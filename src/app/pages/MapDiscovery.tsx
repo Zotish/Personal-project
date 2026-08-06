@@ -138,6 +138,10 @@ async function fetchRoutes(
 
 // ── Category config ───────────────────────────────────────────────────────────
 const categoryColors: Record<string, string> = {
+  "🪑 Used Furniture": "#d97706",
+  "🏢 Furniture Agency": "#ca8a04",
+  "🛍️ Furniture Shop": "#b45309",
+  "📦 Furniture Resale": "#92400e",
   "🕌 Mosque": "#f97316", "⛪ Church": "#f97316", "🛕 Temple": "#f97316",
   "⚖️ Legal Aid": "#0891b2", "🛒 Grocery": "#10b981",
   "🏥 Hospital": "#ef4444", "🏥 Clinic": "#ef4444",
@@ -146,7 +150,21 @@ const categoryColors: Record<string, string> = {
   "🍽️ Restaurant": "#db2777", "🏦 Bank": "#0d9488", "🚌 Transit": "#64748b",
 };
 
+const categoryIcons: Record<string, string> = {
+  "🪑 Used Furniture": "🪑",
+  "🏢 Furniture Agency": "🏢",
+  "🛍️ Furniture Shop": "🛍️",
+  "📦 Furniture Resale": "📦",
+  "🕌 Mosque": "🕌", "⛪ Church": "⛪", "🛕 Temple": "🛕",
+  "⚖️ Legal Aid": "⚖️", "🛒 Grocery": "🛒",
+  "🏥 Hospital": "🏥", "🏥 Clinic": "🏥",
+  "📚 Library": "📚", "🚗 DMV": "🚗",
+  "🏫 School": "🏫", "🏛️ Community Center": "🏛️",
+  "🍽️ Restaurant": "🍽️", "🏦 Bank": "🏦", "🚌 Transit": "🚌",
+};
+
 const categoryMap: Record<string, string[]> = {
+  furniture: ["🪑 Used Furniture", "🏢 Furniture Agency", "🛍️ Furniture Shop", "📦 Furniture Resale"],
   religious: ["🕌 Mosque", "⛪ Church", "🛕 Temple"],
   schools: ["🏫 School"], grocery: ["🛒 Grocery"],
   hospital: ["🏥 Hospital", "🏥 Clinic"], legal: ["⚖️ Legal Aid"],
@@ -157,6 +175,7 @@ const categoryMap: Record<string, string[]> = {
 
 const categories = [
   { id: "all", label: "All", emoji: "📍" },
+  { id: "furniture", label: "Furniture", emoji: "🪑" },
   { id: "religious", label: "Religious", emoji: "🕌" },
   { id: "schools", label: "Schools", emoji: "🏫" },
   { id: "grocery", label: "Grocery", emoji: "🛒" },
@@ -171,6 +190,13 @@ const categories = [
 ];
 
 const places = [
+  // ── Used Furniture Shops & Agencies ──
+  { id: 28, lat: 40.7512, lng: -73.8824, name: "Queens Used Furniture & Resale", category: "🪑 Used Furniture", distance: "0.5 mi", rating: 4.8, reviews: 312, open: true, openUntil: "8:00 PM", address: "78-12 37th Ave, Jackson Heights, NY", phone: "+1 (718) 424-9988", languages: ["English", "Spanish", "Bengali"], immigrantFriendly: true, description: "Affordable pre-owned sofas, dining tables, beds, and household furniture. Delivery available across NYC.", image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=200&fit=crop" },
+  { id: 29, lat: 40.7435, lng: -73.8762, name: "NYC Thrift & Used Furniture Agency", category: "🏢 Furniture Agency", distance: "1.1 mi", rating: 4.7, reviews: 245, open: true, openUntil: "7:00 PM", address: "84-02 Broadway, Elmhurst, NY", phone: "+1 (718) 899-7711", languages: ["English", "Spanish"], immigrantFriendly: true, description: "Community agency providing discounted gently used furniture, desks, and home decor for newcomer families.", image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=200&fit=crop" },
+  { id: 30, lat: 40.7380, lng: -73.8885, name: "Jackson Heights Vintage Furniture Shop", category: "🛍️ Furniture Shop", distance: "1.4 mi", rating: 4.9, reviews: 189, open: true, openUntil: "9:00 PM", address: "40-18 Junction Blvd, Corona, NY", phone: "+1 (718) 651-3322", languages: ["English", "Bengali", "Hindi"], immigrantFriendly: true, description: "Quality second-hand wooden furniture, wardrobes, mattresses, and kitchen appliances at student & immigrant rates.", image: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=400&h=200&fit=crop" },
+  { id: 31, lat: 40.7580, lng: -73.8690, name: "Immigrant Home Furniture Depot", category: "📦 Furniture Resale", distance: "1.8 mi", rating: 4.6, reviews: 154, open: true, openUntil: "6:30 PM", address: "102-15 Northern Blvd, Corona, NY", phone: "+1 (718) 458-9000", languages: ["English", "Spanish", "Chinese"], immigrantFriendly: true, description: "Bulk resale agency for bedroom sets, living room furniture, and home setup packages for newly arrived immigrants.", image: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=400&h=200&fit=crop" },
+
+  // ── Existing Community Places ──
   { id: 1, lat: 40.6794, lng: -73.9534, name: "Masjid At-Taqwa", category: "🕌 Mosque", distance: "0.3 mi", rating: 4.8, reviews: 342, open: true, openUntil: "9:00 PM", address: "1266 Bedford Ave, Brooklyn, NY", phone: "+1 (718) 622-0800", languages: ["Arabic", "Bengali", "English"], immigrantFriendly: true, description: "Serving the Brooklyn Muslim community since 1981.", image: "https://images.unsplash.com/photo-1564769625905-50e93615e769?w=400&h=200&fit=crop" },
   { id: 2, lat: 40.7468, lng: -73.8914, name: "Masjid Al-Aman", category: "🕌 Mosque", distance: "1.2 mi", rating: 4.7, reviews: 218, open: true, openUntil: "10:00 PM", address: "37-14 75th St, Jackson Heights, NY", phone: "+1 (718) 507-8888", languages: ["Arabic", "Urdu", "English"], immigrantFriendly: true, description: "Vibrant Jackson Heights mosque serving South Asian and Arab communities.", image: "https://images.unsplash.com/photo-1585036156171-384164a8c675?w=400&h=200&fit=crop" },
   { id: 3, lat: 40.7040, lng: -73.8260, name: "Jamaica Muslim Center", category: "🕌 Mosque", distance: "2.0 mi", rating: 4.6, reviews: 156, open: true, openUntil: "8:30 PM", address: "168-04 89th Ave, Jamaica, NY", phone: "+1 (718) 658-4081", languages: ["Arabic", "English", "Bengali"], immigrantFriendly: true, description: "Welcoming mosque with Jumu'ah prayers and ESL classes.", image: "https://images.unsplash.com/photo-1519817650390-64a93db51149?w=400&h=200&fit=crop" },
@@ -237,9 +263,8 @@ function HoverTooltipCard({
 
   return (
     <div
-      className="absolute z-[999] bg-white rounded-2xl shadow-2xl border border-border overflow-visible"
+      className="absolute z-[999] bg-white rounded-2xl shadow-2xl border border-border overflow-visible pointer-events-auto"
       style={{ left, top, width: CARD_W, transition: "left 0.12s ease, top 0.12s ease" }}
-      // keep card alive while mouse is over it
       onMouseEnter={() => { }}
     >
       <div className="rounded-2xl overflow-hidden">
@@ -313,7 +338,7 @@ function HoverTooltipCard({
   );
 }
 
-// ── Leaflet map component ─────────────────────────────────────────────────────
+// ── Booking.com Style Leaflet map component ──────────────────────────────────
 function LeafletMap({
   visiblePlaces, activePlaceId, routes, selectedRouteId, userLocation,
   onMarkerClick, onMapClick, onRouteClick, onMarkerHover,
@@ -335,18 +360,17 @@ function LeafletMap({
   const userMarkerRef = useRef<any>(null);
   const LRef = useRef<any>(null);
 
-  function makeMarkerHtml(color: string, active: boolean, name: string) {
-    const size = active ? 38 : 30;
-    return `<div style="position:relative;width:${size}px;height:${size}px;">
-      <div style="background:${color};width:${size}px;height:${size}px;
-        border-radius:50% 50% 50% 0;transform:rotate(-45deg);
-        border:${active ? "4px" : "3px"} solid white;
-        box-shadow:${active ? "0 4px 16px rgba(0,0,0,0.4)" : "0 2px 8px rgba(0,0,0,0.3)"};"></div>
-      ${active ? `<div style="position:absolute;top:-32px;left:50%;transform:translateX(-50%);
-        background:${color};color:white;font-size:11px;font-weight:700;
-        padding:3px 8px;border-radius:20px;white-space:nowrap;
-        box-shadow:0 2px 8px rgba(0,0,0,0.25);font-family:system-ui,sans-serif;">
-        ${name.split(" ").slice(0, 2).join(" ")}</div>` : ""}
+  // Booking.com style round icon bubble marker (No name text)
+  function makeMarkerHtml(place: Place, active: boolean) {
+    const color = categoryColors[place.category] ?? "#2563eb";
+    const iconSymbol = categoryIcons[place.category] || place.category.split(" ")[0] || "📍";
+    const size = active ? 42 : 34;
+
+    return `<div style="position:relative;display:inline-flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.2s ease;">
+      <div style="background:${active ? '#1e293b' : color};color:white;width:${size}px;height:${size}px;border-radius:50%;border:${active ? '3px' : '2px'} solid white;box-shadow:${active ? '0 10px 25px rgba(0,0,0,0.5), 0 0 0 3px rgba(37,99,235,0.4)' : '0 4px 14px rgba(0,0,0,0.25)'};display:flex;align-items:center;justify-content:center;transform:${active ? 'scale(1.15)' : 'scale(1)'};">
+        <span style="font-size:${active ? '18px' : '15px'};line-height:1;">${iconSymbol}</span>
+      </div>
+      <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid ${active ? '#1e293b' : color};margin-top:-1px;"></div>
     </div>`;
   }
 
@@ -355,18 +379,19 @@ function LeafletMap({
     markersRef.current.forEach((m, id) => { if (!ids.has(id)) { m.remove(); markersRef.current.delete(id); } });
     ps.forEach(place => {
       if (markersRef.current.has(place.id)) return;
-      const color = categoryColors[place.category] ?? "#6366f1";
+      const active = place.id === activeId;
       const icon = L.divIcon({
-        className: "", html: makeMarkerHtml(color, place.id === activeId, place.name),
-        iconSize: place.id === activeId ? [38, 38] : [30, 30],
-        iconAnchor: place.id === activeId ? [19, 38] : [15, 30],
+        className: "booking-map-marker",
+        html: makeMarkerHtml(place, active),
+        iconSize: active ? [42, 48] : [34, 40],
+        iconAnchor: active ? [21, 48] : [17, 40],
       });
       const marker = L.marker([place.lat, place.lng], { icon }).addTo(map);
       marker.on("click", () => {
         const px = map.latLngToContainerPoint([place.lat, place.lng]);
         onMarkerClick(place, { x: px.x, y: px.y });
       });
-      // Desktop hover — delegate to parent
+      // Desktop hover card preview
       marker.on("mouseover", () => {
         if (window.innerWidth < 768) return;
         const px = map.latLngToContainerPoint([place.lat, place.lng]);
@@ -375,7 +400,7 @@ function LeafletMap({
       marker.on("mouseout", () => onMarkerHover(null));
       markersRef.current.set(place.id, marker);
     });
-  }, [onMarkerClick]);
+  }, [onMarkerClick, onMarkerHover]);
 
   // Init map
   useEffect(() => {
@@ -403,11 +428,12 @@ function LeafletMap({
     if (!LRef.current) return;
     markersRef.current.forEach((marker, id) => {
       const place = places.find(p => p.id === id); if (!place) return;
-      const color = categoryColors[place.category] ?? "#6366f1";
       const active = id === activePlaceId;
       marker.setIcon(LRef.current.divIcon({
-        className: "", html: makeMarkerHtml(color, active, place.name),
-        iconSize: active ? [38, 38] : [30, 30], iconAnchor: active ? [19, 38] : [15, 30],
+        className: "booking-map-marker",
+        html: makeMarkerHtml(place, active),
+        iconSize: active ? [42, 48] : [34, 40],
+        iconAnchor: active ? [21, 48] : [17, 40],
       }));
     });
   }, [activePlaceId]);
@@ -423,12 +449,11 @@ function LeafletMap({
 
     map.flyTo([p.lat, p.lng], 16, { duration: 1.0 });
 
-    // Mobile only: after fly, pan UP so pin appears above the bottom sheet card
     if (isMobile) {
       map.once("moveend", () => {
         const containerH = containerRef.current?.offsetHeight ?? 600;
         const visibleH = containerH - MOBILE_CARD_H;
-        const dy = (containerH / 2) - (visibleH / 2); // shift pin into visible center
+        const dy = (containerH / 2) - (visibleH / 2);
         map.panBy([0, -dy], { animate: true, duration: 0.25 });
       });
     }
@@ -450,14 +475,12 @@ function LeafletMap({
     if (!mapRef.current || !LRef.current) return;
     const L = LRef.current; const map = mapRef.current;
 
-    // Clear old route lines
     routeLinesRef.current.forEach(l => l.remove());
     routeLinesRef.current = [];
     if (userMarkerRef.current) { userMarkerRef.current.remove(); userMarkerRef.current = null; }
 
     if (routes.length === 0) return;
 
-    // User location pulsing dot
     if (userLocation) {
       const icon = L.divIcon({
         className: "",
@@ -468,7 +491,6 @@ function LeafletMap({
       userMarkerRef.current = L.marker(userLocation, { icon, zIndexOffset: 1000 }).addTo(map);
     }
 
-    // Draw unselected routes first (dimmer), selected on top
     const sorted = [...routes].sort((a, b) =>
       (a.id === selectedRouteId ? 1 : 0) - (b.id === selectedRouteId ? 1 : 0)
     );
@@ -476,13 +498,11 @@ function LeafletMap({
     sorted.forEach(route => {
       const isSelected = route.id === selectedRouteId;
       if (isSelected) {
-        // Draw traffic-colored segments for selected route
         route.trafficSegments.forEach(seg => {
           const color = trafficColor(seg.level);
           const line = L.polyline(seg.coords, { color, weight: 7, opacity: 0.92, lineCap: "round", lineJoin: "round" }).addTo(map);
           routeLinesRef.current.push(line);
         });
-        // White outline behind for contrast
         const outline = L.polyline(route.coords, { color: "white", weight: 10, opacity: 0.4, lineCap: "round" }).addTo(map);
         outline.bringToBack();
         routeLinesRef.current.push(outline);
@@ -496,7 +516,6 @@ function LeafletMap({
       }
     });
 
-    // Fit bounds to show all routes + endpoints
     const allCoords = routes.flatMap(r => r.coords);
     if (userLocation) allCoords.push(userLocation);
     const bounds = L.latLngBounds(allCoords);
@@ -543,7 +562,6 @@ function DirectionsSheet({
 
   return (
     <div className={`absolute bottom-0 left-0 right-0 z-[1001] bg-white rounded-t-3xl shadow-2xl border-t border-border transition-all duration-300 ${collapsed ? "max-h-[72px]" : "max-h-[72vh]"} overflow-hidden flex flex-col`}>
-      {/* Handle + header */}
       <div className="flex-shrink-0">
         <div className="flex justify-center pt-2 pb-1">
           <div className="w-10 h-1 rounded-full bg-border" />
@@ -567,7 +585,6 @@ function DirectionsSheet({
           </button>
         </div>
 
-        {/* Mode tabs */}
         <div className="flex gap-2 px-4 pb-3">
           {MODES.map(({ id, label, icon: Icon }) => (
             <button
@@ -582,7 +599,6 @@ function DirectionsSheet({
         </div>
       </div>
 
-      {/* Route list */}
       {!collapsed && (
         <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-2">
           {loading ? (
@@ -615,7 +631,6 @@ function DirectionsSheet({
                   </span>
                 </div>
 
-                {/* Stats row */}
                 <div className="grid grid-cols-4 gap-2 mb-2">
                   <div className="flex flex-col items-center bg-secondary rounded-xl p-2">
                     <Timer className="w-3.5 h-3.5 text-primary mb-0.5" />
@@ -641,7 +656,6 @@ function DirectionsSheet({
                   </div>
                 </div>
 
-                {/* Traffic segments legend */}
                 <div className="flex items-center gap-1 flex-wrap">
                   {[...new Set(route.trafficSegments.map(s => s.level))].filter(Boolean).map(lvl => (
                     <span key={lvl} className="flex items-center gap-1 text-[10px] text-muted-foreground">
@@ -661,7 +675,6 @@ function DirectionsSheet({
             );
           })}
 
-          {/* Traffic legend */}
           {routes.length > 0 && (
             <div className="bg-secondary rounded-2xl p-3">
               <p className="text-xs font-semibold text-foreground mb-2">Map traffic colors</p>
@@ -691,10 +704,8 @@ function MapPlaceCard({
 }) {
   const [saved, setSaved] = useState(false);
   const color = categoryColors[place.category] ?? "#6366f1";
-  // Use window width — map container can be narrow even on desktop due to sidebar
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
-  // Desktop: original side-card positioning (unchanged)
   const CARD_W = 288; const CARD_H = 340; const GAP = 14;
   const spaceRight = containerSize.w - markerPx.x;
   const left = spaceRight >= CARD_W + GAP + 20
@@ -703,7 +714,6 @@ function MapPlaceCard({
   let top = markerPx.y - CARD_H / 2;
   top = Math.max(8, Math.min(top, containerSize.h - CARD_H - 8));
 
-  // Shared card content
   const cardContent = (
     <>
       <div className="relative overflow-hidden" style={{ height: isMobile ? 120 : 144 }}>
@@ -752,11 +762,9 @@ function MapPlaceCard({
     </>
   );
 
-  // Mobile: full-width bottom sheet
   if (isMobile) {
     return (
       <div className="absolute bottom-0 left-0 right-0 z-[1000] bg-white rounded-t-2xl shadow-2xl border-t border-border overflow-hidden animate-in slide-in-from-bottom-3 duration-250">
-        {/* drag handle */}
         <div className="flex justify-center pt-2 pb-1">
           <div className="w-8 h-1 rounded-full bg-border" />
         </div>
@@ -765,7 +773,6 @@ function MapPlaceCard({
     );
   }
 
-  // Desktop: original floating side card (unchanged)
   return (
     <div className="absolute w-72 bg-white rounded-2xl shadow-2xl border border-border overflow-hidden z-[1000]"
       style={{ left, top, transition: "left 0.25s, top 0.25s" }}>
@@ -777,8 +784,8 @@ function MapPlaceCard({
 // ── Full detail modal ─────────────────────────────────────────────────────────
 function PlaceDetail({ place, onClose, onDirections }: { place: Place; onClose: () => void; onDirections: () => void; key?: string | number }) {
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-[99999] bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
         <div className="relative">
           <img src={place.image} alt={place.name} className="w-full h-48 object-cover" />
           <button onClick={onClose} className="absolute top-3 right-3 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-secondary transition">
@@ -898,192 +905,239 @@ export function MapDiscovery() {
 
   // Try to get real GPS on mount
   useEffect(() => {
-    navigator.geolocation?.getCurrentPosition(
-      pos => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
-      () => { } // keep default
-    );
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        pos => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
+        () => { } // keep default Queens center if denied/unavailable
+      );
+    }
   }, []);
 
-  const visiblePlaces = places.filter(p => {
-    const q = query.trim().toLowerCase();
-    const matchQ = !q || p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q) || p.address.toLowerCase().includes(q);
-    const matchCat = activeCategory === "all" || (categoryMap[activeCategory] ?? []).includes(p.category);
-    return matchQ && matchCat;
+  // Search filter matching name, category, description, address, languages
+  const filteredPlaces = places.filter(p => {
+    const matchesCategory = activeCategory === "all" ||
+      (categoryMap[activeCategory] && categoryMap[activeCategory].includes(p.category));
+
+    const q = query.toLowerCase().trim();
+    const matchesQuery = !q ||
+      p.name.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q) ||
+      p.address.toLowerCase().includes(q) ||
+      p.languages.some(l => l.toLowerCase().includes(q));
+
+    return matchesCategory && matchesQuery;
   });
 
-  const mapActivePlace = mapActiveId !== null ? places.find(p => p.id === mapActiveId) ?? null : null;
-  const mapContainerSize = mapContainerRef.current
-    ? { w: mapContainerRef.current.offsetWidth, h: mapContainerRef.current.offsetHeight }
-    : { w: 400, h: 500 };
-
-  function openDirections(place: Place) {
-    setDetailPlace(null);
-    setMapActiveId(null);
-    setRoutes([]);
-    setSelectedRouteId(null);
-    setDirectionsFor(place);
-    setViewMode("map");
-  }
-
-  function handleSearchInput(val: string) {
+  const handleQueryChange = (val: string) => {
     setQuery(val);
-    setSuggestions(val.trim().length >= 1
-      ? places.filter(p => p.name.toLowerCase().includes(val.toLowerCase()) || p.address.toLowerCase().includes(val.toLowerCase())).slice(0, 5)
-      : []);
-    if (!val.trim()) setMapActiveId(null);
-  }
+    if (val.trim()) {
+      const q = val.toLowerCase();
+      setSuggestions(places.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)).slice(0, 5));
+    } else {
+      setSuggestions([]);
+    }
+  };
 
-  function selectSuggestion(place: Place) {
-    setQuery(place.name); setSuggestions([]);
-    setMapActiveId(place.id); setViewMode("map");
-    inputRef.current?.blur();
-  }
-
-  function clearSearch() {
-    setQuery(""); setSuggestions([]); setMapActiveId(null);
-  }
+  const handleSelectSuggestion = (place: Place) => {
+    setQuery(place.name);
+    setSuggestions([]);
+    setMapActiveId(place.id);
+    setViewMode("map");
+  };
 
   return (
-    <AppLayout noPad hideNav>
-      <div className="flex flex-col h-screen max-h-screen">
-        {/* Header */}
-        <div className="bg-white border-b border-border p-4 space-y-3 flex-shrink-0">
-          <div className="flex items-center gap-2">
+    <AppLayout>
+      <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-background">
+        {/* Top Search Bar & Categories */}
+        <div className="bg-white border-b border-border p-3 sm:p-4 z-20 space-y-3 flex-shrink-0">
+          <div className="flex gap-2 max-w-4xl mx-auto">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
-              <input ref={inputRef} type="text" value={query} onChange={e => handleSearchInput(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" && suggestions[0]) selectSuggestion(suggestions[0]); if (e.key === "Escape") { setSuggestions([]); inputRef.current?.blur(); } }}
-                placeholder="Search places, mosques, hospitals…"
-                className="w-full pl-10 pr-9 py-2.5 bg-input-background rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition"
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Search used furniture, halal food, legal aid, stores..."
+                className="w-full pl-10 pr-9 py-2.5 bg-input-background rounded-xl border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition"
               />
-              {query && <button onClick={clearSearch} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition"><X className="w-3.5 h-3.5" /></button>}
-              {suggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-border shadow-xl z-50 overflow-hidden">
-                  {suggestions.map((place, i) => (
-                    <button key={place.id} onMouseDown={() => selectSuggestion(place)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary transition text-left ${i < suggestions.length - 1 ? "border-b border-border" : ""}`}>
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white" style={{ background: categoryColors[place.category] ?? "#6366f1" }}>
-                        <MapPin className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold truncate">{place.name}</div>
-                        <div className="text-xs text-muted-foreground truncate">{place.address}</div>
-                      </div>
-                      <div className="flex items-center gap-0.5 text-xs text-amber-600 font-medium flex-shrink-0">
-                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />{place.rating}
-                      </div>
-                    </button>
-                  ))}
-                </div>
+              {query && (
+                <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="w-4 h-4" />
+                </button>
               )}
             </div>
-            <button className="w-10 h-10 rounded-xl border border-border bg-white flex items-center justify-center hover:bg-secondary transition flex-shrink-0">
-              <Navigation className="w-4 h-4 text-primary" />
-            </button>
+
+            {/* View Mode Toggle */}
+            <div className="flex bg-secondary p-1 rounded-xl flex-shrink-0">
+              <button
+                onClick={() => setViewMode("map")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${viewMode === "map" ? "bg-white text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <MapIcon className="w-3.5 h-3.5" /> Map
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${viewMode === "list" ? "bg-white text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <List className="w-3.5 h-3.5" /> List ({filteredPlaces.length})
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {categories.map(({ id, label, emoji }) => (
-              <button key={id} onClick={() => { setActiveCategory(id); setMapActiveId(null); if (id !== "all") setViewMode("map"); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-all ${activeCategory === id ? "bg-primary text-white shadow-sm" : "bg-white border border-border text-muted-foreground hover:text-primary hover:border-primary"}`}>
-                <span>{emoji}</span> {label}
+
+          {/* Categories Pill Bar */}
+          <div className="flex gap-2 overflow-x-auto no-scrollbar max-w-4xl mx-auto pb-1">
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${activeCategory === cat.id ? "bg-primary text-white shadow-sm scale-105" : "bg-secondary text-muted-foreground hover:bg-border/60 hover:text-foreground"}`}
+              >
+                <span>{cat.emoji}</span>
+                <span>{cat.label}</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Result count row + view toggle */}
-        <div className="flex items-center px-3 py-2 bg-background border-b border-border flex-shrink-0 gap-2">
-          {/* Back arrow */}
-          <button
-            onClick={() => navigate(-1 as unknown as string)}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary transition-colors flex-shrink-0"
-          >
-            <ArrowLeft className="w-4 h-4 text-foreground" />
-          </button>
-
-          {/* Centered count text */}
-          <p className="flex-1 text-sm text-muted-foreground text-center">
-            {visiblePlaces.length} place{visiblePlaces.length !== 1 ? "s" : ""}{query ? ` for "${query}"` : " near Queens, NY"}
-          </p>
-        </div>
-
-        {/* Map Content */}
-        <div ref={mapContainerRef} className="flex-1 relative overflow-hidden">
-          <LeafletMap
-            visiblePlaces={directionsFor ? [] : visiblePlaces}
-            activePlaceId={mapActiveId}
-            routes={routes}
-            selectedRouteId={selectedRouteId}
-            userLocation={directionsFor ? userLocation : null}
-            onMarkerClick={(p, px) => { setMarkerPx(px); setHoverPlace(null); setMapActiveId(prev => prev === p.id ? null : p.id); }}
-            onMapClick={() => { if (!directionsFor) setMapActiveId(null); }}
-            onRouteClick={id => setSelectedRouteId(id)}
-            onMarkerHover={(p, px) => { setHoverPlace(p); if (px) setHoverPx(px); }}
-          />
-          {/* Desktop hover tooltip */}
-          {!directionsFor && hoverPlace && !mapActiveId && (
-            <HoverTooltipCard
-              place={hoverPlace}
-              px={hoverPx}
-              containerW={mapContainerSize.w}
-              containerH={mapContainerSize.h}
-              onDirections={p => { setHoverPlace(null); openDirections(p); }}
-              onViewDetails={p => { setHoverPlace(null); setDetailPlace(p); }}
-            />
-          )}
-
-          {/* Directions sheet */}
-          {directionsFor && (
-            <DirectionsSheet
-              destination={directionsFor}
-              userLocation={userLocation}
+        {/* Main Content Area */}
+        <div className="flex-1 relative overflow-hidden flex">
+          {/* Map View */}
+          <div ref={mapContainerRef} className={`relative flex-1 w-full h-full ${viewMode === "list" ? "hidden md:block" : "block"}`}>
+            <LeafletMap
+              visiblePlaces={filteredPlaces}
+              activePlaceId={mapActiveId}
               routes={routes}
               selectedRouteId={selectedRouteId}
-              onRoutesReady={r => { setRoutes(r); setSelectedRouteId(r[0]?.id ?? null); }}
-              onSelectRoute={setSelectedRouteId}
-              onClose={() => { setDirectionsFor(null); setRoutes([]); setSelectedRouteId(null); }}
+              userLocation={userLocation}
+              onMarkerClick={(p, px) => {
+                setMapActiveId(p.id);
+                setMarkerPx(px);
+                setHoverPlace(null);
+              }}
+              onMapClick={() => {
+                setMapActiveId(null);
+                setHoverPlace(null);
+              }}
+              onRouteClick={id => setSelectedRouteId(id)}
+              onMarkerHover={(p, px) => {
+                setHoverPlace(p);
+                if (px) setHoverPx(px);
+              }}
             />
-          )}
 
-          {/* Place card beside marker */}
-          {!directionsFor && mapActivePlace && (
-            <MapPlaceCard
-              place={mapActivePlace}
-              markerPx={markerPx}
-              containerSize={mapContainerSize}
-              onClose={() => setMapActiveId(null)}
-              onViewDetails={() => { setDetailPlace(mapActivePlace); setMapActiveId(null); }}
-              onDirections={() => openDirections(mapActivePlace)}
-            />
-          )}
+            {/* Desktop Hover Card Tooltip */}
+            {hoverPlace && (
+              <HoverTooltipCard
+                place={hoverPlace}
+                px={hoverPx}
+                containerW={mapContainerRef.current?.offsetWidth ?? 800}
+                containerH={mapContainerRef.current?.offsetHeight ?? 600}
+                onDirections={p => setDirectionsFor(p)}
+                onViewDetails={p => setDetailPlace(p)}
+              />
+            )}
 
-          {/* Bottom mini strip */}
-          {!directionsFor && !mapActivePlace && (
-            <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-10 pointer-events-none"
-              style={{ background: "linear-gradient(to top,rgba(0,0,0,0.2) 0%,transparent 100%)" }}>
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide pointer-events-auto">
-                {visiblePlaces.map(place => (
-                  <button key={place.id}
-                    onClick={() => { const c = mapContainerRef.current; setMarkerPx(c ? { x: c.offsetWidth / 2, y: c.offsetHeight / 2 } : { x: 200, y: 250 }); setMapActiveId(place.id); }}
-                    className="bg-white rounded-xl border border-border p-2.5 min-w-44 shadow-lg hover:shadow-xl transition-all flex-shrink-0 text-left">
-                    <div className="text-sm font-semibold line-clamp-1">{place.name}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">{place.distance} · {place.category}</div>
-                    <div className="flex items-center gap-1 mt-1"><Star className="w-3 h-3 fill-amber-400 text-amber-400" /><span className="text-xs font-medium">{place.rating}</span></div>
-                  </button>
-                ))}
+            {/* Selected Place Card Overlay (Desktop Side Card / Mobile Bottom Sheet) */}
+            {mapActiveId !== null && (() => {
+              const activePlace = places.find(p => p.id === mapActiveId);
+              if (!activePlace) return null;
+              return (
+                <MapPlaceCard
+                  key={mapActiveId}
+                  place={activePlace}
+                  markerPx={markerPx}
+                  containerSize={{
+                    w: mapContainerRef.current?.offsetWidth ?? 800,
+                    h: mapContainerRef.current?.offsetHeight ?? 600,
+                  }}
+                  onClose={() => setMapActiveId(null)}
+                  onViewDetails={() => {
+                    setDetailPlace(activePlace);
+                    setMapActiveId(null);
+                  }}
+                  onDirections={() => setDirectionsFor(activePlace)}
+                />
+              );
+            })()}
+
+            {/* Directions Sheet Modal */}
+            {directionsFor && (
+              <DirectionsSheet
+                destination={directionsFor}
+                userLocation={userLocation}
+                onClose={() => {
+                  setDirectionsFor(null);
+                  setRoutes([]);
+                  setSelectedRouteId(null);
+                }}
+                onRoutesReady={rts => setRoutes(rts)}
+                selectedRouteId={selectedRouteId}
+                onSelectRoute={id => setSelectedRouteId(id)}
+                routes={routes}
+              />
+            )}
+          </div>
+
+          {/* List View Sidebar (shown only when List view mode is selected) */}
+          <div className={`w-full md:w-[420px] bg-white border-l border-border flex-col h-full overflow-y-auto ${viewMode === "list" ? "flex" : "hidden"}`}>
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <div>
+                <span className="text-sm font-bold text-foreground block">
+                  Showing {filteredPlaces.length} nearby places
+                </span>
+                <span className="text-xs text-muted-foreground">Within 3.5 mi radius</span>
               </div>
+              {query && (
+                <button onClick={() => setQuery("")} className="text-xs text-primary font-semibold hover:underline">
+                  Clear search
+                </button>
+              )}
             </div>
-          )}
-        </div>
-      </div>
 
-      {detailPlace && (
-        <PlaceDetail
-          place={detailPlace}
-          onClose={() => setDetailPlace(null)}
-          onDirections={() => { openDirections(detailPlace); setDetailPlace(null); }}
-        />
-      )}
+            <div className="p-4 space-y-3 flex-1 overflow-y-auto">
+              {filteredPlaces.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center mx-auto mb-3">
+                    <Search className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-base font-semibold text-foreground mb-1">No places found</h3>
+                  <p className="text-xs text-muted-foreground mb-4">Try searching for "Used furniture", "Grocery", or "Legal Aid"</p>
+                  <button onClick={() => { setQuery(""); setActiveCategory("all"); }} className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-semibold hover:opacity-90 transition">
+                    Reset filters
+                  </button>
+                </div>
+              ) : (
+                filteredPlaces.map(p => (
+                  <PlaceCard
+                    key={p.id}
+                    place={p}
+                    onClick={() => {
+                      setMapActiveId(p.id);
+                      setDetailPlace(p);
+                    }}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Full Detail Modal */}
+        {detailPlace && (
+          <PlaceDetail
+            key={detailPlace.id}
+            place={detailPlace}
+            onClose={() => setDetailPlace(null)}
+            onDirections={() => {
+              const p = detailPlace;
+              setDetailPlace(null);
+              setDirectionsFor(p);
+            }}
+          />
+        )}
+      </div>
     </AppLayout>
   );
 }

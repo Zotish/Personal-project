@@ -135,8 +135,8 @@ export function Login() {
                     onChange={(e) => setMethod(e.target.value as "email" | "phone")}
                     className="h-full px-3 py-2.5 bg-input-background rounded-xl border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition appearance-none cursor-pointer pr-8 font-medium shadow-xs"
                   >
-                    <option value="email">📧 Email</option>
-                    <option value="phone">📱 Phone</option>
+                    <option value="email">Email</option>
+                    <option value="phone">Phone</option>
                   </select>
                   <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                 </div>
@@ -302,8 +302,8 @@ export function SignUp() {
                     onChange={(e) => setMethod(e.target.value as "email" | "phone")}
                     className="h-full px-3 py-2.5 bg-input-background rounded-xl border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition appearance-none cursor-pointer pr-8 font-medium shadow-xs"
                   >
-                    <option value="email">📧 Email</option>
-                    <option value="phone">📱 Phone</option>
+                    <option value="email">Email</option>
+                    <option value="phone">Phone</option>
                   </select>
                   <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                 </div>
