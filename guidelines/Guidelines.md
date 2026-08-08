@@ -58,4 +58,6 @@ or initiating processes. They communicate interactivity and should have clear, a
   * Purpose : Used for the least important actions
   * Visual Style : Text-only with no border, using primary color
   * Usage : For actions that should be available but not emphasized
+
+  Signup jei page ta ache seitak aro efficient koro jate open korlei full form fill up er page ta users er samne mane ek pagei ase. Dhoro create/login even google and facebook login tao jeno eksathei dekhte pare users/seller both
 -->

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Globe, Eye, EyeOff, Mail, Lock, User, ChevronLeft, CheckCircle, Smartphone, ChevronDown } from "lucide-react";
+import { Globe, Eye, EyeOff, Mail, Lock, User, ChevronLeft, CheckCircle, Smartphone, ChevronDown, Store, ShieldCheck, Briefcase } from "lucide-react";
 
 // Brand icons
 const GoogleIcon = () => (
@@ -24,7 +24,7 @@ export function Login() {
   const [method, setMethod] = useState<"email" | "phone">("email");
   const [countryCode, setCountryCode] = useState("+1");
   const [step, setStep] = useState<"form" | "otp">("form");
-  
+
   // OTP state
   const [otp, setOtp] = useState(["4", "2", "7", "1", "8", "9"]);
   const [errorMsg, setErrorMsg] = useState("");
@@ -100,7 +100,7 @@ export function Login() {
             <div className="mt-4 text-xs text-muted-foreground">
               Didn't receive code?{" "}
               <button
-                onClick={() => { setOtp(["4","2","7","1","8","9"]); setErrorMsg(""); }}
+                onClick={() => { setOtp(["4", "2", "7", "1", "8", "9"]); setErrorMsg(""); }}
                 className="text-primary font-semibold hover:underline"
               >
                 Resend OTP
@@ -258,21 +258,115 @@ export function SignUp() {
   const [method, setMethod] = useState<"email" | "phone">("email");
   const [countryCode, setCountryCode] = useState("+1");
 
+  // Role & Seller Onboarding State
+  const [role, setRole] = useState<"user" | "seller">("user");
+  const [sellerType, setSellerType] = useState<"individual" | "business">("individual");
+  const [businessCategory, setBusinessCategory] = useState("furniture");
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-foreground">Create your account</h1>
+        <div className="text-center mb-4">
+          <h1 className="text-2xl font-bold text-foreground">
+            {role === "seller" ? "Create Seller Account" : "Create your account"}
+          </h1>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-border p-6 sm:p-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-border p-5 sm:p-6">
           {/* Form Input Fields */}
           <div className="space-y-4">
-            {/* 1. First Name & Last Name */}
+
+            {/* 0. Account Type Side-by-Side Segmented Selector */}
+            <div>
+              <label className="text-sm font-medium text-foreground block mb-1.5">
+                Account Type
+              </label>
+              <div className="grid grid-cols-2 gap-2 p-1 bg-secondary/80 rounded-xl border border-border">
+                <button
+                  type="button"
+                  onClick={() => setRole("user")}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${role === "user"
+                      ? "bg-white text-primary shadow-xs border border-border/40"
+                      : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>Member</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole("seller")}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${role === "seller"
+                      ? "bg-primary text-white shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  <Store className="w-3.5 h-3.5" />
+                  <span>Seller</span>
+                </button>
+              </div>
+            </div>
+
+            {/* BUSINESS / MERCHANT SPECIFIC ONBOARDING UI */}
+            {role === "seller" && (
+              <div className="space-y-3 p-3 bg-blue-50/60 rounded-xl border border-blue-100 animate-in fade-in duration-200">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-primary flex items-center gap-1">
+                    <Store className="w-3.5 h-3.5" /> Merchant / Shop Profile Mode
+                  </span>
+                  <span className="text-[10px] bg-blue-100 text-primary font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" /> Anti-Scam Protected
+                  </span>
+                </div>
+
+                {/* Business Name Field for Shop Owners */}
+                <div>
+                  <label className="text-xs font-semibold text-foreground block mb-1">Business / Shop Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Queens Used Furniture & Resale"
+                    className="w-full px-3 py-2 bg-white rounded-lg border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary transition shadow-xs"
+                  />
+                </div>
+
+                {/* Business Category Selection */}
+                <div>
+                  <label className="text-xs font-semibold text-foreground block mb-1">Business Category</label>
+                  <div className="relative">
+                    <select
+                      value={businessCategory}
+                      onChange={(e) => setBusinessCategory(e.target.value)}
+                      className="w-full px-3 py-2 bg-white rounded-lg border border-border text-xs font-medium text-foreground focus:outline-none cursor-pointer appearance-none pr-7 shadow-xs"
+                    >
+                      <option value="furniture">🪑 Used Furniture & Resale</option>
+                      <option value="grocery">🛒 Grocery & Supermarket</option>
+                      <option value="legal">⚖️ Legal & Immigration Services</option>
+                      <option value="electronics">🔌 Electronics & Appliances</option>
+                      <option value="general">📦 General Thrift & Goods</option>
+                    </select>
+                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* ITIN / EIN Optional Tax Field for Business Verification */}
+                <div>
+                  <label className="text-xs font-semibold text-foreground block mb-1">ITIN or EIN Number (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 9XX-XX-XXXX (For Verified Shop Badge)"
+                    className="w-full px-3 py-2 bg-white rounded-lg border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary transition shadow-xs"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* 1. First Name & Last Name (or Owner Name for Business) */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm font-medium text-foreground block mb-1.5">First name</label>
+                <label className="text-sm font-medium text-foreground block mb-1.5">
+                  {role === "seller" && sellerType === "business" ? "Owner first name" : "First name"}
+                </label>
                 <input
                   type="text"
                   placeholder="Rafiq"
@@ -280,7 +374,9 @@ export function SignUp() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground block mb-1.5">Last name</label>
+                <label className="text-sm font-medium text-foreground block mb-1.5">
+                  {role === "seller" && sellerType === "business" ? "Owner last name" : "Last name"}
+                </label>
                 <input
                   type="text"
                   placeholder="Ahmed"
@@ -372,23 +468,28 @@ export function SignUp() {
                 className="mt-0.5 w-4 h-4 rounded border-primary/40 text-primary focus:ring-primary cursor-pointer flex-shrink-0"
               />
               <p className="text-xs text-primary leading-relaxed">
-                By creating an account, you agree to our <span className="font-semibold underline">Terms of Service</span> and <span className="font-semibold underline">Privacy Policy</span>. Your data is safe and never sold.
+                {role === "seller"
+                  ? "By creating a seller account, you agree to our Seller Code of Conduct, Escrow Policy, and Anti-Scam Protection terms."
+                  : "By creating an account, you agree to our Terms of Service and Privacy Policy. Your data is safe and never sold."}
               </p>
             </label>
 
             {/* Submit Button */}
             <button
               onClick={() => navigate(method === "email" ? "/verify-email" : "/onboarding/country")}
-              className="w-full py-3 rounded-xl text-white font-semibold text-sm shadow-sm hover:opacity-90 transition mt-2"
+              className="w-full py-3 rounded-xl text-white font-semibold text-sm shadow-sm hover:opacity-90 transition mt-2 flex items-center justify-center gap-2"
               style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
             >
-              Create Account
+              {role === "seller" ? <Store className="w-4 h-4" /> : null}
+              <span>{role === "seller" ? "Create Seller Account" : "Create Account"}</span>
             </button>
 
             {/* Divider */}
             <div className="relative flex items-center gap-3 my-5">
               <div className="flex-1 h-px bg-border" />
-              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">or sign up with</span>
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                {role === "seller" ? "or sign up seller with" : "or sign up with"}
+              </span>
               <div className="flex-1 h-px bg-border" />
             </div>
 

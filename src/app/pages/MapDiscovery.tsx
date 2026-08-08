@@ -701,6 +701,7 @@ function MapPlaceCard({
   place: Place; markerPx: { x: number; y: number };
   containerSize: { w: number; h: number };
   onClose: () => void; onViewDetails: () => void; onDirections: () => void;
+  key?: string | number;
 }) {
   const [saved, setSaved] = useState(false);
   const color = categoryColors[place.category] ?? "#6366f1";
