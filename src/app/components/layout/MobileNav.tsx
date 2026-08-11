@@ -102,7 +102,6 @@ export function MobileNav() {
 
           {/* Language Toggle */}
           <div className="px-4 py-3 border-t border-border">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t("switch_language")}</p>
             <LanguageToggle />
           </div>
         </div>
@@ -127,15 +126,15 @@ export function MobileNav() {
           })}
 
           {/* More button */}
-          <button onClick={() => setShowMore(s => !s)}
+          <button onClick={() => navigate("/more")}
             className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all min-w-0 relative ${
-              isMoreActive || showMore ? "text-foreground" : "text-muted-foreground"
+              location.pathname === "/more" || isMoreActive ? "text-foreground" : "text-muted-foreground"
             }`}>
-            <div className={`p-1.5 rounded-xl transition-all ${isMoreActive || showMore ? "bg-secondary" : ""}`}>
-              <MoreHorizontal className="w-5 h-5 text-emerald-600" strokeWidth={isMoreActive || showMore ? 2.5 : 1.8} />
+            <div className={`p-1.5 rounded-xl transition-all ${location.pathname === "/more" || isMoreActive ? "bg-secondary" : ""}`}>
+              <MoreHorizontal className="w-5 h-5 text-emerald-600" strokeWidth={location.pathname === "/more" || isMoreActive ? 2.5 : 1.8} />
             </div>
             <span className="text-[10px] font-medium leading-none">{t("more")}</span>
-            {isMoreActive && !showMore && (
+            {(location.pathname === "/more" || isMoreActive) && (
               <span className="absolute top-1.5 right-2.5 w-2 h-2 rounded-full bg-primary" />
             )}
           </button>

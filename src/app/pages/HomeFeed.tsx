@@ -3,9 +3,10 @@ import { useNavigate } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import { useLanguage } from "../context/LanguageContext";
 import { getFavourites, removeFavourite, type MyBoxFavourite } from "../utils/myBox";
+import { MapDiscoveryContent } from "./MapDiscovery";
 import {
   Heart, MessageCircle, Repeat2, Share2, Bookmark, MoreHorizontal,
-  Image, BarChart2, MapPin, HelpCircle, AlertTriangle, CheckCircle,
+  Image, BarChart2, MapPin, Map, HelpCircle, AlertTriangle, CheckCircle,
   Globe, Users, Bell, Zap, ChevronLeft, ChevronRight, ChevronDown,
   Calendar, Clock, X, MapPin as MapPinIcon, UserCheck, Building2,
   Megaphone, Star, TrendingUp, Lock, Hash, Pin, Award,
@@ -958,8 +959,8 @@ function RightPanel({
 
 const TAB_CONFIG = [
   { id: "for-you",    tKey: "tab_foryou",    icon: Star },
+  { id: "map",        tKey: "tab_map",       icon: Map },
   { id: "following",  tKey: "tab_following", icon: UserCheck },
-  { id: "community",  tKey: "tab_community", icon: Building2 },
   { id: "local",      tKey: "tab_local",     icon: MapPin },
 ];
 
@@ -1051,8 +1052,8 @@ function QuickAccessBox({ navigate, variant = "mobile" }: { navigate: (p: string
   const trigger = variant === "desktop" ? (
     <button
       onClick={() => setOpen(v => !v)}
-      className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 px-3 text-xs font-medium transition-all ${
-        open ? "text-foreground border-b-2 border-emerald-600" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+      className={`w-full h-full flex-1 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 px-3 text-xs font-medium transition-all ${
+        open ? "text-foreground border-b-2 border-emerald-600 font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
       }`}
     >
       <LayoutGrid className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-emerald-600" />
@@ -1070,7 +1071,7 @@ function QuickAccessBox({ navigate, variant = "mobile" }: { navigate: (p: string
   );
 
   return (
-    <div ref={popupRef} className={variant === "mobile" ? "relative flex-1 mx-2" : "relative"}>
+    <div ref={popupRef} className={variant === "mobile" ? "relative flex-1 mx-2" : "relative w-full h-full flex-1 flex flex-col justify-center"}>
       {trigger}
 
       {open && (
@@ -1287,28 +1288,63 @@ export function HomeFeed() {
         {/* Sticky tabs bar */}
         {!selectedDate && (
           <div className="sticky top-0 lg:top-0 z-20 bg-white/90 backdrop-blur-md border-b border-border">
-            <div className="flex">
-              {TAB_CONFIG.map(({ id, tKey, icon: Icon }, idx) => (
-                <Fragment key={id}>
-                  <button
-                    onClick={() => setActiveTab(id)}
-                    className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 text-xs font-medium transition-all ${
-                      activeTab === id
-                        ? "text-foreground border-b-2 border-emerald-600"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-emerald-600" />
-                    <span className="hidden sm:block">{t(tKey)}</span>
-                  </button>
-                  {/* MyBox in desktop tab bar — between For You and Following */}
-                  {idx === 0 && (
-                    <div className="hidden xl:flex items-stretch border-b border-border">
-                      <QuickAccessBox navigate={navigate} variant="desktop" />
-                    </div>
-                  )}
-                </Fragment>
-              ))}
+            <div className="grid grid-cols-5 w-full items-stretch">
+              {/* 1. For You */}
+              <button
+                onClick={() => setActiveTab("for-you")}
+                className={`w-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 text-xs font-medium transition-all ${
+                  activeTab === "for-you"
+                    ? "text-foreground font-semibold border-b-2 border-emerald-600"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                }`}
+              >
+                <Star className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-emerald-600 flex-shrink-0" />
+                <span className="truncate">{t("tab_foryou")}</span>
+              </button>
+
+              {/* 2. MyBox */}
+              <div className="w-full flex items-stretch">
+                <QuickAccessBox navigate={navigate} variant="desktop" />
+              </div>
+
+              {/* 3. Map */}
+              <button
+                onClick={() => setActiveTab("map")}
+                className={`w-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 text-xs font-medium transition-all ${
+                  activeTab === "map"
+                    ? "text-foreground font-semibold border-b-2 border-emerald-600"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                }`}
+              >
+                <Map className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-emerald-600 flex-shrink-0" />
+                <span className="truncate">{t("tab_map")}</span>
+              </button>
+
+              {/* 4. Following */}
+              <button
+                onClick={() => setActiveTab("following")}
+                className={`w-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 text-xs font-medium transition-all ${
+                  activeTab === "following"
+                    ? "text-foreground font-semibold border-b-2 border-emerald-600"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                }`}
+              >
+                <UserCheck className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-emerald-600 flex-shrink-0" />
+                <span className="truncate">{t("tab_following")}</span>
+              </button>
+
+              {/* 5. Local */}
+              <button
+                onClick={() => setActiveTab("local")}
+                className={`w-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 text-xs font-medium transition-all ${
+                  activeTab === "local"
+                    ? "text-foreground font-semibold border-b-2 border-emerald-600"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                }`}
+              >
+                <MapPin className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-emerald-600 flex-shrink-0" />
+                <span className="truncate">{t("tab_local")}</span>
+              </button>
             </div>
           </div>
         )}
@@ -1348,6 +1384,8 @@ export function HomeFeed() {
                 </div>
               )}
             </>
+          ) : activeTab === "map" ? (
+            <MapDiscoveryContent embedded={true} />
           ) : (
             <>
               <PostComposer />

@@ -28,6 +28,9 @@ import { SavedResources } from "./pages/SavedResources";
 import { Settings } from "./pages/Settings";
 import { Admin } from "./pages/Admin";
 import { Reels } from "./pages/Reels";
+import { SellerDashboard } from "./pages/SellerDashboard";
+import { SellerProfile } from "./pages/SellerProfile";
+import { MoreMenu } from "./pages/MoreMenu";
 
 export default function App() {
   return (
@@ -60,6 +63,12 @@ export default function App() {
         <Route path="/qa" element={<QandA />} />
         <Route path="/post/:id" element={<PostDetails />} />
         <Route path="/saved" element={<SavedResources />} />
+        <Route path="/more" element={<MoreMenu />} />
+
+        {/* Seller SaaS & Storefront */}
+        <Route path="/seller-dashboard" element={<SellerDashboard />} />
+        <Route path="/seller/:sellerId" element={<SellerProfile />} />
+        <Route path="/store/:storeId" element={<SellerProfile />} />
 
         {/* Service Pages */}
         <Route path="/services/jobs" element={<Jobs />} />

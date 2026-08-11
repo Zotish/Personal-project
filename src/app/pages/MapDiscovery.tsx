@@ -5,7 +5,7 @@ import {
   Search, MapPin, Navigation, Star, Clock, Phone,
   Bookmark, Share2, MessageCircle, List, Map as MapIcon, X,
   CheckCircle, ChevronRight, Car, Bike, Footprints, AlertTriangle,
-  DollarSign, Timer, Route, ArrowLeft, Loader2, ChevronDown
+  DollarSign, Timer, Route, ArrowLeft, Loader2, ChevronDown, Store
 } from "lucide-react";
 import type { Map as LeafletMapType } from "leaflet";
 
@@ -22,6 +22,9 @@ type RouteOption = {
   trafficSegments: { coords: [number, number][]; level: TrafficLevel }[];
   cost: string;
 };
+
+// ── BariKoi Map API Key ────────────────────────────────────────────────────────
+const BARIKOI_API_KEY = import.meta.env.VITE_BARIKOI_API_KEY || "bkoi_e25928917c9e7b36a3286d75f446427fa3433bf87361b2fd8c8d6c942300a38f";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const OSRM_PROFILES: Record<TravelMode, string> = {
@@ -82,17 +85,101 @@ function splitSegments(
   return segs;
 }
 
-// Fetch real routes from OSRM public API
+// Polyline decoder for BariKoi / OSRM encoded route geometry strings
+function decodePolyline(str: string, precision = 5): [number, number][] {
+  let index = 0, lat = 0, lng = 0, coordinates: [number, number][] = [];
+  const factor = Math.pow(10, precision);
+  while (index < str.length) {
+    let b, shift = 0, result = 0;
+    do {
+      b = str.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+    lat += dlat;
+    shift = 0;
+    result = 0;
+    do {
+      b = str.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+    lng += dlng;
+    coordinates.push([lat / factor, lng / factor]);
+  }
+  return coordinates;
+}
+
+// BariKoi Reverse Geocode API
+export async function fetchBariKoiReverseGeocode(lat: number, lng: number) {
+  const url = `https://barikoi.xyz/v2/api/search/reverse/geocode?api_key=${BARIKOI_API_KEY}&longitude=${lng}&latitude=${lat}&district=true&post_code=true&country=true&sub_district=true&union=true&pauroshova=true&location_type=true&division=true&address=true&area=true&bangla=true`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data?.place) {
+      return {
+        address: data.place.address || data.place.area || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+        area: data.place.area || "",
+        district: data.place.district || "",
+        postCode: data.place.postCode || "",
+        city: data.place.city || data.place.division || "",
+      };
+    }
+  } catch (err) {
+    console.error("BariKoi Reverse Geocode error:", err);
+  }
+  return null;
+}
+
+// Fetch real routes using BariKoi Route API
 async function fetchRoutes(
   from: [number, number],
   to: [number, number],
   mode: TravelMode
 ): Promise<RouteOption[]> {
+  const barikoiUrl = `https://barikoi.xyz/v2/api/route/${from[1]},${from[0]};${to[1]},${to[0]}?api_key=${BARIKOI_API_KEY}&geometries=polyline`;
+  try {
+    const res = await fetch(barikoiUrl, { signal: AbortSignal.timeout(8000) });
+    const data = await res.json();
+    let coords: [number, number][] = [];
+
+    if (data?.routes?.length) {
+      const r = data.routes[0];
+      if (Array.isArray(r.geometry?.coordinates)) {
+        coords = r.geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng]);
+      } else if (typeof r.geometry === "string") {
+        coords = decodePolyline(r.geometry);
+      }
+    } else if (data?.route) {
+      if (typeof data.route === "string") {
+        coords = decodePolyline(data.route);
+      } else if (Array.isArray(data.route)) {
+        coords = data.route.map((c: any) => [c.latitude || c[1], c.longitude || c[0]]);
+      }
+    }
+
+    if (coords.length >= 2) {
+      const traffic = simulateTraffic(0, to[0] * 10 | 0);
+      return [{
+        id: 0,
+        label: "BariKoi Route",
+        coords,
+        distance: 3500,
+        duration: 720,
+        traffic,
+        trafficSegments: splitSegments(coords, traffic, (to[1] * 10 | 0)),
+        cost: estimateCost(mode, 3500),
+      }];
+    }
+  } catch (err) {
+    console.warn("BariKoi route API fallback:", err);
+  }
+
+  // Fallback to OSRM if BariKoi route fails
   const profile = OSRM_PROFILES[mode];
-  const url =
-    `https://router.project-osrm.org/route/v1/${profile}/` +
-    `${from[1]},${from[0]};${to[1]},${to[0]}` +
-    `?overview=full&geometries=geojson&alternatives=true`;
+  const url = `https://router.project-osrm.org/route/v1/${profile}/${from[1]},${from[0]};${to[1]},${to[0]}?overview=full&geometries=geojson&alternatives=true`;
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
     const data = await res.json();
@@ -114,24 +201,20 @@ async function fetchRoutes(
       } as RouteOption;
     });
   } catch {
-    // Fallback: straight-line approximation when API unavailable
-    const mid: [number, number] = [(from[0] + to[0]) / 2 + 0.005, (from[1] + to[1]) / 2 - 0.003];
     const dist = Math.hypot(to[0] - from[0], to[1] - from[1]) * 111000;
-    const speeds: Record<TravelMode, number> = { car: 8, bike: 4, walk: 1.2 };
-    const makeRoute = (id: number, warp: number, lbl: string): RouteOption => {
-      const d = dist * warp;
-      const coords: [number, number][] = [from, mid, to];
-      const traffic = simulateTraffic(id, to[0] * 10 | 0);
-      return {
-        id, label: lbl, coords,
-        distance: d, duration: d / speeds[mode],
-        traffic, trafficSegments: splitSegments(coords, traffic, id),
-        cost: estimateCost(mode, d),
-      };
-    };
+    const dur = mode === "car" ? dist / 11 : mode === "bike" ? dist / 4.5 : dist / 1.4;
+    const coords: [number, number][] = [from, [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2], to];
     return [
-      makeRoute(0, 1.0, "Fastest Route"),
-      makeRoute(1, 1.2, "Alternative"),
+      {
+        id: 0,
+        label: "Direct Route",
+        coords,
+        distance: dist,
+        duration: dur,
+        traffic: "clear",
+        trafficSegments: [{ coords, level: "clear" }],
+        cost: estimateCost(mode, dist),
+      },
     ];
   }
 }
@@ -191,39 +274,23 @@ const categories = [
 
 const places = [
   // ── Used Furniture Shops & Agencies ──
-  { id: 28, lat: 40.7512, lng: -73.8824, name: "Queens Used Furniture & Resale", category: "🪑 Used Furniture", distance: "0.5 mi", rating: 4.8, reviews: 312, open: true, openUntil: "8:00 PM", address: "78-12 37th Ave, Jackson Heights, NY", phone: "+1 (718) 424-9988", languages: ["English", "Spanish", "Bengali"], immigrantFriendly: true, description: "Affordable pre-owned sofas, dining tables, beds, and household furniture. Delivery available across NYC.", image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=200&fit=crop" },
-  { id: 29, lat: 40.7435, lng: -73.8762, name: "NYC Thrift & Used Furniture Agency", category: "🏢 Furniture Agency", distance: "1.1 mi", rating: 4.7, reviews: 245, open: true, openUntil: "7:00 PM", address: "84-02 Broadway, Elmhurst, NY", phone: "+1 (718) 899-7711", languages: ["English", "Spanish"], immigrantFriendly: true, description: "Community agency providing discounted gently used furniture, desks, and home decor for newcomer families.", image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=200&fit=crop" },
-  { id: 30, lat: 40.7380, lng: -73.8885, name: "Jackson Heights Vintage Furniture Shop", category: "🛍️ Furniture Shop", distance: "1.4 mi", rating: 4.9, reviews: 189, open: true, openUntil: "9:00 PM", address: "40-18 Junction Blvd, Corona, NY", phone: "+1 (718) 651-3322", languages: ["English", "Bengali", "Hindi"], immigrantFriendly: true, description: "Quality second-hand wooden furniture, wardrobes, mattresses, and kitchen appliances at student & immigrant rates.", image: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=400&h=200&fit=crop" },
-  { id: 31, lat: 40.7580, lng: -73.8690, name: "Immigrant Home Furniture Depot", category: "📦 Furniture Resale", distance: "1.8 mi", rating: 4.6, reviews: 154, open: true, openUntil: "6:30 PM", address: "102-15 Northern Blvd, Corona, NY", phone: "+1 (718) 458-9000", languages: ["English", "Spanish", "Chinese"], immigrantFriendly: true, description: "Bulk resale agency for bedroom sets, living room furniture, and home setup packages for newly arrived immigrants.", image: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=400&h=200&fit=crop" },
+  { id: 28, lat: 23.7925, lng: 90.4078, name: "Gulshan Used Furniture & Resale", category: "🪑 Used Furniture", distance: "0.5 km", rating: 4.8, reviews: 312, open: true, openUntil: "8:00 PM", address: "Road 11, Gulshan-1, Dhaka", phone: "+880 1711-424998", languages: ["Bengali", "English"], immigrantFriendly: true, description: "Affordable pre-owned sofas, dining tables, beds, and household furniture. Delivery available across Dhaka.", image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=200&fit=crop" },
+  { id: 29, lat: 23.7937, lng: 90.4045, name: "Banani Furniture Agency & Thrift", category: "🏢 Furniture Agency", distance: "1.1 km", rating: 4.7, reviews: 245, open: true, openUntil: "7:00 PM", address: "Road 11, Block D, Banani, Dhaka", phone: "+880 1819-899771", languages: ["Bengali", "English"], immigrantFriendly: true, description: "Community agency providing discounted gently used furniture, desks, and home decor.", image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=200&fit=crop" },
+  { id: 30, lat: 23.7465, lng: 90.3760, name: "Dhanmondi Vintage Furniture Shop", category: "🛍️ Furniture Shop", distance: "1.4 km", rating: 4.9, reviews: 189, open: true, openUntil: "9:00 PM", address: "Road 27, Dhanmondi, Dhaka", phone: "+880 1912-651332", languages: ["Bengali", "English"], immigrantFriendly: true, description: "Quality second-hand wooden furniture, wardrobes, mattresses, and kitchen appliances.", image: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=400&h=200&fit=crop" },
+  { id: 31, lat: 23.8759, lng: 90.3795, name: "Uttara Home Furniture Depot", category: "📦 Furniture Resale", distance: "1.8 km", rating: 4.6, reviews: 154, open: true, openUntil: "6:30 PM", address: "Sector 3, Uttara, Dhaka", phone: "+880 1611-458900", languages: ["Bengali", "English"], immigrantFriendly: true, description: "Bulk resale agency for bedroom sets, living room furniture, and home setup packages.", image: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=400&h=200&fit=crop" },
 
   // ── Existing Community Places ──
-  { id: 1, lat: 40.6794, lng: -73.9534, name: "Masjid At-Taqwa", category: "🕌 Mosque", distance: "0.3 mi", rating: 4.8, reviews: 342, open: true, openUntil: "9:00 PM", address: "1266 Bedford Ave, Brooklyn, NY", phone: "+1 (718) 622-0800", languages: ["Arabic", "Bengali", "English"], immigrantFriendly: true, description: "Serving the Brooklyn Muslim community since 1981.", image: "https://images.unsplash.com/photo-1564769625905-50e93615e769?w=400&h=200&fit=crop" },
-  { id: 2, lat: 40.7468, lng: -73.8914, name: "Masjid Al-Aman", category: "🕌 Mosque", distance: "1.2 mi", rating: 4.7, reviews: 218, open: true, openUntil: "10:00 PM", address: "37-14 75th St, Jackson Heights, NY", phone: "+1 (718) 507-8888", languages: ["Arabic", "Urdu", "English"], immigrantFriendly: true, description: "Vibrant Jackson Heights mosque serving South Asian and Arab communities.", image: "https://images.unsplash.com/photo-1585036156171-384164a8c675?w=400&h=200&fit=crop" },
-  { id: 3, lat: 40.7040, lng: -73.8260, name: "Jamaica Muslim Center", category: "🕌 Mosque", distance: "2.0 mi", rating: 4.6, reviews: 156, open: true, openUntil: "8:30 PM", address: "168-04 89th Ave, Jamaica, NY", phone: "+1 (718) 658-4081", languages: ["Arabic", "English", "Bengali"], immigrantFriendly: true, description: "Welcoming mosque with Jumu'ah prayers and ESL classes.", image: "https://images.unsplash.com/photo-1519817650390-64a93db51149?w=400&h=200&fit=crop" },
-  { id: 4, lat: 40.7320, lng: -73.8630, name: "St. Bartholomew's Church", category: "⛪ Church", distance: "1.8 mi", rating: 4.5, reviews: 98, open: true, openUntil: "6:00 PM", address: "40-01 Junction Blvd, Corona, NY", phone: "+1 (718) 699-1011", languages: ["Spanish", "English"], immigrantFriendly: true, description: "Bilingual Spanish-English mass. Active immigrant support programs.", image: "https://images.unsplash.com/photo-1543499859-4f4e3bb8d80a?w=400&h=200&fit=crop" },
-  { id: 5, lat: 40.7230, lng: -73.7960, name: "Hindu Temple Society of NA", category: "🛕 Temple", distance: "2.5 mi", rating: 4.9, reviews: 421, open: true, openUntil: "8:00 PM", address: "45-57 Bowne St, Flushing, NY", phone: "+1 (718) 460-8484", languages: ["Hindi", "Bengali", "English", "Tamil"], immigrantFriendly: true, description: "Historic Hindu temple open to all. Daily puja, festivals, and cultural events.", image: "https://images.unsplash.com/photo-1609153897327-f62dfb7caf22?w=400&h=200&fit=crop" },
-  { id: 6, lat: 40.7459, lng: -73.8859, name: "PS 69 Jackson Heights", category: "🏫 School", distance: "1.0 mi", rating: 4.3, reviews: 87, open: true, openUntil: "3:30 PM", address: "77-02 37th Ave, Jackson Heights, NY", phone: "+1 (718) 335-0610", languages: ["Spanish", "Bengali", "English"], immigrantFriendly: true, description: "Public elementary school with strong ESL and immigrant family support programs.", image: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=400&h=200&fit=crop" },
-  { id: 7, lat: 40.7391, lng: -73.8701, name: "IS 5 Elmhurst", category: "🏫 School", distance: "1.5 mi", rating: 4.1, reviews: 63, open: true, openUntil: "3:00 PM", address: "80-00 Commonwealth Blvd, Elmhurst, NY", phone: "+1 (718) 898-7474", languages: ["Chinese", "Spanish", "English"], immigrantFriendly: true, description: "Diverse middle school with multilingual staff and after-school programs.", image: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=400&h=200&fit=crop" },
-  { id: 8, lat: 40.7612, lng: -73.8300, name: "LaGuardia Community College", category: "🏫 School", distance: "3.1 mi", rating: 4.6, reviews: 312, open: true, openUntil: "8:00 PM", address: "31-10 Thomson Ave, Long Island City, NY", phone: "+1 (718) 482-7200", languages: ["Spanish", "Chinese", "Bengali", "English"], immigrantFriendly: true, description: "Community college with ESL, GED, and workforce development for immigrants.", image: "https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=400&h=200&fit=crop" },
-  { id: 9, lat: 40.7498, lng: -73.8903, name: "Little Bangladesh Grocery", category: "🛒 Grocery", distance: "1.1 mi", rating: 4.9, reviews: 567, open: true, openUntil: "10:00 PM", address: "73-10 37th Ave, Jackson Heights, NY", phone: "+1 (718) 335-0000", languages: ["Bengali", "Hindi", "English"], immigrantFriendly: true, description: "Largest Bangladeshi grocery store in Queens. Fresh produce, spices, halal meat.", image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=200&fit=crop" },
-  { id: 10, lat: 40.7420, lng: -73.8820, name: "Patel Brothers", category: "🛒 Grocery", distance: "1.3 mi", rating: 4.8, reviews: 934, open: true, openUntil: "9:00 PM", address: "37-27 74th St, Jackson Heights, NY", phone: "+1 (718) 898-3445", languages: ["Hindi", "Gujarati", "English"], immigrantFriendly: true, description: "The go-to South Asian supermarket for spices, lentils, fresh produce, and snacks.", image: "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=400&h=200&fit=crop" },
-  { id: 11, lat: 40.7341, lng: -73.8760, name: "La Placita Supermarket", category: "🛒 Grocery", distance: "1.8 mi", rating: 4.5, reviews: 223, open: true, openUntil: "10:00 PM", address: "91-09 Roosevelt Ave, Elmhurst, NY", phone: "+1 (718) 446-5050", languages: ["Spanish", "English"], immigrantFriendly: true, description: "Latin American grocery with fresh meats, tropical produce, and household goods.", image: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=400&h=200&fit=crop" },
-  { id: 12, lat: 40.7386, lng: -73.8786, name: "Elmhurst Hospital Center", category: "🏥 Hospital", distance: "1.4 mi", rating: 4.2, reviews: 1204, open: true, openUntil: "24h", address: "79-01 Broadway, Elmhurst, NY", phone: "+1 (718) 334-4000", languages: ["Spanish", "Bengali", "Chinese", "Arabic", "Hindi", "English"], immigrantFriendly: true, description: "Multilingual hospital. Interpreter services available.", image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400&h=200&fit=crop" },
-  { id: 13, lat: 40.6975, lng: -73.8025, name: "Jamaica Hospital Medical Ctr", category: "🏥 Hospital", distance: "2.1 mi", rating: 4.0, reviews: 876, open: true, openUntil: "24h", address: "89th Ave & Van Wyck Expy, Jamaica, NY", phone: "+1 (718) 206-6000", languages: ["Spanish", "Bengali", "Mandarin", "English"], immigrantFriendly: true, description: "Full-service hospital with multilingual staff.", image: "https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=400&h=200&fit=crop" },
-  { id: 14, lat: 40.7470, lng: -73.8730, name: "Queens Community Health Ctr", category: "🏥 Clinic", distance: "1.6 mi", rating: 4.5, reviews: 312, open: true, openUntil: "6:00 PM", address: "82-90 Woodhaven Blvd, Queens, NY", phone: "+1 (718) 850-5400", languages: ["Spanish", "Bengali", "English", "Hindi"], immigrantFriendly: true, description: "Sliding-scale fees. Multilingual primary care and dental services.", image: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=400&h=200&fit=crop" },
-  { id: 15, lat: 40.6975, lng: -73.8025, name: "Queens Legal Services", category: "⚖️ Legal Aid", distance: "0.8 mi", rating: 4.6, reviews: 189, open: true, openUntil: "5:00 PM", address: "89-00 Sutphin Blvd, Jamaica, NY", phone: "+1 (718) 657-8611", languages: ["English", "Spanish", "Bengali"], immigrantFriendly: true, description: "Free legal services for low-income immigrants. Immigration, housing, and benefits.", image: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&h=200&fit=crop" },
-  { id: 16, lat: 40.7561, lng: -73.8722, name: "NY Legal Assistance Group", category: "⚖️ Legal Aid", distance: "1.5 mi", rating: 4.7, reviews: 134, open: true, openUntil: "5:00 PM", address: "100-12 Corona Ave, Corona, NY", phone: "+1 (646) 442-4200", languages: ["Spanish", "English", "Bengali"], immigrantFriendly: true, description: "Free civil legal assistance. Specializes in immigration, housing, and family law.", image: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=400&h=200&fit=crop" },
-  { id: 17, lat: 40.7480, lng: -73.8890, name: "MASA Queens", category: "🏛️ Community Center", distance: "1.2 mi", rating: 4.7, reviews: 167, open: true, openUntil: "7:00 PM", address: "75-01 37th Ave, Jackson Heights, NY", phone: "+1 (718) 205-0994", languages: ["Bengali", "Hindi", "English"], immigrantFriendly: true, description: "Empowering South Asian immigrants with job training, language classes.", image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=200&fit=crop" },
-  { id: 18, lat: 40.7350, lng: -73.8800, name: "Make the Road New York", category: "🏛️ Community Center", distance: "1.7 mi", rating: 4.8, reviews: 289, open: true, openUntil: "6:00 PM", address: "92-10 Roosevelt Ave, Jackson Heights, NY", phone: "+1 (718) 565-8500", languages: ["Spanish", "English"], immigrantFriendly: true, description: "Grassroots organization offering legal, health, and social services.", image: "https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=400&h=200&fit=crop" },
-  { id: 19, lat: 40.7452, lng: -73.8870, name: "Kabir's Halal Restaurant", category: "🍽️ Restaurant", distance: "1.1 mi", rating: 4.8, reviews: 445, open: true, openUntil: "11:00 PM", address: "74-16 37th Ave, Jackson Heights, NY", phone: "+1 (718) 779-1234", languages: ["Bengali", "Urdu", "English"], immigrantFriendly: true, description: "Authentic Bangladeshi & Mughlai cuisine. Best biryani in Jackson Heights.", image: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&h=200&fit=crop" },
-  { id: 20, lat: 40.7396, lng: -73.8831, name: "Rincon Criollo", category: "🍽️ Restaurant", distance: "1.5 mi", rating: 4.6, reviews: 312, open: true, openUntil: "10:00 PM", address: "40-09 Junction Blvd, Corona, NY", phone: "+1 (718) 639-8158", languages: ["Spanish", "English"], immigrantFriendly: true, description: "Famous Cuban restaurant. Black beans, roast pork, and pressed sandwiches.", image: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&h=200&fit=crop" },
-  { id: 21, lat: 40.7462, lng: -73.8895, name: "Amalgamated Bank - Queens", category: "🏦 Bank", distance: "1.0 mi", rating: 4.4, reviews: 98, open: true, openUntil: "5:00 PM", address: "37-23 74th St, Jackson Heights, NY", phone: "+1 (800) 662-0860", languages: ["Spanish", "English"], immigrantFriendly: true, description: "No minimum balance, ITIN accounts accepted, Spanish-speaking staff.", image: "https://images.unsplash.com/photo-1541354329998-f4d9a9f9297f?w=400&h=200&fit=crop" },
-  { id: 22, lat: 40.7220, lng: -73.7970, name: "Flushing Bank", category: "🏦 Bank", distance: "3.0 mi", rating: 4.5, reviews: 134, open: true, openUntil: "4:30 PM", address: "144-17 Northern Blvd, Flushing, NY", phone: "+1 (800) 581-2889", languages: ["Mandarin", "Korean", "English"], immigrantFriendly: true, description: "Multilingual banking. Mandarin and Korean-speaking staff.", image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=200&fit=crop" },
-  { id: 23, lat: 40.6942, lng: -73.8073, name: "DMV - Jamaica", category: "🚗 DMV", distance: "2.1 mi", rating: 3.8, reviews: 892, open: true, openUntil: "4:30 PM", address: "168-46 91st Ave, Jamaica, NY", phone: "+1 (718) 526-5100", languages: ["Bengali", "Spanish", "English", "Mandarin"], immigrantFriendly: true, description: "Bengali-speaking staff available on Wednesdays.", image: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=400&h=200&fit=crop" },
-  { id: 24, lat: 40.7505, lng: -73.8808, name: "Library - Jackson Heights", category: "📚 Library", distance: "1.6 mi", rating: 4.5, reviews: 234, open: true, openUntil: "6:00 PM", address: "35-51 81st St, Jackson Heights, NY", phone: "+1 (718) 899-2500", languages: ["English", "Spanish", "Bengali"], immigrantFriendly: true, description: "Free ESL classes, citizenship prep, and computer access.", image: "https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=400&h=200&fit=crop" },
-  { id: 25, lat: 40.7400, lng: -73.8900, name: "Elmhurst Library", category: "📚 Library", distance: "2.0 mi", rating: 4.6, reviews: 178, open: true, openUntil: "6:00 PM", address: "86-01 Broadway, Elmhurst, NY", phone: "+1 (718) 271-1020", languages: ["Spanish", "Chinese", "English"], immigrantFriendly: true, description: "Multilingual library with immigrant resource center and free Wi-Fi.", image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=200&fit=crop" },
-  { id: 26, lat: 40.7468, lng: -73.8914, name: "Jackson Heights Transit Hub", category: "🚌 Transit", distance: "1.0 mi", rating: 4.2, reviews: 2341, open: true, openUntil: "24h", address: "Roosevelt Ave & 74th St, Queens, NY", phone: "+1 (718) 330-1234", languages: ["Spanish", "English"], immigrantFriendly: true, description: "E, F, M, R, 7 trains. Bus connections to all of Queens.", image: "https://images.unsplash.com/photo-1565043589221-1a6fd9ae45c7?w=400&h=200&fit=crop" },
-  { id: 27, lat: 40.7000, lng: -73.8090, name: "Jamaica Station", category: "🚌 Transit", distance: "2.2 mi", rating: 4.0, reviews: 1876, open: true, openUntil: "24h", address: "Sutphin Blvd & Archer Ave, Jamaica, NY", phone: "+1 (718) 330-1234", languages: ["English", "Spanish"], immigrantFriendly: true, description: "E, J, Z trains + LIRR + AirTrain JFK. Free transfers.", image: "https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=400&h=200&fit=crop" },
+  { id: 1, lat: 23.7315, lng: 90.4075, name: "Baitul Mukarram National Mosque", category: "🕌 Mosque", distance: "0.3 km", rating: 4.9, reviews: 1242, open: true, openUntil: "9:00 PM", address: "Paltan, Dhaka", phone: "+880 2-9556000", languages: ["Bengali", "Arabic", "English"], immigrantFriendly: true, description: "National mosque of Bangladesh.", image: "https://images.unsplash.com/photo-1564769625905-50e93615e769?w=400&h=200&fit=crop" },
+  { id: 2, lat: 23.7915, lng: 90.4140, name: "Gulshan Society Mosque", category: "🕌 Mosque", distance: "1.2 km", rating: 4.8, reviews: 418, open: true, openUntil: "10:00 PM", address: "Gulshan-2, Dhaka", phone: "+880 2-9895088", languages: ["Bengali", "English"], immigrantFriendly: true, description: "Modern community mosque in Gulshan.", image: "https://images.unsplash.com/photo-1585036156171-384164a8c675?w=400&h=200&fit=crop" },
+  { id: 3, lat: 23.7540, lng: 90.3920, name: "Tejgaon Holy Rosary Church", category: "⛪ Church", distance: "2.0 km", rating: 4.7, reviews: 256, open: true, openUntil: "8:30 PM", address: "Tejgaon, Dhaka", phone: "+880 2-9114081", languages: ["Bengali", "English"], immigrantFriendly: true, description: "Historic 17th-century Portuguese church in Dhaka.", image: "https://images.unsplash.com/photo-1543499859-4f4e3bb8d80a?w=400&h=200&fit=crop" },
+  { id: 4, lat: 23.7240, lng: 90.3960, name: "Dhakeshwari National Temple", category: "🛕 Temple", distance: "1.8 km", rating: 4.8, reviews: 598, open: true, openUntil: "8:00 PM", address: "Bakshi Bazar, Old Dhaka", phone: "+880 2-9661011", languages: ["Bengali", "English"], immigrantFriendly: true, description: "National Hindu temple of Bangladesh.", image: "https://images.unsplash.com/photo-1609153897327-f62dfb7caf22?w=400&h=200&fit=crop" },
+  { id: 5, lat: 23.7260, lng: 90.3975, name: "Dhaka University Campus", category: "🏫 School", distance: "1.5 km", rating: 4.9, reviews: 2421, open: true, openUntil: "8:00 PM", address: "Nilkhet, Dhaka", phone: "+880 2-9661900", languages: ["Bengali", "English"], immigrantFriendly: true, description: "Premier research university in Bangladesh.", image: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=400&h=200&fit=crop" },
+  { id: 6, lat: 23.8150, lng: 90.4240, name: "North South University", category: "🏫 School", distance: "3.1 km", rating: 4.8, reviews: 1312, open: true, openUntil: "8:00 PM", address: "Bashundhara R/A, Dhaka", phone: "+880 2-55668200", languages: ["English", "Bengali"], immigrantFriendly: true, description: "First private university in Bangladesh with world-class campus.", image: "https://images.unsplash.com/photo-1607237138185-eedd9c632b0b?w=400&h=200&fit=crop" },
+  { id: 7, lat: 23.7930, lng: 90.4050, name: "Unimart Superstore", category: "🛒 Grocery", distance: "0.8 km", rating: 4.9, reviews: 967, open: true, openUntil: "10:00 PM", address: "Gulshan Centre Point, Gulshan-2, Dhaka", phone: "+880 9612-555555", languages: ["Bengali", "English"], immigrantFriendly: true, description: "Premium hypermarket with international & local groceries.", image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=200&fit=crop" },
+  { id: 8, lat: 23.7780, lng: 90.4170, name: "Square Hospital", category: "🏥 Hospital", distance: "1.4 km", rating: 4.7, reviews: 1204, open: true, openUntil: "24h", address: "18/F West Panthapath, Dhaka", phone: "+880 2-8159457", languages: ["Bengali", "English"], immigrantFriendly: true, description: "Tertiary care hospital with international standards.", image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400&h=200&fit=crop" },
+  { id: 9, lat: 23.8120, lng: 90.4230, name: "Evercare Hospital Dhaka", category: "🏥 Hospital", distance: "3.2 km", rating: 4.8, reviews: 1876, open: true, openUntil: "24h", address: "Plot 81, Block E, Bashundhara R/A, Dhaka", phone: "+880 2-8431661", languages: ["Bengali", "English"], immigrantFriendly: true, description: "JCI-accredited super specialty hospital.", image: "https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=400&h=200&fit=crop" },
+  { id: 10, lat: 23.7910, lng: 90.4020, name: "KFC Banani", category: "🍽️ Restaurant", distance: "1.1 km", rating: 4.6, reviews: 545, open: true, openUntil: "11:00 PM", address: "Road 11, Banani, Dhaka", phone: "+880 2-9883445", languages: ["Bengali", "English"], immigrantFriendly: true, description: "Famous quick service restaurant.", image: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&h=200&fit=crop" },
+  { id: 11, lat: 23.7950, lng: 90.4070, name: "Standard Chartered Bank", category: "🏦 Bank", distance: "0.9 km", rating: 4.6, reviews: 198, open: true, openUntil: "4:00 PM", address: "Gulshan-2 Branch, Dhaka", phone: "+880 2-8833000", languages: ["Bengali", "English"], immigrantFriendly: true, description: "International banking services.", image: "https://images.unsplash.com/photo-1541354329998-f4d9a9f9297f?w=400&h=200&fit=crop" },
 ];
 
 type Place = typeof places[0];
@@ -374,67 +441,164 @@ function LeafletMap({
     </div>`;
   }
 
-  const syncMarkers = useCallback((L: any, map: any, ps: Place[], activeId: number | null) => {
+  const syncMarkers = useCallback((ps: Place[], activeId: number | null) => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+    const bkoigl = (window as any).bkoigl;
+    const L = LRef.current;
+
     const ids = new Set(ps.map(p => p.id));
-    markersRef.current.forEach((m, id) => { if (!ids.has(id)) { m.remove(); markersRef.current.delete(id); } });
+    markersRef.current.forEach((m, id) => {
+      if (!ids.has(id)) {
+        if (m.remove) m.remove();
+        markersRef.current.delete(id);
+      }
+    });
+
     ps.forEach(place => {
       if (markersRef.current.has(place.id)) return;
       const active = place.id === activeId;
-      const icon = L.divIcon({
-        className: "booking-map-marker",
-        html: makeMarkerHtml(place, active),
-        iconSize: active ? [42, 48] : [34, 40],
-        iconAnchor: active ? [21, 48] : [17, 40],
-      });
-      const marker = L.marker([place.lat, place.lng], { icon }).addTo(map);
-      marker.on("click", () => {
-        const px = map.latLngToContainerPoint([place.lat, place.lng]);
-        onMarkerClick(place, { x: px.x, y: px.y });
-      });
-      // Desktop hover card preview
-      marker.on("mouseover", () => {
-        if (window.innerWidth < 768) return;
-        const px = map.latLngToContainerPoint([place.lat, place.lng]);
-        onMarkerHover(place, { x: px.x, y: px.y });
-      });
-      marker.on("mouseout", () => onMarkerHover(null));
-      markersRef.current.set(place.id, marker);
+
+      if (L && LRef.current) {
+        // Leaflet marker
+        const icon = L.divIcon({
+          className: "booking-map-marker",
+          html: makeMarkerHtml(place, active),
+          iconSize: active ? [42, 48] : [34, 40],
+          iconAnchor: active ? [21, 48] : [17, 40],
+        });
+        const marker = L.marker([place.lat, place.lng], { icon }).addTo(map);
+        marker.on("click", () => {
+          const px = map.latLngToContainerPoint ? map.latLngToContainerPoint([place.lat, place.lng]) : { x: 0, y: 0 };
+          onMarkerClick(place, { x: px.x, y: px.y });
+        });
+        marker.on("mouseover", () => {
+          if (window.innerWidth < 768) return;
+          const px = map.latLngToContainerPoint ? map.latLngToContainerPoint([place.lat, place.lng]) : { x: 0, y: 0 };
+          onMarkerHover(place, { x: px.x, y: px.y });
+        });
+        marker.on("mouseout", () => onMarkerHover(null));
+        markersRef.current.set(place.id, marker);
+      } else if (bkoigl || map.project) {
+        // bkoi-gl / Mapbox GL marker
+        const el = document.createElement("div");
+        el.className = "booking-map-marker";
+        el.style.cursor = "pointer";
+        el.innerHTML = makeMarkerHtml(place, active);
+
+        const MarkerClass = bkoigl?.Marker || (window as any).maplibregl?.Marker;
+        if (!MarkerClass) return;
+
+        const marker = new MarkerClass({ element: el })
+          .setLngLat([place.lng, place.lat])
+          .addTo(map);
+
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const pos = map.project ? map.project([place.lng, place.lat]) : { x: 0, y: 0 };
+          onMarkerClick(place, { x: pos.x, y: pos.y });
+        });
+        el.addEventListener("mouseenter", () => {
+          if (window.innerWidth < 768) return;
+          const pos = map.project ? map.project([place.lng, place.lat]) : { x: 0, y: 0 };
+          onMarkerHover(place, { x: pos.x, y: pos.y });
+        });
+        el.addEventListener("mouseleave", () => onMarkerHover(null));
+        markersRef.current.set(place.id, marker);
+      }
     });
   }, [onMarkerClick, onMarkerHover]);
 
-  // Init map
+// Official BariKoi GL JS Loader (https://docs.barikoi.com/)
+function loadBkoiGL(): Promise<any> {
+  return new Promise((resolve, reject) => {
+    if ((window as any).bkoigl) {
+      resolve((window as any).bkoigl);
+      return;
+    }
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "https://unpkg.com/bkoi-gl@latest/dist/style/bkoi-gl.css";
+    document.head.appendChild(css);
+
+    const script = document.createElement("script");
+    script.src = "https://unpkg.com/bkoi-gl@latest/dist/iife/bkoi-gl.js";
+    script.onload = () => resolve((window as any).bkoigl);
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
+  // Init map with Official BariKoi bkoi-gl SDK
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    import("leaflet").then(L => {
+    loadBkoiGL().then(bkoigl => {
       if (!containerRef.current || mapRef.current) return;
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
-      const map = L.map(containerRef.current!, { center: [40.7282, -73.8582], zoom: 12 });
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        maxZoom: 19,
-      }).addTo(map);
+
+      const defaultCenter: [number, number] = userLocation ? [userLocation[1], userLocation[0]] : [90.4071, 23.7925];
+      const key = BARIKOI_API_KEY;
+      if (bkoigl) {
+        bkoigl.accessToken = key;
+        bkoigl.apiKey = key;
+      }
+
+      const map = new bkoigl.Map({
+        container: containerRef.current!,
+        center: defaultCenter,
+        zoom: 12,
+        accessToken: key,
+        apiKey: key,
+        style: `https://map.barikoi.com/styles/osm_barikoi_v1/style.json?key=${key}`,
+      });
+
       map.on("click", () => onMapClick());
-      mapRef.current = map; LRef.current = L;
-      syncMarkers(L, map, visiblePlaces, activePlaceId);
+      map.on("load", () => {
+        mapRef.current = map as any;
+        syncMarkers(visiblePlaces, activePlaceId);
+      });
+      mapRef.current = map as any;
+    }).catch(() => {
+      // Fallback to Leaflet if bkoi-gl script blocked
+      import("leaflet").then(L => {
+        if (!containerRef.current || mapRef.current) return;
+        delete (L.Icon.Default.prototype as any)._getIconUrl;
+        const defaultCenter: [number, number] = userLocation || [23.8103, 90.4125];
+        const map = L.map(containerRef.current!, { center: defaultCenter, zoom: 13 });
+        L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
+          attribution: '&copy; <a href="https://barikoi.com">BariKoi API</a>',
+          maxZoom: 19,
+        }).addTo(map);
+        map.on("click", () => onMapClick());
+        mapRef.current = map as any; LRef.current = L;
+        syncMarkers(visiblePlaces, activePlaceId);
+      });
     });
     return () => { mapRef.current?.remove(); mapRef.current = null; markersRef.current.clear(); };
   }, []);
 
-  // Sync place markers
-  useEffect(() => { if (mapRef.current && LRef.current) syncMarkers(LRef.current, mapRef.current, visiblePlaces, activePlaceId); }, [visiblePlaces, syncMarkers]);
+  // Sync place markers whenever visiblePlaces or map loaded
+  useEffect(() => {
+    if (mapRef.current) {
+      syncMarkers(visiblePlaces, activePlaceId);
+    }
+  }, [visiblePlaces, activePlaceId, syncMarkers]);
 
   // Update active marker highlight
   useEffect(() => {
-    if (!LRef.current) return;
     markersRef.current.forEach((marker, id) => {
       const place = places.find(p => p.id === id); if (!place) return;
       const active = id === activePlaceId;
-      marker.setIcon(LRef.current.divIcon({
-        className: "booking-map-marker",
-        html: makeMarkerHtml(place, active),
-        iconSize: active ? [42, 48] : [34, 40],
-        iconAnchor: active ? [21, 48] : [17, 40],
-      }));
+      if (LRef.current && marker.setIcon) {
+        marker.setIcon(LRef.current.divIcon({
+          className: "booking-map-marker",
+          html: makeMarkerHtml(place, active),
+          iconSize: active ? [42, 48] : [34, 40],
+          iconAnchor: active ? [21, 48] : [17, 40],
+        }));
+      } else if (marker.getElement) {
+        const el = marker.getElement();
+        if (el) el.innerHTML = makeMarkerHtml(place, active);
+      }
     });
   }, [activePlaceId]);
 
@@ -444,22 +608,12 @@ function LeafletMap({
     const p = places.find(p => p.id === activePlaceId);
     if (!p) return;
     const map = mapRef.current;
-    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-    const MOBILE_CARD_H = 300;
-
-    map.flyTo([p.lat, p.lng], 16, { duration: 1.0 });
-
-    if (isMobile) {
-      map.once("moveend", () => {
-        const containerH = containerRef.current?.offsetHeight ?? 600;
-        const visibleH = containerH - MOBILE_CARD_H;
-        const dy = (containerH / 2) - (visibleH / 2);
-        map.panBy([0, -dy], { animate: true, duration: 0.25 });
-      });
+    if (LRef.current && map.flyTo) {
+      map.flyTo([p.lat, p.lng], 16, { duration: 1.0 });
+    } else if (map.flyTo) {
+      map.flyTo({ center: [p.lng, p.lat], zoom: 15, duration: 1000 });
     }
   }, [activePlaceId]);
-
-  // Auto fit bounds for filtered places
   useEffect(() => {
     if (!mapRef.current || !LRef.current || visiblePlaces.length === 0 || routes.length > 0) return;
     if (visiblePlaces.length === 1) {
@@ -784,6 +938,7 @@ function MapPlaceCard({
 
 // ── Full detail modal ─────────────────────────────────────────────────────────
 function PlaceDetail({ place, onClose, onDirections }: { place: Place; onClose: () => void; onDirections: () => void; key?: string | number }) {
+  const navigate = useNavigate();
   return (
     <div className="fixed inset-0 z-[99999] bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
       <div className="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
@@ -819,7 +974,18 @@ function PlaceDetail({ place, onClose, onDirections }: { place: Place; onClose: 
             <div className="text-sm font-medium mb-2">Languages</div>
             <div className="flex gap-2 flex-wrap">{place.languages.map(l => <span key={l} className="text-sm bg-blue-50 text-primary px-3 py-1 rounded-full font-medium">{l}</span>)}</div>
           </div>
-          <div className="mb-5"><div className="text-sm font-medium mb-1">About</div><p className="text-sm text-muted-foreground leading-relaxed">{place.description}</p></div>
+          {/* Seller Storefront Link */}
+          <button
+            onClick={() => {
+              onClose();
+              navigate(`/seller/${place.id}`);
+            }}
+            className="w-full py-3 mb-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm hover:opacity-95 transition"
+            style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)" }}
+          >
+            <Store className="w-4 h-4" /> View Seller Profile & Shop Catalog
+          </button>
+
           <div className="grid grid-cols-2 gap-2 mb-3">
             <button onClick={onDirections} className="flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 transition">
               <Navigation className="w-4 h-4" /> Directions
@@ -884,10 +1050,9 @@ function PlaceCard({ place, onClick }: { place: Place; onClick: () => void; key?
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
-const DEFAULT_LOCATION: [number, number] = [40.7282, -73.8582]; // Queens center
+const DEFAULT_LOCATION: [number, number] = [23.8103, 90.4125]; // Dhaka, Bangladesh center
 
-export function MapDiscovery() {
-  const navigate = useNavigate();
+export function MapDiscoveryContent({ embedded = false }: { embedded?: boolean }) {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [viewMode, setViewMode] = useState<"list" | "map">("map");
@@ -914,8 +1079,51 @@ export function MapDiscovery() {
     }
   }, []);
 
+  // BariKoi live autocomplete search state & API integration
+  const [bkoiPlaces, setBkoiPlaces] = useState<Place[]>([]);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (!q || q.length < 2) {
+      setBkoiPlaces([]);
+      return;
+    }
+    const controller = new AbortController();
+    const url = `https://barikoi.xyz/v2/api/search/autocomplete/place?api_key=${BARIKOI_API_KEY}&q=${encodeURIComponent(q)}&sub_area=true&sub_district=true`;
+    
+    fetch(url, { signal: controller.signal })
+      .then(res => res.json())
+      .then(data => {
+        if (data?.places && Array.isArray(data.places)) {
+          const mapped: Place[] = data.places.map((b: any, idx: number) => ({
+            id: 99000 + idx,
+            name: b.name || b.address || "BariKoi Location",
+            lat: parseFloat(b.latitude || "0"),
+            lng: parseFloat(b.longitude || "0"),
+            category: b.category || "Service",
+            address: b.address || b.area || "Bangladesh",
+            rating: 4.9,
+            reviews: 18,
+            distance: b.area || "Nearby",
+            open: true,
+            openUntil: "9:00 PM",
+            phone: "+880 1700-000000",
+            languages: ["Bengali", "English"],
+            immigrantFriendly: true,
+            description: b.address ? `Address: ${b.address}, ${b.city || ""}` : "BariKoi verified location",
+            image: "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=600&q=80",
+          })).filter(p => !isNaN(p.lat) && !isNaN(p.lng) && p.lat !== 0 && p.lng !== 0);
+
+          setBkoiPlaces(mapped);
+        }
+      })
+      .catch(() => {});
+
+    return () => controller.abort();
+  }, [query]);
+
   // Search filter matching name, category, description, address, languages
-  const filteredPlaces = places.filter(p => {
+  const filteredPlaces = [...places, ...bkoiPlaces].filter(p => {
     const matchesCategory = activeCategory === "all" ||
       (categoryMap[activeCategory] && categoryMap[activeCategory].includes(p.category));
 
@@ -948,8 +1156,7 @@ export function MapDiscovery() {
   };
 
   return (
-    <AppLayout>
-      <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-background">
+    <div className={embedded ? "flex flex-col h-[580px] sm:h-[650px] rounded-2xl border border-border overflow-hidden bg-background shadow-sm my-1" : "flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-background"}>
         {/* Top Search Bar & Categories */}
         <div className="bg-white border-b border-border p-3 sm:p-4 z-20 space-y-3 flex-shrink-0">
           <div className="flex gap-2 max-w-4xl mx-auto">
@@ -1139,6 +1346,13 @@ export function MapDiscovery() {
           />
         )}
       </div>
+  );
+}
+
+export function MapDiscovery() {
+  return (
+    <AppLayout>
+      <MapDiscoveryContent />
     </AppLayout>
   );
 }

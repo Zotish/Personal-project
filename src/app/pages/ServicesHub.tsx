@@ -166,6 +166,27 @@ export function ServicesHub() {
 
         <div className="p-4 space-y-6">
 
+          {/* Seller SaaS Portal CTA Banner */}
+          <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white rounded-3xl p-5 sm:p-6 shadow-lg border border-blue-500/20 relative overflow-hidden">
+            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-white/20 backdrop-blur-xs text-white uppercase tracking-wider">
+                  🏪 Seller SaaS Marketplace
+                </span>
+                <h3 className="text-lg sm:text-xl font-extrabold mt-2">Are you a Merchant or Reseller?</h3>
+                <p className="text-xs text-blue-100 mt-1 max-w-md">
+                  Manage products, stock, pricing, and orders like Amazon/Daraz. Your products will appear on Map & Marketplace.
+                </p>
+              </div>
+              <button
+                onClick={() => navigate("/seller-dashboard")}
+                className="px-5 py-3 rounded-2xl bg-white text-blue-700 font-extrabold text-xs sm:text-sm hover:bg-blue-50 transition shadow-md whitespace-nowrap flex items-center justify-center gap-2"
+              >
+                <Store className="w-4 h-4" /> Open Seller SaaS Portal
+              </button>
+            </div>
+          </div>
+
           {/* All Services — grid style like screenshot */}
           <div>
             <div className="flex items-center gap-2 mb-4">

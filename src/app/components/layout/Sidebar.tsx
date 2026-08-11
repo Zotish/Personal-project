@@ -167,9 +167,6 @@ export function Sidebar() {
 
       {/* Language Toggle */}
       <div className="px-3 pb-2">
-        <div className="flex items-center gap-2 px-1 mb-1">
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t("switch_language")}</span>
-        </div>
         <LanguageToggle />
       </div>
 

@@ -65,7 +65,7 @@ const en: TranslationMap = {
   // ── HomeFeed tabs ──
   tab_foryou: "For You",
   tab_following: "Following",
-  tab_community: "Community",
+  tab_map: "Map",
   tab_local: "Local",
 
   // ── PostComposer ──
@@ -163,7 +163,7 @@ const bn: TranslationMap = {
   // ── HomeFeed tabs ──
   tab_foryou: "আপনার জন্য",
   tab_following: "অনুসরণ",
-  tab_community: "কমিউনিটি",
+  tab_map: "ম্যাপস",
   tab_local: "স্থানীয়",
 
   // ── PostComposer ──

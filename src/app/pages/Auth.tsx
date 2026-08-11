@@ -24,7 +24,8 @@ export function Login() {
   const [method, setMethod] = useState<"email" | "phone">("email");
   const [countryCode, setCountryCode] = useState("+1");
   const [step, setStep] = useState<"form" | "otp">("form");
-
+  const [role, setRole] = useState<"user" | "seller">("user");
+  
   // OTP state
   const [otp, setOtp] = useState(["4", "2", "7", "1", "8", "9"]);
   const [errorMsg, setErrorMsg] = useState("");
@@ -37,10 +38,12 @@ export function Login() {
   const handleVerifyOtp = () => {
     const fullCode = otp.join("").trim();
     if (fullCode.length === 6 && fullCode === "427189") {
-      // Valid OTP -> Direct to Home feed!
-      navigate("/feed");
+      if (role === "seller") {
+        navigate("/seller-dashboard");
+      } else {
+        navigate("/feed");
+      }
     } else {
-      // Invalid OTP -> Show Warning message!
       setErrorMsg("Invalid OTP verification code. Please enter valid code (e.g. 427189) to proceed.");
     }
   };
@@ -57,7 +60,9 @@ export function Login() {
             Back to Login
           </button>
 
-          <h1 className="text-2xl font-bold text-foreground mb-2">OTP Verification</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            {role === "seller" ? "Seller OTP Verification" : "OTP Verification"}
+          </h1>
           <p className="text-muted-foreground text-sm mb-6">
             Enter the 6-digit code sent to your {method === "email" ? "email" : "phone number"}
           </p>
@@ -116,12 +121,45 @@ export function Login() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-foreground">Login</h1>
+        <div className="text-center mb-4">
+          <h1 className="text-2xl font-bold text-foreground">
+            {role === "seller" ? "Seller Login" : "Login"}
+          </h1>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-border p-6 sm:p-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-border p-5 sm:p-6">
           <div className="space-y-4">
+            
+            {/* 0. Account Type Side-by-Side Segmented Selector */}
+            <div>
+              <label className="text-sm font-medium text-foreground block mb-1.5">
+                Account Type
+              </label>
+              <div className="grid grid-cols-2 gap-2 p-1 bg-secondary/80 rounded-xl border border-border">
+                <button
+                  type="button"
+                  onClick={() => setRole("user")}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${role === "user"
+                      ? "bg-white text-primary shadow-xs border border-border/40"
+                      : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>Member</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole("seller")}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${role === "seller"
+                      ? "bg-primary text-white shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                  <Store className="w-3.5 h-3.5" />
+                  <span>Seller</span>
+                </button>
+              </div>
+            </div>
             {/* Unified Contact Field with Dropdown Method Box */}
             <div>
               <label className="text-sm font-medium text-foreground block mb-1.5">
@@ -476,7 +514,7 @@ export function SignUp() {
 
             {/* Submit Button */}
             <button
-              onClick={() => navigate(method === "email" ? "/verify-email" : "/onboarding/country")}
+              onClick={() => navigate(role === "seller" ? "/seller-dashboard" : method === "email" ? "/verify-email" : "/onboarding/country")}
               className="w-full py-3 rounded-xl text-white font-semibold text-sm shadow-sm hover:opacity-90 transition mt-2 flex items-center justify-center gap-2"
               style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
             >
