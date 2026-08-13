@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
   Search, Send, Paperclip, Mic, Languages, MoreHorizontal,
@@ -169,10 +170,12 @@ function ChatScreen({ convId, onBack }: { convId: number; onBack: () => void }) 
 }
 
 export function Messages() {
-  const [selectedConv, setSelectedConv] = useState<number | null>(null);
+  const [searchParams] = useSearchParams();
+  const [selectedConv, setSelectedConv] = useState<number | null>(1);
+  const isSeller = searchParams.get("role") === "seller";
 
   return (
-    <AppLayout noPad hideNav={Boolean(selectedConv)}>
+    <AppLayout variant={isSeller ? "seller" : "buyer"} activeTab="messages" noPad hideNav={Boolean(selectedConv)}>
       <div className="flex h-screen max-h-screen overflow-hidden">
         {/* Inbox - always visible on desktop, hidden on mobile when chat is open */}
         <div className={`${selectedConv ? "hidden lg:flex" : "flex"} flex-col w-full lg:w-80 xl:w-96 border-r border-border bg-white flex-shrink-0`}>

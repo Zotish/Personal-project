@@ -7,6 +7,7 @@ import {
   Clock, ArrowLeft, Heart, CheckCircle2, Truck
 } from "lucide-react";
 import { INITIAL_SELLER_PRODUCTS, Product } from "./SellerDashboard";
+import { DeliverySecurityModal } from "../components/DeliverySecurityModal";
 
 export function SellerProfile() {
   const { sellerId } = useParams();
@@ -18,6 +19,7 @@ export function SellerProfile() {
   const [cart, setCart] = useState<{ product: Product; qty: number }[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [savedShop, setSavedShop] = useState(false);
+  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
   const [activeQuickView, setActiveQuickView] = useState<Product | null>(null);
 
   // Shop details
@@ -314,14 +316,15 @@ export function SellerProfile() {
                   </div>
                   <button
                     onClick={() => {
-                      alert("Order request sent to seller! Seller will contact you for pickup/delivery.");
-                      setCart([]);
                       setIsCartOpen(false);
+                      setIsSecurityModalOpen(true);
+                      setCart([]);
                     }}
-                    className="w-full py-3.5 rounded-xl text-white font-bold text-sm shadow-md hover:opacity-95 transition"
+                    className="w-full py-3.5 rounded-xl text-white font-bold text-sm shadow-md hover:opacity-95 transition flex items-center justify-center gap-2"
                     style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
                   >
-                    Place Order & Contact Seller
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Place Order & Escrow Lock</span>
                   </button>
                 </div>
               )}
@@ -329,6 +332,16 @@ export function SellerProfile() {
             </div>
           </div>
         )}
+
+        {/* ESCROW & DELIVERY SECURITY VOIP MODAL (BUYER PORTAL VIEW) */}
+        <DeliverySecurityModal
+          isOpen={isSecurityModalOpen}
+          onClose={() => setIsSecurityModalOpen(false)}
+          role="buyer"
+          orderId="ORD-902"
+          itemTitle="Solid Oak Dining Table with 6 Chairs"
+          totalPrice={`$${cartTotal > 0 ? cartTotal.toFixed(2) : "350.00"}`}
+        />
 
       </div>
     </AppLayout>

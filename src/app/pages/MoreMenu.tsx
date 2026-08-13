@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
   Users, MessageCircle, Bell, User, Settings, Bookmark,
-  HelpCircle, Shield, Store, ChevronRight, ArrowLeft
+  HelpCircle, Shield, Store, ChevronRight, ArrowLeft, ShoppingBag
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import { LanguageToggle } from "../components/ui/LanguageToggle";
@@ -13,6 +13,7 @@ export function MoreMenu() {
   const { t } = useLanguage();
 
   const moreItems = [
+    { icon: ShoppingBag,   tKey: "orders",        label: "My Orders & Tracking", path: "/orders",        badge: "1",   desc: "Track purchases, Escrow & Delivery OTPs" },
     { icon: Users,         tKey: "communities",   label: "Communities",   path: "/communities",   badge: null,  desc: "Join local newcomer groups & forums" },
     { icon: MessageCircle,tKey: "messages",      label: "Messages",      path: "/messages",      badge: "2",   desc: "Direct chats & seller inquiries" },
     { icon: Bell,         tKey: "notifications", label: "Notifications", path: "/notifications", badge: "4",   desc: "Alerts, updates & community news" },

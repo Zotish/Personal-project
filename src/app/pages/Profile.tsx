@@ -4,7 +4,7 @@ import { AppLayout } from "../components/layout/AppLayout";
 import {
   MapPin, Link, Calendar, CheckCircle, Edit3, Users, Globe, MessageCircle,
   Bookmark, Building, Heart, Repeat2, Share2, MoreHorizontal, Image as ImageIcon,
-  HelpCircle, Zap, UserPlus, BarChart2, X, Search, UserCheck
+  HelpCircle, Zap, UserPlus, BarChart2, X, Search, UserCheck, ChevronRight
 } from "lucide-react";
 
 const userPosts = [
@@ -296,20 +296,80 @@ export function Profile() {
 
         {/* Tabs */}
         <div className="flex border-b border-border bg-white sticky top-0 z-10">
-          {["posts", "replies", "communities", "saved"].map(tab => (
+          {["posts", "orders", "communities", "saved"].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`flex-1 py-3 text-sm font-medium capitalize transition-all ${
-                activeTab === tab ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                activeTab === tab ? "text-primary border-b-2 border-primary font-bold" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
               }`}
             >
-              {tab}
+              {tab === "orders" ? "📦 My Orders" : tab}
             </button>
           ))}
         </div>
 
         <div className="p-4 space-y-3">
+          
+          {/* ORDERS TAB VIEW (BUYER ONLY) */}
+          {activeTab === "orders" && (
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-blue-700 to-indigo-700 text-white p-4 rounded-2xl flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-sm">Package Tracking & Escrow Vault</h4>
+                  <p className="text-xs text-blue-100 mt-0.5">Track your purchases & manage delivery OTPs</p>
+                </div>
+                <button
+                  onClick={() => navigate("/orders")}
+                  className="px-3.5 py-1.5 rounded-xl bg-white text-blue-700 font-bold text-xs hover:bg-blue-50 transition"
+                >
+                  View All Orders
+                </button>
+              </div>
+
+              {/* Sample Active Buyer Order Card */}
+              <div className="bg-white rounded-2xl border border-border p-4 shadow-sm space-y-3">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <img src="https://images.unsplash.com/photo-1617806118233-18e1de247200?w=500&h=300&fit=crop" alt="Item" className="w-12 h-12 rounded-xl object-cover border" />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900 text-sm">#ORD-902</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">In Transit</span>
+                      </div>
+                      <h5 className="text-xs font-semibold text-slate-700">Solid Oak Dining Table with 6 Chairs</h5>
+                    </div>
+                  </div>
+                  <span className="font-extrabold text-emerald-600 text-sm">$350.00</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
+                    <span className="text-[10px] font-bold text-emerald-800 uppercase block">Escrow Status</span>
+                    <span className="font-bold text-emerald-900 text-[11px]">$350.00 Locked in Vault</span>
+                  </div>
+                  <div className="bg-blue-50 p-2.5 rounded-xl border border-blue-200 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold text-blue-800 uppercase block">Secret Delivery OTP</span>
+                      <span className="text-[10px] text-blue-900">Give to rider</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-lg bg-blue-600 text-white font-mono font-bold text-xs">427189</span>
+                  </div>
+                </div>
+
+                <div className="pt-1 flex items-center justify-between text-xs">
+                  <span className="text-slate-500">Pathao Express Rider #R-902</span>
+                  <button
+                    onClick={() => navigate("/orders")}
+                    className="text-blue-600 font-bold hover:underline flex items-center gap-1"
+                  >
+                    Track Package <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          )}
           {/* Post composer — only on posts tab */}
           {activeTab === "posts" && (
             <div className="bg-white rounded-2xl border border-border p-4 shadow-sm">

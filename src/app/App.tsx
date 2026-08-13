@@ -31,6 +31,7 @@ import { Reels } from "./pages/Reels";
 import { SellerDashboard } from "./pages/SellerDashboard";
 import { SellerProfile } from "./pages/SellerProfile";
 import { MoreMenu } from "./pages/MoreMenu";
+import { BuyerOrders } from "./pages/BuyerOrders";
 
 export default function App() {
   return (
@@ -59,6 +60,7 @@ export default function App() {
         <Route path="/messages" element={<Messages />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/orders" element={<BuyerOrders />} />
         <Route path="/communities" element={<Communities />} />
         <Route path="/qa" element={<QandA />} />
         <Route path="/post/:id" element={<PostDetails />} />

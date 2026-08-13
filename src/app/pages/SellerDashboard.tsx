@@ -6,8 +6,9 @@ import {
   Eye, Star, Search, Filter, CheckCircle2, AlertCircle, Clock, MapPin,
   Phone, Mail, Globe, Image as ImageIcon, ChevronRight, Settings, BarChart2,
   X, Check, ShieldCheck, ArrowUpRight, ArrowDownRight, MessageSquare, ExternalLink,
-  Tag, RefreshCw, Upload, ToggleLeft, ToggleRight
+  Tag, RefreshCw, Upload, ToggleLeft, ToggleRight, Lock, Key
 } from "lucide-react";
+import { DeliverySecurityModal } from "../components/DeliverySecurityModal";
 
 export type Product = {
   id: number;
@@ -103,13 +104,14 @@ export const INITIAL_SELLER_PRODUCTS: Product[] = [
 
 export function SellerDashboard() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"overview" | "products" | "orders" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "products" | "orders" | "messages" | "settings">("overview");
   const [products, setProducts] = useState<Product[]>(INITIAL_SELLER_PRODUCTS);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
   // Add / Edit Product Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   // Form State
@@ -229,7 +231,7 @@ export function SellerDashboard() {
   const totalSalesCount = products.reduce((sum, p) => sum + p.salesCount, 0);
 
   return (
-    <AppLayout>
+    <AppLayout variant="seller" activeTab={activeTab} onTabChange={setActiveTab}>
       <div className="min-h-screen bg-slate-50/50 pb-16">
         
         {/* Top SaaS Header Banner */}
@@ -281,6 +283,7 @@ export function SellerDashboard() {
                 { id: "overview", label: "Dashboard Overview", icon: BarChart2 },
                 { id: "products", label: `Product Catalog (${products.length})`, icon: Package },
                 { id: "orders", label: "Customer Orders (14)", icon: ShoppingCart },
+                { id: "messages", label: "Buyer Inquiries (2)", icon: MessageSquare },
                 { id: "settings", label: "Store Settings", icon: Settings },
               ].map(tab => {
                 const Icon = tab.icon;
@@ -560,12 +563,24 @@ export function SellerDashboard() {
           {/* TAB 3: ORDERS */}
           {activeTab === "orders" && (
             <div className="bg-white rounded-2xl border border-border shadow-xs p-6">
-              <h2 className="text-base font-bold text-slate-900 mb-4">Customer Orders & Inquiries</h2>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">Customer Orders & Logistics Anti-Fraud Center</h2>
+                  <p className="text-xs text-slate-500">Escrow status, Courier rider dispatch & Dual-OTP verification</p>
+                </div>
+                <button
+                  onClick={() => setIsSecurityModalOpen(true)}
+                  className="px-3.5 py-2 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold flex items-center gap-1.5 hover:bg-blue-100 transition"
+                >
+                  <ShieldCheck className="w-4 h-4 text-blue-600" /> Security & Proxy Call Center
+                </button>
+              </div>
+
               <div className="space-y-3">
                 {[
-                  { id: "ORD-902", buyer: "Kamrul Islam", item: "Solid Oak Dining Table", price: "$350.00", date: "Today, 4:15 PM", status: "Pending Pickup" },
-                  { id: "ORD-901", buyer: "Sofia Rahman", item: "Deshi Basmati Rice 5kg x 2", price: "$37.00", date: "Today, 1:20 PM", status: "Completed" },
-                  { id: "ORD-899", buyer: "Tariqul Hasan", item: "IKEA Sectional Sofa", price: "$280.00", date: "Yesterday", status: "Completed" },
+                  { id: "ORD-902", buyer: "Kamrul Islam", item: "Solid Oak Dining Table", price: "$350.00", date: "Today, 4:15 PM", status: "Pending Pickup", courier: "Pathao Express #R-902", otp: "8942" },
+                  { id: "ORD-901", buyer: "Sofia Rahman", item: "Deshi Basmati Rice 5kg x 2", price: "$37.00", date: "Today, 1:20 PM", status: "Completed", courier: "Steadfast Courier", otp: "7719" },
+                  { id: "ORD-899", buyer: "Tariqul Hasan", item: "IKEA Sectional Sofa", price: "$280.00", date: "Yesterday", status: "Completed", courier: "RedX Logistics", otp: "3104" },
                 ].map(order => (
                   <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-slate-200 transition bg-slate-50/50 gap-3">
                     <div className="flex items-center gap-3">
@@ -576,15 +591,28 @@ export function SellerDashboard() {
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-slate-900 text-sm">{order.buyer}</span>
                           <span className="text-xs text-slate-400">({order.id})</span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            🔒 Escrow Secured
+                          </span>
                         </div>
                         <p className="text-xs text-slate-600 mt-0.5">{order.item} • <span className="font-bold text-emerald-600">{order.price}</span></p>
+                        <p className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
+                          <span>Courier: <strong>{order.courier}</strong></span>
+                          <span>Pickup OTP: <code className="bg-slate-200 px-1 rounded font-bold text-slate-800">{order.otp}</code></span>
+                        </p>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200">
+                    <div className="flex items-center justify-between sm:justify-end gap-2 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200 flex-wrap">
                       <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                         {order.status}
                       </span>
-                      <button onClick={() => navigate("/messages")} className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium hover:bg-slate-100 transition flex items-center gap-1">
+                      <button
+                        onClick={() => setIsSecurityModalOpen(true)}
+                        className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition flex items-center gap-1"
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5" /> Logistics Portal
+                      </button>
+                      <button onClick={() => setActiveTab("messages")} className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium hover:bg-slate-100 transition flex items-center gap-1">
                         <MessageSquare className="w-3.5 h-3.5 text-slate-500" /> Chat Buyer
                       </button>
                     </div>
@@ -594,7 +622,93 @@ export function SellerDashboard() {
             </div>
           )}
 
-          {/* TAB 4: SETTINGS */}
+          {/* TAB 4: BUYER MESSAGES & CUSTOMER INQUIRIES */}
+          {activeTab === "messages" && (
+            <div className="bg-white rounded-2xl border border-border shadow-xs overflow-hidden">
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">Buyer Inquiries & Customer Messages</h2>
+                  <p className="text-xs text-slate-500">Direct inquiries from buyers regarding your products and orders</p>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-bold text-xs">
+                  2 Active Chats
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100 min-h-[450px]">
+                
+                {/* Conversations List */}
+                <div className="p-3 space-y-2 bg-slate-50/50">
+                  <div className="p-3 bg-white rounded-xl border border-blue-200 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-900 text-xs">Kamrul Islam</span>
+                      <span className="text-[10px] text-slate-400">4:15 PM</span>
+                    </div>
+                    <span className="text-[11px] font-bold text-blue-600 block mt-0.5">Item: Solid Oak Dining Table</span>
+                    <p className="text-xs text-slate-600 mt-1 line-clamp-1">Is pickup available today before 6 PM?</p>
+                  </div>
+
+                  <div className="p-3 bg-white rounded-xl border border-slate-100 hover:border-slate-200 transition cursor-pointer">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-900 text-xs">Sofia Rahman</span>
+                      <span className="text-[10px] text-slate-400">1:20 PM</span>
+                    </div>
+                    <span className="text-[11px] font-bold text-emerald-600 block mt-0.5">Item: Deshi Basmati Rice 5kg</span>
+                    <p className="text-xs text-slate-600 mt-1 line-clamp-1">Thank you for the quick delivery!</p>
+                  </div>
+                </div>
+
+                {/* Active Chat Screen */}
+                <div className="md:col-span-2 p-5 flex flex-col justify-between space-y-4">
+                  
+                  {/* Chat Header */}
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs">
+                        KI
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-xs">Kamrul Islam</h4>
+                        <span className="text-[11px] text-slate-500">Inquiring about: <strong>Solid Oak Dining Table ($350.00)</strong></span>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                      Online
+                    </span>
+                  </div>
+
+                  {/* Chat Messages */}
+                  <div className="flex-1 space-y-3 overflow-y-auto max-h-[300px] pr-2">
+                    <div className="bg-slate-100 text-slate-800 p-3 rounded-2xl max-w-sm text-xs space-y-1">
+                      <p>Hello! I placed order #ORD-902 for the Solid Oak Dining Table. Is pickup available today before 6 PM?</p>
+                      <span className="text-[10px] text-slate-400 block text-right">4:15 PM</span>
+                    </div>
+
+                    <div className="bg-blue-600 text-white p-3 rounded-2xl max-w-sm ml-auto text-xs space-y-1">
+                      <p>Hello Kamrul! Yes, Pathao Express rider #R-902 has already accepted your order and is currently picking up the table.</p>
+                      <span className="text-[10px] text-blue-200 block text-right">4:18 PM</span>
+                    </div>
+                  </div>
+
+                  {/* Input Box */}
+                  <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Reply to Kamrul Islam..."
+                      className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-blue-600"
+                    />
+                    <button className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition">
+                      Send Reply
+                    </button>
+                  </div>
+
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: SETTINGS */}
           {activeTab === "settings" && (
             <div className="bg-white rounded-2xl border border-border shadow-xs p-6 max-w-3xl">
               <h2 className="text-base font-bold text-slate-900 mb-4">Shop Settings & Storefront Configuration</h2>
@@ -806,6 +920,16 @@ export function SellerDashboard() {
             </div>
           </div>
         )}
+
+        {/* LOGISTICS ANTI-FRAUD & PROXY CALL CENTER MODAL (SELLER PORTAL VIEW) */}
+        <DeliverySecurityModal
+          isOpen={isSecurityModalOpen}
+          onClose={() => setIsSecurityModalOpen(false)}
+          role="seller"
+          orderId="ORD-902"
+          itemTitle="Solid Oak Dining Table with 6 Chairs"
+          totalPrice="$350.00"
+        />
 
       </div>
     </AppLayout>
