@@ -143,74 +143,79 @@ export function ProductCard({
           }}
         />
 
-        {/* CONDITION PILL BADGE (Top Left) - SELECTABLE DROPDOWN IN SELLER VIEW */}
-        <div className="absolute top-3 left-3 z-20">
-          {isSellerView ? (
-            <div className="relative inline-block">
-              <select
-                value={product.condition || "Gently Used"}
-                onChange={(e) => handleConditionChange(e.target.value as any)}
-                className="px-3 py-1 rounded-full text-xs font-bold bg-white/95 text-slate-800 shadow-sm border border-slate-200/60 backdrop-blur-xs cursor-pointer outline-none appearance-none pr-6 hover:bg-white transition"
-                title="Click to change condition"
-              >
-                <option value="Gently Used">Gently Used</option>
-                <option value="New">New (Brand New)</option>
-                <option value="Refurbished">Refurbished</option>
-              </select>
-              <ChevronDown className="w-3 h-3 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-          ) : (
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-white/95 text-slate-800 shadow-sm border border-slate-200/60 backdrop-blur-xs">
-              {product.condition || "Gently Used"}
-            </span>
-          )}
-        </div>
-
-        {/* OFFER / DISCOUNT PILL BADGE (Top Right) - SCREENSHOT 1 & 2 STYLED (NO OVERLAP) */}
-        <div className="absolute top-3 right-3 z-20 max-w-[135px]">
-          {isSellerView ? (
-            <div className="relative inline-block w-full">
-              {/* Styled Pill Display */}
-              <div className={`px-3 py-1 rounded-full text-xs font-extrabold shadow-md flex items-center justify-between gap-1 border transition ${
-                hasOffer
-                  ? "bg-gradient-to-r from-rose-500 to-amber-500 text-white border-white/40"
-                  : "bg-slate-900/80 text-white border-slate-700 hover:bg-slate-900"
-              }`}>
-                <span className="truncate">{hasOffer ? `🔥 ${product.offerTag}` : "+ Offer"}</span>
-                <ChevronDown className="w-3 h-3 flex-shrink-0 opacity-80" />
+        {/* Top Badges Bar: Condition (Left) & Offer (Right) - Single Flex Row (Never Overlaps) */}
+        <div className="absolute top-2.5 left-2.5 right-2.5 z-20 flex items-center justify-between gap-1.5 pointer-events-none">
+          
+          {/* CONDITION PILL BADGE (Top Left) */}
+          <div className="pointer-events-auto max-w-[50%] min-w-0">
+            {isSellerView ? (
+              <div className="relative inline-block w-full">
+                <select
+                  value={product.condition || "Gently Used"}
+                  onChange={(e) => handleConditionChange(e.target.value as any)}
+                  className="w-full px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/95 text-slate-800 shadow-sm border border-slate-200/60 backdrop-blur-xs cursor-pointer outline-none appearance-none pr-5 hover:bg-white transition truncate"
+                  title="Click to change condition"
+                >
+                  <option value="Gently Used">Gently Used</option>
+                  <option value="New">New</option>
+                  <option value="Refurbished">Refurbished</option>
+                </select>
+                <ChevronDown className="w-3 h-3 text-slate-500 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
-
-              {/* Invisible native select overlaid on top to pick offer without ugly expansion */}
-              <select
-                value={product.offerTag || "none"}
-                onChange={(e) => handleOfferChange(e.target.value)}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-xs font-bold"
-                title="Click to select offer discount"
-              >
-                <option value="none">No Offer (Regular Price - Screenshot 2)</option>
-                <option value="5% OFF">🔥 5% OFF</option>
-                <option value="10% OFF">🔥 10% OFF</option>
-                <option value="15% OFF">🔥 15% OFF</option>
-                <option value="20% OFF">🔥 20% OFF</option>
-                <option value="22% OFF">🔥 22% OFF</option>
-                <option value="25% OFF">🔥 25% OFF</option>
-                <option value="30% OFF">🔥 30% OFF</option>
-                <option value="40% OFF">🔥 40% OFF</option>
-                <option value="50% OFF">🔥 50% OFF</option>
-                <option value="60% OFF">🔥 60% OFF</option>
-                <option value="70% OFF">🔥 70% OFF</option>
-                <option value="80% OFF">🔥 80% OFF</option>
-                <option value="SPECIAL DEAL">🔥 SPECIAL DEAL</option>
-                <option value="SAVE $35">🔥 SAVE $35</option>
-              </select>
-            </div>
-          ) : (
-            hasOffer && (
-              <span className="px-3 py-1 rounded-full text-xs font-extrabold text-white bg-gradient-to-r from-rose-500 to-amber-500 shadow-md flex items-center gap-1 border border-white/30 truncate">
-                🔥 {product.offerTag}
+            ) : (
+              <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/95 text-slate-800 shadow-sm border border-slate-200/60 backdrop-blur-xs block truncate">
+                {product.condition || "Gently Used"}
               </span>
-            )
-          )}
+            )}
+          </div>
+
+          {/* OFFER / DISCOUNT PILL BADGE (Top Right) */}
+          <div className="pointer-events-auto max-w-[50%] min-w-0">
+            {isSellerView ? (
+              <div className="relative inline-block w-full">
+                {/* Styled Pill Display */}
+                <div className={`px-2.5 py-1 rounded-full text-[11px] font-extrabold shadow-md flex items-center justify-between gap-1 border transition ${
+                  hasOffer
+                    ? "bg-gradient-to-r from-rose-500 to-amber-500 text-white border-white/40"
+                    : "bg-slate-900/80 text-white border-slate-700 hover:bg-slate-900"
+                }`}>
+                  <span className="truncate">{hasOffer ? `🔥 ${product.offerTag}` : "+ Offer"}</span>
+                  <ChevronDown className="w-2.5 h-2.5 flex-shrink-0 opacity-80" />
+                </div>
+
+                {/* Invisible native select overlaid on top */}
+                <select
+                  value={product.offerTag || "none"}
+                  onChange={(e) => handleOfferChange(e.target.value)}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-[11px] font-bold"
+                  title="Click to select offer discount"
+                >
+                  <option value="none">No Offer (Regular Price)</option>
+                  <option value="5% OFF">🔥 5% OFF</option>
+                  <option value="10% OFF">🔥 10% OFF</option>
+                  <option value="15% OFF">🔥 15% OFF</option>
+                  <option value="20% OFF">🔥 20% OFF</option>
+                  <option value="22% OFF">🔥 22% OFF</option>
+                  <option value="25% OFF">🔥 25% OFF</option>
+                  <option value="30% OFF">🔥 30% OFF</option>
+                  <option value="40% OFF">🔥 40% OFF</option>
+                  <option value="50% OFF">🔥 50% OFF</option>
+                  <option value="60% OFF">🔥 60% OFF</option>
+                  <option value="70% OFF">🔥 70% OFF</option>
+                  <option value="80% OFF">🔥 80% OFF</option>
+                  <option value="SPECIAL DEAL">🔥 SPECIAL DEAL</option>
+                  <option value="SAVE $35">🔥 SAVE $35</option>
+                </select>
+              </div>
+            ) : (
+              hasOffer && (
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-extrabold text-white bg-gradient-to-r from-rose-500 to-amber-500 shadow-md flex items-center gap-1 border border-white/30 truncate block">
+                  🔥 {product.offerTag}
+                </span>
+              )
+            )}
+          </div>
+
         </div>
 
         {/* Seller Trash Icon Button (Bottom Right Overlay) */}
