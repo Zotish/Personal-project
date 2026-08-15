@@ -11,30 +11,51 @@ interface ProductCardProps {
   onAddToCart?: (product: Product) => void;
 }
 
-export function calculateOriginalPrice(price: number, offerTag?: string): number | undefined {
-  if (!offerTag || offerTag.toLowerCase() === "none" || offerTag.toLowerCase() === "no offer") {
-    return undefined;
+export function calculateOfferPrice(mainPrice: number, offerTag?: string): {
+  hasOffer: boolean;
+  offerPrice: number;
+  mainPrice: number;
+} {
+  const hasOffer = Boolean(
+    offerTag &&
+    offerTag.toLowerCase() !== "none" &&
+    offerTag.toLowerCase() !== "no offer"
+  );
+
+  if (!hasOffer || !offerTag) {
+    return {
+      hasOffer: false,
+      offerPrice: mainPrice,
+      mainPrice: mainPrice,
+    };
   }
 
-  // Check percentage discount e.g. "20% OFF", "50% OFF", "5% OFF"
+  let calculatedOfferPrice = mainPrice;
+
+  // Percentage discount: e.g. "20% OFF", "22% OFF", "50% OFF", "5% OFF"
   const percentMatch = offerTag.match(/(\d+)%/);
   if (percentMatch && percentMatch[1]) {
     const discountPercent = parseInt(percentMatch[1], 10);
     if (discountPercent > 0 && discountPercent < 100) {
-      const calculated = price / (1 - discountPercent / 100);
-      return Math.round(calculated * 100) / 100;
+      calculatedOfferPrice = mainPrice * (1 - discountPercent / 100);
+    }
+  } 
+  // Dollar discount: e.g. "SAVE $35"
+  else {
+    const saveMatch = offerTag.match(/SAVE \$?(\d+)/i);
+    if (saveMatch && saveMatch[1]) {
+      const saveAmount = parseFloat(saveMatch[1]);
+      calculatedOfferPrice = Math.max(0, mainPrice - saveAmount);
+    } else if (offerTag.toUpperCase().includes("SPECIAL")) {
+      calculatedOfferPrice = mainPrice * 0.80;
     }
   }
 
-  // Check dollar discount e.g. "SAVE $35"
-  const saveMatch = offerTag.match(/SAVE \$?(\d+)/i);
-  if (saveMatch && saveMatch[1]) {
-    const saveAmount = parseFloat(saveMatch[1]);
-    return Math.round((price + saveAmount) * 100) / 100;
-  }
-
-  // Fallback 25% markup for SPECIAL DEAL
-  return Math.round(price * 1.25 * 100) / 100;
+  return {
+    hasOffer: true,
+    offerPrice: Math.round(calculatedOfferPrice * 100) / 100,
+    mainPrice: Math.round(mainPrice * 100) / 100,
+  };
 }
 
 export function ProductCard({
@@ -56,14 +77,8 @@ export function ProductCard({
   const [descInput, setDescInput] = useState(product.description || "");
   const [priceInput, setPriceInput] = useState(product.price.toString());
 
-  const hasOffer = Boolean(
-    product.offerTag &&
-    product.offerTag.toLowerCase() !== "none" &&
-    product.offerTag.toLowerCase() !== "no offer"
-  );
-
-  // Dynamic calculate strikethrough price if offer exists
-  const originalPrice = product.originalPrice || calculateOriginalPrice(product.price, product.offerTag);
+  const priceDetails = calculateOfferPrice(product.price, product.offerTag);
+  const hasOffer = priceDetails.hasOffer;
 
   // Helper to handle inline state update
   const triggerUpdate = (fields: Partial<Product>) => {
@@ -75,11 +90,9 @@ export function ProductCard({
   const handleOfferChange = (newOffer: string) => {
     const isNoOffer = newOffer === "none" || newOffer === "";
     const updatedOfferTag = isNoOffer ? undefined : newOffer;
-    const updatedOriginalPrice = calculateOriginalPrice(product.price, updatedOfferTag);
 
     triggerUpdate({
       offerTag: updatedOfferTag,
-      originalPrice: updatedOriginalPrice,
     });
     setIsEditingOffer(false);
   };
@@ -97,10 +110,8 @@ export function ProductCard({
   const handleSavePrice = () => {
     const parsed = parseFloat(priceInput);
     if (!isNaN(parsed) && parsed > 0) {
-      const updatedOriginalPrice = calculateOriginalPrice(parsed, product.offerTag);
       triggerUpdate({
         price: parsed,
-        originalPrice: updatedOriginalPrice,
       });
     }
     setIsEditingPrice(false);
@@ -341,9 +352,9 @@ export function ProductCard({
               <div
                 onClick={() => isSellerView && setIsEditingPrice(true)}
                 className={isSellerView ? "cursor-pointer hover:opacity-85 transition" : ""}
-                title={isSellerView ? "Click to edit price" : ""}
+                title={isSellerView ? "Click to edit main price" : ""}
               >
-                {hasOffer ? (
+                {priceDetails.hasOffer ? (
                   /* SCREENSHOT 1: DISCOUNTED OFFER PRICE VIEW */
                   <div className="space-y-0.5">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
@@ -351,13 +362,11 @@ export function ProductCard({
                     </span>
                     <div className="flex flex-col">
                       <span className="text-xl font-extrabold text-emerald-600 leading-none tracking-tight">
-                        ${product.price.toFixed(2)}
+                        ${priceDetails.offerPrice.toFixed(2)}
                       </span>
-                      {originalPrice && (
-                        <span className="text-xs font-bold text-rose-500 line-through tracking-tight mt-0.5">
-                          ${originalPrice.toFixed(2)}
-                        </span>
-                      )}
+                      <span className="text-xs font-bold text-rose-500 line-through tracking-tight mt-0.5">
+                        ${priceDetails.mainPrice.toFixed(2)}
+                      </span>
                     </div>
                   </div>
                 ) : (
@@ -367,7 +376,7 @@ export function ProductCard({
                       REGULAR PRICE
                     </span>
                     <span className="text-xl font-extrabold text-emerald-600 leading-none tracking-tight block">
-                      ${product.price.toFixed(2)}
+                      ${priceDetails.mainPrice.toFixed(2)}
                     </span>
                   </div>
                 )}
