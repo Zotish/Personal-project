@@ -11,6 +11,32 @@ interface ProductCardProps {
   onAddToCart?: (product: Product) => void;
 }
 
+export function calculateOriginalPrice(price: number, offerTag?: string): number | undefined {
+  if (!offerTag || offerTag.toLowerCase() === "none" || offerTag.toLowerCase() === "no offer") {
+    return undefined;
+  }
+
+  // Check percentage discount e.g. "20% OFF", "50% OFF", "5% OFF"
+  const percentMatch = offerTag.match(/(\d+)%/);
+  if (percentMatch && percentMatch[1]) {
+    const discountPercent = parseInt(percentMatch[1], 10);
+    if (discountPercent > 0 && discountPercent < 100) {
+      const calculated = price / (1 - discountPercent / 100);
+      return Math.round(calculated * 100) / 100;
+    }
+  }
+
+  // Check dollar discount e.g. "SAVE $35"
+  const saveMatch = offerTag.match(/SAVE \$?(\d+)/i);
+  if (saveMatch && saveMatch[1]) {
+    const saveAmount = parseFloat(saveMatch[1]);
+    return Math.round((price + saveAmount) * 100) / 100;
+  }
+
+  // Fallback 25% markup for SPECIAL DEAL
+  return Math.round(price * 1.25 * 100) / 100;
+}
+
 export function ProductCard({
   product,
   isSellerView = false,
@@ -36,8 +62,8 @@ export function ProductCard({
     product.offerTag.toLowerCase() !== "no offer"
   );
 
-  // Calculate strikethrough price if offer exists
-  const originalPrice = product.originalPrice || (hasOffer ? product.price * 1.25 : undefined);
+  // Dynamic calculate strikethrough price if offer exists
+  const originalPrice = product.originalPrice || calculateOriginalPrice(product.price, product.offerTag);
 
   // Helper to handle inline state update
   const triggerUpdate = (fields: Partial<Product>) => {
@@ -49,7 +75,7 @@ export function ProductCard({
   const handleOfferChange = (newOffer: string) => {
     const isNoOffer = newOffer === "none" || newOffer === "";
     const updatedOfferTag = isNoOffer ? undefined : newOffer;
-    const updatedOriginalPrice = isNoOffer ? undefined : (product.originalPrice || product.price * 1.25);
+    const updatedOriginalPrice = calculateOriginalPrice(product.price, updatedOfferTag);
 
     triggerUpdate({
       offerTag: updatedOfferTag,
@@ -71,7 +97,11 @@ export function ProductCard({
   const handleSavePrice = () => {
     const parsed = parseFloat(priceInput);
     if (!isNaN(parsed) && parsed > 0) {
-      triggerUpdate({ price: parsed });
+      const updatedOriginalPrice = calculateOriginalPrice(parsed, product.offerTag);
+      triggerUpdate({
+        price: parsed,
+        originalPrice: updatedOriginalPrice,
+      });
     }
     setIsEditingPrice(false);
   };
@@ -345,15 +375,17 @@ export function ProductCard({
             )}
           </div>
 
-          {/* Add to Cart Button (Identical Size & Style for Both Screens) */}
-          <button
-            onClick={() => onAddToCart && onAddToCart(product)}
-            className="px-4 py-2.5 rounded-2xl text-white font-bold text-xs shadow-md shadow-purple-500/20 hover:shadow-lg hover:opacity-95 active:scale-95 transition-all flex items-center gap-1.5 whitespace-nowrap"
-            style={{ background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)" }}
-          >
-            <ShoppingCart className="w-4 h-4" />
-            <span>Add to Cart</span>
-          </button>
+          {/* Add to Cart Button (Only rendered for Buyers, hidden for Sellers) */}
+          {!isSellerView && (
+            <button
+              onClick={() => onAddToCart && onAddToCart(product)}
+              className="px-4 py-2.5 rounded-2xl text-white font-bold text-xs shadow-md shadow-purple-500/20 hover:shadow-lg hover:opacity-95 active:scale-95 transition-all flex items-center gap-1.5 whitespace-nowrap"
+              style={{ background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)" }}
+            >
+              <ShoppingCart className="w-4 h-4" />
+              <span>Add to Cart</span>
+            </button>
+          )}
 
         </div>
 
