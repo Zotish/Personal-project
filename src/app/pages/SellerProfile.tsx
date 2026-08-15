@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { INITIAL_SELLER_PRODUCTS, Product } from "./SellerDashboard";
 import { DeliverySecurityModal } from "../components/DeliverySecurityModal";
+import { ProductCard } from "../components/ProductCard";
 
 export function SellerProfile() {
   const { sellerId } = useParams();
@@ -182,67 +183,11 @@ export function SellerProfile() {
           {/* Product Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map(product => (
-              <div key={product.id} className="bg-white rounded-2xl border border-border shadow-xs hover:shadow-md transition overflow-hidden flex flex-col group">
-                
-                {/* Image & Condition / Offer Tag */}
-                <div className="relative h-48 bg-slate-100 overflow-hidden">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                  />
-                  <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/90 backdrop-blur-xs text-slate-800 shadow-xs border border-slate-200">
-                    {product.condition}
-                  </span>
-
-                  {(product.offerTag || (product.originalPrice && product.originalPrice > product.price)) && (
-                    <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-gradient-to-r from-rose-500 to-red-600 text-white shadow-md border border-white/40 flex items-center gap-1 animate-pulse">
-                      🔥 {product.offerTag || "SPECIAL OFFER"}
-                    </span>
-                  )}
-                </div>
-
-                {/* Info Content */}
-                <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                  <div>
-                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">{product.category}</span>
-                    <h3 className="text-sm font-bold text-slate-900 line-clamp-1 mt-0.5">{product.name}</h3>
-                    <p className="text-xs text-slate-500 line-clamp-2 mt-1">{product.description}</p>
-                  </div>
-
-                  {/* Price & Add to Cart */}
-                  <div className="flex items-center justify-between border-t border-slate-100 pt-3 mt-auto">
-                    
-                    {/* Price Block with Fixed Minimum Height for 100% Uniform Alignment */}
-                    <div className="flex flex-col justify-center min-h-[42px]">
-                      <span className="text-[10px] text-slate-400 font-semibold block leading-tight">
-                        {product.originalPrice && product.originalPrice > product.price ? "Offer Price" : "Regular Price"}
-                      </span>
-                      <div className="flex items-baseline gap-1.5 flex-wrap">
-                        <span className="text-lg font-extrabold text-emerald-600 leading-tight">${product.price.toFixed(2)}</span>
-                        {product.originalPrice && product.originalPrice > product.price ? (
-                          <span className="text-xs font-bold text-rose-500 line-through tracking-tight leading-tight">${product.originalPrice.toFixed(2)}</span>
-                        ) : (
-                          /* Height placeholder for non-discounted products */
-                          <span className="text-xs invisible leading-tight">$0.00</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Uniform Add to Cart Button */}
-                    <button
-                      onClick={() => handleAddToCart(product)}
-                      className="h-10 px-4 rounded-xl text-white text-xs font-bold shadow-xs hover:opacity-95 transition flex items-center justify-center gap-1.5 flex-shrink-0"
-                      style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
-                    >
-                      <ShoppingCart className="w-4 h-4" />
-                      <span>Add to Cart</span>
-                    </button>
-                  </div>
-
-                </div>
-
-              </div>
+              <ProductCard
+                key={product.id}
+                product={product}
+                onAddToCart={handleAddToCart}
+              />
             ))}
           </div>
 

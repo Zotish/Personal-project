@@ -6,9 +6,10 @@ import {
   Eye, Star, Search, Filter, CheckCircle2, AlertCircle, Clock, MapPin,
   Phone, Mail, Globe, Image as ImageIcon, ChevronRight, Settings, BarChart2,
   X, Check, ShieldCheck, ArrowUpRight, ArrowDownRight, MessageSquare, ExternalLink,
-  Tag, RefreshCw, Upload, ToggleLeft, ToggleRight, Lock, Key
+  Tag, RefreshCw, Upload, ToggleLeft, ToggleRight, Lock, Key, LayoutGrid, List
 } from "lucide-react";
 import { DeliverySecurityModal } from "../components/DeliverySecurityModal";
+import { ProductCard } from "../components/ProductCard";
 
 export type Product = {
   id: number;
@@ -114,12 +115,14 @@ export function SellerDashboard() {
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+
   // Form State
   const [formName, setFormName] = useState("");
   const [formPrice, setFormPrice] = useState("");
   const [formOriginalPrice, setFormOriginalPrice] = useState("");
-  const [formOfferTag, setFormOfferTag] = useState("");
-  const [formCategory, setFormCategory] = useState("Used Furniture");
+  const [formOfferTag, setFormOfferTag] = useState("none");
+  const [formCategory, setFormCategory] = useState("USED FURNITURE");
   const [formCondition, setFormCondition] = useState<"New" | "Gently Used" | "Refurbished">("Gently Used");
   const [formStock, setFormStock] = useState("1");
   const [formImage, setFormImage] = useState("");
@@ -132,14 +135,28 @@ export function SellerDashboard() {
   const [shopAddress, setShopAddress] = useState("Road 11, Gulshan-1, Dhaka, Bangladesh");
   const [storeStatus, setStoreStatus] = useState<"open" | "busy" | "closed">("open");
 
+  // File Reader for Image Uploads
+  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result) {
+          setFormImage(reader.result.toString());
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   // Open modal for creating product
   const handleOpenAddModal = () => {
     setEditingProduct(null);
     setFormName("");
     setFormPrice("");
     setFormOriginalPrice("");
-    setFormOfferTag("");
-    setFormCategory("Used Furniture");
+    setFormOfferTag("none");
+    setFormCategory("USED FURNITURE");
     setFormCondition("Gently Used");
     setFormStock("1");
     setFormImage("https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=500&h=300&fit=crop");
@@ -153,7 +170,7 @@ export function SellerDashboard() {
     setFormName(p.name);
     setFormPrice(p.price.toString());
     setFormOriginalPrice(p.originalPrice ? p.originalPrice.toString() : "");
-    setFormOfferTag(p.offerTag || "");
+    setFormOfferTag(p.offerTag || "none");
     setFormCategory(p.category);
     setFormCondition(p.condition);
     setFormStock(p.stock.toString());
@@ -168,7 +185,11 @@ export function SellerDashboard() {
     if (!formName || !formPrice) return;
 
     const parsedPrice = parseFloat(formPrice) || 0;
-    const parsedOriginalPrice = formOriginalPrice ? parseFloat(formOriginalPrice) : undefined;
+    const hasOffer = formOfferTag !== "none" && formOfferTag !== "";
+    const selectedOffer = hasOffer ? formOfferTag : undefined;
+    const parsedOriginalPrice = hasOffer
+      ? (formOriginalPrice ? parseFloat(formOriginalPrice) : parsedPrice * 1.25)
+      : undefined;
 
     if (editingProduct) {
       setProducts(prev => prev.map(p => p.id === editingProduct.id ? {
@@ -176,7 +197,7 @@ export function SellerDashboard() {
         name: formName,
         price: parsedPrice,
         originalPrice: parsedOriginalPrice,
-        offerTag: formOfferTag || undefined,
+        offerTag: selectedOffer,
         category: formCategory,
         condition: formCondition,
         stock: parseInt(formStock) || 0,
@@ -189,7 +210,7 @@ export function SellerDashboard() {
         name: formName,
         price: parsedPrice,
         originalPrice: parsedOriginalPrice,
-        offerTag: formOfferTag || undefined,
+        offerTag: selectedOffer,
         category: formCategory,
         condition: formCondition,
         stock: parseInt(formStock) || 1,
@@ -203,6 +224,11 @@ export function SellerDashboard() {
     }
 
     setIsModalOpen(false);
+  };
+
+  // In-place Product Update from Card
+  const handleUpdateProduct = (updated: Product) => {
+    setProducts(prev => prev.map(p => p.id === updated.id ? updated : p));
   };
 
   // Delete Product
@@ -402,7 +428,7 @@ export function SellerDashboard() {
           {activeTab === "products" && (
             <div className="space-y-6">
               
-              {/* Control Bar: Search, Category Filter & Add Button */}
+              {/* Control Bar: Search, Category Filter & View Toggle */}
               <div className="bg-white p-4 rounded-2xl border border-border shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex flex-col sm:flex-row items-center gap-3 flex-1">
                   
@@ -425,9 +451,31 @@ export function SellerDashboard() {
                     className="w-full sm:w-48 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none"
                   >
                     <option value="all">All Categories</option>
-                    <option value="Used Furniture">Used Furniture</option>
-                    <option value="Grocery & Food">Grocery & Food</option>
+                    <option value="USED FURNITURE">Used Furniture</option>
+                    <option value="GROCERY & FOOD">Grocery & Food</option>
                   </select>
+
+                  {/* View Mode Toggle Buttons */}
+                  <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+                    <button
+                      onClick={() => setViewMode("grid")}
+                      className={`p-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${
+                        viewMode === "grid" ? "bg-white text-blue-600 shadow-xs" : "text-slate-500 hover:text-slate-900"
+                      }`}
+                      title="Cards View"
+                    >
+                      <LayoutGrid className="w-4 h-4" /> Cards View
+                    </button>
+                    <button
+                      onClick={() => setViewMode("table")}
+                      className={`p-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${
+                        viewMode === "table" ? "bg-white text-blue-600 shadow-xs" : "text-slate-500 hover:text-slate-900"
+                      }`}
+                      title="Table View"
+                    >
+                      <List className="w-4 h-4" /> Table View
+                    </button>
+                  </div>
 
                 </div>
 
@@ -436,126 +484,125 @@ export function SellerDashboard() {
                   className="px-4 py-2 rounded-xl text-white text-xs sm:text-sm font-semibold shadow-sm hover:opacity-95 transition flex items-center justify-center gap-2"
                   style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
                 >
-                  <Plus className="w-4 h-4" /> Add Product
+                  <Plus className="w-4 h-4" /> Add New Product
                 </button>
               </div>
 
-              {/* Products Table */}
-              <div className="bg-white rounded-2xl border border-border shadow-xs overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                        <th className="py-3.5 px-4">Product details</th>
-                        <th className="py-3.5 px-4">Category</th>
-                        <th className="py-3.5 px-4">Price</th>
-                        <th className="py-3.5 px-4">Stock</th>
-                        <th className="py-3.5 px-4">Condition</th>
-                        <th className="py-3.5 px-4">Status</th>
-                        <th className="py-3.5 px-4 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-xs">
-                      {filteredProducts.map(p => (
-                        <tr key={p.id} className="hover:bg-slate-50/80 transition">
-                          
-                          {/* Name & Thumbnail */}
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-3 min-w-[200px]">
-                              <img src={p.image} alt={p.name} className="w-12 h-12 rounded-xl object-cover border border-slate-200 flex-shrink-0" />
-                              <div>
-                                <h3 className="font-bold text-slate-900 text-sm line-clamp-1">{p.name}</h3>
-                                <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">{p.description}</p>
+              {/* PRODUCTS DISPLAY: CARDS GRID VIEW OR TABLE VIEW */}
+              {viewMode === "grid" ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {filteredProducts.map(product => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      isSellerView={true}
+                      onUpdateProduct={handleUpdateProduct}
+                      onDelete={handleDeleteProduct}
+                    />
+                  ))}
+
+                  {filteredProducts.length === 0 && (
+                    <div className="col-span-full py-16 text-center text-slate-400 bg-white rounded-3xl border border-slate-200">
+                      <Package className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                      <p className="font-bold text-sm text-slate-600">No products found matching your search.</p>
+                      <p className="text-xs text-slate-400 mt-1">Click "Add New Product" to list an item in your store.</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Products Table */
+                <div className="bg-white rounded-2xl border border-border shadow-xs overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                          <th className="py-3.5 px-4">Product details</th>
+                          <th className="py-3.5 px-4">Category</th>
+                          <th className="py-3.5 px-4">Price</th>
+                          <th className="py-3.5 px-4">Stock</th>
+                          <th className="py-3.5 px-4">Condition</th>
+                          <th className="py-3.5 px-4">Status</th>
+                          <th className="py-3.5 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-xs">
+                        {filteredProducts.map(p => (
+                          <tr key={p.id} className="hover:bg-slate-50/80 transition">
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-3 min-w-[200px]">
+                                <img src={p.image} alt={p.name} className="w-12 h-12 rounded-xl object-cover border border-slate-200 flex-shrink-0" />
+                                <div>
+                                  <h3 className="font-bold text-slate-900 text-sm line-clamp-1">{p.name}</h3>
+                                  <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">{p.description}</p>
+                                </div>
                               </div>
-                            </div>
-                          </td>
-
-                          {/* Category */}
-                          <td className="py-3 px-4 whitespace-nowrap">
-                            <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">
-                              {p.category}
-                            </span>
-                          </td>
-
-                          {/* Price */}
-                          <td className="py-3 px-4 whitespace-nowrap">
-                            <div className="flex flex-col">
-                              <div className="flex items-baseline gap-1.5">
-                                <span className="font-extrabold text-emerald-600 text-sm">${p.price.toFixed(2)}</span>
-                                {p.originalPrice && p.originalPrice > p.price && (
-                                  <span className="text-xs text-rose-500 font-bold line-through tracking-tight">${p.originalPrice.toFixed(2)}</span>
+                            </td>
+                            <td className="py-3 px-4 whitespace-nowrap">
+                              <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">
+                                {p.category}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 whitespace-nowrap">
+                              <div className="flex flex-col">
+                                <div className="flex items-baseline gap-1.5">
+                                  <span className="font-extrabold text-emerald-600 text-sm">${p.price.toFixed(2)}</span>
+                                  {p.originalPrice && p.originalPrice > p.price && (
+                                    <span className="text-xs text-rose-500 font-bold line-through tracking-tight">${p.originalPrice.toFixed(2)}</span>
+                                  )}
+                                </div>
+                                {p.offerTag && (
+                                  <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-rose-100 text-rose-700 w-max border border-rose-200">
+                                    🔥 {p.offerTag}
+                                  </span>
                                 )}
                               </div>
-                              {p.offerTag && (
-                                <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-rose-100 text-rose-700 w-max border border-rose-200">
-                                  🔥 {p.offerTag}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* Stock */}
-                          <td className="py-3 px-4 whitespace-nowrap">
-                            <span className={`font-semibold ${p.stock > 0 ? "text-slate-700" : "text-rose-600"}`}>
-                              {p.stock} units
-                            </span>
-                          </td>
-
-                          {/* Condition */}
-                          <td className="py-3 px-4 whitespace-nowrap font-medium text-slate-600">
-                            {p.condition}
-                          </td>
-
-                          {/* Status */}
-                          <td className="py-3 px-4 whitespace-nowrap">
-                            <button
-                              onClick={() => handleToggleStatus(p.id)}
-                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1 transition ${
-                                p.status === "active"
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                  : "bg-amber-50 text-amber-700 border-amber-200"
-                              }`}
-                            >
-                              <span className={`w-1.5 h-1.5 rounded-full ${p.status === "active" ? "bg-emerald-500" : "bg-amber-500"}`} />
-                              {p.status === "active" ? "Active" : "Out of Stock"}
-                            </button>
-                          </td>
-
-                          {/* Actions */}
-                          <td className="py-3 px-4 whitespace-nowrap text-right">
-                            <div className="flex items-center justify-end gap-1">
+                            </td>
+                            <td className="py-3 px-4 whitespace-nowrap">
+                              <span className={`font-semibold ${p.stock > 0 ? "text-slate-700" : "text-rose-600"}`}>
+                                {p.stock} units
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 whitespace-nowrap font-medium text-slate-600">
+                              {p.condition}
+                            </td>
+                            <td className="py-3 px-4 whitespace-nowrap">
                               <button
-                                onClick={() => handleOpenEditModal(p)}
-                                className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition"
-                                title="Edit Product"
+                                onClick={() => handleToggleStatus(p.id)}
+                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1 transition ${
+                                  p.status === "active"
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    : "bg-amber-50 text-amber-700 border-amber-200"
+                                }`}
                               >
-                                <Edit className="w-3.5 h-3.5" />
+                                <span className={`w-1.5 h-1.5 rounded-full ${p.status === "active" ? "bg-emerald-500" : "bg-amber-500"}`} />
+                                {p.status === "active" ? "Active" : "Out of Stock"}
                               </button>
-                              <button
-                                onClick={() => handleDeleteProduct(p.id)}
-                                className="p-1.5 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 transition"
-                                title="Remove Product"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
-
-                        </tr>
-                      ))}
-
-                      {filteredProducts.length === 0 && (
-                        <tr>
-                          <td colSpan={7} className="py-12 text-center text-slate-400">
-                            <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                            No products found matching your search.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                            </td>
+                            <td className="py-3 px-4 whitespace-nowrap text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  onClick={() => handleOpenEditModal(p)}
+                                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition"
+                                  title="Edit Product"
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteProduct(p.id)}
+                                  className="p-1.5 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 transition"
+                                  title="Remove Product"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
+              )}
 
             </div>
           )}
@@ -773,128 +820,73 @@ export function SellerDashboard() {
           <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-xl border border-border w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
               
-              {/* Modal Header */}
+              {/* Ultra-Simple Add Product Modal Header */}
               <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                <h3 className="font-bold text-slate-900 text-base">
-                  {editingProduct ? "Edit Product Listing" : "Add New Product"}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">📷</span>
+                  <h3 className="font-bold text-slate-900 text-base">Add New Product</h3>
+                </div>
                 <button onClick={() => setIsModalOpen(false)} className="p-1 rounded-lg hover:bg-slate-200 text-slate-500 transition">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Form Body */}
+              {/* Minimal Form Body */}
               <form onSubmit={handleSaveProduct} className="p-6 space-y-4 text-xs sm:text-sm">
                 
+                {/* 1. Photo Upload (Device or Camera) */}
+                <div className="space-y-2">
+                  <label className="font-bold text-slate-900 block">Product Photo (From Device or Camera) *</label>
+                  
+                  <label className="w-full h-32 rounded-2xl border-2 border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 hover:bg-blue-50/50 flex flex-col items-center justify-center cursor-pointer transition p-4 text-center">
+                    <Upload className="w-7 h-7 text-blue-600 mb-1" />
+                    <span className="font-bold text-slate-800 text-xs">Click to Upload Photo / Take Camera Picture</span>
+                    <span className="text-[11px] text-slate-400">Supports JPG, PNG, WEBP</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleImageFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+
+                  {/* Thumbnail Preview */}
+                  {formImage && (
+                    <div className="flex items-center gap-3 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
+                      <img src={formImage} alt="Preview" className="w-12 h-12 rounded-lg object-cover border border-emerald-300" />
+                      <div>
+                        <span className="text-xs font-bold text-emerald-800 block">✓ Photo Selected & Ready</span>
+                        <span className="text-[10px] text-emerald-600">Will be displayed on product card</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Product Name */}
                 <div>
-                  <label className="font-medium text-slate-700 block mb-1">Product Name *</label>
+                  <label className="font-bold text-slate-900 block mb-1">Product Name *</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Solid Wood Dining Table"
+                    placeholder="e.g. Solid Oak Dining Table with 6 Chairs"
                     value={formName}
                     onChange={e => setFormName(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-blue-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="font-medium text-slate-700 block mb-1">Offer Price ($) *</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      required
-                      placeholder="99.99"
-                      value={formPrice}
-                      onChange={e => setFormPrice(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="font-medium text-slate-700 block mb-1">Original Price ($)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="120.00 (Optional)"
-                      value={formOriginalPrice}
-                      onChange={e => setFormOriginalPrice(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="font-medium text-slate-700 block mb-1">Stock Quantity *</label>
-                    <input
-                      type="number"
-                      required
-                      placeholder="1"
-                      value={formStock}
-                      onChange={e => setFormStock(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
+                {/* 3. Product Price */}
                 <div>
-                  <label className="font-medium text-slate-700 block mb-1">Offer Tag / Discount Badge</label>
+                  <label className="font-bold text-slate-900 block mb-1">Price ($) *</label>
                   <input
-                    type="text"
-                    placeholder="e.g. 20% OFF, HOT DEAL, SAVE $20"
-                    value={formOfferTag}
-                    onChange={e => setFormOfferTag(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="font-medium text-slate-700 block mb-1">Category</label>
-                    <select
-                      value={formCategory}
-                      onChange={e => setFormCategory(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
-                    >
-                      <option value="Used Furniture">Used Furniture</option>
-                      <option value="Grocery & Food">Grocery & Food</option>
-                      <option value="Electronics & Goods">Electronics & Goods</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="font-medium text-slate-700 block mb-1">Item Condition</label>
-                    <select
-                      value={formCondition}
-                      onChange={e => setFormCondition(e.target.value as any)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-blue-500 font-medium"
-                    >
-                      <option value="Gently Used">Gently Used</option>
-                      <option value="New">Brand New</option>
-                      <option value="Refurbished">Refurbished</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="font-medium text-slate-700 block mb-1">Image URL</label>
-                  <input
-                    type="text"
-                    placeholder="https://images.unsplash.com/..."
-                    value={formImage}
-                    onChange={e => setFormImage(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-medium text-slate-700 block mb-1">Product Description</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Describe item condition, measurements, pickup/delivery details..."
-                    value={formDescription}
-                    onChange={e => setFormDescription(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-blue-500"
+                    type="number"
+                    step="0.01"
+                    required
+                    placeholder="e.g. 350.00"
+                    value={formPrice}
+                    onChange={e => setFormPrice(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-extrabold text-base focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
@@ -902,16 +894,16 @@ export function SellerDashboard() {
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 rounded-xl text-slate-600 font-medium hover:bg-slate-100 transition"
+                    className="px-4 py-2.5 rounded-xl text-slate-600 font-medium hover:bg-slate-100 transition"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl text-white font-semibold shadow-sm hover:opacity-95 transition"
+                    className="px-6 py-2.5 rounded-xl text-white font-bold shadow-md hover:opacity-95 transition"
                     style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
                   >
-                    {editingProduct ? "Update Product" : "Publish Product"}
+                    Publish Product
                   </button>
                 </div>
 
