@@ -314,9 +314,7 @@ export function SellerDashboard() {
                 <div className="bg-white p-5 rounded-2xl border border-border shadow-xs">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-slate-500">Total Sales Revenue</span>
-                    <div className="w-8 h-8 rounded-xl bg-white border border-slate-200/80 text-[#993C1D] flex items-center justify-center font-bold shadow-xs">
-                      <DollarSign className="w-4 h-4" />
-                    </div>
+                    <DollarSign className="w-5 h-5 text-[#993C1D]" />
                   </div>
                   <div className="mt-3">
                     <span className="text-2xl font-bold text-slate-900">${totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
@@ -328,9 +326,7 @@ export function SellerDashboard() {
                 <div className="bg-white p-5 rounded-2xl border border-border shadow-xs">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-slate-500">Total Orders Completed</span>
-                    <div className="w-8 h-8 rounded-xl bg-white border border-slate-200/80 text-[#993C1D] flex items-center justify-center font-bold shadow-xs">
-                      <ShoppingCart className="w-4 h-4" />
-                    </div>
+                    <ShoppingCart className="w-5 h-5 text-[#993C1D]" />
                   </div>
                   <div className="mt-3">
                     <span className="text-2xl font-bold text-slate-900">{totalSalesCount}</span>
@@ -342,9 +338,7 @@ export function SellerDashboard() {
                 <div className="bg-white p-5 rounded-2xl border border-border shadow-xs">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-slate-500">Active Listings</span>
-                    <div className="w-8 h-8 rounded-xl bg-white border border-slate-200/80 text-[#993C1D] flex items-center justify-center font-bold shadow-xs">
-                      <Package className="w-4 h-4" />
-                    </div>
+                    <Package className="w-5 h-5 text-[#993C1D]" />
                   </div>
                   <div className="mt-3">
                     <span className="text-2xl font-bold text-slate-900">{products.filter(p => p.status === "active").length}</span>
