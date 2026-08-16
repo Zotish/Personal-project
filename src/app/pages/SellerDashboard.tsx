@@ -133,6 +133,84 @@ export function SellerDashboard() {
   const [shopAddress, setShopAddress] = useState("Road 11, Gulshan-1, Dhaka, Bangladesh");
   const [storeStatus, setStoreStatus] = useState<"open" | "busy" | "closed">("open");
 
+  // Dynamic Conversations State
+  const [conversations, setConversations] = useState([
+    {
+      id: 1,
+      name: "Kamrul Islam",
+      initials: "KI",
+      time: "4:15 PM",
+      unread: true,
+      item: "Solid Oak Dining Table ($350.00)",
+      status: "Online",
+      messages: [
+        { id: 101, text: "Hello! I placed order #ORD-902 for the Solid Oak Dining Table. Is pickup available today before 6 PM?", time: "4:15 PM", sender: "buyer" },
+        { id: 102, text: "Yes, pickup is available today. Feel free to come by!", time: "4:18 PM", sender: "seller" }
+      ]
+    },
+    {
+      id: 2,
+      name: "Sofia Rahman",
+      initials: "SR",
+      time: "1:20 PM",
+      unread: false,
+      item: "Deshi Basmati Rice 5kg ($37.00)",
+      status: "Online",
+      messages: [
+        { id: 201, text: "Hi! Do you have extra bags of Deshi Basmati Rice 5kg pack in stock?", time: "1:15 PM", sender: "buyer" },
+        { id: 202, text: "Thank you for the quick delivery!", time: "1:20 PM", sender: "buyer" }
+      ]
+    },
+    {
+      id: 3,
+      name: "Tariqul Hasan",
+      initials: "TH",
+      time: "Yesterday",
+      unread: false,
+      item: "IKEA Sectional Sofa ($280.00)",
+      status: "Offline",
+      messages: [
+        { id: 301, text: "Can I inspect the sofa condition before making final payment?", time: "Yesterday, 3:45 PM", sender: "buyer" },
+        { id: 302, text: "Sure! You can test it at our store anytime between 10 AM and 8 PM.", time: "Yesterday, 4:00 PM", sender: "seller" }
+      ]
+    }
+  ]);
+
+  const [selectedChatId, setSelectedChatId] = useState<number>(1);
+  const [replyText, setReplyText] = useState("");
+
+  const handleSelectChat = (id: number) => {
+    setSelectedChatId(id);
+    setConversations(prev =>
+      prev.map(c => (c.id === id ? { ...c, unread: false } : c))
+    );
+  };
+
+  const handleSendReply = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!replyText.trim()) return;
+
+    const nowTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    setConversations(prev =>
+      prev.map(c => {
+        if (c.id === selectedChatId) {
+          return {
+            ...c,
+            messages: [
+              ...c.messages,
+              { id: Date.now(), text: replyText.trim(), time: nowTime, sender: "seller" }
+            ]
+          };
+        }
+        return c;
+      })
+    );
+    setReplyText("");
+  };
+
+  const activeChat = conversations.find(c => c.id === selectedChatId) || conversations[0];
+  const unreadCount = conversations.filter(c => c.unread).length;
+
   // File Reader for Image Uploads
   const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -265,15 +343,19 @@ export function SellerDashboard() {
               
               {/* Shop Profile Info */}
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-2xl shadow-md border-2 border-white flex-shrink-0">
+                <div className="w-16 h-16 rounded-2xl text-white flex items-center justify-center font-bold text-2xl shadow-md border-2 border-white flex-shrink-0" style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}>
                   🏪
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{shopName}</h1>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      <ShieldCheck className="w-3.5 h-3.5" /> Verified Seller SaaS
-                    </span>
+                    <div
+                      className="w-5 h-5 rounded-full text-white flex items-center justify-center shadow-xs flex-shrink-0"
+                      style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
+                      title="Verified Seller"
+                    >
+                      <Check className="w-3 h-3 stroke-[3]" />
+                    </div>
                   </div>
                   <p className="text-xs sm:text-sm text-slate-500 mt-1 flex items-center gap-3 flex-wrap">
                     <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-slate-400" /> {shopAddress}</span>
@@ -288,14 +370,14 @@ export function SellerDashboard() {
                   onClick={() => navigate("/seller/28")}
                   className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50 transition flex items-center gap-1.5 shadow-xs"
                 >
-                  <ExternalLink className="w-4 h-4 text-slate-500" /> Public Storefront View
+                  <ExternalLink className="w-4 h-4 text-slate-500" /> Public View
                 </button>
                 <button
                   onClick={handleOpenAddModal}
                   className="px-4 py-2 rounded-xl text-white text-xs sm:text-sm font-semibold shadow-sm hover:opacity-95 transition flex items-center gap-2"
-                  style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
+                  style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
                 >
-                  <Plus className="w-4 h-4" /> Add New Product
+                  <Plus className="w-4 h-4" /> Add Products
                 </button>
             </div>
           </div>
@@ -314,37 +396,33 @@ export function SellerDashboard() {
                 <div className="bg-white p-5 rounded-2xl border border-border shadow-xs">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-slate-500">Total Sales Revenue</span>
-                    <DollarSign className="w-5 h-5 text-[#993C1D]" />
+                    <DollarSign className="w-5 h-5 text-[#D85A30]" />
                   </div>
                   <div className="mt-3">
                     <span className="text-2xl font-bold text-slate-900">${totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
                     <span className="ml-2 text-xs font-semibold text-emerald-600 flex items-inline gap-0.5"><ArrowUpRight className="w-3 h-3 inline" /> +14.2%</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">Updated in real-time from orders</p>
                 </div>
 
                 <div className="bg-white p-5 rounded-2xl border border-border shadow-xs">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-slate-500">Total Orders Completed</span>
-                    <ShoppingCart className="w-5 h-5 text-[#993C1D]" />
+                    <ShoppingCart className="w-5 h-5 text-[#D85A30]" />
                   </div>
                   <div className="mt-3">
                     <span className="text-2xl font-bold text-slate-900">{totalSalesCount}</span>
-                    <span className="ml-2 text-xs font-semibold text-blue-600 flex items-inline gap-0.5"><ArrowUpRight className="w-3 h-3 inline" /> +8.5%</span>
+                    <span className="ml-2 text-xs font-semibold text-[#D85A30] flex items-inline gap-0.5"><ArrowUpRight className="w-3 h-3 inline" /> +8.5%</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">Across all product categories</p>
                 </div>
 
                 <div className="bg-white p-5 rounded-2xl border border-border shadow-xs">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-slate-500">Active Listings</span>
-                    <Package className="w-5 h-5 text-[#993C1D]" />
+                    <Package className="w-5 h-5 text-[#D85A30]" />
                   </div>
                   <div className="mt-3">
                     <span className="text-2xl font-bold text-slate-900">{products.filter(p => p.status === "active").length}</span>
-                    <span className="ml-2 text-xs font-medium text-slate-500">({products.length} total)</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">In stock & visible to buyers</p>
                 </div>
 
                 <div className="bg-white p-5 rounded-2xl border border-border shadow-xs">
@@ -357,7 +435,6 @@ export function SellerDashboard() {
                     <div className="flex text-amber-400">★★★★★</div>
                     <span className="text-xs text-slate-400">(312 reviews)</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">Top-Rated Immigrant Seller</p>
                 </div>
               </div>
 
@@ -366,9 +443,8 @@ export function SellerDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h2 className="text-base font-bold text-slate-900">Top Selling Products</h2>
-                    <p className="text-xs text-slate-500">Your most popular items listed on Marketplace</p>
                   </div>
-                  <button onClick={() => setActiveTab("products")} className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1">
+                  <button onClick={() => setActiveTab("products")} className="text-xs font-semibold text-[#D85A30] hover:underline flex items-center gap-1">
                     Manage All <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -378,7 +454,7 @@ export function SellerDashboard() {
                     <div key={p.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-slate-200 transition bg-slate-50/50">
                       <img src={p.image} alt={p.name} className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">{p.category}</span>
+                        <span className="text-[10px] font-bold text-[#D85A30] uppercase tracking-wider">{p.category}</span>
                         <h4 className="text-xs font-bold text-slate-900 truncate">{p.name}</h4>
                         <div className="flex items-center justify-between mt-1">
                           <span className="text-sm font-bold text-emerald-600">${p.price}</span>
@@ -409,7 +485,7 @@ export function SellerDashboard() {
                       placeholder="Search products..."
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-blue-500"
+                      className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#D85A30]"
                     />
                   </div>
 
@@ -429,9 +505,9 @@ export function SellerDashboard() {
                 <button
                   onClick={handleOpenAddModal}
                   className="px-4 py-2 rounded-xl text-white text-xs sm:text-sm font-semibold shadow-sm hover:opacity-95 transition flex items-center justify-center gap-2"
-                  style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
+                  style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
                 >
-                  <Plus className="w-4 h-4" /> Add New Product
+                  <Plus className="w-4 h-4" /> Add Products
                 </button>
               </div>
 
@@ -464,14 +540,13 @@ export function SellerDashboard() {
             <div className="bg-white rounded-2xl border border-border shadow-xs p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-base font-bold text-slate-900">Customer Orders & Logistics Anti-Fraud Center</h2>
-                  <p className="text-xs text-slate-500">Escrow status, Courier rider dispatch & Dual-OTP verification</p>
+                  <h2 className="text-base font-bold text-slate-900">Customer Orders</h2>
                 </div>
                 <button
                   onClick={() => setIsSecurityModalOpen(true)}
-                  className="px-3.5 py-2 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold flex items-center gap-1.5 hover:bg-blue-100 transition"
+                  className="px-3.5 py-2 rounded-xl bg-[#D85A30]/10 text-[#D85A30] border border-[#D85A30]/30 text-xs font-bold flex items-center gap-1.5 hover:bg-[#D85A30]/20 transition"
                 >
-                  <ShieldCheck className="w-4 h-4 text-blue-600" /> Security & Proxy Call Center
+                  <ShieldCheck className="w-4 h-4 text-[#D85A30]" /> Security & Proxy Call Center
                 </button>
               </div>
 
@@ -483,7 +558,7 @@ export function SellerDashboard() {
                 ].map(order => (
                   <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-slate-200 transition bg-slate-50/50 gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
+                      <div className="w-10 h-10 rounded-xl bg-[#D85A30]/10 text-[#D85A30] flex items-center justify-center font-bold text-sm">
                         {order.buyer[0]}
                       </div>
                       <div>
@@ -507,7 +582,7 @@ export function SellerDashboard() {
                       </span>
                       <button
                         onClick={() => setIsSecurityModalOpen(true)}
-                        className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition flex items-center gap-1"
+                        className="px-3 py-1.5 rounded-lg bg-[#D85A30] text-white text-xs font-bold hover:bg-[#c24f28] transition flex items-center gap-1 shadow-xs"
                       >
                         <ShieldCheck className="w-3.5 h-3.5" /> Logistics Portal
                       </button>
@@ -526,35 +601,42 @@ export function SellerDashboard() {
             <div className="bg-white rounded-2xl border border-border shadow-xs overflow-hidden">
               <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                 <div>
-                  <h2 className="text-base font-bold text-slate-900">Buyer Inquiries & Customer Messages</h2>
-                  <p className="text-xs text-slate-500">Direct inquiries from buyers regarding your products and orders</p>
+                  <h2 className="text-base font-bold text-slate-900">Messages</h2>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-bold text-xs">
-                  2 Active Chats
-                </span>
+                {unreadCount > 0 && (
+                  <span className="px-3 py-1 rounded-full bg-[#D85A30]/10 text-[#D85A30] border border-[#D85A30]/20 font-bold text-xs">
+                    {unreadCount} Unread Chat{unreadCount > 1 ? "s" : ""}
+                  </span>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100 min-h-[450px]">
                 
                 {/* Conversations List */}
                 <div className="p-3 space-y-2 bg-slate-50/50">
-                  <div className="p-3 bg-white rounded-xl border border-blue-200 shadow-2xs">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900 text-xs">Kamrul Islam</span>
-                      <span className="text-[10px] text-slate-400">4:15 PM</span>
+                  {conversations.map((chat) => (
+                    <div
+                      key={chat.id}
+                      onClick={() => handleSelectChat(chat.id)}
+                      className={`p-3 rounded-xl border transition cursor-pointer flex items-center justify-between ${
+                        chat.id === selectedChatId
+                          ? "bg-[#D85A30]/10 border-[#D85A30] shadow-xs"
+                          : chat.unread
+                          ? "bg-[#D85A30]/5 border-[#D85A30]/40"
+                          : "bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {chat.unread && (
+                          <span className="w-2 h-2 rounded-full bg-[#D85A30] flex-shrink-0 animate-pulse" />
+                        )}
+                        <span className={`text-xs ${chat.id === selectedChatId || chat.unread ? "font-bold text-slate-900" : "font-medium text-slate-600"}`}>
+                          {chat.name}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400">{chat.time}</span>
                     </div>
-                    <span className="text-[11px] font-bold text-blue-600 block mt-0.5">Item: Solid Oak Dining Table</span>
-                    <p className="text-xs text-slate-600 mt-1 line-clamp-1">Is pickup available today before 6 PM?</p>
-                  </div>
-
-                  <div className="p-3 bg-white rounded-xl border border-slate-100 hover:border-slate-200 transition cursor-pointer">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900 text-xs">Sofia Rahman</span>
-                      <span className="text-[10px] text-slate-400">1:20 PM</span>
-                    </div>
-                    <span className="text-[11px] font-bold text-emerald-600 block mt-0.5">Item: Deshi Basmati Rice 5kg</span>
-                    <p className="text-xs text-slate-600 mt-1 line-clamp-1">Thank you for the quick delivery!</p>
-                  </div>
+                  ))}
                 </div>
 
                 {/* Active Chat Screen */}
@@ -563,43 +645,56 @@ export function SellerDashboard() {
                   {/* Chat Header */}
                   <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs">
-                        KI
+                      <div className="w-9 h-9 rounded-full bg-[#D85A30] text-white font-bold flex items-center justify-center text-xs">
+                        {activeChat.initials}
                       </div>
                       <div>
-                        <h4 className="font-bold text-slate-900 text-xs">Kamrul Islam</h4>
-                        <span className="text-[11px] text-slate-500">Inquiring about: <strong>Solid Oak Dining Table ($350.00)</strong></span>
+                        <h4 className="font-bold text-slate-900 text-xs">{activeChat.name}</h4>
+                        <span className="text-[11px] text-slate-500">Inquiring about: <strong>{activeChat.item}</strong></span>
                       </div>
                     </div>
-                    <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                      Online
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                      activeChat.status === "Online" ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
+                    }`}>
+                      {activeChat.status}
                     </span>
                   </div>
 
                   {/* Chat Messages */}
                   <div className="flex-1 space-y-3 overflow-y-auto max-h-[300px] pr-2">
-                    <div className="bg-slate-100 text-slate-800 p-3 rounded-2xl max-w-sm text-xs space-y-1">
-                      <p>Hello! I placed order #ORD-902 for the Solid Oak Dining Table. Is pickup available today before 6 PM?</p>
-                      <span className="text-[10px] text-slate-400 block text-right">4:15 PM</span>
-                    </div>
-
-                    <div className="bg-blue-600 text-white p-3 rounded-2xl max-w-sm ml-auto text-xs space-y-1">
-                      <p>Hello Kamrul! Yes, Pathao Express rider #R-902 has already accepted your order and is currently picking up the table.</p>
-                      <span className="text-[10px] text-blue-200 block text-right">4:18 PM</span>
-                    </div>
+                    {activeChat.messages.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`p-3 rounded-2xl max-w-sm text-xs space-y-1 ${
+                          msg.sender === "seller"
+                            ? "bg-[#D85A30] text-white ml-auto"
+                            : "bg-slate-100 text-slate-800"
+                        }`}
+                      >
+                        <p>{msg.text}</p>
+                        <span className={`text-[10px] block text-right ${
+                          msg.sender === "seller" ? "text-orange-100" : "text-slate-400"
+                        }`}>{msg.time}</span>
+                      </div>
+                    ))}
                   </div>
 
                   {/* Input Box */}
-                  <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+                  <form onSubmit={handleSendReply} className="pt-2 border-t border-slate-100 flex items-center gap-2">
                     <input
                       type="text"
-                      placeholder="Reply to Kamrul Islam..."
-                      className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-blue-600"
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      placeholder={`Reply to ${activeChat.name}...`}
+                      className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-[#D85A30]"
                     />
-                    <button className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition">
+                    <button
+                      type="submit"
+                      className="px-4 py-2.5 rounded-xl bg-[#D85A30] hover:bg-[#c24f28] text-white text-xs font-bold transition active:scale-95"
+                    >
                       Send Reply
                     </button>
-                  </div>
+                  </form>
 
                 </div>
 
@@ -610,7 +705,6 @@ export function SellerDashboard() {
           {/* TAB 5: SETTINGS */}
           {activeTab === "settings" && (
             <div className="bg-white rounded-2xl border border-border shadow-xs p-6 max-w-3xl">
-              <h2 className="text-base font-bold text-slate-900 mb-4">Shop Settings & Storefront Configuration</h2>
               
               <div className="space-y-4 text-xs sm:text-sm">
                 <div>
@@ -619,7 +713,7 @@ export function SellerDashboard() {
                     type="text"
                     value={shopName}
                     onChange={e => setShopName(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-[#D85A30]"
                   />
                 </div>
 
@@ -629,7 +723,7 @@ export function SellerDashboard() {
                     rows={3}
                     value={shopDescription}
                     onChange={e => setShopDescription(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-[#D85A30]"
                   />
                 </div>
 
@@ -640,7 +734,7 @@ export function SellerDashboard() {
                       type="text"
                       value={shopPhone}
                       onChange={e => setShopPhone(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-blue-500"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-[#D85A30]"
                     />
                   </div>
 
@@ -650,14 +744,14 @@ export function SellerDashboard() {
                       type="text"
                       value={shopAddress}
                       onChange={e => setShopAddress(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-blue-500"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-[#D85A30]"
                     />
                   </div>
                 </div>
 
                 <button
                   onClick={() => alert("Shop settings updated successfully!")}
-                  className="px-5 py-2.5 rounded-xl text-white font-semibold text-xs sm:text-sm bg-blue-600 hover:bg-blue-700 transition"
+                  className="px-5 py-2.5 rounded-xl text-white font-semibold text-xs sm:text-sm bg-[#D85A30] hover:bg-[#c24f28] transition"
                 >
                   Save Settings
                 </button>
@@ -690,8 +784,8 @@ export function SellerDashboard() {
                 <div className="space-y-2">
                   <label className="font-bold text-slate-900 block">Product Photo (From Device or Camera) *</label>
                   
-                  <label className="w-full h-32 rounded-2xl border-2 border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 hover:bg-blue-50/50 flex flex-col items-center justify-center cursor-pointer transition p-4 text-center">
-                    <Upload className="w-7 h-7 text-blue-600 mb-1" />
+                  <label className="w-full h-32 rounded-2xl border-2 border-dashed border-slate-300 hover:border-[#D85A30] bg-slate-50 hover:bg-[#D85A30]/5 flex flex-col items-center justify-center cursor-pointer transition p-4 text-center">
+                    <Upload className="w-7 h-7 text-[#D85A30] mb-1" />
                     <span className="font-bold text-slate-800 text-xs">Click to Upload Photo / Take Camera Picture</span>
                     <span className="text-[11px] text-slate-400">Supports JPG, PNG, WEBP</span>
                     <input
@@ -724,7 +818,7 @@ export function SellerDashboard() {
                     placeholder="e.g. Solid Oak Dining Table with 6 Chairs"
                     value={formName}
                     onChange={e => setFormName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium focus:outline-none focus:border-blue-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium focus:outline-none focus:border-[#D85A30]"
                   />
                 </div>
 
@@ -738,7 +832,7 @@ export function SellerDashboard() {
                     placeholder="e.g. 350.00"
                     value={formPrice}
                     onChange={e => setFormPrice(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-extrabold text-base focus:outline-none focus:border-blue-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-extrabold text-base focus:outline-none focus:border-[#D85A30]"
                   />
                 </div>
 
@@ -753,7 +847,7 @@ export function SellerDashboard() {
                   <button
                     type="submit"
                     className="px-6 py-2.5 rounded-xl text-white font-bold shadow-md hover:opacity-95 transition"
-                    style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
+                    style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
                   >
                     Publish Product
                   </button>

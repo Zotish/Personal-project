@@ -84,7 +84,7 @@ export function MobileNav() {
                     active ? "bg-secondary/80 text-foreground" : "hover:bg-secondary text-foreground"
                   }`}>
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 bg-secondary">
-                    <Icon className="w-4 h-4 text-emerald-600" />
+                    <Icon className="w-4 h-4 text-[#993C1D]" />
                   </div>
                   <span className={`text-sm font-medium flex-1 ${active ? "font-semibold" : ""}`}>
                     {t(tKey)}
@@ -118,7 +118,7 @@ export function MobileNav() {
                   active ? "text-foreground" : "text-muted-foreground"
                 }`}>
                 <div className={`p-1.5 rounded-xl transition-all ${active ? "bg-secondary" : ""}`}>
-                  <Icon className="w-5 h-5 text-emerald-600" strokeWidth={active ? 2.5 : 1.8} />
+                  <Icon className={`w-5 h-5 transition-colors ${active ? "text-[#D85A30]" : "text-[#993C1D]"}`} strokeWidth={active ? 2.5 : 1.8} />
                 </div>
                 <span className="text-[10px] font-medium leading-none">{t(tKey)}</span>
               </button>
@@ -131,7 +131,7 @@ export function MobileNav() {
               location.pathname === "/more" || isMoreActive ? "text-foreground" : "text-muted-foreground"
             }`}>
             <div className={`p-1.5 rounded-xl transition-all ${location.pathname === "/more" || isMoreActive ? "bg-secondary" : ""}`}>
-              <MoreHorizontal className="w-5 h-5 text-emerald-600" strokeWidth={location.pathname === "/more" || isMoreActive ? 2.5 : 1.8} />
+              <MoreHorizontal className={`w-5 h-5 transition-colors ${location.pathname === "/more" || isMoreActive ? "text-[#D85A30]" : "text-[#993C1D]"}`} strokeWidth={location.pathname === "/more" || isMoreActive ? 2.5 : 1.8} />
             </div>
             <span className="text-[10px] font-medium leading-none">{t("more")}</span>
             {(location.pathname === "/more" || isMoreActive) && (

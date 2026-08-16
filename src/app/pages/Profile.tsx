@@ -424,9 +424,9 @@ export function Profile() {
           {activeTab === "posts" && userPosts.map(post => (
             <div key={post.id} className="bg-white rounded-2xl border border-border p-4">
               <p className="text-sm text-foreground leading-relaxed">{post.content}</p>
-              <div className="flex gap-1.5 mt-2 flex-wrap">
+              <div className="flex gap-2 mt-2 flex-wrap">
                 {post.tags.map(t => (
-                  <span key={t} className="text-xs text-primary bg-blue-50 px-2 py-0.5 rounded-full cursor-pointer">#{t}</span>
+                  <span key={t} className="text-xs font-semibold text-foreground cursor-pointer hover:text-[#D85A30]">#{t}</span>
                 ))}
               </div>
               <div className="flex items-center justify-between mt-3 pt-2 border-t border-border">

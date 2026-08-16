@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Globe, Eye, EyeOff, Mail, Lock, User, ChevronLeft, CheckCircle, Smartphone, ChevronDown, Store, ShieldCheck, Briefcase } from "lucide-react";
+import { Logo } from "../components/ui/Logo";
 
 // Brand icons
 const GoogleIcon = () => (
@@ -120,11 +121,12 @@ export function Login() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-4">
-          <h1 className="text-2xl font-bold text-foreground">
-            {role === "seller" ? "Seller Login" : "Login"}
-          </h1>
+        {/* Header Logo */}
+        <div className="text-center mb-6 flex flex-col items-center">
+          <Logo size="lg" onClick={() => navigate("/")} className="mb-2" />
+          <p className="text-xs text-slate-500 font-medium">
+            {role === "seller" ? "Sign in to your Merchant SaaS Portal" : "Sign in to your PathaSathi Account"}
+          </p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-border p-5 sm:p-6">

@@ -646,14 +646,14 @@ function PostCard({ post }: { post: Post; key?: string | number }) {
   const [votedOption, setVotedOption] = useState<number | null>(null);
 
   const typeColors: Record<string, string> = {
-    emergency: "bg-red-50 border-red-200",
-    question: "bg-blue-50 border-blue-200",
-    tip: "bg-emerald-50 border-emerald-200",
-    need_help: "bg-amber-50 border-amber-200",
-    announcement: "bg-indigo-50 border-indigo-200",
-    achievement: "bg-yellow-50 border-yellow-200",
-    poll: "bg-violet-50 border-violet-200",
-    regular: "bg-white border-border",
+    emergency: "bg-white border-border shadow-2xs",
+    question: "bg-white border-border shadow-2xs",
+    tip: "bg-white border-border shadow-2xs",
+    need_help: "bg-white border-border shadow-2xs",
+    announcement: "bg-white border-border shadow-2xs",
+    achievement: "bg-white border-border shadow-2xs",
+    poll: "bg-white border-border shadow-2xs",
+    regular: "bg-white border-border shadow-2xs",
   };
 
   const typeLabel: Record<string, ReactNode> = {
@@ -687,8 +687,6 @@ function PostCard({ post }: { post: Post; key?: string | number }) {
         </div>
       )}
 
-      {typeLabel[post.type]}
-
       <div className="flex gap-2.5 sm:gap-3">
         <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br ${post.author.color} flex items-center justify-center text-white text-xs sm:text-sm font-bold flex-shrink-0`}>
           {post.author.avatar}
@@ -698,13 +696,15 @@ function PostCard({ post }: { post: Post; key?: string | number }) {
             <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
               <span className="text-sm font-semibold text-foreground">{post.author.name}</span>
               {post.author.verified && (
-                <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                <div
+                  className="w-4 h-4 rounded-full text-white flex items-center justify-center flex-shrink-0"
+                  style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
+                  title="Verified Account"
+                >
                   <CheckCircle className="w-2.5 h-2.5 text-white" />
                 </div>
               )}
-              <span className="text-xs text-muted-foreground hidden sm:inline">{post.author.handle}</span>
-              <span className="text-xs text-muted-foreground hidden sm:inline">·</span>
-              <span className="text-xs text-muted-foreground">{post.time}</span>
+              <span className="text-xs text-muted-foreground">· {post.time}</span>
             </div>
             <button className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-white/60 transition-colors">
               <MoreHorizontal className="w-4 h-4" />
@@ -756,9 +756,9 @@ function PostCard({ post }: { post: Post; key?: string | number }) {
           )}
 
           {post.tags && (
-            <div className="flex gap-1.5 mt-2 flex-wrap">
+            <div className="flex gap-2 mt-2 flex-wrap">
               {post.tags.map(t => (
-                <span key={t} className="text-xs text-foreground font-medium bg-secondary px-2 py-0.5 rounded-full cursor-pointer hover:bg-secondary/80">#{t}</span>
+                <span key={t} className="text-xs font-semibold text-foreground cursor-pointer hover:text-[#D85A30]">#{t}</span>
               ))}
             </div>
           )}
@@ -804,18 +804,23 @@ function PostComposer() {
   return (
     <div className="bg-white rounded-2xl border border-border p-3 sm:p-4 mb-3 sm:mb-4">
       <div className="flex gap-2.5 sm:gap-3">
-        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">RA</div>
+        <div
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full text-white text-xs sm:text-sm font-bold flex items-center justify-center flex-shrink-0"
+          style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
+        >
+          RA
+        </div>
         <div className="flex-1">
           <div className="flex gap-1.5 sm:gap-2 mb-3 flex-wrap">
             {postTypes.map(({ id, tKey, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setPostType(id)}
-                className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
-                  postType === id ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                className={`flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                  postType === id ? "bg-[#D85A30] text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
-                <Icon className="w-3 h-3 text-emerald-600" />
+                <Icon className={`w-3 h-3 ${postType === id ? "text-white" : "text-[#993C1D]"}`} />
                 <span className="hidden xs:inline sm:inline">{t(tKey)}</span>
               </button>
             ))}
@@ -834,13 +839,13 @@ function PostComposer() {
           />
           <div className="flex items-center justify-between pt-2 border-t border-border mt-2">
             <div className="flex gap-1">
-              <button className="p-1.5 rounded-lg hover:bg-secondary transition-colors"><Image className="w-4 h-4 text-emerald-600" /></button>
-              <button className="p-1.5 rounded-lg hover:bg-secondary transition-colors"><MapPin className="w-4 h-4 text-emerald-600" /></button>
-              <button className="p-1.5 rounded-lg hover:bg-secondary transition-colors"><BarChart2 className="w-4 h-4 text-emerald-600" /></button>
+              <button className="p-1.5 rounded-lg hover:bg-secondary transition-colors"><Image className="w-4 h-4 text-[#993C1D]" /></button>
+              <button className="p-1.5 rounded-lg hover:bg-secondary transition-colors"><MapPin className="w-4 h-4 text-[#993C1D]" /></button>
+              <button className="p-1.5 rounded-lg hover:bg-secondary transition-colors"><BarChart2 className="w-4 h-4 text-[#993C1D]" /></button>
             </div>
             <button
               className="px-4 py-1.5 rounded-full text-white text-sm font-semibold hover:opacity-90 transition disabled:opacity-40"
-              style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
+              style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
               disabled={text.length === 0}
             >
               {t("post_btn")}

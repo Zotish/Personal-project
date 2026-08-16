@@ -4,6 +4,7 @@ import {
   ChevronRight, CheckCircle, ArrowRight, Languages,
   Briefcase, Heart, BookOpen, AlertTriangle
 } from "lucide-react";
+import { Logo } from "../components/ui/Logo";
 
 const languages = ["English", "Español", "বাংলা", "हिंदी", "العربية"];
 
@@ -55,12 +56,7 @@ export function Landing() {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}>
-              <Globe className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold text-foreground" style={{ fontFamily: "var(--font-display)" }}>ImmigrantConnect <span className="text-primary">USA</span></span>
-          </div>
+          <Logo size="md" onClick={() => navigate("/")} />
           <div className="flex items-center gap-2">
             {/* Language selector */}
             <div className="hidden md:flex items-center gap-1 text-muted-foreground text-sm">
