@@ -26,20 +26,20 @@ export function AppLayout({
   const isSeller = variant === "seller";
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50/50">
       {isSeller ? (
         <SellerSidebar activeTab={activeTab} onTabChange={onTabChange} />
       ) : (
         <Sidebar />
       )}
 
-      <div className="lg:ml-64">
-        <div className="max-w-6xl mx-auto flex gap-0">
-          <main className={`flex-1 min-w-0 ${noPad ? "" : ""} ${hideNav ? "pb-0" : "pb-20 lg:pb-0"}`}>
+      <div className="lg:ml-64 min-h-screen">
+        <div className={`w-full max-w-[1536px] mx-auto flex gap-0 ${noPad ? "" : "px-3 sm:px-5 lg:px-6 pt-0 pb-6 sm:pb-8 lg:pb-8"}`}>
+          <main className={`flex-1 min-w-0 ${hideNav ? "pb-0" : "pb-20 lg:pb-0"}`}>
             {children}
           </main>
           {rightPanel && (
-            <aside className="hidden xl:block w-80 flex-shrink-0 p-4 space-y-4 sticky top-0 h-screen overflow-y-auto">
+            <aside className="hidden xl:block w-80 flex-shrink-0 pl-5 space-y-4 sticky top-0 h-screen overflow-y-auto pt-4">
               {rightPanel}
             </aside>
           )}

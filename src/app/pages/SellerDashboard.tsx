@@ -334,58 +334,56 @@ export function SellerDashboard() {
 
   return (
     <AppLayout variant="seller" activeTab={activeTab} onTabChange={setActiveTab}>
-      <div className="min-h-screen bg-slate-50/50 pb-16">
+      <div className="space-y-6">
         
-        {/* Top SaaS Header Banner */}
-        <div className="bg-white border-b border-border shadow-xs">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              
-              {/* Shop Profile Info */}
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl text-white flex items-center justify-center font-bold text-2xl shadow-md border-2 border-white flex-shrink-0" style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}>
-                  🏪
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{shopName}</h1>
-                    <div
-                      className="w-5 h-5 rounded-full text-white flex items-center justify-center shadow-xs flex-shrink-0"
-                      style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
-                      title="Verified Seller"
-                    >
-                      <Check className="w-3 h-3 stroke-[3]" />
-                    </div>
-                  </div>
-                  <p className="text-xs sm:text-sm text-slate-500 mt-1 flex items-center gap-3 flex-wrap">
-                    <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-slate-400" /> {shopAddress}</span>
-                    <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-slate-400" /> {shopPhone}</span>
-                  </p>
-                </div>
+        {/* Top SaaS Header Banner Card - Flush attached to top edge */}
+        <div className="bg-white rounded-b-2xl border-b border-x border-border shadow-xs p-5 sm:p-6 mb-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            
+            {/* Shop Profile Info */}
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-2xl text-white flex items-center justify-center font-bold text-2xl shadow-md border-2 border-white flex-shrink-0" style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}>
+                🏪
               </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{shopName}</h1>
+                  <div
+                    className="w-5 h-5 rounded-full text-white flex items-center justify-center shadow-xs flex-shrink-0"
+                    style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
+                    title="Verified Seller"
+                  >
+                    <Check className="w-3 h-3 stroke-[3]" />
+                  </div>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1 flex items-center gap-3 flex-wrap">
+                  <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-slate-400" /> {shopAddress}</span>
+                  <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-slate-400" /> {shopPhone}</span>
+                </p>
+              </div>
+            </div>
 
-              {/* Action buttons */}
-              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                <button
-                  onClick={() => navigate("/seller/28")}
-                  className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50 transition flex items-center gap-1.5 shadow-xs"
-                >
-                  <ExternalLink className="w-4 h-4 text-slate-500" /> Public View
-                </button>
-                <button
-                  onClick={handleOpenAddModal}
-                  className="px-4 py-2 rounded-xl text-white text-xs sm:text-sm font-semibold shadow-sm hover:opacity-95 transition flex items-center gap-2"
-                  style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
-                >
-                  <Plus className="w-4 h-4" /> Add Products
-                </button>
+            {/* Action buttons */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              <button
+                onClick={() => navigate("/seller/28")}
+                className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50 transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+              >
+                <ExternalLink className="w-4 h-4 text-slate-500" /> Public View
+              </button>
+              <button
+                onClick={handleOpenAddModal}
+                className="px-4 py-2 rounded-xl text-white text-xs sm:text-sm font-semibold shadow-sm hover:opacity-95 transition flex items-center gap-2 cursor-pointer"
+                style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
+              >
+                <Plus className="w-4 h-4" /> Add Products
+              </button>
             </div>
           </div>
         </div>
-      </div>
 
         {/* Dashboard Main Body */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <div>
           
           {/* TAB 1: OVERVIEW */}
           {activeTab === "overview" && (

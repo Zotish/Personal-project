@@ -624,56 +624,154 @@ function loadBkoiGL(): Promise<any> {
     }
   }, [visiblePlaces, routes.length]);
 
-  // Draw/clear route polylines + user location
+  // ── Sync User Location Marker (Works on both bkoi-gl & Leaflet) ─────────────
   useEffect(() => {
-    if (!mapRef.current || !LRef.current) return;
-    const L = LRef.current; const map = mapRef.current;
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+    const bkoigl = (window as any).bkoigl;
+    const L = LRef.current;
 
-    routeLinesRef.current.forEach(l => l.remove());
+    // Remove existing user marker if present
+    if (userMarkerRef.current) {
+      if (userMarkerRef.current.remove) userMarkerRef.current.remove();
+      userMarkerRef.current = null;
+    }
+
+    if (!userLocation) return;
+    const [lat, lng] = userLocation;
+
+    // Create pulsing user pin element
+    const el = document.createElement("div");
+    el.className = "user-location-pulse-pin";
+    el.style.cssText = "position:relative;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;";
+    el.innerHTML = `
+      <div style="position:absolute;inset:-8px;border-radius:50%;background:rgba(216,90,48,0.35);animation:ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+      <div style="width:16px;height:16px;border-radius:50%;background:#D85A30;border:3px solid white;box-shadow:0 4px 12px rgba(216,90,48,0.5);position:relative;z-index:2;"></div>
+    `;
+
+    if (L && map.addLayer) {
+      const icon = L.divIcon({
+        className: "custom-user-location-pin",
+        html: el.outerHTML,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      });
+      userMarkerRef.current = L.marker([lat, lng], { icon, zIndexOffset: 1000 }).addTo(map);
+    } else if (bkoigl || map.addSource) {
+      const MarkerClass = bkoigl?.Marker || (window as any).maplibregl?.Marker;
+      if (MarkerClass) {
+        userMarkerRef.current = new MarkerClass({ element: el })
+          .setLngLat([lng, lat])
+          .addTo(map);
+      }
+    }
+  }, [userLocation]);
+
+  // ── Draw/Clear Route Polylines (Supports both bkoi-gl & Leaflet) ───────────
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+    const L = LRef.current;
+
+    // Clear previous Leaflet polyline layers
+    routeLinesRef.current.forEach(l => { if (l.remove) l.remove(); });
     routeLinesRef.current = [];
-    if (userMarkerRef.current) { userMarkerRef.current.remove(); userMarkerRef.current = null; }
+
+    // Clear previous bkoi-gl layers & sources
+    try {
+      if (map.getLayer && map.getLayer("route-line-layer")) map.removeLayer("route-line-layer");
+      if (map.getLayer && map.getLayer("route-line-casing")) map.removeLayer("route-line-casing");
+      if (map.getSource && map.getSource("route-source")) map.removeSource("route-source");
+    } catch (e) {
+      console.warn("bkoi-gl cleanup route error:", e);
+    }
 
     if (routes.length === 0) return;
 
-    if (userLocation) {
-      const icon = L.divIcon({
-        className: "",
-        html: `<div style="width:16px;height:16px;border-radius:50%;background:#2563eb;
-          border:3px solid white;box-shadow:0 0 0 4px rgba(37,99,235,0.25);"></div>`,
-        iconSize: [16, 16], iconAnchor: [8, 8],
-      });
-      userMarkerRef.current = L.marker(userLocation, { icon, zIndexOffset: 1000 }).addTo(map);
-    }
+    if (L && map.addLayer) {
+      // Leaflet Polyline rendering
+      const sorted = [...routes].sort((a, b) =>
+        (a.id === selectedRouteId ? 1 : 0) - (b.id === selectedRouteId ? 1 : 0)
+      );
 
-    const sorted = [...routes].sort((a, b) =>
-      (a.id === selectedRouteId ? 1 : 0) - (b.id === selectedRouteId ? 1 : 0)
-    );
-
-    sorted.forEach(route => {
-      const isSelected = route.id === selectedRouteId;
-      if (isSelected) {
-        route.trafficSegments.forEach(seg => {
-          const color = trafficColor(seg.level);
-          const line = L.polyline(seg.coords, { color, weight: 7, opacity: 0.92, lineCap: "round", lineJoin: "round" }).addTo(map);
+      sorted.forEach(route => {
+        const isSelected = route.id === selectedRouteId;
+        if (isSelected) {
+          route.trafficSegments.forEach(seg => {
+            const color = trafficColor(seg.level);
+            const line = L.polyline(seg.coords, { color, weight: 7, opacity: 0.92, lineCap: "round", lineJoin: "round" }).addTo(map);
+            routeLinesRef.current.push(line);
+          });
+          const outline = L.polyline(route.coords, { color: "white", weight: 10, opacity: 0.4, lineCap: "round" }).addTo(map);
+          outline.bringToBack();
+          routeLinesRef.current.push(outline);
+        } else {
+          const line = L.polyline(route.coords, {
+            color: trafficColor(route.traffic), weight: 4, opacity: 0.4,
+            dashArray: "8 6", lineCap: "round",
+          }).addTo(map);
+          line.on("click", () => onRouteClick(route.id));
           routeLinesRef.current.push(line);
-        });
-        const outline = L.polyline(route.coords, { color: "white", weight: 10, opacity: 0.4, lineCap: "round" }).addTo(map);
-        outline.bringToBack();
-        routeLinesRef.current.push(outline);
-      } else {
-        const line = L.polyline(route.coords, {
-          color: trafficColor(route.traffic), weight: 4, opacity: 0.4,
-          dashArray: "8 6", lineCap: "round",
-        }).addTo(map);
-        line.on("click", () => onRouteClick(route.id));
-        routeLinesRef.current.push(line);
-      }
-    });
+        }
+      });
 
-    const allCoords = routes.flatMap(r => r.coords);
-    if (userLocation) allCoords.push(userLocation);
-    const bounds = L.latLngBounds(allCoords);
-    map.fitBounds(bounds, { padding: [80, 80] });
+      const allCoords = routes.flatMap(r => r.coords);
+      if (userLocation) allCoords.push(userLocation);
+      const bounds = L.latLngBounds(allCoords);
+      map.fitBounds(bounds, { padding: [80, 80] });
+    } else if (map.addSource && map.addLayer) {
+      // bkoi-gl / Mapbox GL GeoJSON route line rendering
+      const selected = routes.find(r => r.id === selectedRouteId) || routes[0];
+      if (selected && selected.coords?.length) {
+        const geojson = {
+          type: "Feature",
+          properties: {},
+          geometry: {
+            type: "LineString",
+            coordinates: selected.coords.map(([lat, lng]) => [lng, lat]),
+          },
+        };
+
+        map.addSource("route-source", {
+          type: "geojson",
+          data: geojson,
+        });
+
+        map.addLayer({
+          id: "route-line-casing",
+          type: "line",
+          source: "route-source",
+          layout: { "line-join": "round", "line-cap": "round" },
+          paint: {
+            "line-color": "#ffffff",
+            "line-width": 8,
+            "line-opacity": 0.6,
+          },
+        });
+
+        map.addLayer({
+          id: "route-line-layer",
+          type: "line",
+          source: "route-source",
+          layout: { "line-join": "round", "line-cap": "round" },
+          paint: {
+            "line-color": trafficColor(selected.traffic),
+            "line-width": 6,
+            "line-opacity": 0.9,
+          },
+        });
+
+        // Fit map bounds to user + route
+        const bkoigl = (window as any).bkoigl;
+        const LngLatBounds = bkoigl?.LngLatBounds || (window as any).maplibregl?.LngLatBounds;
+        if (LngLatBounds) {
+          const bounds = new LngLatBounds();
+          selected.coords.forEach(([lat, lng]) => bounds.extend([lng, lat]));
+          if (userLocation) bounds.extend([userLocation[1], userLocation[0]]);
+          map.fitBounds(bounds, { padding: 80 });
+        }
+      }
+    }
   }, [routes, selectedRouteId, userLocation, onRouteClick]);
 
   return <div ref={containerRef} className="absolute inset-0 w-full h-full" />;
@@ -1269,6 +1367,27 @@ export function MapDiscoveryContent({ embedded = false }: { embedded?: boolean }
                 />
               );
             })()}
+
+            {/* Floating My Location Button */}
+            <button
+              onClick={() => {
+                if ("geolocation" in navigator) {
+                  navigator.geolocation.getCurrentPosition(
+                    pos => {
+                      const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+                      setUserLocation(loc);
+                    },
+                    err => {
+                      console.warn("Geolocation error:", err);
+                    }
+                  );
+                }
+              }}
+              className="absolute bottom-6 right-6 z-[999] bg-white text-foreground p-3.5 rounded-full shadow-lg border border-border hover:bg-slate-50 transition-all flex items-center justify-center group cursor-pointer active:scale-95"
+              title="Go to My Current Location"
+            >
+              <Navigation className="w-5 h-5 text-[#D85A30] group-hover:scale-110 transition-transform" />
+            </button>
 
             {/* Directions Sheet Modal */}
             {directionsFor && (
