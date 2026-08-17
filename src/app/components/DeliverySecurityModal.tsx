@@ -204,7 +204,7 @@ export function DeliverySecurityModal({
                 <div className="flex items-center gap-2 text-[11px] text-slate-600 bg-blue-50/80 p-2.5 rounded-xl border border-blue-100">
                   <ShieldAlert className="w-4 h-4 text-blue-600 flex-shrink-0" />
                   <span>
-                    <strong>Privacy Guarantee:</strong> Calls route through ImmigrantConnect Proxy. Rider sees proxy number <code className="bg-white px-1 py-0.5 rounded font-mono font-bold">+1 (800) 555-0199</code>. Your personal mobile number is 100% hidden.
+                    <strong>Privacy Guarantee:</strong> Calls route through PathaSathi Proxy. Rider sees proxy number <code className="bg-white px-1 py-0.5 rounded font-mono font-bold">+1 (800) 555-0199</code>. Your personal mobile number is 100% hidden.
                   </span>
                 </div>
               </div>
@@ -355,7 +355,7 @@ export function DeliverySecurityModal({
                   {currentRole === "buyer" ? "Calling Delivery Rider #R-902" : "Calling Pickup Rider #R-902"}
                 </h4>
                 <p className="text-xs text-slate-400 font-mono">
-                  {callState === "calling" ? "Connecting through ImmigrantConnect Proxy..." : `Connected • ${formatTime(callDuration)}`}
+                  {callState === "calling" ? "Connecting through PathaSathi Proxy..." : `Connected • ${formatTime(callDuration)}`}
                 </p>
               </div>
 
@@ -400,7 +400,7 @@ export function DeliverySecurityModal({
                 </h5>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
-                As per ImmigrantConnect Privacy & Anti-Stalking Policy, all call records, virtual proxy numbers, and contact links between you and Rider #R-902 have been <strong>permanently deleted and expired</strong>.
+                As per PathaSathi Privacy & Anti-Stalking Policy, all call records, virtual proxy numbers, and contact links between you and Rider #R-902 have been <strong>permanently deleted and expired</strong>.
               </p>
             </div>
           )}

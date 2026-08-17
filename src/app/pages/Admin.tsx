@@ -58,7 +58,7 @@ export function Admin() {
               </div>
               <div>
                 <h1 className="text-lg font-bold text-foreground" style={{ fontFamily: "var(--font-display)" }}>Admin Dashboard</h1>
-                <p className="text-xs text-muted-foreground">ImmigrantConnect USA Moderation Panel</p>
+                <p className="text-xs text-muted-foreground">PathaSathi Moderation Panel</p>
               </div>
             </div>
             <div className="flex items-center gap-2">

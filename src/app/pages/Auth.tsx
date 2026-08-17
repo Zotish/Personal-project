@@ -282,7 +282,7 @@ export function Login() {
         </div>
 
         <p className="text-center text-sm text-muted-foreground mt-6">
-          New to ImmigrantConnect?{" "}
+          New to PathaSathi?{" "}
           <button onClick={() => navigate("/signup")} className="text-primary font-semibold hover:underline">
             Create account
           </button>

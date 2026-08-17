@@ -9,7 +9,7 @@ import { Logo } from "../components/ui/Logo";
 const languages = ["English", "Español", "বাংলা", "हिंदी", "العربية"];
 
 const features = [
-  { icon: Users, title: "Connect with Your Community", desc: "Find people from your home country, join communities, share experiences and get real advice from those who've been there.", color: "#2563eb" },
+  { icon: Users, title: "Connect with Your Community", desc: "Find people from your home country, join communities, share experiences and get real advice from those who've been there.", color: "#D85A30" },
   { icon: Map, title: "Discover Nearby Services", desc: "Find mosques, temples, schools, hospitals, grocery stores, legal aid, and more — all filtered for immigrants.", color: "#10b981" },
   { icon: Briefcase, title: "Jobs & Housing", desc: "Immigrant-friendly job listings and housing resources with guidance through the application process.", color: "#f97316" },
   { icon: Shield, title: "Legal Help & Immigration", desc: "Step-by-step checklists, verified legal advisors, document guides, and community Q&A for your visa journey.", color: "#8b5cf6" },
@@ -30,7 +30,7 @@ const testimonials = [
     origin: "🇸🇾 Syria → Texas",
     avatar: "FA",
     color: "from-emerald-400 to-teal-500",
-    text: "ImmigrantConnect helped me find a halal grocery store and a lawyer for my asylum case in the same week. The community Q&A gave me answers I couldn't find anywhere else.",
+    text: "PathaSathi helped me find a halal grocery store and a lawyer for my asylum case in the same week. The community Q&A gave me answers I couldn't find anywhere else.",
   },
   {
     name: "Priya Sharma",
@@ -43,7 +43,7 @@ const testimonials = [
     name: "Carlos Mendoza",
     origin: "🇲🇽 Mexico → New York",
     avatar: "CM",
-    color: "from-blue-400 to-indigo-500",
+    color: "from-[#e6653c] to-[#D85A30]",
     text: "The map feature showed me all the Spanish-speaking clinics near my apartment. Huge relief when my daughter got sick and I didn't know where to go.",
   },
 ];
@@ -67,14 +67,14 @@ export function Landing() {
             </div>
             <button
               onClick={() => navigate("/login")}
-              className="text-sm font-medium text-foreground hover:text-primary px-3 py-1.5 rounded-lg transition-colors"
+              className="text-sm font-medium text-foreground hover:text-[#D85A30] px-3 py-1.5 rounded-lg transition-colors"
             >
               Log In
             </button>
             <button
               onClick={() => navigate("/signup")}
-              className="text-sm font-medium px-4 py-1.5 rounded-xl text-white transition-all hover:opacity-90 shadow-sm"
-              style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
+              className="text-sm font-bold px-4 py-1.5 rounded-xl text-white transition-all hover:opacity-90 shadow-sm"
+              style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
             >
               Join Free
             </button>
@@ -83,17 +83,17 @@ export function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #eff6ff 0%, #f0f4ff 50%, #fdf4ff 100%)" }}>
+      <section className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #fff7f5 0%, #fff4f0 50%, #fff8f6 100%)" }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 bg-blue-100 text-primary rounded-full px-4 py-1.5 text-sm font-medium mb-6">
-                <CheckCircle className="w-4 h-4" />
+              <div className="inline-flex items-center gap-2 bg-[#D85A30]/10 text-[#D85A30] border border-[#D85A30]/20 rounded-full px-4 py-1.5 text-sm font-semibold mb-6">
+                <CheckCircle className="w-4 h-4 text-[#D85A30]" />
                 Your trusted community for life in the USA
               </div>
               <h1 className="text-4xl sm:text-5xl font-extrabold text-foreground leading-tight mb-4" style={{ fontFamily: "var(--font-display)" }}>
                 New to the USA?<br />
-                <span style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                <span style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                   You're Not Alone.
                 </span>
               </h1>
@@ -104,14 +104,14 @@ export function Landing() {
                 <button
                   onClick={() => navigate("/signup")}
                   className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-semibold text-base shadow-lg hover:shadow-xl transition-all hover:scale-105"
-                  style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
+                  style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
                 >
                   Get Started — It's Free
                   <ArrowRight className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => navigate("/feed")}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm bg-white text-foreground border border-border hover:bg-secondary transition-all"
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm bg-white text-foreground border border-border hover:bg-slate-50 transition-all"
                 >
                   Browse Community
                 </button>
@@ -124,9 +124,9 @@ export function Landing() {
             <div className="relative hidden lg:block">
               <div className="relative w-full aspect-square max-w-md mx-auto">
                 {/* Background circle */}
-                <div className="absolute inset-4 rounded-full opacity-10" style={{ background: "linear-gradient(135deg, #2563eb, #7c3aed)" }} />
+                <div className="absolute inset-4 rounded-full opacity-15" style={{ background: "linear-gradient(135deg, #e6653c, #D85A30)" }} />
                 {/* Floating cards */}
-                <div className="absolute top-8 right-0 bg-white rounded-2xl shadow-lg p-4 w-52 border border-border animate-pulse">
+                <div className="absolute top-8 right-0 bg-white rounded-2xl shadow-lg p-4 w-52 border border-border">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold">FA</div>
                     <div>
@@ -138,19 +138,19 @@ export function Landing() {
                 </div>
                 <div className="absolute bottom-12 left-0 bg-white rounded-2xl shadow-lg p-4 w-48 border border-border">
                   <div className="flex items-center gap-2 mb-2">
-                    <Map className="w-4 h-4 text-primary" />
+                    <Map className="w-4 h-4 text-[#D85A30]" />
                     <span className="text-sm font-semibold">Near You</span>
                   </div>
                   <div className="space-y-1.5">
                     {["Islamic Center · 0.3mi", "Bangladeshi Restaurant · 0.5mi", "Legal Aid · 1.2mi"].map(p => (
                       <div key={p} className="text-xs text-muted-foreground flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#D85A30]" />
                         {p}
                       </div>
                     ))}
                   </div>
                 </div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-2xl flex items-center justify-center shadow-xl" style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-2xl flex items-center justify-center shadow-xl" style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}>
                   <Globe className="w-12 h-12 text-white" />
                 </div>
               </div>
@@ -160,12 +160,12 @@ export function Landing() {
       </section>
 
       {/* Stats */}
-      <section className="bg-primary py-10">
+      <section className="py-10" style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}>
         <div className="max-w-4xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           {stats.map(({ value, label }) => (
             <div key={label}>
               <div className="text-3xl font-extrabold text-white" style={{ fontFamily: "var(--font-display)" }}>{value}</div>
-              <div className="text-blue-200 text-sm mt-1">{label}</div>
+              <div className="text-orange-100 text-sm mt-1">{label}</div>
             </div>
           ))}
         </div>
@@ -223,28 +223,25 @@ export function Landing() {
       </section>
 
       {/* CTA */}
-      <section className="py-16" style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}>
+      <section className="py-16" style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}>
         <div className="max-w-2xl mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-white mb-4" style={{ fontFamily: "var(--font-display)" }}>Start Your Journey Today</h2>
-          <p className="text-blue-200 mb-8 text-lg">Free to join. No credit card needed. Your community is waiting.</p>
+          <p className="text-orange-100 mb-8 text-lg">Free to join. No credit card needed. Your community is waiting.</p>
           <button
             onClick={() => navigate("/signup")}
-            className="px-8 py-4 rounded-xl bg-white font-bold text-primary text-base shadow-lg hover:shadow-xl transition-all hover:scale-105"
+            className="px-8 py-4 rounded-xl bg-white font-bold text-[#D85A30] text-base shadow-lg hover:shadow-xl transition-all hover:scale-105"
           >
-            Join ImmigrantConnect USA — Free
+            Join PathaSathi — Free
           </button>
-          <p className="text-blue-200 text-sm mt-4">Available in: English · Español · বাংলা · हिंदी · العربية</p>
+          <p className="text-orange-100 text-sm mt-4">Available in: English · Español · বাংলা · हिंदी · العربية</p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-foreground text-white py-10">
+      <footer className="bg-slate-950 text-white py-10">
         <div className="max-w-6xl mx-auto px-4 flex flex-wrap gap-6 justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Globe className="w-5 h-5 text-blue-400" />
-            <span className="font-bold" style={{ fontFamily: "var(--font-display)" }}>ImmigrantConnect USA</span>
-          </div>
-          <div className="text-sm text-slate-400">© 2025 ImmigrantConnect USA. All rights reserved.</div>
+          <Logo size="md" variant="white" onClick={() => navigate("/")} />
+          <div className="text-sm text-slate-400">© 2026 PathaSathi. All rights reserved.</div>
           <div className="flex gap-4 text-sm text-slate-400">
             <span className="hover:text-white cursor-pointer">Privacy</span>
             <span className="hover:text-white cursor-pointer">Terms</span>

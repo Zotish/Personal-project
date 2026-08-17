@@ -969,7 +969,7 @@ export function Settings() {
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors">
             <LogOut className="w-4 h-4" /> Log Out
           </button>
-          <p className="text-center text-xs text-muted-foreground mt-3">ImmigrantConnect USA v2.1.0 · Terms · Privacy</p>
+          <p className="text-center text-xs text-muted-foreground mt-3">PathaSathi v2.1.0 · Terms · Privacy</p>
         </div>
       </div>
     </AppLayout>

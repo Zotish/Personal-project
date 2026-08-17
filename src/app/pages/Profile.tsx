@@ -10,7 +10,13 @@ import {
 const userPosts = [
   { id: 1, content: "Has anyone applied for a New York State ID without a Social Security Number? I'm on a tourist visa and need some form of ID to open a bank account. Would love to hear your experiences! #NewYork #Banking", likes: 156, comments: 89, reposts: 34, time: "4h ago", tags: ["Banking", "ID", "New York"] },
   { id: 2, content: "🆘 NEED HELP: My family is looking for a 2BR apartment in the Bronx under $1,800/month. We have 2 adults and 1 child. Does anyone know of any landlords who accept ITIN instead of SSN?", likes: 43, comments: 127, reposts: 89, time: "6h ago", tags: ["Housing", "Rental"] },
-  { id: 3, content: "Just joined the Bangladeshi New Yorkers community on ImmigrantConnect! Amazing to find so many people from home here. Special thanks to @rahim_bdconnect for welcoming me 🇧🇩❤️", likes: 234, comments: 18, reposts: 12, time: "2d ago", tags: ["Bangladeshi Community"] },
+  { id: 3, content: "Just joined the Bangladeshi New Yorkers community on PathaSathi! Amazing to find so many people from home here. Special thanks to @rahim_bdconnect for welcoming me 🇧🇩❤️", likes: 234, comments: 18, reposts: 12, time: "2d ago", tags: ["Bangladeshi Community"] },
+  { id: 4, content: "Pro tip for new arrivals in NYC: You don't need a Social Security Number to get a New York State ID (IDNYC). Just bring your passport, proof of address, and 3 points of ID. Process took 20 minutes!", likes: 567, comments: 45, reposts: 89, time: "4d ago", tags: ["NYC", "IDNYC", "Tips"] },
+  { id: 5, content: "Passed my US driving test on the first try! 🚗 Huge thanks to the practice tips shared in this group. For anyone taking it soon: practice parallel parking at the Staten Island DMV testing center!", likes: 890, comments: 112, reposts: 34, time: "1w ago", tags: ["DMV", "DrivingTest"] },
+];
+
+export const mockUsers = [
+  { id: 8,  name: "PathaSathi",   handle: "@pathasathi",  avatar: "PS", color: "from-[#e6653c] to-[#D85A30]",   verified: true,  bio: "Official PathaSathi account 🌐 Connecting communities", mutual: false, location: "New York, NY",      followers: "48.9K"},
 ];
 
 const followingList = [
@@ -21,7 +27,7 @@ const followingList = [
   { id: 5,  name: "Fatima Al-Hassan",   handle: "@fatima_legal_help", avatar: "FA", color: "from-sky-400 to-blue-500",      verified: true,  bio: "Immigration attorney | Free consultations on Thursdays",    mutual: false, location: "Bronx, NY",         followers: "12.3K"},
   { id: 6,  name: "Wei Zhang",          handle: "@wei_zhang_flushing",avatar: "WZ", color: "from-red-400 to-rose-500",      verified: false, bio: "Flushing local | Restaurant owner | Chinese-American",      mutual: true,  location: "Flushing, NY",      followers: "3.2K" },
   { id: 7,  name: "Amara Diallo",       handle: "@amara_diallo_bk",   avatar: "AD", color: "from-lime-400 to-green-500",    verified: false, bio: "West African community advocate | Helping newcomers",        mutual: false, location: "Flatbush, Brooklyn", followers: "1.8K" },
-  { id: 8,  name: "ImmigrantConnect",   handle: "@immigrantconnect",  avatar: "IC", color: "from-blue-500 to-indigo-600",   verified: true,  bio: "Official ImmigrantConnect account 🌐 Connecting communities", mutual: false, location: "New York, NY",      followers: "48.9K"},
+  { id: 8,  name: "PathaSathi",   handle: "@pathasathi",  avatar: "PS", color: "from-[#e6653c] to-[#D85A30]",   verified: true,  bio: "Official PathaSathi account 🌐 Connecting communities", mutual: false, location: "New York, NY",      followers: "48.9K"},
 ];
 
 const followersList = [

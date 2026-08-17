@@ -1,6 +1,7 @@
 import { useState, useEffect, Fragment, useRef, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
+import { Logo } from "../components/ui/Logo";
 import { useLanguage } from "../context/LanguageContext";
 import { getFavourites, removeFavourite, type MyBoxFavourite } from "../utils/myBox";
 import { MapDiscoveryContent } from "./MapDiscovery";
@@ -220,7 +221,7 @@ const eventsByDate: Record<string, CalEvent[]> = {
 const forYouPosts: Post[] = [
   {
     id: 1, type: "emergency",
-    author: { name: "ImmigrantConnect Official", handle: "@ic_official", avatar: "IC", color: "from-blue-500 to-indigo-600", verified: true },
+    author: { name: "PathaSathi Official", handle: "@pathasathi_official", avatar: "PS", color: "from-[#e6653c] to-[#D85A30]", verified: true },
     time: "2h ago",
     content: "🚨 EMERGENCY ALERT: USCIS has announced a 90-day extension for all pending I-765 (EAD) renewals. If your work permit expires before December 2025, you are now covered. Check the Services Hub for more info and your case status.",
     likes: 2847, comments: 324, reposts: 1203,
@@ -1281,8 +1282,8 @@ export function HomeFeed() {
     }>
       {/* Mobile-only header — hidden on desktop (sidebar handles nav) */}
       <div className="lg:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-border px-4 py-3 flex items-center justify-between">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">RA</div>
-        <span className="font-bold text-foreground" style={{ fontFamily: "var(--font-display)" }}>ImmigrantConnect</span>
+        <div className="w-8 h-8 rounded-full text-white text-xs font-bold flex items-center justify-center flex-shrink-0" style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}>RA</div>
+        <Logo size="sm" onClick={() => navigate("/feed")} />
         <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary">
           <Bell className="w-5 h-5 text-foreground" />
         </button>
