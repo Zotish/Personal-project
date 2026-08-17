@@ -59,17 +59,17 @@ export function SellerSidebar({ activeTab = "overview", onTabChange }: SellerSid
               onClick={() => handleNavClick(item.id)}
               className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition-all text-left group ${
                 isSelected
-                  ? "bg-[#D85A30] text-white shadow-md shadow-[#D85A30]/30"
+                  ? "bg-[#D85A30]/12 text-[#993C1D] border border-[#D85A30]/20 shadow-2xs"
                   : "text-slate-700 hover:bg-[#D85A30]/10 hover:text-[#993C1D]"
               }`}
             >
               <div className="flex items-center gap-3">
-                <Icon className={`w-4.5 h-4.5 transition-colors ${isSelected ? "text-white" : "text-slate-500 group-hover:text-[#993C1D]"}`} />
+                <Icon className={`w-4.5 h-4.5 transition-colors ${isSelected ? "text-[#993C1D]" : "text-slate-500 group-hover:text-[#993C1D]"}`} />
                 <span>{item.label}</span>
               </div>
               {item.badge && (
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold transition-colors ${
-                  isSelected ? "bg-white text-[#D85A30]" : "bg-slate-100 text-slate-600 border border-slate-200 group-hover:bg-[#D85A30]/10 group-hover:text-[#993C1D]"
+                  isSelected ? "bg-[#D85A30]/20 text-[#993C1D]" : "bg-slate-100 text-slate-600 border border-slate-200 group-hover:bg-[#D85A30]/10 group-hover:text-[#993C1D]"
                 }`}>
                   {item.badge}
                 </span>

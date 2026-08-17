@@ -71,22 +71,22 @@ export function Sidebar() {
             <button
               key={path}
               onClick={() => navigate(path)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 group ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 group ${
                 active
-                  ? "bg-[#D85A30] text-white font-medium shadow-sm"
+                  ? "bg-[#D85A30]/12 text-[#993C1D] border border-[#D85A30]/20 shadow-2xs"
                   : "text-slate-700 hover:bg-[#D85A30]/10 hover:text-[#993C1D]"
               }`}
             >
-              <Icon className={`w-5 h-5 flex-shrink-0 transition-colors ${active ? "text-white" : "text-[#993C1D]"}`} />
+              <Icon className="w-5 h-5 flex-shrink-0 transition-colors text-[#993C1D]" />
               <span>{label}</span>
               {tKey === "notifications" && (
-                <span className={`ml-auto w-5 h-5 rounded-full text-xs flex items-center justify-center font-medium transition-colors ${
-                  active ? "bg-white text-[#D85A30]" : "bg-slate-100 text-slate-600 group-hover:bg-[#D85A30]/10 group-hover:text-[#993C1D]"
+                <span className={`ml-auto w-5 h-5 rounded-full text-xs flex items-center justify-center font-bold transition-colors ${
+                  active ? "bg-[#D85A30]/20 text-[#993C1D]" : "bg-slate-100 text-slate-600 group-hover:bg-[#D85A30]/10 group-hover:text-[#993C1D]"
                 }`}>4</span>
               )}
               {tKey === "messages" && (
-                <span className={`ml-auto w-5 h-5 rounded-full text-xs flex items-center justify-center font-medium transition-colors ${
-                  active ? "bg-white text-[#D85A30]" : "bg-slate-100 text-slate-600 group-hover:bg-[#D85A30]/10 group-hover:text-[#993C1D]"
+                <span className={`ml-auto w-5 h-5 rounded-full text-xs flex items-center justify-center font-bold transition-colors ${
+                  active ? "bg-[#D85A30]/20 text-[#993C1D]" : "bg-slate-100 text-slate-600 group-hover:bg-[#D85A30]/10 group-hover:text-[#993C1D]"
                 }`}>2</span>
               )}
             </button>
