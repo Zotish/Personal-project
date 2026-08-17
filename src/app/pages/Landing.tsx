@@ -87,10 +87,6 @@ export function Landing() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 bg-[#D85A30]/10 text-[#D85A30] border border-[#D85A30]/20 rounded-full px-4 py-1.5 text-sm font-semibold mb-6">
-                <CheckCircle className="w-4 h-4 text-[#D85A30]" />
-                Your trusted community for life in the USA
-              </div>
               <h1 className="text-4xl sm:text-5xl font-extrabold text-foreground leading-tight mb-4" style={{ fontFamily: "var(--font-display)" }}>
                 New to the USA?<br />
                 <span style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
@@ -100,25 +96,16 @@ export function Landing() {
               <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-lg">
                 Connect with your community, discover immigrant-friendly services, get legal help, find jobs and housing — all in one safe, welcoming platform.
               </p>
-              <div className="flex flex-wrap gap-3 mb-6">
+              <div className="flex flex-wrap gap-3">
                 <button
                   onClick={() => navigate("/signup")}
                   className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-semibold text-base shadow-lg hover:shadow-xl transition-all hover:scale-105"
                   style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
                 >
-                  Get Started — It's Free
+                  Get Started
                   <ArrowRight className="w-4 h-4" />
                 </button>
-                <button
-                  onClick={() => navigate("/feed")}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm bg-white text-foreground border border-border hover:bg-slate-50 transition-all"
-                >
-                  Browse Community
-                </button>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Available in: {languages.join(" · ")}
-              </p>
             </div>
             {/* Hero visual */}
             <div className="relative hidden lg:block">
@@ -206,7 +193,7 @@ export function Landing() {
             {testimonials.map((t) => (
               <div key={t.name} className="bg-background rounded-2xl p-6 border border-border">
                 <div className="flex items-center gap-1 mb-4">
-                  {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
+                  {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
                 </div>
                 <p className="text-sm text-foreground leading-relaxed mb-5">"{t.text}"</p>
                 <div className="flex items-center gap-3">
@@ -233,7 +220,6 @@ export function Landing() {
           >
             Join PathaSathi — Free
           </button>
-          <p className="text-orange-100 text-sm mt-4">Available in: English · Español · বাংলা · हिंदी · العربية</p>
         </div>
       </section>
 

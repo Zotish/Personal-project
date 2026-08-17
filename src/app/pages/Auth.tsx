@@ -83,8 +83,8 @@ export function Login() {
                   type="text"
                   maxLength={1}
                   value={v}
-                  className="w-11 h-12 text-center text-lg font-bold border-2 rounded-xl focus:outline-none focus:border-primary transition bg-input-background"
-                  style={{ borderColor: v ? "var(--primary)" : "var(--border)" }}
+                  className="w-11 h-12 text-center text-lg font-bold border-2 rounded-xl focus:outline-none focus:border-[#D85A30] transition bg-input-background"
+                  style={{ borderColor: v ? "#D85A30" : "var(--border)" }}
                   onChange={(e) => {
                     const next = [...otp];
                     next[i] = e.target.value;
@@ -97,8 +97,8 @@ export function Login() {
 
             <button
               onClick={handleVerifyOtp}
-              className="w-full py-3 rounded-xl text-white font-semibold text-sm shadow-sm hover:opacity-90 transition"
-              style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
+              className="w-full py-3 rounded-xl text-white font-bold text-sm shadow-sm hover:opacity-90 transition"
+              style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
             >
               Verify OTP & Log In
             </button>
@@ -107,7 +107,7 @@ export function Login() {
               Didn't receive code?{" "}
               <button
                 onClick={() => { setOtp(["4", "2", "7", "1", "8", "9"]); setErrorMsg(""); }}
-                className="text-primary font-semibold hover:underline"
+                className="text-[#D85A30] font-semibold hover:underline"
               >
                 Resend OTP
               </button>
@@ -142,7 +142,7 @@ export function Login() {
                   type="button"
                   onClick={() => setRole("user")}
                   className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${role === "user"
-                      ? "bg-white text-primary shadow-xs border border-border/40"
+                      ? "bg-white text-[#D85A30] shadow-xs border border-border/40"
                       : "text-muted-foreground hover:text-foreground"
                     }`}
                 >
@@ -153,7 +153,7 @@ export function Login() {
                   type="button"
                   onClick={() => setRole("seller")}
                   className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${role === "seller"
-                      ? "bg-primary text-white shadow-xs"
+                      ? "bg-[#D85A30] text-white shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
                     }`}
                 >
@@ -162,6 +162,7 @@ export function Login() {
                 </button>
               </div>
             </div>
+
             {/* Unified Contact Field with Dropdown Method Box */}
             <div>
               <label className="text-sm font-medium text-foreground block mb-1.5">
@@ -173,7 +174,7 @@ export function Login() {
                   <select
                     value={method}
                     onChange={(e) => setMethod(e.target.value as "email" | "phone")}
-                    className="h-full px-3 py-2.5 bg-input-background rounded-xl border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition appearance-none cursor-pointer pr-8 font-medium shadow-xs"
+                    className="h-full px-3 py-2.5 bg-input-background rounded-xl border border-border text-sm text-foreground focus:outline-none focus:border-[#D85A30] transition appearance-none cursor-pointer pr-8 font-medium shadow-xs"
                   >
                     <option value="email">Email</option>
                     <option value="phone">Phone</option>
@@ -190,12 +191,12 @@ export function Login() {
                         type="email"
                         placeholder="you@example.com"
                         defaultValue="rafiq.ahmed@gmail.com"
-                        className="w-full pl-10 pr-4 py-2.5 bg-input-background rounded-xl border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition shadow-xs"
+                        className="w-full pl-10 pr-4 py-2.5 bg-input-background rounded-xl border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#D85A30] transition shadow-xs"
                       />
                     </div>
                   ) : (
                     /* Single Combined Box for Country Code Selector + Phone Number Input */
-                    <div className="flex items-center bg-input-background rounded-xl border border-border focus-within:ring-2 focus-within:ring-ring focus-within:border-primary transition shadow-xs overflow-hidden">
+                    <div className="flex items-center bg-input-background rounded-xl border border-border focus-within:border-[#D85A30] transition shadow-xs overflow-hidden">
                       <div className="relative border-r border-border bg-secondary/30 flex-shrink-0">
                         <select
                           value={countryCode}
@@ -230,7 +231,7 @@ export function Login() {
                 <input
                   type={showPw ? "text" : "password"}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-10 py-2.5 bg-input-background rounded-xl border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition"
+                  className="w-full pl-10 pr-10 py-2.5 bg-input-background rounded-xl border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#D85A30] transition"
                 />
                 <button onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                   {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -240,16 +241,16 @@ export function Login() {
 
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="rounded border-border text-primary focus:ring-primary" defaultChecked />
+                <input type="checkbox" className="rounded border-border text-[#D85A30] focus:ring-[#D85A30]" defaultChecked />
                 <span className="text-xs text-muted-foreground font-medium">Remember me</span>
               </label>
-              <button className="text-xs text-primary font-semibold hover:underline">Forgot password?</button>
+              <button className="text-xs text-[#D85A30] font-semibold hover:underline">Forgot password?</button>
             </div>
 
             <button
               onClick={handleSendOtp}
-              className="w-full py-3 rounded-xl text-white font-semibold text-sm shadow-sm hover:opacity-90 transition mt-2"
-              style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
+              className="w-full py-3 rounded-xl text-white font-bold text-sm shadow-sm hover:opacity-90 transition mt-2"
+              style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
             >
               Log In
             </button>
@@ -283,7 +284,7 @@ export function Login() {
 
         <p className="text-center text-sm text-muted-foreground mt-6">
           New to PathaSathi?{" "}
-          <button onClick={() => navigate("/signup")} className="text-primary font-semibold hover:underline">
+          <button onClick={() => navigate("/signup")} className="text-[#D85A30] font-semibold hover:underline">
             Create account
           </button>
         </p>
@@ -307,7 +308,8 @@ export function SignUp() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
-        <div className="text-center mb-4">
+        <div className="text-center mb-4 flex flex-col items-center">
+          <Logo size="lg" onClick={() => navigate("/")} className="mb-2" />
           <h1 className="text-2xl font-bold text-foreground">
             {role === "seller" ? "Create Seller Account" : "Create your account"}
           </h1>
@@ -327,7 +329,7 @@ export function SignUp() {
                   type="button"
                   onClick={() => setRole("user")}
                   className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${role === "user"
-                      ? "bg-white text-primary shadow-xs border border-border/40"
+                      ? "bg-white text-[#D85A30] shadow-xs border border-border/40"
                       : "text-muted-foreground hover:text-foreground"
                     }`}
                 >
@@ -338,7 +340,7 @@ export function SignUp() {
                   type="button"
                   onClick={() => setRole("seller")}
                   className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${role === "seller"
-                      ? "bg-primary text-white shadow-xs"
+                      ? "bg-[#D85A30] text-white shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
                     }`}
                 >
@@ -350,13 +352,13 @@ export function SignUp() {
 
             {/* BUSINESS / MERCHANT SPECIFIC ONBOARDING UI */}
             {role === "seller" && (
-              <div className="space-y-3 p-3 bg-blue-50/60 rounded-xl border border-blue-100 animate-in fade-in duration-200">
+              <div className="space-y-3 p-3 bg-[#D85A30]/10 rounded-xl border border-[#D85A30]/20 animate-in fade-in duration-200">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-primary flex items-center gap-1">
+                  <span className="text-xs font-bold text-[#D85A30] flex items-center gap-1">
                     <Store className="w-3.5 h-3.5" /> Merchant / Shop Profile Mode
                   </span>
-                  <span className="text-[10px] bg-blue-100 text-primary font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3" /> Anti-Scam Protected
+                  <span className="text-[10px] bg-[#D85A30]/20 text-[#D85A30] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-[#D85A30]" /> Anti-Scam Protected
                   </span>
                 </div>
 
@@ -366,7 +368,7 @@ export function SignUp() {
                   <input
                     type="text"
                     placeholder="e.g. Queens Used Furniture & Resale"
-                    className="w-full px-3 py-2 bg-white rounded-lg border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary transition shadow-xs"
+                    className="w-full px-3 py-2 bg-white rounded-lg border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#D85A30] transition shadow-xs"
                   />
                 </div>
 
@@ -395,7 +397,7 @@ export function SignUp() {
                   <input
                     type="text"
                     placeholder="e.g. 9XX-XX-XXXX (For Verified Shop Badge)"
-                    className="w-full px-3 py-2 bg-white rounded-lg border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary transition shadow-xs"
+                    className="w-full px-3 py-2 bg-white rounded-lg border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#D85A30] transition shadow-xs"
                   />
                 </div>
               </div>
@@ -410,7 +412,7 @@ export function SignUp() {
                 <input
                   type="text"
                   placeholder="Rafiq"
-                  className="w-full px-3 py-2.5 bg-input-background rounded-xl border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition"
+                  className="w-full px-3 py-2.5 bg-input-background rounded-xl border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#D85A30] transition"
                 />
               </div>
               <div>
@@ -420,7 +422,7 @@ export function SignUp() {
                 <input
                   type="text"
                   placeholder="Ahmed"
-                  className="w-full px-3 py-2.5 bg-input-background rounded-xl border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition"
+                  className="w-full px-3 py-2.5 bg-input-background rounded-xl border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#D85A30] transition"
                 />
               </div>
             </div>
@@ -436,7 +438,7 @@ export function SignUp() {
                   <select
                     value={method}
                     onChange={(e) => setMethod(e.target.value as "email" | "phone")}
-                    className="h-full px-3 py-2.5 bg-input-background rounded-xl border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition appearance-none cursor-pointer pr-8 font-medium shadow-xs"
+                    className="h-full px-3 py-2.5 bg-input-background rounded-xl border border-border text-sm text-foreground focus:outline-none focus:border-[#D85A30] transition appearance-none cursor-pointer pr-8 font-medium shadow-xs"
                   >
                     <option value="email">Email</option>
                     <option value="phone">Phone</option>
@@ -452,12 +454,12 @@ export function SignUp() {
                       <input
                         type="email"
                         placeholder="you@example.com"
-                        className="w-full pl-10 pr-4 py-2.5 bg-input-background rounded-xl border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition shadow-xs"
+                        className="w-full pl-10 pr-4 py-2.5 bg-input-background rounded-xl border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#D85A30] transition shadow-xs"
                       />
                     </div>
                   ) : (
                     /* Single Combined Box for Country Code Selector + Phone Number Input */
-                    <div className="flex items-center bg-input-background rounded-xl border border-border focus-within:ring-2 focus-within:ring-ring focus-within:border-primary transition shadow-xs overflow-hidden">
+                    <div className="flex items-center bg-input-background rounded-xl border border-border focus-within:border-[#D85A30] transition shadow-xs overflow-hidden">
                       <div className="relative border-r border-border bg-secondary/30 flex-shrink-0">
                         <select
                           value={countryCode}
@@ -492,7 +494,7 @@ export function SignUp() {
                 <input
                   type={showPw ? "text" : "password"}
                   placeholder="At least 8 characters"
-                  className="w-full pl-10 pr-10 py-2.5 bg-input-background rounded-xl border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition"
+                  className="w-full pl-10 pr-10 py-2.5 bg-input-background rounded-xl border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#D85A30] transition"
                 />
                 <button onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                   {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -501,13 +503,13 @@ export function SignUp() {
             </div>
 
             {/* Terms notice with Checkbox */}
-            <label className="flex items-start gap-2.5 cursor-pointer bg-blue-50/80 p-3 rounded-xl border border-blue-100/80 hover:bg-blue-50 transition">
+            <label className="flex items-start gap-2.5 cursor-pointer bg-[#D85A30]/10 p-3 rounded-xl border border-[#D85A30]/20 hover:bg-[#D85A30]/15 transition">
               <input
                 type="checkbox"
                 defaultChecked
-                className="mt-0.5 w-4 h-4 rounded border-primary/40 text-primary focus:ring-primary cursor-pointer flex-shrink-0"
+                className="mt-0.5 w-4 h-4 rounded border-[#D85A30]/40 text-[#D85A30] focus:ring-[#D85A30] cursor-pointer flex-shrink-0"
               />
-              <p className="text-xs text-primary leading-relaxed">
+              <p className="text-xs text-[#993C1D] leading-relaxed font-medium">
                 {role === "seller"
                   ? "By creating a seller account, you agree to our Seller Code of Conduct, Escrow Policy, and Anti-Scam Protection terms."
                   : "By creating an account, you agree to our Terms of Service and Privacy Policy. Your data is safe and never sold."}
@@ -517,8 +519,8 @@ export function SignUp() {
             {/* Submit Button */}
             <button
               onClick={() => navigate(role === "seller" ? "/seller-dashboard" : method === "email" ? "/verify-email" : "/onboarding/country")}
-              className="w-full py-3 rounded-xl text-white font-semibold text-sm shadow-sm hover:opacity-90 transition mt-2 flex items-center justify-center gap-2"
-              style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
+              className="w-full py-3 rounded-xl text-white font-bold text-sm shadow-sm hover:opacity-90 transition mt-2 flex items-center justify-center gap-2"
+              style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
             >
               {role === "seller" ? <Store className="w-4 h-4" /> : null}
               <span>{role === "seller" ? "Create Seller Account" : "Create Account"}</span>
@@ -557,7 +559,7 @@ export function SignUp() {
         {/* Login Link */}
         <p className="text-center text-sm text-muted-foreground mt-6">
           Already have an account?{" "}
-          <button onClick={() => navigate("/login")} className="text-primary font-semibold hover:underline">
+          <button onClick={() => navigate("/login")} className="text-[#D85A30] font-semibold hover:underline">
             Log in
           </button>
         </p>
@@ -578,8 +580,8 @@ export function EmailVerification() {
           Back
         </button>
 
-        <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center mx-auto mb-6">
-          <Mail className="w-8 h-8 text-primary" />
+        <div className="w-16 h-16 rounded-2xl bg-[#D85A30]/10 flex items-center justify-center mx-auto mb-6">
+          <Mail className="w-8 h-8 text-[#D85A30]" />
         </div>
         <h1 className="text-2xl font-bold text-foreground mb-2" style={{ fontFamily: "var(--font-display)" }}>Check your email</h1>
         <p className="text-muted-foreground mb-2 text-sm">We sent a 6-digit verification code to</p>
@@ -594,8 +596,8 @@ export function EmailVerification() {
                 type="text"
                 maxLength={1}
                 value={i === 0 ? "4" : i === 1 ? "2" : i === 2 ? "7" : v}
-                className="w-11 h-12 text-center text-lg font-bold border-2 rounded-xl focus:outline-none focus:border-primary transition bg-input-background"
-                style={{ borderColor: i < 3 ? "var(--primary)" : "var(--border)" }}
+                className="w-11 h-12 text-center text-lg font-bold border-2 rounded-xl focus:outline-none focus:border-[#D85A30] transition bg-input-background"
+                style={{ borderColor: i < 3 ? "#D85A30" : "var(--border)" }}
                 onChange={(e) => {
                   const next = [...code];
                   next[i] = e.target.value;
@@ -606,14 +608,14 @@ export function EmailVerification() {
           </div>
           <button
             onClick={() => navigate("/onboarding/country")}
-            className="w-full py-3 rounded-xl text-white font-semibold text-sm shadow-sm hover:opacity-90 transition"
-            style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
+            className="w-full py-3 rounded-xl text-white font-bold text-sm shadow-sm hover:opacity-90 transition"
+            style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
           >
             Verify Email
           </button>
           <div className="mt-4 text-sm text-muted-foreground">
             Didn't receive it?{" "}
-            <button className="text-primary font-medium hover:underline">Resend code</button>
+            <button className="text-[#D85A30] font-medium hover:underline">Resend code</button>
           </div>
           <p className="text-xs text-muted-foreground mt-3">Code expires in 10:00 minutes</p>
         </div>
