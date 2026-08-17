@@ -4,12 +4,14 @@ import { AppLayout } from "../components/layout/AppLayout";
 import {
   Store, Plus, Edit, Trash2, Package, DollarSign, ShoppingCart, TrendingUp,
   Eye, Star, Search, Filter, CheckCircle2, AlertCircle, Clock, MapPin,
-  Phone, Mail, Globe, Image as ImageIcon, ChevronRight, Settings, BarChart2,
+  Phone, Mail, Globe, Image as ImageIcon, ChevronRight, ChevronLeft, Settings, BarChart2,
   X, Check, ShieldCheck, ArrowUpRight, ArrowDownRight, MessageSquare, ExternalLink,
-  Tag, RefreshCw, Upload, ToggleLeft, ToggleRight, Lock, Key, LayoutGrid, List
+  Tag, RefreshCw, Upload, ToggleLeft, ToggleRight, Lock, Key, LayoutGrid, List, User
 } from "lucide-react";
 import { DeliverySecurityModal } from "../components/DeliverySecurityModal";
 import { ProductCard } from "../components/ProductCard";
+import { GoldenBadge } from "../components/ui/GoldenBadge";
+import { LanguageToggle } from "../components/ui/LanguageToggle";
 
 export type Product = {
   id: number;
@@ -101,6 +103,137 @@ export const INITIAL_SELLER_PRODUCTS: Product[] = [
     status: "active",
     createdAt: "2026-08-10",
   },
+  {
+    id: 106,
+    name: "Samsung Smart 4K UHD TV 55 Inch",
+    price: 420,
+    originalPrice: 550,
+    offerTag: "25% OFF",
+    category: "Electronics & Tech",
+    condition: "Gently Used",
+    stock: 1,
+    salesCount: 3,
+    image: "https://images.unsplash.com/photo-1593784991095-a205069470b6?w=500&h=300&fit=crop",
+    description: "Crystal UHD 4K Smart TV with HDR, built-in Wi-Fi and streaming apps.",
+    status: "active",
+    createdAt: "2026-08-11",
+  },
+  {
+    id: 107,
+    name: "Instant Pot Duo 7-in-1 Electric Pressure Cooker",
+    price: 65,
+    originalPrice: 89,
+    offerTag: "SAVE $24",
+    category: "Home Appliances",
+    condition: "Gently Used",
+    stock: 3,
+    salesCount: 15,
+    image: "https://images.unsplash.com/photo-1544233726-9f1d2b27be8b?w=500&h=300&fit=crop",
+    description: "Multi-functional pressure cooker, slow cooker, rice cooker, steamer & warmer.",
+    status: "active",
+    createdAt: "2026-08-12",
+  },
+  {
+    id: 108,
+    name: "Wooden Coffee Table with Glass Top",
+    price: 110,
+    originalPrice: 150,
+    offerTag: "15% OFF",
+    category: "Used Furniture",
+    condition: "Gently Used",
+    stock: 2,
+    salesCount: 6,
+    image: "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=500&h=300&fit=crop",
+    description: "Sturdy solid teak wood coffee table with tempered glass top panel.",
+    status: "active",
+    createdAt: "2026-08-13",
+  },
+  {
+    id: 109,
+    name: "Organic Deshi Mustard Oil 1 Litre",
+    price: 12.50,
+    category: "Grocery & Food",
+    condition: "New",
+    stock: 30,
+    salesCount: 78,
+    image: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=500&h=300&fit=crop",
+    description: "100% pure cold-pressed Kachi Ghani mustard oil for authentic cooking.",
+    status: "active",
+    createdAt: "2026-08-14",
+  },
+  {
+    id: 110,
+    name: "Queen Size Solid Wood Bed Frame",
+    price: 290,
+    originalPrice: 380,
+    offerTag: "30% OFF",
+    category: "Used Furniture",
+    condition: "Gently Used",
+    stock: 1,
+    salesCount: 2,
+    image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=500&h=300&fit=crop",
+    description: "Modern minimalist queen bed frame with sturdy wooden slats.",
+    status: "active",
+    createdAt: "2026-08-15",
+  },
+  {
+    id: 111,
+    name: "Pre-owned Stainless Steel Microwave",
+    price: 45,
+    originalPrice: 75,
+    offerTag: "40% OFF",
+    category: "Home Appliances",
+    condition: "Gently Used",
+    stock: 2,
+    salesCount: 9,
+    image: "https://images.unsplash.com/photo-1574269909862-7e4d705a4d08?w=500&h=300&fit=crop",
+    description: "Clean countertop microwave oven with multiple power levels.",
+    status: "active",
+    createdAt: "2026-08-15",
+  },
+  {
+    id: 112,
+    name: "Traditional Nakshi Kantha Embroidered Quilt",
+    price: 85,
+    category: "Clothing & Fashion",
+    condition: "New",
+    stock: 5,
+    salesCount: 14,
+    image: "https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=500&h=300&fit=crop",
+    description: "Handcrafted 100% pure cotton Bengali Nakshi Kantha quilt.",
+    status: "active",
+    createdAt: "2026-08-16",
+  },
+  {
+    id: 113,
+    name: "Wireless Noise Cancelling Headphones",
+    price: 140,
+    originalPrice: 199,
+    offerTag: "30% OFF",
+    category: "Electronics & Tech",
+    condition: "Refurbished",
+    stock: 4,
+    salesCount: 18,
+    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=300&fit=crop",
+    description: "Over-ear Bluetooth headphones with active noise cancellation and 30hr battery.",
+    status: "active",
+    createdAt: "2026-08-17",
+  },
+  {
+    id: 114,
+    name: "Vintage Wooden Bookshelf 5-Tier",
+    price: 120,
+    originalPrice: 160,
+    offerTag: "SAVE $40",
+    category: "Used Furniture",
+    condition: "Gently Used",
+    stock: 1,
+    salesCount: 5,
+    image: "https://images.unsplash.com/photo-1594620302200-9a762244a156?w=500&h=300&fit=crop",
+    description: "Spacious 5-tier mahogany finish bookshelf for home library.",
+    status: "active",
+    createdAt: "2026-08-17",
+  },
 ];
 
 export function SellerDashboard() {
@@ -132,6 +265,7 @@ export function SellerDashboard() {
   const [shopPhone, setShopPhone] = useState("+880 1711-424998");
   const [shopAddress, setShopAddress] = useState("Road 11, Gulshan-1, Dhaka, Bangladesh");
   const [storeStatus, setStoreStatus] = useState<"open" | "busy" | "closed">("open");
+  const [shopImage, setShopImage] = useState<string | null>(null);
 
   // Dynamic Conversations State
   const [conversations, setConversations] = useState([
@@ -139,6 +273,8 @@ export function SellerDashboard() {
       id: 1,
       name: "Kamrul Islam",
       initials: "KI",
+      image: null,
+      orderId: "#ORD-902",
       time: "4:15 PM",
       unread: true,
       item: "Solid Oak Dining Table ($350.00)",
@@ -152,6 +288,8 @@ export function SellerDashboard() {
       id: 2,
       name: "Sofia Rahman",
       initials: "SR",
+      image: null,
+      orderId: "#ORD-841",
       time: "1:20 PM",
       unread: false,
       item: "Deshi Basmati Rice 5kg ($37.00)",
@@ -165,6 +303,8 @@ export function SellerDashboard() {
       id: 3,
       name: "Tariqul Hasan",
       initials: "TH",
+      image: null,
+      orderId: "#ORD-719",
       time: "Yesterday",
       unread: false,
       item: "IKEA Sectional Sofa ($280.00)",
@@ -329,6 +469,21 @@ export function SellerDashboard() {
     return matchesSearch && matchesCat;
   });
 
+  // Pagination State & Logic (Max 8 items per page)
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 8;
+
+  // Reset pagination to page 1 whenever filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, categoryFilter]);
+
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE) || 1;
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   const totalRevenue = products.reduce((sum, p) => sum + (p.price * p.salesCount), 0);
   const totalSalesCount = products.reduce((sum, p) => sum + p.salesCount, 0);
 
@@ -338,23 +493,27 @@ export function SellerDashboard() {
         
         {/* Top SaaS Header Banner Card - Flush attached to top edge */}
         <div className="bg-white rounded-b-2xl border-b border-x border-border shadow-xs p-5 sm:p-6 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             
             {/* Shop Profile Info */}
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl text-white flex items-center justify-center font-bold text-2xl shadow-md border-2 border-white flex-shrink-0" style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}>
-                🏪
+              <div className="relative flex-shrink-0">
+                {shopImage ? (
+                  <img
+                    src={shopImage}
+                    alt={shopName}
+                    className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-md"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-2xl bg-slate-200 text-slate-500 flex items-center justify-center border-2 border-white shadow-md">
+                    <User className="w-8 h-8 text-slate-500" />
+                  </div>
+                )}
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{shopName}</h1>
-                  <div
-                    className="w-5 h-5 rounded-full text-white flex items-center justify-center shadow-xs flex-shrink-0"
-                    style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
-                    title="Verified Seller"
-                  >
-                    <Check className="w-3 h-3 stroke-[3]" />
-                  </div>
+                  <GoldenBadge size={20} title="Verified Seller" />
                 </div>
                 <p className="text-xs sm:text-sm text-slate-500 mt-1 flex items-center gap-3 flex-wrap">
                   <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-slate-400" /> {shopAddress}</span>
@@ -363,22 +522,16 @@ export function SellerDashboard() {
               </div>
             </div>
 
-            {/* Action buttons */}
-            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            {/* Public View Button: Centered on mobile/iPad (<lg), Right-aligned on laptop/desktop (>=lg) */}
+            <div className="w-full lg:w-auto flex justify-center lg:justify-end items-center mt-2 lg:mt-0">
               <button
                 onClick={() => navigate("/seller/28")}
-                className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50 transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-95"
               >
                 <ExternalLink className="w-4 h-4 text-slate-500" /> Public View
               </button>
-              <button
-                onClick={handleOpenAddModal}
-                className="px-4 py-2 rounded-xl text-white text-xs sm:text-sm font-semibold shadow-sm hover:opacity-95 transition flex items-center gap-2 cursor-pointer"
-                style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
-              >
-                <Plus className="w-4 h-4" /> Add Products
-              </button>
             </div>
+
           </div>
         </div>
 
@@ -391,47 +544,51 @@ export function SellerDashboard() {
               
               {/* Metric Cards Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white p-5 rounded-2xl border border-border shadow-xs">
-                  <div className="flex items-center justify-between">
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-border shadow-xs flex flex-col justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-medium text-slate-500">Total Sales Revenue</span>
-                    <DollarSign className="w-5 h-5 text-[#D85A30]" />
+                    <DollarSign className="w-5 h-5 text-[#D85A30] flex-shrink-0" />
                   </div>
-                  <div className="mt-3">
+                  <div className="mt-3 flex items-baseline gap-2 flex-wrap">
                     <span className="text-2xl font-bold text-slate-900">${totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
-                    <span className="ml-2 text-xs font-semibold text-emerald-600 flex items-inline gap-0.5"><ArrowUpRight className="w-3 h-3 inline" /> +14.2%</span>
+                    <span className="text-xs font-semibold text-emerald-600 flex items-center gap-0.5"><ArrowUpRight className="w-3 h-3" /> +14.2%</span>
                   </div>
                 </div>
 
-                <div className="bg-white p-5 rounded-2xl border border-border shadow-xs">
-                  <div className="flex items-center justify-between">
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-border shadow-xs flex flex-col justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-medium text-slate-500">Total Orders Completed</span>
-                    <ShoppingCart className="w-5 h-5 text-[#D85A30]" />
+                    <ShoppingCart className="w-5 h-5 text-[#D85A30] flex-shrink-0" />
                   </div>
-                  <div className="mt-3">
+                  <div className="mt-3 flex items-baseline gap-2 flex-wrap">
                     <span className="text-2xl font-bold text-slate-900">{totalSalesCount}</span>
-                    <span className="ml-2 text-xs font-semibold text-[#D85A30] flex items-inline gap-0.5"><ArrowUpRight className="w-3 h-3 inline" /> +8.5%</span>
+                    <span className="text-xs font-semibold text-[#D85A30] flex items-center gap-0.5"><ArrowUpRight className="w-3 h-3" /> +8.5%</span>
                   </div>
                 </div>
 
-                <div className="bg-white p-5 rounded-2xl border border-border shadow-xs">
-                  <div className="flex items-center justify-between">
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-border shadow-xs flex flex-col justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-medium text-slate-500">Active Listings</span>
-                    <Package className="w-5 h-5 text-[#D85A30]" />
+                    <Package className="w-5 h-5 text-[#D85A30] flex-shrink-0" />
                   </div>
                   <div className="mt-3">
                     <span className="text-2xl font-bold text-slate-900">{products.filter(p => p.status === "active").length}</span>
                   </div>
                 </div>
 
-                <div className="bg-white p-5 rounded-2xl border border-border shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">Store Rating</span>
-                    <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center"><Star className="w-4 h-4 fill-amber-400" /></div>
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-border shadow-xs flex flex-col justify-between">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-slate-500 truncate">Store Rating</span>
+                    <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
+                      <Star className="w-4 h-4 fill-amber-400" />
+                    </div>
                   </div>
-                  <div className="mt-3 flex items-center gap-1.5">
-                    <span className="text-2xl font-bold text-slate-900">4.9</span>
-                    <div className="flex text-amber-400">★★★★★</div>
-                    <span className="text-xs text-slate-400">(312 reviews)</span>
+                  <div className="mt-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-2xl font-bold text-slate-900 leading-none">4.9</span>
+                      <div className="flex text-amber-400 text-xs tracking-tight">★★★★★</div>
+                    </div>
+                    <span className="text-[11px] text-slate-400 font-medium block mt-1 truncate">(312 reviews)</span>
                   </div>
                 </div>
               </div>
@@ -471,47 +628,52 @@ export function SellerDashboard() {
           {activeTab === "products" && (
             <div className="space-y-6">
               
-              {/* Control Bar: Search, Category Filter & Add Button */}
-              <div className="bg-white p-4 rounded-2xl border border-border shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex flex-col sm:flex-row items-center gap-3 flex-1">
-                  
-                  {/* Search bar */}
-                  <div className="relative w-full sm:w-72">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      placeholder="Search products..."
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#D85A30]"
-                    />
-                  </div>
+              {/* Control Bar: Search (Expanded Left), Category Filter & Add Button (Grouped Right) */}
+              <div className="bg-white p-4 rounded-2xl border border-border shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+                
+                {/* Expanded Search bar */}
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#D85A30] transition"
+                  />
+                </div>
 
+                {/* Right Controls: Category Dropdown next to Add Products Button */}
+                <div className="flex items-center gap-3 flex-shrink-0 flex-wrap sm:flex-nowrap">
                   {/* Category dropdown filter */}
                   <select
                     value={categoryFilter}
                     onChange={e => setCategoryFilter(e.target.value)}
-                    className="w-full sm:w-48 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none"
+                    className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:border-[#D85A30] cursor-pointer"
                   >
                     <option value="all">All Categories</option>
                     <option value="USED FURNITURE">Used Furniture</option>
                     <option value="GROCERY & FOOD">Grocery & Food</option>
+                    <option value="ELECTRONICS & TECH">Electronics & Tech</option>
+                    <option value="SERVICES & RENTALS">Services & Rentals</option>
+                    <option value="CLOTHING & FASHION">Clothing & Fashion</option>
+                    <option value="HOME APPLIANCES">Home Appliances</option>
                   </select>
 
+                  {/* Add Products Button */}
+                  <button
+                    onClick={handleOpenAddModal}
+                    className="px-4 py-2 rounded-xl text-white text-xs sm:text-sm font-semibold shadow-sm hover:opacity-95 transition flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer active:scale-95"
+                    style={{ background: "linear-gradient(135deg, #d4522a 0%, #C04A22 100%)" }}
+                  >
+                    <Plus className="w-4 h-4" /> Add Products
+                  </button>
                 </div>
-
-                <button
-                  onClick={handleOpenAddModal}
-                  className="px-4 py-2 rounded-xl text-white text-xs sm:text-sm font-semibold shadow-sm hover:opacity-95 transition flex items-center justify-center gap-2"
-                  style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
-                >
-                  <Plus className="w-4 h-4" /> Add Products
-                </button>
               </div>
 
-              {/* PRODUCTS DISPLAY: PRODUCT CARDS GRID */}
+              {/* PRODUCTS DISPLAY: PRODUCT CARDS GRID (MAX 8 PER PAGE) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredProducts.map(product => (
+                {paginatedProducts.map(product => (
                   <ProductCard
                     key={product.id}
                     product={product}
@@ -525,10 +687,58 @@ export function SellerDashboard() {
                   <div className="col-span-full py-16 text-center text-slate-400 bg-white rounded-3xl border border-slate-200">
                     <Package className="w-10 h-10 mx-auto mb-2 opacity-40" />
                     <p className="font-bold text-sm text-slate-600">No products found matching your search.</p>
-                    <p className="text-xs text-slate-400 mt-1">Click "Add New Product" to list an item in your store.</p>
+                    <p className="text-xs text-slate-400 mt-1">Click "Add Products" to list an item in your store.</p>
                   </div>
                 )}
               </div>
+
+              {/* PAGINATION CONTROLS AT THE BOTTOM (MAX 8 CARDS PER PAGE) */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between border border-slate-200/80 p-4 rounded-2xl bg-white shadow-2xs flex-wrap gap-4 mt-6">
+                  <div className="text-xs font-semibold text-slate-500">
+                    Showing <span className="font-bold text-slate-900">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to{" "}
+                    <span className="font-bold text-slate-900">{Math.min(currentPage * ITEMS_PER_PAGE, filteredProducts.length)}</span> of{" "}
+                    <span className="font-bold text-slate-900">{filteredProducts.length}</span> products
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {/* Previous Button */}
+                    <button
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer"
+                    >
+                      <ChevronLeft className="w-4 h-4" /> Previous
+                    </button>
+
+                    {/* Page Numbers */}
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`w-8 h-8 rounded-xl text-xs font-extrabold transition cursor-pointer ${
+                            currentPage === pageNum
+                              ? "bg-[#C04A22] text-white shadow-xs"
+                              : "border border-slate-200 text-slate-700 hover:bg-slate-50"
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Next Button */}
+                    <button
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer"
+                    >
+                      Next <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
 
             </div>
           )}
@@ -624,15 +834,28 @@ export function SellerDashboard() {
                           : "bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50"
                       }`}
                     >
-                      <div className="flex items-center gap-2">
-                        {chat.unread && (
-                          <span className="w-2 h-2 rounded-full bg-[#D85A30] flex-shrink-0 animate-pulse" />
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {chat.image ? (
+                          <img
+                            src={chat.image}
+                            alt={chat.name}
+                            className="w-7 h-7 rounded-full object-cover border border-slate-200 flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center border border-slate-300/60 flex-shrink-0">
+                            <User className="w-4 h-4 text-slate-500" />
+                          </div>
                         )}
-                        <span className={`text-xs ${chat.id === selectedChatId || chat.unread ? "font-bold text-slate-900" : "font-medium text-slate-600"}`}>
-                          {chat.name}
-                        </span>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          {chat.unread && (
+                            <span className="w-2 h-2 rounded-full bg-[#D85A30] flex-shrink-0 animate-pulse" />
+                          )}
+                          <span className={`text-xs truncate ${chat.id === selectedChatId || chat.unread ? "font-bold text-slate-900" : "font-medium text-slate-600"}`}>
+                            {chat.name}
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-[10px] text-slate-400">{chat.time}</span>
+                      <span className="text-[10px] text-slate-400 flex-shrink-0 ml-1">{chat.time}</span>
                     </div>
                   ))}
                 </div>
@@ -643,12 +866,21 @@ export function SellerDashboard() {
                   {/* Chat Header */}
                   <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-[#D85A30] text-white font-bold flex items-center justify-center text-xs">
-                        {activeChat.initials}
-                      </div>
+                      {/* Buyer Avatar: Twitter Fallback if no photo uploaded */}
+                      {activeChat.image ? (
+                        <img
+                          src={activeChat.image}
+                          alt={activeChat.name}
+                          className="w-9 h-9 rounded-full object-cover border border-slate-200 flex-shrink-0 shadow-2xs"
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center border border-slate-300/60 flex-shrink-0 shadow-2xs">
+                          <User className="w-5 h-5 text-slate-500" />
+                        </div>
+                      )}
                       <div>
                         <h4 className="font-bold text-slate-900 text-xs">{activeChat.name}</h4>
-                        <span className="text-[11px] text-slate-500">Inquiring about: <strong>{activeChat.item}</strong></span>
+                        <span className="text-[11px] text-slate-500">Order ID: <strong className="text-slate-900 font-bold">{activeChat.orderId || "#ORD-902"}</strong></span>
                       </div>
                     </div>
                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
@@ -665,13 +897,13 @@ export function SellerDashboard() {
                         key={msg.id}
                         className={`p-3 rounded-2xl max-w-sm text-xs space-y-1 ${
                           msg.sender === "seller"
-                            ? "bg-[#D85A30] text-white ml-auto"
-                            : "bg-slate-100 text-slate-800"
+                            ? "bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/20 ml-auto shadow-2xs"
+                            : "bg-slate-100 text-slate-800 border border-slate-200/60"
                         }`}
                       >
-                        <p>{msg.text}</p>
-                        <span className={`text-[10px] block text-right ${
-                          msg.sender === "seller" ? "text-orange-100" : "text-slate-400"
+                        <p className="leading-relaxed font-medium">{msg.text}</p>
+                        <span className={`text-[10px] block text-right font-medium ${
+                          msg.sender === "seller" ? "text-[#8C3015]/80" : "text-slate-400"
                         }`}>{msg.time}</span>
                       </div>
                     ))}
@@ -684,11 +916,11 @@ export function SellerDashboard() {
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
                       placeholder={`Reply to ${activeChat.name}...`}
-                      className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-[#D85A30]"
+                      className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-[#C04A22]"
                     />
                     <button
                       type="submit"
-                      className="px-4 py-2.5 rounded-xl bg-[#D85A30] hover:bg-[#c24f28] text-white text-xs font-bold transition active:scale-95"
+                      className="px-4 py-2.5 rounded-xl bg-[#C04A22] hover:bg-[#a63c1a] text-white text-xs font-bold transition active:scale-95 cursor-pointer"
                     >
                       Send Reply
                     </button>
@@ -702,8 +934,82 @@ export function SellerDashboard() {
 
           {/* TAB 5: SETTINGS */}
           {activeTab === "settings" && (
-            <div className="bg-white rounded-2xl border border-border shadow-xs p-6 max-w-3xl">
-              
+            <div className="bg-white rounded-2xl border border-border shadow-xs p-6 max-w-3xl space-y-6">
+              <div>
+                <h2 className="text-base font-bold text-slate-900">Shop Profile & Settings</h2>
+              </div>
+
+              {/* Language Preference Section (Moved into Shop Settings) */}
+              <div className="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/70 flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#D85A30]/10 text-[#D85A30] flex items-center justify-center border border-[#D85A30]/20 flex-shrink-0 shadow-2xs">
+                    <Globe className="w-5 h-5 text-[#D85A30]" />
+                  </div>
+                  <label className="font-extrabold text-slate-900 block text-xs sm:text-sm tracking-tight">
+                    Display Language Preference
+                  </label>
+                </div>
+
+                <div className="w-full sm:w-auto flex justify-end">
+                  <LanguageToggle />
+                </div>
+              </div>
+
+              {/* Profile Picture / Shop Logo Upload Section - Centered */}
+              <div className="p-6 rounded-2xl border border-slate-200/80 bg-slate-50/70 flex flex-col items-center justify-center text-center space-y-4">
+                <label className="font-bold text-slate-900 block text-xs sm:text-sm">
+                  Shop Profile Picture & Logo
+                </label>
+
+                {/* Current Avatar Preview or Twitter Fallback */}
+                <div className="relative">
+                  {shopImage ? (
+                    <img
+                      src={shopImage}
+                      alt={shopName}
+                      className="w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-md mx-auto"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-2xl bg-slate-200 text-slate-500 flex items-center justify-center border-2 border-white shadow-md mx-auto">
+                      <User className="w-10 h-10 text-slate-500" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Upload Controls - Centered */}
+                <div className="flex items-center justify-center gap-2 flex-wrap">
+                  <label className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs transition flex items-center gap-2">
+                    <Upload className="w-4 h-4 text-[#D85A30]" />
+                    <span>Upload Profile Picture</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            if (reader.result) setShopImage(reader.result.toString());
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+
+                  {shopImage && (
+                    <button
+                      type="button"
+                      onClick={() => setShopImage(null)}
+                      className="px-3.5 py-2.5 rounded-xl border border-rose-200 text-xs font-bold text-rose-600 hover:bg-rose-50 transition"
+                    >
+                      Remove Photo
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <div className="space-y-4 text-xs sm:text-sm">
                 <div>
                   <label className="font-medium text-slate-700 block mb-1">Shop Name</label>
@@ -747,12 +1053,14 @@ export function SellerDashboard() {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => alert("Shop settings updated successfully!")}
-                  className="px-5 py-2.5 rounded-xl text-white font-semibold text-xs sm:text-sm bg-[#D85A30] hover:bg-[#c24f28] transition"
-                >
-                  Save Settings
-                </button>
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={() => alert("Shop settings updated successfully!")}
+                    className="px-6 py-2.5 rounded-xl text-white font-bold text-xs sm:text-sm bg-[#C04A22] hover:bg-[#a63c1a] transition shadow-xs cursor-pointer active:scale-95"
+                  >
+                    Save Settings
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -845,7 +1153,7 @@ export function SellerDashboard() {
                   <button
                     type="submit"
                     className="px-6 py-2.5 rounded-xl text-white font-bold shadow-md hover:opacity-95 transition"
-                    style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
+                    style={{ background: "linear-gradient(135deg, #d4522a 0%, #C04A22 100%)" }}
                   >
                     Publish Product
                   </button>

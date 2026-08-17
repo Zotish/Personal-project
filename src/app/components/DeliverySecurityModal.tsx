@@ -88,35 +88,22 @@ export function DeliverySecurityModal({
     <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
 
-        {/* Hero Banner Header */}
-        <div className={`p-5 text-white relative overflow-hidden ${
-          currentRole === "buyer"
-            ? "bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700"
-            : "bg-gradient-to-r from-purple-700 via-indigo-700 to-slate-900"
-        }`}>
+        {/* Hero Banner Header - Brand Coral with White Title, Subline & Bold White X Icon */}
+        <div className="p-5 bg-gradient-to-r from-[#d4522a] to-[#C04A22] text-white relative overflow-hidden">
           <div className="relative z-10 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
-                <ShieldCheck className="w-6 h-6 text-emerald-300" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-extrabold text-base">
-                    {currentRole === "buyer" ? "Escrow & Delivery Center" : "Seller Logistics Hub"}
-                  </h3>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-400 text-slate-950 uppercase tracking-wider">
-                    {currentRole === "buyer" ? "Buyer Portal" : "Seller Portal"}
-                  </span>
-                </div>
-                <p className="text-xs text-blue-100 mt-0.5">Order #{orderId} • {totalPrice}</p>
-              </div>
+            <div>
+              <h3 className="font-extrabold text-base sm:text-lg text-white tracking-tight">
+                {currentRole === "buyer" ? "Escrow & Delivery Center" : "Seller Logistics Hub"}
+              </h3>
+              <p className="text-xs text-white/90 mt-0.5 font-semibold">Order #{orderId} • {totalPrice}</p>
             </div>
 
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition cursor-pointer active:scale-95 border border-white/30 shadow-xs"
+              title="Close modal"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" strokeWidth={3} />
             </button>
           </div>
         </div>
@@ -259,42 +246,109 @@ export function DeliverySecurityModal({
           {/* ========================================================================= */}
           {currentRole === "seller" && (
             <>
-              {/* 1. SELLER PAYOUT GUARANTEE BANNER */}
-              <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Store className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-bold text-purple-900 uppercase tracking-wider">Escrow Payout Pending</h4>
-                    <span className="text-xs font-extrabold text-purple-700">{totalPrice} Guaranteed</span>
+              {/* RIDER LIVE STATUS TRACKING STEPPER (TOP OF MODAL) */}
+              <div className="bg-[#C04A22]/5 border border-[#C04A22]/20 rounded-2xl p-4 space-y-3 shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Truck className="w-4.5 h-4.5 text-[#C04A22]" />
+                    <h4 className="text-xs font-extrabold text-slate-900 tracking-tight">Rider Live Order Status</h4>
                   </div>
-                  <p className="text-xs text-purple-800 mt-1 leading-relaxed">
-                    Escrow payout will be automatically transferred to your bank/bKash account as soon as Pathao Express rider completes the delivery verification.
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#C04A22]/10 text-[#8C3015] border border-[#C04A22]/30 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#C04A22] animate-ping inline-block" /> Live Tracking
+                  </span>
+                </div>
+
+                {/* 4-Step Progress Stepper */}
+                <div className="grid grid-cols-4 gap-1 relative pt-1">
+                  {/* Step 1: Confirmed */}
+                  <div className="flex flex-col items-center text-center space-y-1">
+                    <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                      ✓
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-900">Order Placed</span>
+                    <span className="text-[9px] text-slate-500">10:15 AM</span>
+                  </div>
+
+                  {/* Step 2: Rider Assigned (Active Step) */}
+                  <div className="flex flex-col items-center text-center space-y-1">
+                    <div className="w-7 h-7 rounded-full bg-[#C04A22] text-white flex items-center justify-center text-xs font-bold shadow-xs ring-4 ring-[#C04A22]/20 animate-pulse">
+                      🏍️
+                    </div>
+                    <span className="text-[10px] font-extrabold text-[#8C3015]">Rider Assigned</span>
+                    <span className="text-[9px] text-[#8C3015] font-bold">Arif (Pathao)</span>
+                  </div>
+
+                  {/* Step 3: Package Handover */}
+                  <div className="flex flex-col items-center text-center space-y-1">
+                    <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold border border-slate-300">
+                      📦
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-600">Pickup OTP</span>
+                    <span className="text-[9px] text-slate-400">Handover</span>
+                  </div>
+
+                  {/* Step 4: Delivered */}
+                  <div className="flex flex-col items-center text-center space-y-1">
+                    <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold border border-slate-300">
+                      🏠
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-600">Delivered</span>
+                    <span className="text-[9px] text-slate-400">Buyer OTP</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 1. SELLER PAYOUT GUARANTEE BANNER */}
+              <div className="bg-[#C04A22]/8 border border-[#C04A22]/20 rounded-2xl p-4 flex items-center gap-3">
+                <Store className="w-5 h-5 text-[#C04A22] flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
+                    <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Escrow Payout Pending</h4>
+                    <span className="text-xs font-extrabold text-slate-900">{totalPrice} Guaranteed</span>
+                  </div>
+                  <p className="text-xs text-slate-700 mt-0.5 font-medium">
+                    Payout auto-transfers to your bank/bKash once rider verifies delivery.
                   </p>
                 </div>
               </div>
 
               {/* 2. SELLER PICKUP HANDOVER OTP CARD */}
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-2xl p-5 space-y-2">
+              <div className="bg-gradient-to-br from-[#C04A22]/5 to-[#C04A22]/10 border-2 border-[#C04A22]/30 rounded-2xl p-5 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Key className="w-5 h-5 text-purple-600" />
-                    <h4 className="text-xs font-extrabold text-purple-950 uppercase tracking-wider">
+                    <Key className="w-5 h-5 text-[#C04A22]" />
+                    <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
                       Seller Pickup Handover OTP
                     </h4>
                   </div>
-                  <span className="px-3 py-1 rounded-full text-sm font-mono font-extrabold bg-purple-600 text-white shadow-sm border border-purple-500">
+                  <span className="text-base sm:text-lg font-mono font-extrabold text-slate-900 tracking-widest">
                     {SELLER_PICKUP_OTP}
                   </span>
                 </div>
 
-                <p className="text-xs text-purple-900 leading-relaxed pt-1">
-                  <strong>Instructions for Seller:</strong> When the courier pickup rider arrives at your store to pick up the package, give this Pickup OTP <code className="bg-purple-200 px-1 py-0.5 rounded font-bold font-mono">{SELLER_PICKUP_OTP}</code> to the rider as proof of handover.
+                <p className="text-xs text-slate-700 pt-0.5 font-medium">
+                  <strong className="text-slate-900">Seller Instruction:</strong> Share OTP <code className="bg-slate-200 text-slate-900 px-1.5 py-0.5 rounded font-extrabold font-mono border border-slate-300">{SELLER_PICKUP_OTP}</code> with the pickup rider as proof of package handover.
                 </p>
               </div>
 
-              {/* 3. WEIGHT AUDIT & SECURITY SEAL PROOF */}
+              {/* 3. CALL COURIER PICKUP RIDER VIA PROXY */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Truck className="w-5 h-5 text-[#C04A22]" />
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-900">Pickup Rider #R-902</h5>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleStartMaskedCall}
+                  className="px-3.5 py-2 rounded-xl bg-[#C04A22] hover:bg-[#a63c1a] text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer active:scale-95"
+                >
+                  <PhoneCall className="w-3.5 h-3.5" /> Call Pickup Rider
+                </button>
+              </div>
+
+              {/* 4. WEIGHT AUDIT & SECURITY SEAL PROOF */}
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2 text-xs">
                 <h4 className="font-bold text-slate-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" /> Pre-Shipment Audit & Package Record
@@ -309,35 +363,6 @@ export function DeliverySecurityModal({
                     <span className="font-bold text-emerald-600 text-xs">✓ Sealed Barcode</span>
                   </div>
                 </div>
-              </div>
-
-              {/* 4. BUYER SECRET OTP - HIDDEN FOR SELLER SECURITY */}
-              <div className="bg-rose-50/70 border border-rose-200 rounded-2xl p-4 flex items-center gap-3">
-                <EyeOff className="w-6 h-6 text-rose-600 flex-shrink-0" />
-                <div>
-                  <h5 className="text-xs font-bold text-rose-900">Buyer Delivery Secret OTP: 🔒 HIDDEN</h5>
-                  <p className="text-[11px] text-rose-800 mt-0.5">
-                    Buyer's delivery OTP is hidden from seller for anti-collusion fraud prevention. Only the buyer holds their secret code.
-                  </p>
-                </div>
-              </div>
-
-              {/* 5. CALL COURIER PICKUP RIDER VIA PROXY */}
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Truck className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <h5 className="text-xs font-bold text-slate-900">Pickup Rider #R-902</h5>
-                    <p className="text-[11px] text-slate-500">Pathao Logistics Pickup Partner</p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleStartMaskedCall}
-                  className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition"
-                >
-                  <PhoneCall className="w-3.5 h-3.5" /> Call Pickup Rider
-                </button>
               </div>
             </>
           )}

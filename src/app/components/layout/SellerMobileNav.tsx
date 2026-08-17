@@ -39,11 +39,11 @@ export function SellerMobileNav({ activeTab = "overview", onTabChange }: SellerM
               key={item.id}
               onClick={() => handleTabClick(item.id)}
               className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all min-w-0 group ${
-                isSelected ? "text-[#D85A30] font-bold" : "text-slate-500 hover:text-[#993C1D]"
+                isSelected ? "text-[#8C3015] font-bold" : "text-slate-600 hover:text-[#8C3015]"
               }`}
             >
-              <div className={`p-1.5 rounded-xl transition-all ${isSelected ? "bg-[#D85A30]/10 text-[#D85A30]" : "group-hover:bg-[#993C1D]/10 group-hover:text-[#993C1D]"}`}>
-                <Icon className="w-5 h-5" />
+              <div className={`p-1.5 rounded-xl transition-all ${isSelected ? "bg-[#C04A22]/10 text-[#8C3015]" : "group-hover:bg-[#C04A22]/10 group-hover:text-[#8C3015]"}`}>
+                <Icon className={`w-5 h-5 transition-colors ${isSelected ? "text-[#8C3015]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
               </div>
               <span className="text-[10px] leading-none font-medium">{item.label}</span>
             </button>
@@ -53,10 +53,10 @@ export function SellerMobileNav({ activeTab = "overview", onTabChange }: SellerM
         {/* Switch back to Buyer Feed */}
         <button
           onClick={() => navigate("/feed")}
-          className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-slate-500 hover:text-[#993C1D] transition-all group"
+          className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-slate-600 hover:text-[#8C3015] transition-all group"
         >
-          <div className="p-1.5 rounded-xl bg-slate-50 group-hover:bg-[#993C1D]/10">
-            <ArrowLeftRight className="w-5 h-5 text-slate-500 group-hover:text-[#993C1D] transition-colors" />
+          <div className="p-1.5 rounded-xl bg-slate-50 group-hover:bg-[#C04A22]/10">
+            <ArrowLeftRight className="w-5 h-5 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
           </div>
           <span className="text-[10px] leading-none font-medium">Buyer Mode</span>
         </button>

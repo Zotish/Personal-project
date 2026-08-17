@@ -80,13 +80,13 @@ export function MobileNav() {
               return (
                 <button key={path}
                   onClick={() => { navigate(path); setShowMore(false); }}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left ${
-                    active ? "bg-secondary/80 text-foreground" : "hover:bg-secondary text-foreground"
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left group ${
+                    active ? "bg-secondary/80 text-foreground font-semibold" : "hover:bg-secondary text-foreground"
                   }`}>
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 bg-secondary">
-                    <Icon className="w-4 h-4 text-[#993C1D]" />
+                    <Icon className={`w-4 h-4 transition-colors ${active ? "text-[#8C3015]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
                   </div>
-                  <span className={`text-sm font-medium flex-1 ${active ? "font-semibold" : ""}`}>
+                  <span className={`text-sm font-medium flex-1 ${active ? "font-semibold text-[#8C3015]" : ""}`}>
                     {t(tKey)}
                   </span>
                   {badge && (
@@ -94,7 +94,7 @@ export function MobileNav() {
                       {badge}
                     </span>
                   )}
-                  {active && <div className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                  {active && <div className="w-1.5 h-1.5 rounded-full bg-[#C04A22]" />}
                 </button>
               );
             })}
@@ -114,11 +114,11 @@ export function MobileNav() {
             const active = location.pathname === path;
             return (
               <button key={path} onClick={() => navigate(path)}
-                className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all min-w-0 relative ${
-                  active ? "text-foreground" : "text-muted-foreground"
+                className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all min-w-0 relative group ${
+                  active ? "text-[#8C3015] font-semibold" : "text-slate-600 hover:text-[#8C3015]"
                 }`}>
-                <div className={`p-1.5 rounded-xl transition-all ${active ? "bg-secondary" : ""}`}>
-                  <Icon className={`w-5 h-5 transition-colors ${active ? "text-[#D85A30]" : "text-[#993C1D]"}`} strokeWidth={active ? 2.5 : 1.8} />
+                <div className={`p-1.5 rounded-xl transition-all ${active ? "bg-[#C04A22]/10" : ""}`}>
+                  <Icon className={`w-5 h-5 transition-colors ${active ? "text-[#8C3015]" : "text-slate-600 group-hover:text-[#8C3015]"}`} strokeWidth={active ? 2.3 : 1.8} />
                 </div>
                 <span className="text-[10px] font-medium leading-none">{t(tKey)}</span>
               </button>
@@ -127,15 +127,15 @@ export function MobileNav() {
 
           {/* More button */}
           <button onClick={() => navigate("/more")}
-            className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all min-w-0 relative ${
-              location.pathname === "/more" || isMoreActive ? "text-foreground" : "text-muted-foreground"
+            className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all min-w-0 relative group ${
+              location.pathname === "/more" || isMoreActive ? "text-[#8C3015] font-semibold" : "text-slate-600 hover:text-[#8C3015]"
             }`}>
-            <div className={`p-1.5 rounded-xl transition-all ${location.pathname === "/more" || isMoreActive ? "bg-secondary" : ""}`}>
-              <MoreHorizontal className={`w-5 h-5 transition-colors ${location.pathname === "/more" || isMoreActive ? "text-[#D85A30]" : "text-[#993C1D]"}`} strokeWidth={location.pathname === "/more" || isMoreActive ? 2.5 : 1.8} />
+            <div className={`p-1.5 rounded-xl transition-all ${location.pathname === "/more" || isMoreActive ? "bg-[#C04A22]/10" : ""}`}>
+              <MoreHorizontal className={`w-5 h-5 transition-colors ${location.pathname === "/more" || isMoreActive ? "text-[#8C3015]" : "text-slate-600 group-hover:text-[#8C3015]"}`} strokeWidth={location.pathname === "/more" || isMoreActive ? 2.3 : 1.8} />
             </div>
             <span className="text-[10px] font-medium leading-none">{t("more")}</span>
             {(location.pathname === "/more" || isMoreActive) && (
-              <span className="absolute top-1.5 right-2.5 w-2 h-2 rounded-full bg-primary" />
+              <span className="absolute top-1.5 right-2.5 w-2 h-2 rounded-full bg-[#C04A22]" />
             )}
           </button>
         </div>

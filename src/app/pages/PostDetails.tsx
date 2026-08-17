@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
   ArrowLeft, Heart, MessageCircle, Repeat2, Share2, Bookmark, MoreHorizontal,
-  CheckCircle, MapPin, Send, Smile, Image, Flag, Ban, ThumbsUp, ChevronDown
+  CheckCircle, MapPin, Send, Smile, Image, Flag, Ban, ThumbsUp, ChevronDown, User
 } from "lucide-react";
 
 const post = {
@@ -108,8 +108,8 @@ function ReplyCard({ reply }: { reply: typeof replies[0]; key?: string | number 
       )}
       <div className="flex gap-3 px-4">
         <div className="flex flex-col items-center">
-          <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${reply.author.color} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
-            {reply.author.avatar}
+          <div className="w-10 h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs">
+            <User className="w-5 h-5 text-slate-500" />
           </div>
           <div className="w-0.5 bg-border flex-1 my-2" />
         </div>
@@ -185,8 +185,8 @@ export function PostDetails() {
           {/* Author */}
           <div className="flex items-center justify-between p-4 pb-3">
             <div className="flex items-center gap-3">
-              <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${post.author.color} flex items-center justify-center text-white font-bold text-base flex-shrink-0`}>
-                {post.author.avatar}
+              <div className="w-12 h-12 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs">
+                <User className="w-6 h-6 text-slate-500" />
               </div>
               <div>
                 <div className="flex items-center gap-1.5">

@@ -11,6 +11,27 @@ interface ProductCardProps {
   onAddToCart?: (product: Product) => void;
 }
 
+// Deep Coral Vector Writing Pen / Hand Icon Component
+function DeepCoralHandPen({ size = 15, className = "" }: { size?: number; className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#8C3015"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="inline-block flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+      title="Click to edit field"
+    >
+      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" fill="#8C3015" fillOpacity="0.25" />
+    </svg>
+  );
+}
+
 export function calculateOfferPrice(mainPrice: number, offerTag?: string): {
   hasOffer: boolean;
   offerPrice: number;
@@ -69,9 +90,6 @@ export function ProductCard({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDesc, setIsEditingDesc] = useState(false);
   const [isEditingPrice, setIsEditingPrice] = useState(false);
-  const [isEditingCategory, setIsEditingCategory] = useState(false);
-  const [isEditingOffer, setIsEditingOffer] = useState(false);
-  const [isEditingCondition, setIsEditingCondition] = useState(false);
 
   const [titleInput, setTitleInput] = useState(product.name);
   const [descInput, setDescInput] = useState(product.description || "");
@@ -80,7 +98,6 @@ export function ProductCard({
   const priceDetails = calculateOfferPrice(product.price, product.offerTag);
   const hasOffer = priceDetails.hasOffer;
 
-  // Helper to handle inline state update
   const triggerUpdate = (fields: Partial<Product>) => {
     if (onUpdateProduct) {
       onUpdateProduct({ ...product, ...fields });
@@ -90,29 +107,21 @@ export function ProductCard({
   const handleOfferChange = (newOffer: string) => {
     const isNoOffer = newOffer === "none" || newOffer === "";
     const updatedOfferTag = isNoOffer ? undefined : newOffer;
-
-    triggerUpdate({
-      offerTag: updatedOfferTag,
-    });
-    setIsEditingOffer(false);
+    triggerUpdate({ offerTag: updatedOfferTag });
   };
 
   const handleCategoryChange = (newCategory: string) => {
     triggerUpdate({ category: newCategory });
-    setIsEditingCategory(false);
   };
 
   const handleConditionChange = (newCondition: "New" | "Gently Used" | "Refurbished") => {
     triggerUpdate({ condition: newCondition });
-    setIsEditingCondition(false);
   };
 
   const handleSavePrice = () => {
     const parsed = parseFloat(priceInput);
     if (!isNaN(parsed) && parsed > 0) {
-      triggerUpdate({
-        price: parsed,
-      });
+      triggerUpdate({ price: parsed });
     }
     setIsEditingPrice(false);
   };
@@ -131,7 +140,7 @@ export function ProductCard({
 
   return (
     <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
-
+      
       {/* Top Image Section with Badges */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
         <img
@@ -143,9 +152,9 @@ export function ProductCard({
           }}
         />
 
-        {/* Top Badges Bar: Condition (Left) & Offer (Right) - Single Flex Row (Never Overlaps) */}
+        {/* Top Badges Bar: Condition (Left) & Offer (Right) */}
         <div className="absolute top-2.5 left-2.5 right-2.5 z-20 flex items-center justify-between gap-1.5 pointer-events-none">
-
+          
           {/* CONDITION PILL BADGE (Top Left) */}
           <div className="pointer-events-auto max-w-[50%] min-w-0">
             {isSellerView ? (
@@ -173,16 +182,15 @@ export function ProductCard({
           <div className="pointer-events-auto max-w-[50%] min-w-0">
             {isSellerView ? (
               <div className="relative inline-block w-full">
-                {/* Styled Pill Display */}
-                <div className={`px-2.5 py-1 rounded-full text-[11px] font-extrabold shadow-md flex items-center justify-between gap-1 border transition ${hasOffer
-                  ? "bg-gradient-to-r from-rose-500 to-amber-500 text-white border-white/40"
-                  : "bg-slate-900/80 text-white border-slate-700 hover:bg-slate-900"
-                  }`}>
+                <div className={`px-2.5 py-1 rounded-full text-[11px] font-extrabold shadow-md flex items-center justify-between gap-1 border transition ${
+                  hasOffer
+                    ? "bg-gradient-to-r from-rose-500 to-amber-500 text-white border-white/40"
+                    : "bg-slate-900/80 text-white border-slate-700 hover:bg-slate-900"
+                }`}>
                   <span className="truncate">{hasOffer ? `🔥 ${product.offerTag}` : "+ Offer"}</span>
                   <ChevronDown className="w-2.5 h-2.5 flex-shrink-0 opacity-80" />
                 </div>
 
-                {/* Invisible native select overlaid on top */}
                 <select
                   value={product.offerTag || "none"}
                   onChange={(e) => handleOfferChange(e.target.value)}
@@ -217,16 +225,6 @@ export function ProductCard({
 
         </div>
 
-        {/* Seller Trash Icon Button (Bottom Right Overlay) */}
-        {isSellerView && onDelete && (
-          <button
-            onClick={() => onDelete(product.id)}
-            className="absolute bottom-3 right-3 z-10 p-2 rounded-full bg-slate-900/70 hover:bg-rose-600 text-white transition backdrop-blur-xs shadow-md"
-            title="Remove Product"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        )}
       </div>
 
       {/* Card Content Section */}
@@ -282,10 +280,11 @@ export function ProductCard({
               ) : (
                 <h3
                   onClick={() => setIsEditingTitle(true)}
-                  className="font-bold text-slate-900 text-sm leading-snug line-clamp-1 cursor-pointer"
+                  className="font-bold text-slate-900 text-sm leading-snug line-clamp-1 cursor-pointer flex items-center justify-between gap-1 group/title"
                   title="Click to edit title"
                 >
-                  {product.name}
+                  <span className="truncate">{product.name}</span>
+                  <DeepCoralHandPen size={15} className="group-hover/title:scale-125 transition-transform" />
                 </h3>
               )
             ) : (
@@ -315,25 +314,26 @@ export function ProductCard({
               ) : (
                 <p
                   onClick={() => setIsEditingDesc(true)}
-                  className="text-xs text-slate-500 line-clamp-2 leading-relaxed cursor-pointer hover:text-slate-900 hover:bg-slate-50 p-1 rounded transition"
+                  className="text-xs text-slate-500 line-clamp-2 leading-relaxed cursor-pointer hover:text-slate-900 hover:bg-slate-50 p-1 rounded transition flex items-start justify-between gap-1 group/desc"
                   title="Click to edit details"
                 >
-                  {product.description || "Click to add product description..."}
+                  <span className="flex-1 min-w-0">{product.description || "Click to add product description..."}</span>
+                  <DeepCoralHandPen size={14} className="mt-0.5 group-hover/desc:scale-125 transition-transform" />
                 </p>
               )
             ) : (
               <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                {product.description || "High quality item listed on marketplace. Great condition and ready for pickup or delivery."}
+                {product.description || "High quality item listed on marketplace."}
               </p>
             )}
           </div>
 
         </div>
 
-        {/* Price & Add to Cart Action Bar */}
-        <div className="pt-2 border-t border-slate-100 flex items-end justify-between gap-3">
+        {/* Price & Action Bar */}
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-3">
 
-          {/* DIRECTLY CLICKABLE / INPUTABLE PRICE BOX WITH MATCHED SCREENSHOT 1 & 2 STYLING */}
+          {/* PRICE BOX */}
           <div>
             {isSellerView && isEditingPrice ? (
               <div className="flex items-center gap-1">
@@ -355,14 +355,14 @@ export function ProductCard({
             ) : (
               <div
                 onClick={() => isSellerView && setIsEditingPrice(true)}
-                className={isSellerView ? "cursor-pointer hover:opacity-85 transition" : ""}
+                className={isSellerView ? "cursor-pointer hover:opacity-85 transition group/price" : ""}
                 title={isSellerView ? "Click to edit main price" : ""}
               >
                 {priceDetails.hasOffer ? (
-                  /* SCREENSHOT 1: DISCOUNTED OFFER PRICE VIEW */
                   <div className="space-y-0.5">
-                    <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">
-                      PRICE
+                    <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                      <span>PRICE</span>
+                      {isSellerView && <DeepCoralHandPen size={12} className="group-hover/price:scale-125 transition-transform" />}
                     </span>
                     <div className="flex flex-col">
                       <span className="text-sm font-normal text-[#404040] leading-none tracking-tight">
@@ -374,10 +374,10 @@ export function ProductCard({
                     </div>
                   </div>
                 ) : (
-                  /* SCREENSHOT 2: REGULAR PRICE VIEW */
                   <div className="space-y-0.5">
-                    <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">
-                      PRICE
+                    <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                      <span>PRICE</span>
+                      {isSellerView && <DeepCoralHandPen size={12} className="group-hover/price:scale-125 transition-transform" />}
                     </span>
                     <span className="text-xl font-normal text-[#404040] leading-none tracking-tight block">
                       ${priceDetails.mainPrice.toFixed(2)}
@@ -388,7 +388,18 @@ export function ProductCard({
             )}
           </div>
 
-          {/* Add to Cart Button (Only rendered for Buyers, hidden for Sellers) */}
+          {/* Delete Button for Seller */}
+          {isSellerView && onDelete && (
+            <button
+              onClick={() => onDelete(product.id)}
+              className="p-2 rounded-xl text-[#D85A30] hover:text-[#993C1D] hover:bg-[#D85A30]/10 transition-all flex items-center justify-center active:scale-95 cursor-pointer group"
+              title="Delete Product"
+            >
+              <Trash2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            </button>
+          )}
+
+          {/* Add to Cart Button for Buyers */}
           {!isSellerView && (
             <button
               onClick={() => onAddToCart && onAddToCart(product)}

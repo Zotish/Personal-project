@@ -73,20 +73,22 @@ export function Sidebar() {
               onClick={() => navigate(path)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 group ${
                 active
-                  ? "bg-[#D85A30]/12 text-[#993C1D] border border-[#D85A30]/20 shadow-2xs"
-                  : "text-slate-700 hover:bg-[#D85A30]/10 hover:text-[#993C1D]"
+                  ? "bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/20"
+                  : "text-slate-700 hover:bg-[#C04A22]/10 hover:text-[#8C3015]"
               }`}
             >
-              <Icon className="w-5 h-5 flex-shrink-0 transition-colors text-[#993C1D]" />
+              <Icon className={`w-5 h-5 flex-shrink-0 transition-colors ${
+                active ? "text-[#8C3015]" : "text-slate-600 group-hover:text-[#8C3015]"
+              }`} />
               <span>{label}</span>
               {tKey === "notifications" && (
                 <span className={`ml-auto w-5 h-5 rounded-full text-xs flex items-center justify-center font-bold transition-colors ${
-                  active ? "bg-[#D85A30]/20 text-[#993C1D]" : "bg-slate-100 text-slate-600 group-hover:bg-[#D85A30]/10 group-hover:text-[#993C1D]"
+                  active ? "bg-[#C04A22]/20 text-[#8C3015]" : "bg-slate-100 text-slate-600 group-hover:bg-[#C04A22]/10 group-hover:text-[#8C3015]"
                 }`}>4</span>
               )}
               {tKey === "messages" && (
                 <span className={`ml-auto w-5 h-5 rounded-full text-xs flex items-center justify-center font-bold transition-colors ${
-                  active ? "bg-[#D85A30]/20 text-[#993C1D]" : "bg-slate-100 text-slate-600 group-hover:bg-[#D85A30]/10 group-hover:text-[#993C1D]"
+                  active ? "bg-[#C04A22]/20 text-[#8C3015]" : "bg-slate-100 text-slate-600 group-hover:bg-[#C04A22]/10 group-hover:text-[#8C3015]"
                 }`}>2</span>
               )}
             </button>
@@ -97,38 +99,40 @@ export function Sidebar() {
         <div ref={moreRef} className="relative">
           <button
             onClick={() => setShowMore(!showMore)}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 group ${
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 group ${
               isMoreActive || showMore
-                ? "bg-primary text-primary-foreground font-medium shadow-sm"
-                : "text-foreground hover:bg-secondary hover:text-primary"
+                ? "bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/20"
+                : "text-slate-700 hover:bg-[#C04A22]/10 hover:text-[#8C3015]"
             }`}
           >
             <MoreHorizontal
-              className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${isMoreActive || showMore ? "text-white" : "text-[#993C1D]"} ${showMore ? "rotate-90" : ""}`}
+              className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${
+                isMoreActive || showMore ? "text-[#8C3015]" : "text-slate-600 group-hover:text-[#8C3015]"
+              } ${showMore ? "rotate-90" : ""}`}
             />
             <span>{t("more")}</span>
             {/* Dot indicator if a "more" page is active */}
             {isMoreActive && !showMore && (
-              <span className="ml-auto w-2 h-2 rounded-full bg-white" />
+              <span className="ml-auto w-2 h-2 rounded-full bg-[#C04A22]" />
             )}
           </button>
 
           {/* Popover Menu */}
           {showMore && (
-            <div className="absolute bottom-full left-0 mb-2 w-60 bg-white rounded-2xl border border-border shadow-xl overflow-hidden z-50 animate-in slide-in-from-bottom-2 duration-150">
+            <div className="absolute bottom-full left-0 mb-2 w-64 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden z-50 animate-in slide-in-from-bottom-2 duration-150">
               {/* Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                <span className="text-sm font-semibold text-foreground">{t("more")}</span>
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                <span className="text-sm font-bold text-slate-900">{t("more")}</span>
                 <button
                   onClick={() => setShowMore(false)}
-                  className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                  className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition-colors"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
 
               {/* Menu Items */}
-              <div className="p-2">
+              <div className="p-2 space-y-0.5">
                 {moreKeys.map(({ icon: Icon, tKey, path, descKey }) => {
                   const active = location.pathname === path;
                   return (
@@ -140,19 +144,17 @@ export function Sidebar() {
                       }}
                       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 group ${
                         active
-                          ? "bg-secondary/80 text-foreground"
-                          : "hover:bg-secondary"
+                          ? "bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/20 font-semibold"
+                          : "text-slate-700 hover:bg-[#C04A22]/10 hover:text-[#8C3015]"
                       }`}
                     >
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-secondary">
-                        <Icon className="w-4.5 h-4.5 text-[#993C1D]" />
-                      </div>
+                      <Icon className={`w-5 h-5 flex-shrink-0 transition-colors ${active ? "text-[#8C3015]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
                       <div className="flex-1 min-w-0">
-                        <div className={`text-sm font-medium ${active ? "text-primary" : "text-foreground"}`}>{t(tKey)}</div>
-                        <div className="text-xs text-muted-foreground truncate">{descFallbacks[descKey]}</div>
+                        <div className={`text-sm font-semibold transition-colors ${active ? "text-[#8C3015]" : "text-slate-800 group-hover:text-[#8C3015]"}`}>{t(tKey)}</div>
+                        <div className="text-xs text-slate-500 truncate">{descFallbacks[descKey]}</div>
                       </div>
                       {active && (
-                        <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                        <div className="w-2 h-2 rounded-full bg-[#C04A22] flex-shrink-0" />
                       )}
                     </button>
                   );
@@ -203,11 +205,8 @@ export function Sidebar() {
           onClick={() => setShowUserMenu(!showUserMenu)}
           className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 cursor-pointer transition select-none group"
         >
-          <div
-            className="w-9 h-9 rounded-full text-white font-bold flex items-center justify-center text-sm shadow-sm flex-shrink-0"
-            style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
-          >
-            RA
+          <div className="w-9 h-9 rounded-full bg-slate-200 border border-slate-300/60 text-slate-500 flex items-center justify-center shadow-2xs flex-shrink-0">
+            <User className="w-5 h-5 text-slate-500" />
           </div>
           <div className="flex-1 min-w-0 flex items-center justify-between">
             <div className="text-left flex-1 min-w-0">

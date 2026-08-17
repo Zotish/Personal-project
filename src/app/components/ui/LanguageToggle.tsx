@@ -35,29 +35,27 @@ export function LanguageToggle({ compact }: LanguageToggleProps) {
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex items-center bg-secondary rounded-xl p-0.5 gap-0.5 flex-1">
-        <button
-          onClick={() => setLang("en")}
-          className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-            lang === "en"
-              ? "bg-white text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          EN · English
-        </button>
-        <button
-          onClick={() => setLang("bn")}
-          className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-            lang === "bn"
-              ? "bg-white text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          বাং · বাংলা
-        </button>
-      </div>
+    <div className="inline-flex items-center bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-2xs">
+      <button
+        onClick={() => setLang("en")}
+        className={`px-4 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
+          lang === "en"
+            ? "bg-white text-[#8C3015] shadow-sm border border-slate-200/60"
+            : "text-slate-600 hover:text-slate-900"
+        }`}
+      >
+        EN · English
+      </button>
+      <button
+        onClick={() => setLang("bn")}
+        className={`px-4 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
+          lang === "bn"
+            ? "bg-white text-[#8C3015] shadow-sm border border-slate-200/60"
+            : "text-slate-600 hover:text-slate-900"
+        }`}
+      >
+        বাং · বাংলা
+      </button>
     </div>
   );
 }

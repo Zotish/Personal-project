@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { LanguageToggle } from "../ui/LanguageToggle";
 import { Logo } from "../ui/Logo";
+import { GoldenBadge } from "../ui/GoldenBadge";
 
 interface SellerSidebarProps {
   activeTab?: string;
@@ -59,17 +60,17 @@ export function SellerSidebar({ activeTab = "overview", onTabChange }: SellerSid
               onClick={() => handleNavClick(item.id)}
               className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition-all text-left group ${
                 isSelected
-                  ? "bg-[#D85A30]/12 text-[#993C1D] border border-[#D85A30]/20 shadow-2xs"
-                  : "text-slate-700 hover:bg-[#D85A30]/10 hover:text-[#993C1D]"
+                  ? "bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/20 shadow-2xs"
+                  : "text-slate-700 hover:bg-[#C04A22]/10 hover:text-[#8C3015]"
               }`}
             >
               <div className="flex items-center gap-3">
-                <Icon className={`w-4.5 h-4.5 transition-colors ${isSelected ? "text-[#993C1D]" : "text-slate-500 group-hover:text-[#993C1D]"}`} />
+                <Icon className={`w-4.5 h-4.5 transition-colors ${isSelected ? "text-[#8C3015]" : "text-slate-500 group-hover:text-[#8C3015]"}`} />
                 <span>{item.label}</span>
               </div>
               {item.badge && (
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold transition-colors ${
-                  isSelected ? "bg-[#D85A30]/20 text-[#993C1D]" : "bg-slate-100 text-slate-600 border border-slate-200 group-hover:bg-[#D85A30]/10 group-hover:text-[#993C1D]"
+                  isSelected ? "bg-[#C04A22]/20 text-[#8C3015]" : "bg-slate-100 text-slate-600 border border-slate-200 group-hover:bg-[#C04A22]/10 group-hover:text-[#8C3015]"
                 }`}>
                   {item.badge}
                 </span>
@@ -81,37 +82,20 @@ export function SellerSidebar({ activeTab = "overview", onTabChange }: SellerSid
         {/* Public Storefront Link */}
         <button
           onClick={() => navigate("/seller/28")}
-          className="w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold text-slate-700 hover:bg-[#993C1D]/10 hover:text-[#993C1D] transition-all text-left group"
+          className="w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold text-slate-700 hover:bg-[#C04A22]/10 hover:text-[#8C3015] transition-all text-left group"
         >
           <div className="flex items-center gap-3">
-            <Store className="w-4.5 h-4.5 text-slate-500 group-hover:text-[#993C1D] transition-colors" />
+            <Store className="w-4.5 h-4.5 text-slate-500 group-hover:text-[#8C3015] transition-colors" />
             <span>Public View</span>
           </div>
-          <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#993C1D] transition-colors" />
+          <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#8C3015] transition-colors" />
         </button>
 
       </nav>
 
-      {/* Switch to Buyer Mode CTA Card */}
-      <div className="p-3">
-        <button
-          onClick={() => navigate("/feed")}
-          className="w-full p-3 rounded-2xl bg-slate-50 hover:bg-[#993C1D]/10 border border-slate-200 transition flex items-center gap-3 text-left group"
-        >
-          <div className="w-8 h-8 rounded-xl bg-[#993C1D]/10 text-[#993C1D] flex items-center justify-center flex-shrink-0 border border-[#993C1D]/20">
-            <ArrowLeftRight className="w-4 h-4 group-hover:rotate-180 transition duration-300" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <span className="text-xs font-bold text-slate-900 block">Switch to Buyer Portal</span>
-            <span className="text-[10px] text-slate-500 block truncate">Return to user feed & map</span>
-          </div>
-        </button>
-      </div>
 
-      {/* Clean Language Toggle */}
-      <div className="px-3 pb-3">
-        <LanguageToggle />
-      </div>
+
+
 
       {/* Merchant Profile Footer with Logout Popover Menu */}
       <div className="p-3 border-t border-slate-100 bg-slate-50/80 relative">
@@ -136,22 +120,13 @@ export function SellerSidebar({ activeTab = "overview", onTabChange }: SellerSid
           onClick={() => setShowProfileMenu(!showProfileMenu)}
           className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 cursor-pointer transition select-none group"
         >
-          <div
-            className="w-9 h-9 rounded-full text-white font-bold flex items-center justify-center text-sm shadow-sm flex-shrink-0"
-            style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
-          >
-            G
+          <div className="w-9 h-9 rounded-full bg-slate-200 border border-slate-300/60 text-slate-500 flex items-center justify-center shadow-2xs flex-shrink-0">
+            <User className="w-5 h-5 text-slate-500" />
           </div>
           <div className="flex-1 min-w-0 flex items-center justify-between">
             <div className="text-xs font-bold text-slate-900 truncate flex items-center gap-1.5">
               <span>Gulshan</span>
-              <div
-                className="w-4 h-4 rounded-full text-white flex items-center justify-center shadow-xs flex-shrink-0"
-                style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
-                title="Verified Merchant"
-              >
-                <Check className="w-2.5 h-2.5 stroke-[3]" />
-              </div>
+              <GoldenBadge size={16} title="Verified Merchant" />
             </div>
             <ChevronUp className={`w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-transform ${showProfileMenu ? "rotate-180" : ""}`} />
           </div>

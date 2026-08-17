@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
+import { GoldenBadge } from "../components/ui/GoldenBadge";
 import {
   MapPin, Link, Calendar, CheckCircle, Edit3, Users, Globe, MessageCircle,
   Bookmark, Building, Heart, Repeat2, Share2, MoreHorizontal, Image as ImageIcon,
-  HelpCircle, Zap, UserPlus, BarChart2, X, Search, UserCheck, ChevronRight
+  HelpCircle, Zap, UserPlus, BarChart2, X, Search, UserCheck, ChevronRight, User
 } from "lucide-react";
 
 const userPosts = [
@@ -184,7 +185,9 @@ function EditProfileModal({ onClose }: { onClose: () => void }) {
         </div>
         <div className="px-4 pb-4">
           <div className="relative -mt-10 mb-4">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-xl font-bold border-4 border-white">RA</div>
+            <div className="w-20 h-20 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center border-4 border-white shadow-md">
+              <User className="w-10 h-10 text-slate-500" />
+            </div>
             <button className="absolute inset-0 w-20 h-20 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/30 transition-colors">
               <ImageIcon className="w-4 h-4 text-white" />
             </button>
@@ -248,7 +251,9 @@ export function Profile() {
         <div className="px-4 pb-4 bg-white border-b border-border">
           <div className="flex items-end justify-between -mt-12 mb-3">
             <div className="relative">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow-lg">RA</div>
+              <div className="w-24 h-24 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center border-4 border-white shadow-lg">
+                <User className="w-12 h-12 text-slate-500" />
+              </div>
               <div className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-white" />
             </div>
             <button
@@ -263,8 +268,8 @@ export function Profile() {
           <div className="mb-3">
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: "var(--font-display)" }}>Rafiq Ahmed</h1>
-              <div className="flex items-center gap-1 bg-blue-100 text-primary text-xs px-2 py-0.5 rounded-full font-medium">
-                <CheckCircle className="w-3 h-3" />
+              <GoldenBadge size={18} title="Verified Community Member" />
+              <div className="flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200/80 text-xs px-2.5 py-0.5 rounded-full font-bold">
                 Community Member
               </div>
             </div>
