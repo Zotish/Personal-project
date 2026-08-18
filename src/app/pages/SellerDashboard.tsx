@@ -1,4 +1,4 @@
-import React, { useState, type FormEvent } from "react";
+import React, { useState, useRef, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
@@ -6,7 +6,7 @@ import {
   Eye, Star, Search, Filter, CheckCircle2, AlertCircle, Clock, MapPin,
   Phone, Mail, Globe, Image as ImageIcon, ChevronRight, ChevronLeft, Settings, BarChart2,
   X, Check, ShieldCheck, ArrowUpRight, ArrowDownRight, MessageSquare, ExternalLink,
-  Tag, RefreshCw, Upload, ToggleLeft, ToggleRight, Lock, Key, LayoutGrid, List, User
+  Tag, RefreshCw, Upload, Camera, ToggleLeft, ToggleRight, Lock, Key, LayoutGrid, List, User
 } from "lucide-react";
 import { DeliverySecurityModal } from "../components/DeliverySecurityModal";
 import { ProductCard } from "../components/ProductCard";
@@ -248,6 +248,10 @@ export function SellerDashboard() {
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
+  // Upload Refs
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
   // Form State
   const [formName, setFormName] = useState("");
   const [formPrice, setFormPrice] = useState("");
@@ -398,8 +402,7 @@ export function SellerDashboard() {
   // Save Product (Add or Edit)
   const handleSaveProduct = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName || !formPrice) return;
-
+    const finalName = formName.trim() || "Uploaded Product Item";
     const parsedPrice = parseFloat(formPrice) || 0;
     const hasOffer = formOfferTag !== "none" && formOfferTag !== "";
     const selectedOffer = hasOffer ? formOfferTag : undefined;
@@ -410,7 +413,7 @@ export function SellerDashboard() {
     if (editingProduct) {
       setProducts(prev => prev.map(p => p.id === editingProduct.id ? {
         ...p,
-        name: formName,
+        name: finalName,
         price: parsedPrice,
         originalPrice: parsedOriginalPrice,
         offerTag: selectedOffer,
@@ -423,7 +426,7 @@ export function SellerDashboard() {
     } else {
       const newProduct: Product = {
         id: Date.now(),
-        name: formName,
+        name: finalName,
         price: parsedPrice,
         originalPrice: parsedOriginalPrice,
         offerTag: selectedOffer,
@@ -1072,87 +1075,104 @@ export function SellerDashboard() {
           <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-xl border border-border w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
               
-              {/* Ultra-Simple Add Product Modal Header */}
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                <div className="flex items-center gap-2">
+              {/* Add Product Modal Header Centered */}
+              <div className="px-6 py-4 border-b border-slate-100 relative flex items-center justify-center bg-slate-50">
+                <div className="flex items-center justify-center gap-2">
                   <span className="text-lg">📷</span>
-                  <h3 className="font-bold text-slate-900 text-base">Add New Product</h3>
+                  <h3 className="font-bold text-slate-900 text-base text-center">Add New Product</h3>
                 </div>
-                <button onClick={() => setIsModalOpen(false)} className="p-1 rounded-lg hover:bg-slate-200 text-slate-500 transition">
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="absolute right-4 p-1.5 rounded-full hover:bg-slate-200 text-slate-500 transition cursor-pointer"
+                  title="Close modal"
+                >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Minimal Form Body */}
+              {/* Form Body */}
               <form onSubmit={handleSaveProduct} className="p-6 space-y-4 text-xs sm:text-sm">
                 
-                {/* 1. Photo Upload (Device or Camera) */}
-                <div className="space-y-2">
-                  <label className="font-bold text-slate-900 block">Product Photo (From Device or Camera) *</label>
+                {/* 1. Dual Photo Upload Options (Device/Gallery vs Camera) */}
+                <div className="space-y-3">
                   
-                  <label className="w-full h-32 rounded-2xl border-2 border-dashed border-slate-300 hover:border-[#D85A30] bg-slate-50 hover:bg-[#D85A30]/5 flex flex-col items-center justify-center cursor-pointer transition p-4 text-center">
-                    <Upload className="w-7 h-7 text-[#D85A30] mb-1" />
-                    <span className="font-bold text-slate-800 text-xs">Click to Upload Photo / Take Camera Picture</span>
-                    <span className="text-[11px] text-slate-400">Supports JPG, PNG, WEBP</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={handleImageFileUpload}
-                      className="hidden"
-                    />
-                  </label>
+                  {/* Hidden File Inputs */}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageFileUpload}
+                    ref={galleryInputRef}
+                    className="hidden"
+                  />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleImageFileUpload}
+                    ref={cameraInputRef}
+                    className="hidden"
+                  />
+
+                  {/* Dual Upload Buttons */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Option 1: Device / Gallery Photo */}
+                    <button
+                      type="button"
+                      onClick={() => galleryInputRef.current?.click()}
+                      className="p-4 rounded-2xl border-2 border-dashed border-slate-300 hover:border-[#D85A30] bg-slate-50 hover:bg-[#D85A30]/5 flex flex-col items-center justify-center text-center transition group cursor-pointer"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-[#D85A30]/10 text-[#D85A30] group-hover:bg-[#D85A30] group-hover:text-white flex items-center justify-center mb-2 transition-colors shadow-2xs">
+                        <Upload className="w-5 h-5" />
+                      </div>
+                      <span className="font-bold text-slate-800 text-xs">Device / Gallery Photo</span>
+                      <span className="text-[10px] text-slate-400 mt-0.5">Upload saved image file</span>
+                    </button>
+
+                    {/* Option 2: Camera Photo */}
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="p-4 rounded-2xl border-2 border-dashed border-slate-300 hover:border-[#D85A30] bg-slate-50 hover:bg-[#D85A30]/5 flex flex-col items-center justify-center text-center transition group cursor-pointer"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-[#D85A30]/10 text-[#D85A30] group-hover:bg-[#D85A30] group-hover:text-white flex items-center justify-center mb-2 transition-colors shadow-2xs">
+                        <Camera className="w-5 h-5" />
+                      </div>
+                      <span className="font-bold text-slate-800 text-xs">Take Camera Picture</span>
+                      <span className="text-[10px] text-slate-400 mt-0.5">Capture with phone camera</span>
+                    </button>
+                  </div>
 
                   {/* Thumbnail Preview */}
                   {formImage && (
-                    <div className="flex items-center gap-3 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
-                      <img src={formImage} alt="Preview" className="w-12 h-12 rounded-lg object-cover border border-emerald-300" />
-                      <div>
-                        <span className="text-xs font-bold text-emerald-800 block">✓ Photo Selected & Ready</span>
-                        <span className="text-[10px] text-emerald-600">Will be displayed on product card</span>
+                    <div className="flex items-center gap-3 bg-emerald-50 p-3 rounded-2xl border border-emerald-200">
+                      <img src={formImage} alt="Preview" className="w-12 h-12 rounded-xl object-cover border border-emerald-300 shadow-2xs" />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs font-bold text-emerald-800 block truncate">✓ Photo Selected & Ready</span>
+                        <span className="text-[10px] text-emerald-600 block truncate">Will be displayed on product card</span>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => setFormImage("")}
+                        className="p-1 rounded-lg hover:bg-emerald-200 text-emerald-700 transition"
+                        title="Remove photo"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
                   )}
-                </div>
-
-                {/* 2. Product Name */}
-                <div>
-                  <label className="font-bold text-slate-900 block mb-1">Product Name *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Solid Oak Dining Table with 6 Chairs"
-                    value={formName}
-                    onChange={e => setFormName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium focus:outline-none focus:border-[#D85A30]"
-                  />
-                </div>
-
-                {/* 3. Product Price */}
-                <div>
-                  <label className="font-bold text-slate-900 block mb-1">Price ($) *</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    placeholder="e.g. 350.00"
-                    value={formPrice}
-                    onChange={e => setFormPrice(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-extrabold text-base focus:outline-none focus:border-[#D85A30]"
-                  />
                 </div>
 
                 <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2.5 rounded-xl text-slate-600 font-medium hover:bg-slate-100 transition"
+                    className="px-4 py-2.5 rounded-xl text-slate-600 font-medium hover:bg-slate-100 transition cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-xl text-white font-bold shadow-md hover:opacity-95 transition"
+                    className="px-6 py-2.5 rounded-xl text-white font-bold shadow-md hover:opacity-95 transition cursor-pointer"
                     style={{ background: "linear-gradient(135deg, #d4522a 0%, #C04A22 100%)" }}
                   >
                     Publish Product
