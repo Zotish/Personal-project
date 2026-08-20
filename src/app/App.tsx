@@ -32,11 +32,13 @@ import { SellerDashboard } from "./pages/SellerDashboard";
 import { SellerProfile } from "./pages/SellerProfile";
 import { MoreMenu } from "./pages/MoreMenu";
 import { BuyerOrders } from "./pages/BuyerOrders";
+import { PWAInstallPrompt } from "./components/ui/PWAInstallPrompt";
 
 export default function App() {
   return (
     <LanguageProvider>
     <BrowserRouter>
+      <PWAInstallPrompt />
       <Routes>
         {/* Public */}
         <Route path="/" element={<Landing />} />
