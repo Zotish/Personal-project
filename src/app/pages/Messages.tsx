@@ -75,9 +75,8 @@ function InboxList({ onSelect, selected, pinnedIds }: { onSelect: (id: number) =
             <button
               key={conv.id}
               onClick={() => onSelect(conv.id)}
-              className={`w-full flex items-center gap-3 p-4 text-left transition-all border-b border-border/50 cursor-pointer ${
-                selected === conv.id ? "bg-[#C04A22]/15" : "hover:bg-slate-50"
-              }`}
+              className={`w-full flex items-center gap-3 p-4 text-left transition-all border-b border-border/50 cursor-pointer ${selected === conv.id ? "bg-[#C04A22]/15" : "hover:bg-slate-50"
+                }`}
             >
               <div className="relative flex-shrink-0">
                 <div className="w-11 h-11 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs">
@@ -124,7 +123,7 @@ function ChatScreen({
   const conv = conversations.find(c => c.id === convId)!;
   const [messagesList, setMessagesList] = useState<MessageItem[]>(initialMessages);
   const [inputText, setInputText] = useState("");
-  
+
   // Feature states
   const [isTranslating, setIsTranslating] = useState(false);
   const [isCallingAudio, setIsCallingAudio] = useState(false);
@@ -275,7 +274,7 @@ function ChatScreen({
     const minutes = Math.floor(callDuration / 60);
     const seconds = callDuration % 60;
     const durationFormatted = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-    
+
     setIsCallingAudio(false);
     setIsCallingVideo(false);
 
@@ -522,11 +521,10 @@ function ChatScreen({
                   </div>
                 ) : (
                   <div
-                    className={`max-w-[75%] rounded-2xl px-4 py-2.5 relative group transition-all ${
-                      msgItem.from === "me"
+                    className={`max-w-[75%] rounded-2xl px-4 py-2.5 relative group transition-all ${msgItem.from === "me"
                         ? "bg-[#C04A22]/15 text-slate-900 rounded-br-sm shadow-2xs font-medium"
                         : "bg-white border border-border text-foreground rounded-bl-sm"
-                    }`}
+                      }`}
                   >
                     {/* WhatsApp Dropdown Chevron Button on Hover */}
                     <button
@@ -542,194 +540,193 @@ function ChatScreen({
 
                     {/* WhatsApp In-Place Dropdown Popover attached directly to message bubble */}
                     {selectedMsgForAction?.id === msgItem.id && (
-                      <div className={`absolute right-2 z-40 w-52 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 animate-fadeIn text-xs font-semibold text-slate-700 ${
-                        isNearBottom ? "bottom-8" : "top-8"
-                      }`}>
-                      {/* Quick Emoji Reactions Bar */}
-                      <div className="flex items-center justify-between bg-slate-50 p-1.5 rounded-xl border border-slate-200/60 mb-1.5">
-                        {["❤️", "👍", "😂", "😮", "😢", "🙏", "🔥"].map(emoji => (
-                          <button
-                            key={emoji}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAddReaction(msgItem.id, emoji);
-                            }}
-                            className="text-base hover:scale-125 transition cursor-pointer p-0.5 active:scale-95"
-                            title={`React ${emoji}`}
-                          >
-                            {emoji}
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Action Items List */}
-                      <div className="space-y-0.5">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setReplyingToMsg(msgItem);
-                            setSelectedMsgForAction(null);
-                          }}
-                          className="w-full px-2.5 py-1.5 flex items-center gap-2.5 hover:bg-slate-50 rounded-lg transition cursor-pointer text-left"
-                        >
-                          <Reply className="w-3.5 h-3.5 text-[#C04A22]" /> Reply
-                        </button>
-
-                        {msgItem.text && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCopyMsgText(msgItem.text!);
-                            }}
-                            className="w-full px-2.5 py-1.5 flex items-center gap-2.5 hover:bg-slate-50 rounded-lg transition cursor-pointer text-left"
-                          >
-                            <Copy className="w-3.5 h-3.5 text-slate-600" /> Copy Text
-                          </button>
-                        )}
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleTogglePinMessage(msgItem);
-                          }}
-                          className="w-full px-2.5 py-1.5 flex items-center gap-2.5 hover:bg-slate-50 rounded-lg transition cursor-pointer text-left"
-                        >
-                          <Pin className="w-3.5 h-3.5 text-amber-500" /> {msgItem.isPinned ? "Unpin Message" : "Pin Message"}
-                        </button>
-
-                        {msgItem.text && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleTranslateSingleMsg(msgItem);
-                            }}
-                            className="w-full px-2.5 py-1.5 flex items-center gap-2.5 hover:bg-slate-50 rounded-lg transition cursor-pointer text-left"
-                          >
-                            <Languages className="w-3.5 h-3.5 text-blue-500" /> Translate
-                          </button>
-                        )}
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowForwardModal(msgItem);
-                            setSelectedMsgForAction(null);
-                          }}
-                          className="w-full px-2.5 py-1.5 flex items-center gap-2.5 hover:bg-slate-50 rounded-lg transition cursor-pointer text-left"
-                        >
-                          <Share2 className="w-3.5 h-3.5 text-emerald-600" /> Forward
-                        </button>
-
-                        <hr className="my-1 border-slate-100" />
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteMsg(msgItem.id);
-                          }}
-                          className="w-full px-2.5 py-1.5 flex items-center gap-2.5 hover:bg-red-50 text-red-600 rounded-lg transition cursor-pointer text-left"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-red-500" /> Delete
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Quoted Reply Header inside bubble */}
-                  {msgItem.replyToText && (
-                    <div className="mb-2 p-2 rounded-xl bg-black/5 border-l-3 border-l-[#C04A22] text-xs">
-                      <span className="font-bold text-[#8C3015] block text-[10px]">{msgItem.replyToSender || "Replied"}</span>
-                      <span className="text-slate-700 truncate block">{msgItem.replyToText}</span>
-                    </div>
-                  )}
-
-                  {/* File Attachment Message */}
-                  {msgItem.type === "file" ? (
-                    <div className="flex items-center gap-3 p-1 pr-4">
-                      <div className="w-10 h-10 rounded-xl bg-[#C04A22]/10 text-[#C04A22] flex items-center justify-center flex-shrink-0 border border-[#C04A22]/20">
-                        <FileText className="w-5 h-5" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-slate-900 truncate">{msgItem.fileName}</p>
-                        <p className="text-[10px] text-slate-500">{msgItem.fileSize}</p>
-                      </div>
-                      <button className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 cursor-pointer">
-                        <Download className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ) : msgItem.type === "image" ? (
-                    /* Image Message */
-                    <div className="space-y-1 pr-2">
-                      <img src={msgItem.imageUrl} alt="Attached" className="max-w-full rounded-xl max-h-60 object-cover shadow-xs border border-slate-200" />
-                    </div>
-                  ) : msgItem.type === "voice" ? (
-                    /* Voice Note Message */
-                    <div className="flex items-center gap-3 min-w-[180px] py-1 pr-3">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPlayingVoiceId(playingVoiceId === msgItem.id ? null : msgItem.id);
-                        }}
-                        className="w-9 h-9 rounded-full bg-[#C04A22] text-white flex items-center justify-center cursor-pointer active:scale-95 shadow-xs"
-                      >
-                        {playingVoiceId === msgItem.id ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
-                      </button>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-1">
-                          {[3, 7, 4, 9, 6, 10, 5, 8, 4, 7, 5, 3].map((h, idx) => (
-                            <span
-                              key={idx}
-                              className={`w-1 rounded-full ${playingVoiceId === msgItem.id ? "bg-[#C04A22] animate-pulse" : "bg-slate-300"}`}
-                              style={{ height: `${h * 2}px` }}
-                            />
+                      <div className={`absolute right-2 z-40 w-52 bg-white rounded-2xl shadow-2xl border border-slate-100 p-2 animate-fadeIn text-xs font-semibold text-slate-700 ${isNearBottom ? "bottom-8" : "top-8"
+                        }`}>
+                        {/* Quick Emoji Reactions Bar */}
+                        <div className="flex items-center justify-between bg-slate-50 p-1.5 rounded-xl border border-slate-200/60 mb-1.5">
+                          {["❤️", "👍", "😂", "😮", "😢", "🙏", "🔥"].map(emoji => (
+                            <button
+                              key={emoji}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAddReaction(msgItem.id, emoji);
+                              }}
+                              className="text-base hover:scale-125 transition cursor-pointer p-0.5 active:scale-95"
+                              title={`React ${emoji}`}
+                            >
+                              {emoji}
+                            </button>
                           ))}
                         </div>
-                        <span className="text-[10px] font-bold text-slate-500 block">{msgItem.duration}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    /* Regular Text Message */
-                    <>
-                      <p className="text-sm leading-relaxed whitespace-pre-line pr-4">{msgItem.text}</p>
-                      
-                      {/* Auto-translated card when Enabled */}
-                      {((isTranslating && msgItem.from === "them") || msgItem.isManuallyTranslated) && msgItem.translatedText && (
-                        <div className="mt-2 pt-2 border-t border-slate-200 text-xs text-[#8C3015] bg-[#C04A22]/5 p-2 rounded-lg space-y-0.5 animate-fadeIn">
-                          <span className="text-[10px] font-bold text-[#C04A22] flex items-center gap-1">
-                            <Languages className="w-3 h-3" /> বাংলা অনুবাদ:
-                          </span>
-                          <p className="font-medium text-slate-800">{msgItem.translatedText}</p>
+
+                        {/* Action Items List */}
+                        <div className="space-y-0.5">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setReplyingToMsg(msgItem);
+                              setSelectedMsgForAction(null);
+                            }}
+                            className="w-full px-2.5 py-1.5 flex items-center gap-2.5 hover:bg-slate-50 rounded-lg transition cursor-pointer text-left"
+                          >
+                            <Reply className="w-3.5 h-3.5 text-[#C04A22]" /> Reply
+                          </button>
+
+                          {msgItem.text && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCopyMsgText(msgItem.text!);
+                              }}
+                              className="w-full px-2.5 py-1.5 flex items-center gap-2.5 hover:bg-slate-50 rounded-lg transition cursor-pointer text-left"
+                            >
+                              <Copy className="w-3.5 h-3.5 text-slate-600" /> Copy Text
+                            </button>
+                          )}
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTogglePinMessage(msgItem);
+                            }}
+                            className="w-full px-2.5 py-1.5 flex items-center gap-2.5 hover:bg-slate-50 rounded-lg transition cursor-pointer text-left"
+                          >
+                            <Pin className="w-3.5 h-3.5 text-amber-500" /> {msgItem.isPinned ? "Unpin Message" : "Pin Message"}
+                          </button>
+
+                          {msgItem.text && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTranslateSingleMsg(msgItem);
+                              }}
+                              className="w-full px-2.5 py-1.5 flex items-center gap-2.5 hover:bg-slate-50 rounded-lg transition cursor-pointer text-left"
+                            >
+                              <Languages className="w-3.5 h-3.5 text-blue-500" /> Translate
+                            </button>
+                          )}
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowForwardModal(msgItem);
+                              setSelectedMsgForAction(null);
+                            }}
+                            className="w-full px-2.5 py-1.5 flex items-center gap-2.5 hover:bg-slate-50 rounded-lg transition cursor-pointer text-left"
+                          >
+                            <Share2 className="w-3.5 h-3.5 text-emerald-600" /> Forward
+                          </button>
+
+                          <hr className="my-1 border-slate-100" />
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteMsg(msgItem.id);
+                            }}
+                            className="w-full px-2.5 py-1.5 flex items-center gap-2.5 hover:bg-red-50 text-red-600 rounded-lg transition cursor-pointer text-left"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-red-500" /> Delete
+                          </button>
                         </div>
-                      )}
-                    </>
-                  )}
-
-                  {/* Reaction Badges Container */}
-                  {msgItem.reactions && Object.keys(msgItem.reactions).length > 0 && (
-                    <div className="flex items-center gap-1 mt-1.5 flex-wrap">
-                      {Object.entries(msgItem.reactions).map(([emoji, count]) => (
-                        <span key={emoji} className="bg-white border border-slate-200 shadow-2xs rounded-full px-2 py-0.5 text-xs flex items-center gap-1">
-                          <span>{emoji}</span>
-                          {(count as number) > 1 && <span className="text-[10px] font-bold text-slate-600">{count as number}</span>}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Timestamp & Status */}
-                  <div className={`flex items-center gap-1 mt-1 ${msgItem.from === "me" ? "justify-end" : ""}`}>
-                    {msgItem.isPinned && <Pin className="w-3 h-3 text-[#C04A22] mr-1" title="Pinned" />}
-                    <span className={`text-[10px] ${msgItem.from === "me" ? "text-slate-600" : "text-muted-foreground"}`}>{msgItem.time}</span>
-                    {msgItem.from === "me" && (
-                      <CheckCheck className={`w-3.5 h-3.5 ${msgItem.read ? "text-[#C04A22]" : "text-slate-400"}`} />
+                      </div>
                     )}
+
+                    {/* Quoted Reply Header inside bubble */}
+                    {msgItem.replyToText && (
+                      <div className="mb-2 p-2 rounded-xl bg-black/5 border-l-3 border-l-[#C04A22] text-xs">
+                        <span className="font-bold text-[#8C3015] block text-[10px]">{msgItem.replyToSender || "Replied"}</span>
+                        <span className="text-slate-700 truncate block">{msgItem.replyToText}</span>
+                      </div>
+                    )}
+
+                    {/* File Attachment Message */}
+                    {msgItem.type === "file" ? (
+                      <div className="flex items-center gap-3 p-1 pr-4">
+                        <div className="w-10 h-10 rounded-xl bg-[#C04A22]/10 text-[#C04A22] flex items-center justify-center flex-shrink-0 border border-[#C04A22]/20">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-slate-900 truncate">{msgItem.fileName}</p>
+                          <p className="text-[10px] text-slate-500">{msgItem.fileSize}</p>
+                        </div>
+                        <button className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 cursor-pointer">
+                          <Download className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : msgItem.type === "image" ? (
+                      /* Image Message */
+                      <div className="space-y-1 pr-2">
+                        <img src={msgItem.imageUrl} alt="Attached" className="max-w-full rounded-xl max-h-60 object-cover shadow-xs border border-slate-200" />
+                      </div>
+                    ) : msgItem.type === "voice" ? (
+                      /* Voice Note Message */
+                      <div className="flex items-center gap-3 min-w-[180px] py-1 pr-3">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPlayingVoiceId(playingVoiceId === msgItem.id ? null : msgItem.id);
+                          }}
+                          className="w-9 h-9 rounded-full bg-[#C04A22] text-white flex items-center justify-center cursor-pointer active:scale-95 shadow-xs"
+                        >
+                          {playingVoiceId === msgItem.id ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+                        </button>
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-center gap-1">
+                            {[3, 7, 4, 9, 6, 10, 5, 8, 4, 7, 5, 3].map((h, idx) => (
+                              <span
+                                key={idx}
+                                className={`w-1 rounded-full ${playingVoiceId === msgItem.id ? "bg-[#C04A22] animate-pulse" : "bg-slate-300"}`}
+                                style={{ height: `${h * 2}px` }}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-[10px] font-bold text-slate-500 block">{msgItem.duration}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Regular Text Message */
+                      <>
+                        <p className="text-sm leading-relaxed whitespace-pre-line pr-4">{msgItem.text}</p>
+
+                        {/* Auto-translated card when Enabled */}
+                        {((isTranslating && msgItem.from === "them") || msgItem.isManuallyTranslated) && msgItem.translatedText && (
+                          <div className="mt-2 pt-2 border-t border-slate-200 text-xs text-[#8C3015] bg-[#C04A22]/5 p-2 rounded-lg space-y-0.5 animate-fadeIn">
+                            <span className="text-[10px] font-bold text-[#C04A22] flex items-center gap-1">
+                              <Languages className="w-3 h-3" /> বাংলা অনুবাদ:
+                            </span>
+                            <p className="font-medium text-slate-800">{msgItem.translatedText}</p>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* Reaction Badges Container */}
+                    {msgItem.reactions && Object.keys(msgItem.reactions).length > 0 && (
+                      <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                        {Object.entries(msgItem.reactions).map(([emoji, count]) => (
+                          <span key={emoji} className="bg-white border border-slate-200 shadow-2xs rounded-full px-2 py-0.5 text-xs flex items-center gap-1">
+                            <span>{emoji}</span>
+                            {(count as number) > 1 && <span className="text-[10px] font-bold text-slate-600">{count as number}</span>}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Timestamp & Status */}
+                    <div className={`flex items-center gap-1 mt-1 ${msgItem.from === "me" ? "justify-end" : ""}`}>
+                      {msgItem.isPinned && <Pin className="w-3 h-3 text-[#C04A22] mr-1" title="Pinned" />}
+                      <span className={`text-[10px] ${msgItem.from === "me" ? "text-slate-600" : "text-muted-foreground"}`}>{msgItem.time}</span>
+                      {msgItem.from === "me" && (
+                        <CheckCheck className={`w-3.5 h-3.5 ${msgItem.read ? "text-[#C04A22]" : "text-slate-400"}`} />
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          );
-        })
-      )}
+                )}
+              </div>
+            );
+          })
+        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -740,7 +737,7 @@ function ChatScreen({
           <div className="flex items-center justify-between bg-slate-100 border-l-4 border-l-[#C04A22] px-3.5 py-2 rounded-xl text-xs mb-2 animate-fadeIn">
             <div className="min-w-0 flex-1">
               <span className="font-bold text-[#8C3015] block text-[11px]">
-                Replying to {replyingToMsg.from === "me" ? "You" : conv.name}
+                Reply to {replyingToMsg.from === "me" ? "You" : conv.name}
               </span>
               <span className="text-slate-600 truncate block font-medium">
                 {replyingToMsg.text || replyingToMsg.fileName || "Media Message"}
@@ -829,11 +826,10 @@ function ChatScreen({
                 setIsTranslating(!isTranslating);
                 showToast(isTranslating ? "Auto Translation disabled" : "Auto Translation enabled (English ⇄ Bangla)");
               }}
-              className={`p-2 rounded-xl transition-colors flex-shrink-0 cursor-pointer ${
-                isTranslating
+              className={`p-2 rounded-xl transition-colors flex-shrink-0 cursor-pointer ${isTranslating
                   ? "bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/40"
                   : "hover:bg-secondary text-slate-500 hover:text-[#C04A22]"
-              }`}
+                }`}
               title="Toggle Auto Translation (Bangla)"
             >
               <Languages className="w-4.5 h-4.5" />
@@ -930,9 +926,8 @@ function ChatScreen({
             <div className="flex items-center justify-center gap-4 pt-4">
               <button
                 onClick={() => setAudioMuted(!audioMuted)}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition cursor-pointer ${
-                  audioMuted ? "bg-red-500 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
-                }`}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition cursor-pointer ${audioMuted ? "bg-red-500 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
+                  }`}
                 title={audioMuted ? "Unmute Mic" : "Mute Mic"}
               >
                 {audioMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
@@ -948,9 +943,8 @@ function ChatScreen({
 
               <button
                 onClick={() => setSpeakerOn(!speakerOn)}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition cursor-pointer ${
-                  !speakerOn ? "bg-red-500 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
-                }`}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition cursor-pointer ${!speakerOn ? "bg-red-500 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
+                  }`}
                 title={speakerOn ? "Mute Speaker" : "Turn On Speaker"}
               >
                 {speakerOn ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
@@ -999,18 +993,16 @@ function ChatScreen({
             <div className="relative z-10 p-6 flex items-center justify-center gap-4 bg-gradient-to-t from-black/80 to-transparent">
               <button
                 onClick={() => setVideoMicOff(!videoMicOff)}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition cursor-pointer ${
-                  videoMicOff ? "bg-red-500 text-white" : "bg-white/20 text-white hover:bg-white/30"
-                }`}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition cursor-pointer ${videoMicOff ? "bg-red-500 text-white" : "bg-white/20 text-white hover:bg-white/30"
+                  }`}
               >
                 {videoMicOff ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </button>
 
               <button
                 onClick={() => setVideoCamOff(!videoCamOff)}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition cursor-pointer ${
-                  videoCamOff ? "bg-red-500 text-white" : "bg-white/20 text-white hover:bg-white/30"
-                }`}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition cursor-pointer ${videoCamOff ? "bg-red-500 text-white" : "bg-white/20 text-white hover:bg-white/30"
+                  }`}
               >
                 {videoCamOff ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
               </button>
@@ -1036,7 +1028,7 @@ function ChatScreen({
             >
               <X className="w-4 h-4" />
             </button>
-            
+
             <div className="w-20 h-20 rounded-full bg-slate-100 border-2 border-[#C04A22] mx-auto flex items-center justify-center text-slate-500 shadow-md">
               <User className="w-10 h-10 text-slate-500" />
             </div>
