@@ -31,10 +31,12 @@ const trendingTopics: Topic[] = [
 ];
 
 const people = [
-  { name: "Nadia Islam", handle: "@nadia_nyc", avatar: "NI", color: "from-emerald-400 to-teal-500", bio: "Immigration attorney in NYC", followers: "12.4K", verified: true },
-  { name: "Carlos Rivera", handle: "@carlos_helps", avatar: "CR", color: "from-amber-400 to-orange-500", bio: "Community helper & legal advocate", followers: "8.2K", verified: false },
-  { name: "Dr. Priya Menon", handle: "@dr_priya_health", avatar: "PM", color: "from-purple-400 to-indigo-500", bio: "Healthcare navigator & Medicaid aid", followers: "15.8K", verified: true },
-  { name: "Ahmed Hassan", handle: "@ahmed_taxes", avatar: "AH", color: "from-blue-400 to-cyan-500", bio: "CPA & tax consultant for immigrants", followers: "6.5K", verified: true },
+  { id: "nadia_islam_nyc", name: "Nadia Islam, Esq.", followers: "14.8K", verified: true },
+  { id: "rahim_bdconnect", name: "Rahim Chowdhury", followers: "8.4K", verified: true },
+  { id: "sadia_islam_nyc", name: "Sadia Islam", followers: "2.2K", verified: true },
+  { id: "priya_sharma_usa", name: "Priya Sharma", followers: "1.9K", verified: false },
+  { id: "carlos_mx_nyc", name: "Carlos Mendoza", followers: "5.7K", verified: false },
+  { id: "soraya_h", name: "Soraya Hosseini", followers: "3.5K", verified: false },
 ];
 
 const communities = [
@@ -196,6 +198,7 @@ function getPostsForTopic(topic: Topic): PostItem[] {
 }
 
 export function Explore() {
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [activeTab, setActiveTab] = useState("trending");
@@ -272,80 +275,139 @@ export function Explore() {
 
             {/* Posts Feed matching HomeFeed style */}
             <div className="p-3 sm:p-4 space-y-3">
-              {getPostsForTopic(selectedTopic).map(post => {
-                const isLiked = !!likedPosts[post.id];
-                const currentLikes = likeCounts[post.id] ?? post.likes;
-
-                return (
-                  <article 
-                    key={post.id} 
-                    className="bg-white rounded-2xl border border-slate-200/90 p-3.5 sm:p-4 transition-all hover:shadow-sm cursor-pointer"
+              {feedTab === "people" ? (
+                people.map(p => (
+                  <div
+                    key={p.name}
+                    onClick={() => navigate(`/profile/${p.id}`)}
+                    className="bg-white rounded-2xl border border-slate-200/90 p-4 flex gap-3 items-center hover:border-[#C04A22]/40 hover:shadow-sm transition cursor-pointer group"
+                    title={`View ${p.name}'s Profile`}
                   >
-                    {/* Author Header matching HomeFeed */}
-                    <div className="flex items-center justify-between mb-2.5">
-                      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                        {/* Avatar matching HomeFeed */}
-                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs">
+                    <div className="w-10 h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs group-hover:opacity-85">
+                      <User className="w-5 h-5 text-slate-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-bold text-slate-900 truncate group-hover:underline group-hover:text-[#C04A22] transition-colors">{p.name}</span>
+                        {p.verified && (
+                          <GoldenBadge size={15} title="Verified Account" />
+                        )}
+                      </div>
+                      <div className="text-xs text-slate-500">{p.followers} followers</div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/profile/${p.id}`);
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#C04A22]/15 text-[#8C3015] border border-[#C04A22]/30 hover:bg-[#C04A22]/25 transition cursor-pointer active:scale-95 flex-shrink-0"
+                    >
+                      Follow
+                    </button>
+                  </div>
+                ))
+              ) : (
+                getPostsForTopic(selectedTopic).map(post => {
+                  const isLiked = !!likedPosts[post.id];
+                  const currentLikes = likeCounts[post.id] ?? post.likes;
+
+                  return (
+                    <article 
+                      key={post.id} 
+                      className="bg-white rounded-2xl border border-slate-200/90 p-3.5 sm:p-4 transition-all hover:shadow-sm cursor-pointer"
+                    >
+                      <div className="flex gap-3 items-start">
+                        {/* Left Column: Avatar */}
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const handleClean = (post.handle || post.author).replace('@', '').toLowerCase().replace(/\s+/g, '_');
+                            navigate(`/profile/${handleClean}`);
+                          }}
+                          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs hover:opacity-85 cursor-pointer mt-0.5"
+                          title={`View ${post.author}'s Profile`}
+                        >
                           <User className="w-5 h-5 text-slate-500" />
                         </div>
-                        <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap min-w-0">
-                          <span className="text-sm font-bold text-slate-900 truncate">{post.author}</span>
-                          {post.verified && (
-                            <GoldenBadge size={16} title="Verified Account" />
+
+                        {/* Right Column: All Content Aligned Under Name */}
+                        <div className="flex-1 min-w-0">
+                          {/* Author Header */}
+                          <div className="flex items-center justify-between mb-1">
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const handleClean = (post.handle || post.author).replace('@', '').toLowerCase().replace(/\s+/g, '_');
+                                navigate(`/profile/${handleClean}`);
+                              }}
+                              className="flex items-center gap-1 sm:gap-1.5 flex-wrap min-w-0 cursor-pointer"
+                            >
+                              <span className="text-sm font-bold text-slate-900 truncate hover:underline">{post.author}</span>
+                              {post.verified && (
+                                <GoldenBadge size={16} title="Verified Account" />
+                              )}
+                              <span className="text-xs text-slate-400">· {post.time}</span>
+                            </div>
+                            <button className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </button>
+                          </div>
+
+                          {/* Content text */}
+                          <p className="text-sm text-slate-900 leading-relaxed whitespace-pre-line">
+                            {post.content}
+                          </p>
+
+                          {/* Post Image Attachment */}
+                          {post.image && (
+                            <div className="mt-3 rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-100">
+                              <img
+                                src={post.image}
+                                alt="Post attachment"
+                                className="w-full max-h-64 sm:max-h-72 object-cover hover:scale-[1.01] transition-transform duration-300"
+                              />
+                            </div>
                           )}
-                          <span className="text-xs text-slate-400">· {post.time}</span>
+
+                          {/* Action Bar */}
+                          <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 text-slate-500 max-w-md">
+                            <button 
+                              onClick={() => toggleLike(post.id, post.likes)} 
+                              className={`flex items-center gap-1.5 text-xs transition-colors cursor-pointer ${
+                                isLiked ? "text-red-600 font-bold" : "hover:text-red-600"
+                              }`}
+                            >
+                              <Heart className={`w-4 h-4 ${isLiked ? "fill-red-600 text-red-600" : ""}`} />
+                              <span>{currentLikes}</span>
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/post/${post.id || 1}?focus=comment`);
+                              }}
+                              className="flex items-center gap-1.5 text-xs hover:text-[#C04A22] transition-colors cursor-pointer"
+                              title="Comment on post"
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                              <span>{post.comments}</span>
+                            </button>
+                            <button className="flex items-center gap-1.5 text-xs hover:text-emerald-600 transition-colors cursor-pointer">
+                              <Repeat2 className="w-4 h-4" />
+                              <span>{post.reposts}</span>
+                            </button>
+                            <button className="flex items-center gap-1.5 text-xs hover:text-[#C04A22] transition-colors cursor-pointer">
+                              <Share2 className="w-4 h-4" />
+                            </button>
+                            <button className="flex items-center gap-1.5 text-xs hover:text-[#C04A22] transition-colors cursor-pointer">
+                              <Bookmark className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                      <button className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* Content matching HomeFeed */}
-                    <p className="text-sm text-slate-900 leading-relaxed whitespace-pre-line">
-                      {post.content}
-                    </p>
-
-                    {/* Post Image Attachment */}
-                    {post.image && (
-                      <div className="mt-3 rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-100">
-                        <img
-                          src={post.image}
-                          alt="Post attachment"
-                          className="w-full max-h-64 sm:max-h-72 object-cover hover:scale-[1.01] transition-transform duration-300"
-                        />
-                      </div>
-                    )}
-
-                    {/* Action Bar matching HomeFeed */}
-                    <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 text-slate-500">
-                      <button 
-                        onClick={() => toggleLike(post.id, post.likes)} 
-                        className={`flex items-center gap-1.5 text-xs transition-colors cursor-pointer ${
-                          isLiked ? "text-red-600 font-bold" : "hover:text-red-600"
-                        }`}
-                      >
-                        <Heart className={`w-4 h-4 ${isLiked ? "fill-red-600 text-red-600" : ""}`} />
-                        <span>{currentLikes}</span>
-                      </button>
-                      <button className="flex items-center gap-1.5 text-xs hover:text-[#C04A22] transition-colors cursor-pointer">
-                        <MessageCircle className="w-4 h-4" />
-                        <span>{post.comments}</span>
-                      </button>
-                      <button className="flex items-center gap-1.5 text-xs hover:text-emerald-600 transition-colors cursor-pointer">
-                        <Repeat2 className="w-4 h-4" />
-                        <span>{post.reposts}</span>
-                      </button>
-                      <button className="flex items-center gap-1.5 text-xs hover:text-[#C04A22] transition-colors cursor-pointer">
-                        <Share2 className="w-4 h-4" />
-                      </button>
-                      <button className="flex items-center gap-1.5 text-xs hover:text-[#C04A22] transition-colors cursor-pointer">
-                        <Bookmark className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
+                    </article>
+                  );
+                })
+              )}
             </div>
           </div>
         ) : (
@@ -436,21 +498,32 @@ export function Explore() {
                     <h2 className="font-normal text-slate-900 text-sm">Suggested People to Follow</h2>
                   </div>
                   {people.map(p => (
-                    <div key={p.name} className="bg-white rounded-2xl border border-slate-200/90 p-4 flex gap-3 items-center">
+                    <div
+                      key={p.name}
+                      onClick={() => navigate(`/profile/${p.id}`)}
+                      className="bg-white rounded-2xl border border-slate-200/90 p-4 flex gap-3 items-center hover:border-[#C04A22]/40 hover:shadow-sm transition cursor-pointer group"
+                      title={`View ${p.name}'s Profile`}
+                    >
                       {/* Normal User Profile Avatar */}
-                      <div className="w-10 h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs">
+                      <div className="w-10 h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs group-hover:opacity-85">
                         <User className="w-5 h-5 text-slate-500" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-bold text-slate-900 truncate">{p.name}</span>
+                          <span className="text-sm font-bold text-slate-900 truncate group-hover:underline group-hover:text-[#C04A22] transition-colors">{p.name}</span>
                           {p.verified && (
                             <GoldenBadge size={15} title="Verified Account" />
                           )}
                         </div>
                         <div className="text-xs text-slate-500">{p.followers} followers</div>
                       </div>
-                      <button className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#C04A22]/15 text-[#8C3015] border border-[#C04A22]/30 hover:bg-[#C04A22]/25 transition cursor-pointer active:scale-95 flex-shrink-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/profile/${p.id}`);
+                        }}
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#C04A22]/15 text-[#8C3015] border border-[#C04A22]/30 hover:bg-[#C04A22]/25 transition cursor-pointer active:scale-95 flex-shrink-0"
+                      >
                         Follow
                       </button>
                     </div>

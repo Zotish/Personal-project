@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import { GoldenBadge } from "../components/ui/GoldenBadge";
@@ -7,7 +7,8 @@ import {
   Bookmark, Building, Heart, Repeat2, Share2, MoreHorizontal, Image as ImageIcon,
   HelpCircle, Zap, UserPlus, BarChart2, X, Search, UserCheck, ChevronRight, User,
   ArrowLeft, Mail, Bell, BellOff, Flag, UserX, VolumeX, Sparkles, Check, Play,
-  Download, Eye, MessageSquare, ExternalLink, ShieldCheck, GraduationCap, Briefcase
+  Download, Eye, MessageSquare, ExternalLink, ShieldCheck, GraduationCap, Briefcase, Languages,
+  Video, Smile
 } from "lucide-react";
 
 export interface UserProfileData {
@@ -76,6 +77,17 @@ export interface TweetReply {
   };
 }
 
+export const formatStatusShort = (status?: string) => {
+  if (!status) return "";
+  const s = status.toLowerCase();
+  if (s.includes("student") || s.includes("f-1") || s.includes("opt")) return "Student";
+  if (s.includes("citizen")) return "Citizen";
+  if (s.includes("resident") || s.includes("green card") || s.includes("pr")) return "Resident";
+  if (s.includes("asylum")) return "Asylum";
+  if (s.includes("work") || s.includes("ead") || s.includes("employ") || s.includes("h-1b")) return "Employed";
+  return status.split(" ")[0] || "Member";
+};
+
 // ─── Universal Mock Users Database (Twitter Profiles) ──────────────────────────────
 export const mockUniversalUsers: Record<string, UserProfileData> = {
   "rafiq_ahmed": {
@@ -86,7 +98,7 @@ export const mockUniversalUsers: Record<string, UserProfileData> = {
     verified: true,
     role: "Community Member",
     roleType: "member",
-    visaStatus: "Student Visa (F-1)",
+    visaStatus: "Student",
     originCountry: "Bangladesh 🇧🇩",
     location: "Queens, New York",
     website: "https://rafiqahmed.dev",
@@ -106,7 +118,7 @@ export const mockUniversalUsers: Record<string, UserProfileData> = {
     verified: true,
     role: "Immigration Attorney",
     roleType: "advisor",
-    visaStatus: "US Citizen",
+    visaStatus: "Citizen",
     originCountry: "Bangladesh / USA 🇧🇩🇺🇸",
     location: "Brooklyn, New York",
     website: "https://nadialaw.nyc",
@@ -126,7 +138,7 @@ export const mockUniversalUsers: Record<string, UserProfileData> = {
     verified: true,
     role: "Community Organizer",
     roleType: "advocate",
-    visaStatus: "Permanent Resident (Green Card)",
+    visaStatus: "Resident",
     originCountry: "Bangladesh 🇧🇩",
     location: "Jackson Heights, Queens",
     website: "https://bdconnectnyc.org",
@@ -146,7 +158,7 @@ export const mockUniversalUsers: Record<string, UserProfileData> = {
     verified: true,
     role: "Social Worker & Advocate",
     roleType: "advocate",
-    visaStatus: "Permanent Resident",
+    visaStatus: "Resident",
     originCountry: "Bangladesh 🇧🇩",
     location: "Brooklyn, NY",
     website: "https://nycimmigrantadvocacy.org",
@@ -166,7 +178,7 @@ export const mockUniversalUsers: Record<string, UserProfileData> = {
     verified: false,
     role: "Graduate Student (NYU)",
     roleType: "student",
-    visaStatus: "F-1 Student Visa (STEM OPT)",
+    visaStatus: "Student",
     originCountry: "India 🇮🇳",
     location: "Manhattan, NY",
     website: "https://priyasharma.substack.com",
@@ -186,7 +198,7 @@ export const mockUniversalUsers: Record<string, UserProfileData> = {
     verified: false,
     role: "Chef & Food Creator",
     roleType: "member",
-    visaStatus: "Work Authorization (EAD)",
+    visaStatus: "Employed",
     originCountry: "Mexico 🇲🇽",
     location: "Corona, Queens, NY",
     website: "https://carlosculinary.com",
@@ -206,7 +218,7 @@ export const mockUniversalUsers: Record<string, UserProfileData> = {
     verified: false,
     role: "Community Member",
     roleType: "member",
-    visaStatus: "Asylum Applicant",
+    visaStatus: "Asylum",
     originCountry: "Iran 🇮🇷",
     location: "New York, NY",
     website: "https://sorayahosseini.art",
@@ -323,7 +335,122 @@ const userPostsDatabase: Record<string, TweetPost[]> = {
       reposts: 380,
       views: "34.8K",
     }
+  ],
+  "sadia_islam_nyc": [
+    {
+      id: 401,
+      author: { name: "Sadia Islam", handle: "@sadia_islam_nyc", verified: true },
+      time: "3h",
+      content: "🗽 Important reminder for NYC families: Enrollment for 3-K and Pre-K is open regardless of immigration status. Free translation services available at all Family Welcome Centers! #NYCImmigrants #Education",
+      likes: 540,
+      comments: 32,
+      reposts: 110,
+      views: "8.4K",
+      isPinned: true,
+      image: "https://images.unsplash.com/photo-1577896851231-70ef18881754?w=800&h=450&fit=crop",
+    },
+    {
+      id: 402,
+      author: { name: "Sadia Islam", handle: "@sadia_islam_nyc", verified: true },
+      time: "2d",
+      content: "Distributed winter jackets and school supplies to 120 newcomer families in Sunset Park today. Thank you to everyone from the Bangladeshi New Yorkers group who contributed! 🧣📦❤️",
+      likes: 890,
+      comments: 65,
+      reposts: 210,
+      views: "14.2K",
+    }
+  ],
+  "priya_sharma_usa": [
+    {
+      id: 501,
+      author: { name: "Priya Sharma", handle: "@priya_sharma_usa", verified: false },
+      time: "6h",
+      content: "🎓 STEM OPT Extension Guide 2024: Make sure to apply up to 90 days before your initial 12-month post-completion OPT expires. Must have Form I-983 training plan signed by employer! #F1Visa #STEMOPT #NYU",
+      likes: 720,
+      comments: 94,
+      reposts: 310,
+      views: "19.5K",
+      isPinned: true,
+      image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&h=450&fit=crop",
+    },
+    {
+      id: 502,
+      author: { name: "Priya Sharma", handle: "@priya_sharma_usa", verified: false },
+      time: "3d",
+      content: "First year of graduate school at NYU done! Manhattan rent is insane, but the community libraries and student discounts make it worth it 🍎📚",
+      likes: 380,
+      comments: 24,
+      reposts: 15,
+      views: "5.6K",
+    }
+  ],
+  "carlos_mx_nyc": [
+    {
+      id: 601,
+      author: { name: "Carlos Mendoza", handle: "@carlos_mx_nyc", verified: false },
+      time: "8h",
+      content: "🌮 Secret to authentic Birria tacos in Queens: Slow-cooked for 6 hours with guajillo and ancho chiles. Available this weekend at our community food popup in Corona Plaza! #QueensEats #MexicanFood",
+      likes: 1140,
+      comments: 118,
+      reposts: 420,
+      views: "28.3K",
+      isPinned: true,
+      image: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800&h=450&fit=crop",
+    },
+    {
+      id: 602,
+      author: { name: "Carlos Mendoza", handle: "@carlos_mx_nyc", verified: false },
+      time: "4d",
+      content: "Started with a pushcart in 2021, today signed the lease for our kitchen space. Never give up on your American dream! 🇺🇸✨",
+      likes: 2150,
+      comments: 230,
+      reposts: 680,
+      views: "51.2K",
+    }
+  ],
+  "soraya_h": [
+    {
+      id: 701,
+      author: { name: "Soraya Hosseini", handle: "@soraya_h", verified: false },
+      time: "1d",
+      content: "☕ Documenting immigrant stories across NYC coffee shops. Today's interview was with an Iranian artist in Greenwich Village who moved here 30 years ago. Every story is resilient and beautiful. #ImmigrantVoices #NYC",
+      likes: 640,
+      comments: 52,
+      reposts: 140,
+      views: "11.8K",
+      isPinned: true,
+      image: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&h=450&fit=crop",
+    },
+    {
+      id: 702,
+      author: { name: "Soraya Hosseini", handle: "@soraya_h", verified: false },
+      time: "5d",
+      content: "Art exhibition opening this Friday in Brooklyn showcasing immigrant artists from 12 countries. Link in bio! 🎨🗽",
+      likes: 490,
+      comments: 38,
+      reposts: 95,
+      views: "9.1K",
+    }
   ]
+};
+
+export const getUserPosts = (user: UserProfileData): TweetPost[] => {
+  const key = (user.id as string).toLowerCase().replace("@", "");
+  if (userPostsDatabase[key]) {
+    return userPostsDatabase[key];
+  }
+  return [
+    {
+      id: Date.now(),
+      author: { name: user.name, handle: user.handle, verified: user.verified },
+      time: "1d",
+      content: `Hello everyone! Glad to be part of the ImmigrantConnect community. Connecting from ${user.location || "USA"} and excited to support one another! 🤝🗽 #ImmigrantCommunity #NewYork`,
+      likes: 38,
+      comments: 6,
+      reposts: 3,
+      views: "620",
+    }
+  ];
 };
 
 // ─── Replies Database ─────────────────────────────────────────────────────────────
@@ -382,13 +509,32 @@ const userRepliesDatabase: Record<string, TweetReply[]> = {
   ]
 };
 
-// ─── Joined Communities Database ──────────────────────────────────────────────────
-const mockCommunities = [
-  { id: "bd_nyc", name: "Bangladeshi New Yorkers", emoji: "🇧🇩", members: "14.2K members", desc: "The largest hub for the Bangladeshi diaspora across NYC.", category: "Ethnic Community" },
-  { id: "f1_students", name: "International Students USA", emoji: "🎓", members: "89.4K members", desc: "F-1, J-1, OPT, STEM OPT tips & university life.", category: "Education" },
-  { id: "legal_qa", name: "Immigration Legal Q&A", emoji: "⚖️", members: "28.3K members", desc: "Peer advice & licensed attorney Q&A sessions.", category: "Legal Aid" },
-  { id: "desi_tech", name: "South Asian Tech Network", emoji: "💻", members: "19.5K members", desc: "Software engineers, designers, and founders in the USA.", category: "Career" },
-];
+export const getUserReplies = (user: UserProfileData): TweetReply[] => {
+  const key = (user.id as string).toLowerCase().replace("@", "");
+  if (userRepliesDatabase[key]) {
+    return userRepliesDatabase[key];
+  }
+  return [
+    {
+      id: Date.now() + 1,
+      parentPost: {
+        author: { name: "Rahim Chowdhury", handle: "@rahim_bdconnect", verified: true },
+        time: "2d",
+        content: "Annual Bangladeshi Community Picnic is set for next Saturday at Flushing Meadows Park..."
+      },
+      reply: {
+        time: "1d",
+        content: "Excited for this! Looking forward to meeting everyone in person. 🤝✨",
+        likes: 19,
+        reposts: 2,
+        comments: 1,
+        views: "480",
+      }
+    }
+  ];
+};
+
+const QUICK_EMOJIS = ["👍", "❤️", "🔥", "🎉", "👏", "🙌", "😊", "🗽", "🇺🇸", "🇧🇩", "🤝", "💡"];
 
 export function Profile() {
   const navigate = useNavigate();
@@ -408,7 +554,7 @@ export function Profile() {
     verified: false,
     role: "Community Member",
     roleType: "member",
-    visaStatus: "Immigrant Community Member",
+    visaStatus: "Member",
     originCountry: "USA / Global 🌐",
     location: "New York, NY",
     website: `https://pathasathi.com/u/${routeUserKey}`,
@@ -424,7 +570,7 @@ export function Profile() {
   const isSelf = activeUser.handle === "@rafiq_ahmed";
 
   // Interactive States
-  const [activeTab, setActiveTab] = useState<"posts" | "replies" | "communities" | "media" | "likes" | "orders">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "replies" | "likes" | "orders">("posts");
   const [isFollowing, setIsFollowing] = useState<boolean>(activeUser.isFollowing || false);
   const [followersCount, setFollowersCount] = useState<number>(activeUser.followersCount);
   const [isNotificationsOn, setIsNotificationsOn] = useState<boolean>(false);
@@ -439,9 +585,36 @@ export function Profile() {
   const [profileData, setProfileData] = useState<UserProfileData>(activeUser);
 
   // Posts State
-  const initialPosts = userPostsDatabase[activeUser.id as string] || userPostsDatabase["rafiq_ahmed"];
-  const [postsList, setPostsList] = useState<TweetPost[]>(initialPosts);
+  const [postsList, setPostsList] = useState<TweetPost[]>(() => getUserPosts(activeUser));
   const [newPostText, setNewPostText] = useState("");
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setMediaPreview(url);
+    }
+  };
+
+  const insertEmoji = (emoji: string) => {
+    setNewPostText(prev => prev + emoji);
+    setEmojiPickerOpen(false);
+  };
+
+  // Re-sync states whenever routeUserKey or activeUser changes
+  useEffect(() => {
+    setProfileData(activeUser);
+    setPostsList(getUserPosts(activeUser));
+    setIsFollowing(activeUser.isFollowing || false);
+    setFollowersCount(activeUser.followersCount);
+    setActiveTab("posts");
+    setShowMoreMenu(false);
+  }, [routeUserKey, activeUser.id]);
+
+  const userReplies = useMemo(() => getUserReplies(profileData), [profileData]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -512,7 +685,7 @@ export function Profile() {
 
   // Create Tweet Action
   const handleCreatePost = () => {
-    if (!newPostText.trim()) return;
+    if (!newPostText.trim() && !mediaPreview) return;
     const newTweet: TweetPost = {
       id: Date.now(),
       author: {
@@ -527,9 +700,12 @@ export function Profile() {
       reposts: 0,
       views: "1",
       isPinned: false,
+      image: mediaPreview || undefined,
     };
     setPostsList([newTweet, ...postsList]);
     setNewPostText("");
+    setMediaPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     showToast("Your post was published!");
   };
 
@@ -539,13 +715,6 @@ export function Profile() {
     setShowMoreMenu(false);
     showToast("Profile link copied to clipboard!");
   };
-
-  const userReplies = userRepliesDatabase[activeUser.id as string] || userRepliesDatabase["rafiq_ahmed"];
-
-  // Media posts
-  const mediaPosts = useMemo(() => {
-    return postsList.filter(p => p.image || p.video);
-  }, [postsList]);
 
   return (
     <AppLayout>
@@ -744,11 +913,6 @@ export function Profile() {
               {profileData.verified && (
                 <GoldenBadge size={20} title="Verified Community Member" />
               )}
-              {profileData.role && (
-                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#C04A22]/10 text-[#8C3015] border border-[#C04A22]/30">
-                  {profileData.role}
-                </span>
-              )}
             </div>
 
             <div className="flex items-center gap-2 mt-0.5">
@@ -774,48 +938,19 @@ export function Profile() {
                 <span>{profileData.location}</span>
               </div>
             )}
-            {profileData.originCountry && (
-              <div className="flex items-center gap-1.5">
-                <Globe className="w-4 h-4 text-slate-400" />
-                <span>From {profileData.originCountry}</span>
-              </div>
-            )}
             {profileData.visaStatus && (
               <div className="flex items-center gap-1.5">
                 <GraduationCap className="w-4 h-4 text-slate-400" />
-                <span>{profileData.visaStatus}</span>
+                <span>{formatStatusShort(profileData.visaStatus)}</span>
               </div>
             )}
-            {profileData.website && (
-              <div className="flex items-center gap-1.5 text-[#C04A22] font-semibold hover:text-[#8C3015] hover:underline">
-                <LinkIcon className="w-4 h-4 text-slate-400" />
-                <a href={profileData.website} target="_blank" rel="noreferrer">
-                  {profileData.website.replace("https://", "")}
-                </a>
-              </div>
-            )}
-            {profileData.joinedDate && (
+            {profileData.languages && profileData.languages.length > 0 && (
               <div className="flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-slate-400" />
-                <span>{profileData.joinedDate}</span>
+                <Languages className="w-4 h-4 text-slate-400" />
+                <span>{profileData.languages.join(", ")}</span>
               </div>
             )}
           </div>
-
-          {/* Languages spoken chips */}
-          {profileData.languages && profileData.languages.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap mb-3.5">
-              <span className="text-xs text-slate-400 font-semibold mr-1">Languages:</span>
-              {profileData.languages.map(lang => (
-                <span
-                  key={lang}
-                  className="text-xs bg-[#C04A22]/10 text-[#8C3015] font-semibold px-2.5 py-0.5 rounded-full border border-[#C04A22]/20"
-                >
-                  {lang}
-                </span>
-              ))}
-            </div>
-          )}
 
           {/* Following & Followers Counts */}
           <div className="flex items-center gap-5 text-xs sm:text-sm font-medium mb-3">
@@ -853,8 +988,6 @@ export function Profile() {
           {[
             { id: "posts", label: "Posts" },
             { id: "replies", label: "Replies" },
-            { id: "communities", label: "Communities" },
-            { id: "media", label: "Media" },
             { id: "likes", label: "Likes" },
             ...(isSelf ? [{ id: "orders", label: "📦 My Orders" }] : []),
           ].map(tab => (
@@ -883,9 +1016,9 @@ export function Profile() {
             <div>
               {/* Tweet Composer (when viewing own profile) */}
               {isSelf && (
-                <div className="p-4 border-b border-border/80 bg-white">
-                  <div className="flex gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs">
+                <div className="p-3.5 sm:p-4 border-b border-border/80 bg-white">
+                  <div className="flex gap-3 items-start">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs mt-0.5">
                       <User className="w-5 h-5 text-slate-500" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -894,26 +1027,114 @@ export function Profile() {
                         onChange={e => setNewPostText(e.target.value)}
                         placeholder="What is happening in your community?!"
                         rows={2}
-                        className="w-full resize-none text-sm text-slate-900 placeholder:text-slate-400 bg-transparent outline-none leading-relaxed"
+                        className="w-full resize-none text-sm text-slate-900 placeholder:text-slate-400 bg-transparent outline-none leading-relaxed focus:outline-none min-h-[52px] pt-1"
                       />
-                      <div className="flex items-center justify-between pt-2 border-t border-slate-100 mt-2">
-                        <div className="flex items-center gap-3 text-[#C04A22]">
-                          <button className="p-1.5 hover:bg-[#C04A22]/10 rounded-full transition cursor-pointer">
-                            <ImageIcon className="w-4.5 h-4.5" />
-                          </button>
-                          <button className="p-1.5 hover:bg-[#C04A22]/10 rounded-full transition cursor-pointer">
-                            <MapPin className="w-4.5 h-4.5" />
-                          </button>
-                          <button className="p-1.5 hover:bg-[#C04A22]/10 rounded-full transition cursor-pointer">
-                            <BarChart2 className="w-4.5 h-4.5" />
+
+                      {/* Media Preview Box */}
+                      {mediaPreview && (
+                        <div className="relative my-2.5 rounded-2xl overflow-hidden border border-slate-200 bg-slate-950 group">
+                          <img src={mediaPreview} alt="Media preview" className="w-full max-h-60 object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setMediaPreview(null)}
+                            className="absolute top-2.5 right-2.5 p-1.5 rounded-full bg-slate-900/80 text-white hover:bg-red-600 transition-colors shadow-md cursor-pointer"
+                            title="Remove file"
+                          >
+                            <X className="w-4 h-4" />
                           </button>
                         </div>
+                      )}
+
+                      {/* Hidden File Input */}
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept="image/*,video/*"
+                        className="hidden"
+                      />
+
+                      {/* Bottom Action Bar matching HomeFeed */}
+                      <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 mt-2">
+                        <div className="flex gap-1 items-center relative">
+                          {/* Photo Button */}
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="p-2 rounded-xl text-slate-700 hover:text-[#8C3015] hover:bg-[#C04A22]/10 transition-colors cursor-pointer"
+                            title="Upload Photo"
+                          >
+                            <ImageIcon className="w-5 h-5 text-[#C04A22]" />
+                          </button>
+
+                          {/* Video Button */}
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="p-2 rounded-xl text-slate-700 hover:text-[#8C3015] hover:bg-[#C04A22]/10 transition-colors cursor-pointer"
+                            title="Upload Video"
+                          >
+                            <Video className="w-5 h-5 text-[#C04A22]" />
+                          </button>
+
+                          {/* Emoji Button & Picker Popover */}
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => setEmojiPickerOpen(v => !v)}
+                              className="p-2 rounded-xl text-slate-700 hover:text-[#8C3015] hover:bg-[#C04A22]/10 transition-colors cursor-pointer"
+                              title="Add Emoji"
+                            >
+                              <Smile className="w-5 h-5 text-[#C04A22]" />
+                            </button>
+
+                            {emojiPickerOpen && (
+                              <>
+                                <div className="fixed inset-0 z-30" onClick={() => setEmojiPickerOpen(false)} />
+                                <div className="absolute left-0 bottom-11 z-40 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 flex items-center gap-1 sm:gap-1.5 animate-in fade-in zoom-in-95 duration-150">
+                                  {QUICK_EMOJIS.map(emo => (
+                                    <button
+                                      key={emo}
+                                      type="button"
+                                      onClick={() => insertEmoji(emo)}
+                                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl hover:bg-[#C04A22]/10 flex items-center justify-center text-base sm:text-lg transition-transform hover:scale-125 cursor-pointer"
+                                    >
+                                      {emo}
+                                    </button>
+                                  ))}
+                                </div>
+                              </>
+                            )}
+                          </div>
+
+                          {/* Location Button */}
+                          <button
+                            type="button"
+                            onClick={() => showToast("Location tagging available!")}
+                            className="p-2 rounded-xl text-slate-700 hover:text-[#8C3015] hover:bg-[#C04A22]/10 transition-colors cursor-pointer"
+                            title="Tag Location"
+                          >
+                            <MapPin className="w-5 h-5 text-[#C04A22]" />
+                          </button>
+
+                          {/* Poll Button */}
+                          <button
+                            type="button"
+                            onClick={() => showToast("Poll creation available!")}
+                            className="p-2 rounded-xl text-slate-700 hover:text-[#8C3015] hover:bg-[#C04A22]/10 transition-colors cursor-pointer"
+                            title="Create Poll"
+                          >
+                            <BarChart2 className="w-5 h-5 text-[#C04A22]" />
+                          </button>
+                        </div>
+
                         <button
+                          type="button"
                           onClick={handleCreatePost}
-                          disabled={!newPostText.trim()}
-                          className={`px-4 py-1.5 rounded-full text-xs font-bold transition cursor-pointer shadow-xs ${
-                            newPostText.trim()
-                              ? "bg-[#C04A22] text-white hover:bg-[#8C3015]"
+                          disabled={!newPostText.trim() && !mediaPreview}
+                          className={`px-5 py-1.5 rounded-full text-xs font-bold transition cursor-pointer shadow-xs ${
+                            newPostText.trim() || mediaPreview
+                              ? "bg-[#C04A22] text-white hover:bg-[#8C3015] active:scale-95"
                               : "bg-slate-200 text-slate-400 cursor-not-allowed"
                           }`}
                         >
@@ -932,162 +1153,172 @@ export function Profile() {
                   <p className="text-sm font-semibold">No posts yet</p>
                 </div>
               ) : (
-                postsList.map(tweet => (
-                  <div
-                    key={tweet.id}
-                    className="p-4 hover:bg-slate-50/70 transition cursor-pointer"
-                    onClick={() => navigate(`/post/${tweet.id}`)}
-                  >
-                    {/* Pinned Tweet Badge */}
-                    {tweet.isPinned && (
-                      <div className="flex items-center gap-2 text-xs font-bold text-slate-500 mb-1.5 pl-8 sm:pl-10">
-                        <span className="text-[#C04A22]">📌</span> Pinned Post
-                      </div>
-                    )}
+                <div className="divide-y divide-border/80">
+                  {postsList.map(tweet => (
+                    <article
+                      key={tweet.id}
+                      className="p-4 hover:bg-slate-50/70 transition cursor-pointer border-b border-border/80"
+                      onClick={() => navigate(`/post/${tweet.id}`)}
+                    >
+                      {/* Pinned Tweet Badge */}
+                      {tweet.isPinned && (
+                        <div className="flex items-center gap-2 text-xs font-bold text-slate-500 mb-1.5 pl-8 sm:pl-10">
+                          <span className="text-[#C04A22]">📌</span> Pinned Post
+                        </div>
+                      )}
 
-                    <div className="flex gap-3">
-                      {/* Left Column: Author Avatar (Default User Icon) */}
-                      <div
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/profile/${tweet.author.handle.replace("@", "")}`);
-                        }}
-                        className="w-10 h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs hover:opacity-90"
-                      >
-                        <User className="w-5 h-5 text-slate-500" />
-                      </div>
-
-                      {/* Right Column: Tweet Content */}
-                      <div className="flex-1 min-w-0">
-                        {/* Author Header */}
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-1.5 flex-wrap truncate">
-                            <span className="font-bold text-slate-900 text-sm hover:underline">
-                              {tweet.author.name}
-                            </span>
-                            {tweet.author.verified && (
-                              <GoldenBadge size={14} title="Verified" />
-                            )}
-                            <span className="text-xs text-slate-500">
-                              {tweet.author.handle} · {tweet.time}
-                            </span>
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              showToast("Post link copied");
-                            }}
-                            className="p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100"
-                          >
-                            <MoreHorizontal className="w-4 h-4" />
-                          </button>
+                      <div className="flex gap-3">
+                        {/* Left Column: Author Avatar (Default User Icon) */}
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/profile/${tweet.author.handle.replace("@", "")}`);
+                          }}
+                          className="w-10 h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs hover:opacity-90"
+                        >
+                          <User className="w-5 h-5 text-slate-500" />
                         </div>
 
-                        {/* Tweet Text */}
-                        <p className="text-sm text-slate-900 leading-relaxed whitespace-pre-line mb-2">
-                          {tweet.content}
-                        </p>
-
-                        {/* Attached Image */}
-                        {tweet.image && (
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setLightboxImage(tweet.image!);
-                            }}
-                            className="rounded-2xl overflow-hidden border border-slate-200 mb-3 bg-slate-100 max-h-80"
-                          >
-                            <img
-                              src={tweet.image}
-                              alt="Tweet Media"
-                              className="w-full h-full object-cover hover:scale-101 transition duration-300"
-                            />
-                          </div>
-                        )}
-
-                        {/* Twitter Action Bar */}
-                        <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100/80 max-w-md">
-                          {/* Reply */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/post/${tweet.id}`);
-                            }}
-                            className="flex items-center gap-1.5 hover:text-[#C04A22] transition group cursor-pointer"
-                          >
-                            <div className="p-1.5 rounded-full group-hover:bg-[#C04A22]/10">
-                              <MessageCircle className="w-4 h-4" />
+                        {/* Right Column: Tweet Details */}
+                        <div className="flex-1 min-w-0">
+                          {/* Header: Name, Badge, Handle, Time */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                              <span
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/profile/${tweet.author.handle.replace("@", "")}`);
+                                }}
+                                className="font-bold text-sm text-slate-900 truncate hover:underline"
+                              >
+                                {tweet.author.name}
+                              </span>
+                              {tweet.author.verified && (
+                                <GoldenBadge size={15} title="Verified Account" />
+                              )}
+                              <span className="text-xs text-slate-500">{tweet.author.handle}</span>
+                              <span className="text-slate-300">·</span>
+                              <span className="text-xs text-slate-400">{tweet.time}</span>
                             </div>
-                            <span>{tweet.comments}</span>
-                          </button>
 
-                          {/* Repost */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleRepost(tweet.id);
-                            }}
-                            className={`flex items-center gap-1.5 transition group cursor-pointer ${
-                              tweet.isReposted ? "text-emerald-600 font-bold" : "hover:text-emerald-600"
-                            }`}
-                          >
-                            <div className="p-1.5 rounded-full group-hover:bg-emerald-50">
-                              <Repeat2 className="w-4 h-4" />
-                            </div>
-                            <span>{tweet.reposts}</span>
-                          </button>
-
-                          {/* Like */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleLike(tweet.id);
-                            }}
-                            className={`flex items-center gap-1.5 transition group cursor-pointer ${
-                              tweet.isLiked ? "text-rose-600 font-bold" : "hover:text-rose-600"
-                            }`}
-                          >
-                            <div className="p-1.5 rounded-full group-hover:bg-rose-50">
-                              <Heart className={`w-4 h-4 ${tweet.isLiked ? "fill-rose-600 text-rose-600" : ""}`} />
-                            </div>
-                            <span>{tweet.likes}</span>
-                          </button>
-
-                          {/* Views */}
-                          <div className="flex items-center gap-1 text-slate-400">
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>{tweet.views}</span>
+                            {/* More Options dropdown */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                showToast("Post options");
+                              }}
+                              className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                            >
+                              <MoreHorizontal className="w-4 h-4" />
+                            </button>
                           </div>
 
-                          {/* Bookmark */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleBookmark(tweet.id);
-                            }}
-                            className={`p-1.5 rounded-full hover:bg-[#C04A22]/10 transition cursor-pointer ${
-                              tweet.isBookmarked ? "text-[#C04A22]" : "hover:text-[#C04A22]"
-                            }`}
-                          >
-                            <Bookmark className={`w-4 h-4 ${tweet.isBookmarked ? "fill-[#C04A22] text-[#C04A22]" : ""}`} />
-                          </button>
+                          {/* Tweet Content */}
+                          <p className="text-sm text-slate-900 leading-relaxed mt-1 whitespace-pre-line font-normal">
+                            {tweet.content}
+                          </p>
 
-                          {/* Share */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigator.clipboard.writeText(window.location.origin + `/post/${tweet.id}`);
-                              showToast("Post link copied to clipboard");
-                            }}
-                            className="p-1.5 rounded-full hover:bg-slate-100 transition cursor-pointer"
-                          >
-                            <Share2 className="w-4 h-4" />
-                          </button>
+                          {/* Attached Image / Media */}
+                          {tweet.image && (
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setLightboxImage(tweet.image || null);
+                              }}
+                              className="mt-3 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 cursor-zoom-in max-h-80"
+                            >
+                              <img
+                                src={tweet.image}
+                                alt="Post attachment"
+                                className="w-full h-full object-cover hover:scale-[1.01] transition-transform duration-300"
+                              />
+                            </div>
+                          )}
+
+                          {/* Twitter Action Bar */}
+                          <div className="flex items-center justify-between text-xs text-slate-500 mt-3 pt-1 max-w-md">
+                            {/* Reply */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/post/${tweet.id}?focus=comment`);
+                              }}
+                              className="flex items-center gap-1.5 transition group cursor-pointer hover:text-[#C04A22]"
+                            >
+                              <div className="p-1.5 rounded-full group-hover:bg-[#C04A22]/10">
+                                <MessageCircle className="w-4 h-4" />
+                              </div>
+                              <span>{tweet.comments}</span>
+                            </button>
+
+                            {/* Repost */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleRepost(tweet.id);
+                              }}
+                              className={`flex items-center gap-1.5 transition group cursor-pointer ${
+                                tweet.isReposted ? "text-emerald-600 font-bold" : "hover:text-emerald-600"
+                              }`}
+                            >
+                              <div className="p-1.5 rounded-full group-hover:bg-emerald-50">
+                                <Repeat2 className="w-4 h-4" />
+                              </div>
+                              <span>{tweet.reposts}</span>
+                            </button>
+
+                            {/* Like */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleLike(tweet.id);
+                              }}
+                              className={`flex items-center gap-1.5 transition group cursor-pointer ${
+                                tweet.isLiked ? "text-rose-600 font-bold" : "hover:text-rose-600"
+                              }`}
+                            >
+                              <div className="p-1.5 rounded-full group-hover:bg-rose-50">
+                                <Heart className={`w-4 h-4 ${tweet.isLiked ? "fill-rose-600 text-rose-600" : ""}`} />
+                              </div>
+                              <span>{tweet.likes}</span>
+                            </button>
+
+                            {/* Views */}
+                            <div className="flex items-center gap-1 text-slate-400">
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>{tweet.views}</span>
+                            </div>
+
+                            {/* Bookmark */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleBookmark(tweet.id);
+                              }}
+                              className={`p-1.5 rounded-full hover:bg-[#C04A22]/10 transition cursor-pointer ${
+                                tweet.isBookmarked ? "text-[#C04A22]" : "hover:text-[#C04A22]"
+                              }`}
+                            >
+                              <Bookmark className={`w-4 h-4 ${tweet.isBookmarked ? "fill-[#C04A22] text-[#C04A22]" : ""}`} />
+                            </button>
+
+                            {/* Share */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(window.location.origin + `/post/${tweet.id}`);
+                                showToast("Post link copied to clipboard");
+                              }}
+                              className="p-1.5 rounded-full hover:bg-slate-100 transition cursor-pointer"
+                            >
+                              <Share2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                ))
+                    </article>
+                  ))}
+                </div>
               )}
             </div>
           )}
@@ -1138,68 +1369,7 @@ export function Profile() {
             </div>
           )}
 
-          {/* ── 3. COMMUNITIES TAB ── */}
-          {activeTab === "communities" && (
-            <div className="p-4 space-y-3">
-              <p className="text-xs text-slate-500 font-medium">Joined Communities & Groups:</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {mockCommunities.map(comm => (
-                  <div
-                    key={comm.id}
-                    onClick={() => navigate(`/communities`)}
-                    className="p-3.5 rounded-2xl border border-slate-200 bg-white hover:border-[#C04A22]/40 hover:shadow-sm transition cursor-pointer flex flex-col justify-between"
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className="text-3xl">{comm.emoji}</span>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-xs font-bold text-slate-900 truncate">{comm.name}</h4>
-                        <p className="text-[10px] text-slate-500">{comm.members}</p>
-                        <p className="text-[11px] text-slate-600 mt-1 line-clamp-2">{comm.desc}</p>
-                      </div>
-                    </div>
-                    <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                      <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{comm.category}</span>
-                      <span className="text-[#C04A22] font-bold">Joined ✓</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── 4. MEDIA TAB (Twitter Grid) ── */}
-          {activeTab === "media" && (
-            <div className="p-4">
-              {mediaPosts.length === 0 ? (
-                <div className="text-center py-16 text-slate-400">
-                  <ImageIcon className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm font-semibold">No media uploaded yet</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {mediaPosts.map(m => (
-                    <div
-                      key={m.id}
-                      onClick={() => setLightboxImage(m.image!)}
-                      className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 cursor-pointer group bg-slate-100"
-                    >
-                      <img
-                        src={m.image}
-                        alt="Media"
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-bold gap-3">
-                        <span className="flex items-center gap-1"><Heart className="w-3.5 h-3.5 fill-white" /> {m.likes}</span>
-                        <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5 fill-white" /> {m.comments}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── 5. LIKES TAB ── */}
+          {/* ── 3. LIKES TAB ── */}
           {activeTab === "likes" && (
             <div className="p-4 divide-y divide-slate-100">
               <p className="text-xs text-slate-500 font-medium mb-3">Posts liked by {profileData.handle}:</p>
@@ -1345,16 +1515,6 @@ export function Profile() {
                       className="w-full px-3.5 py-2 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-1 focus:ring-[#C04A22]"
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Website</label>
-                  <input
-                    type="text"
-                    value={profileData.website}
-                    onChange={e => setProfileData({ ...profileData, website: e.target.value })}
-                    className="w-full px-3.5 py-2 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-1 focus:ring-[#C04A22]"
-                  />
                 </div>
               </div>
             </div>

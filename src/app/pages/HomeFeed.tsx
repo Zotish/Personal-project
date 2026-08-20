@@ -672,53 +672,71 @@ function PostCard({ post }: { post: Post; key?: string | number }) {
 
   return (
     <div
-      className={`border rounded-2xl p-3 sm:p-4 ${typeColors[post.type] ?? "bg-white border-border"} transition-all hover:shadow-sm cursor-pointer`}
+      className={`border rounded-2xl p-3.5 sm:p-4 ${typeColors[post.type] ?? "bg-white border-border"} transition-all hover:shadow-sm cursor-pointer`}
       onClick={() => navigate("/post/1")}
     >
       {/* Pinned badge */}
       {post.pinned && (
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-          <Pin className="w-3 h-3" /> Pinned post
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2 pl-12 sm:pl-13">
+          <Pin className="w-3.5 h-3.5 text-[#C04A22]" /> Pinned post
         </div>
       )}
 
       {/* Community badge */}
       {post.communityName && (
-        <div className="flex items-center gap-1.5 mb-2">
+        <div className="flex items-center gap-1.5 mb-2 pl-12 sm:pl-13">
           <span className="text-base leading-none">{post.communityEmoji}</span>
           <span className="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">{post.communityName}</span>
         </div>
       )}
 
-      {/* Author Header */}
-      <div className="flex items-center justify-between mb-2.5">
+      {/* Two Column Layout: Left Avatar, Right Column for all content */}
+      <div className="flex gap-3 items-start">
+        {/* Left Column: Author Avatar */}
         <div
           onClick={(e) => {
             e.stopPropagation();
             const userHandle = (post.author.handle || post.author.name).toLowerCase().replace(/[@\s]/g, "_");
             navigate(`/profile/${userHandle}`);
           }}
-          className="flex items-center gap-2.5 sm:gap-3 min-w-0 cursor-pointer hover:opacity-85 transition"
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs hover:opacity-85 cursor-pointer mt-0.5"
           title={`View ${post.author.name}'s Profile`}
         >
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs">
-            <User className="w-5 h-5 text-slate-500" />
-          </div>
-          <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap min-w-0">
-            <span className="text-sm font-bold text-foreground hover:underline">{post.author.name}</span>
-            {post.author.verified && (
-              <GoldenBadge size={16} title="Verified Account" />
-            )}
-            <span className="text-xs text-muted-foreground">· {post.time}</span>
-          </div>
+          <User className="w-5 h-5 text-slate-500" />
         </div>
-        <button className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-white/60 transition-colors">
-          <MoreHorizontal className="w-4 h-4" />
-        </button>
-      </div>
 
-      <p className="text-sm text-foreground leading-relaxed">{post.content}</p>
+        {/* Right Column: Name, Text, Media, Poll, Tags, Actions */}
+        <div className="flex-1 min-w-0">
+          {/* Author Header */}
+          <div className="flex items-center justify-between mb-1">
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                const userHandle = (post.author.handle || post.author.name).toLowerCase().replace(/[@\s]/g, "_");
+                navigate(`/profile/${userHandle}`);
+              }}
+              className="flex items-center gap-1.5 flex-wrap min-w-0 cursor-pointer"
+            >
+              <span className="text-sm font-bold text-foreground hover:underline">{post.author.name}</span>
+              {post.author.verified && (
+                <GoldenBadge size={16} title="Verified Account" />
+              )}
+              <span className="text-xs text-muted-foreground">· {post.time}</span>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+              className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
+          </div>
 
+          {/* Content text aligned under the name */}
+          <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{post.content}</p>
+
+          {/* Attached image */}
           {post.image && (
             <div className="mt-3 rounded-2xl overflow-hidden border border-border/50 bg-muted">
               <img
@@ -729,6 +747,7 @@ function PostCard({ post }: { post: Post; key?: string | number }) {
             </div>
           )}
 
+          {/* Attached video */}
           {post.video && (
             <div className="mt-3 rounded-2xl overflow-hidden border border-border/50 bg-slate-950">
               <video
@@ -766,7 +785,7 @@ function PostCard({ post }: { post: Post; key?: string | number }) {
 
           {post.location && (
             <div className="flex items-center gap-1 mt-2">
-              <MapPin className="w-3 h-3 text-muted-foreground" />
+              <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">{post.location}</span>
             </div>
           )}
@@ -779,25 +798,36 @@ function PostCard({ post }: { post: Post; key?: string | number }) {
             </div>
           )}
 
-          <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/40" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setLiked(!liked)} className={`flex items-center gap-1 sm:gap-1.5 text-xs transition-colors ${liked ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}>
-              <Heart className={`w-4 h-4 ${liked ? "fill-red-500" : ""}`} />
+          <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100 max-w-md" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setLiked(!liked)} className={`flex items-center gap-1 sm:gap-1.5 text-xs transition-colors cursor-pointer ${liked ? "text-red-500 font-bold" : "text-muted-foreground hover:text-red-500"}`}>
+              <Heart className={`w-4 h-4 ${liked ? "fill-red-500 text-red-500" : ""}`} />
               <span className="hidden sm:inline">{post.likes + (liked ? 1 : 0)}</span>
               <span className="sm:hidden">{post.likes + (liked ? 1 : 0) > 999 ? `${Math.round((post.likes + (liked ? 1 : 0)) / 1000)}k` : post.likes + (liked ? 1 : 0)}</span>
             </button>
-            <button className="flex items-center gap-1 sm:gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors">
-              <MessageCircle className="w-4 h-4" /><span className="hidden sm:inline">{post.comments}</span><span className="sm:hidden">{post.comments > 999 ? `${Math.round(post.comments / 1000)}k` : post.comments}</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/post/${post.id || 1}?focus=comment`);
+              }}
+              className="flex items-center gap-1 sm:gap-1.5 text-xs text-muted-foreground hover:text-[#C04A22] transition-colors cursor-pointer"
+              title="Comment on post"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">{post.comments}</span>
+              <span className="sm:hidden">{post.comments > 999 ? `${Math.round(post.comments / 1000)}k` : post.comments}</span>
             </button>
-            <button className="flex items-center gap-1 sm:gap-1.5 text-xs text-muted-foreground hover:text-emerald-600 transition-colors">
+            <button className="flex items-center gap-1 sm:gap-1.5 text-xs text-muted-foreground hover:text-emerald-600 transition-colors cursor-pointer">
               <Repeat2 className="w-4 h-4" /><span className="hidden sm:inline">{post.reposts}</span><span className="sm:hidden">{post.reposts > 999 ? `${Math.round(post.reposts / 1000)}k` : post.reposts}</span>
             </button>
-            <button className="flex items-center gap-1 sm:gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors">
+            <button className="flex items-center gap-1 sm:gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer">
               <Share2 className="w-4 h-4" />
             </button>
-            <button onClick={() => setBookmarked(!bookmarked)} className={`flex items-center gap-1 sm:gap-1.5 text-xs transition-colors ${bookmarked ? "text-primary" : "text-muted-foreground hover:text-primary"}`}>
-              <Bookmark className={`w-4 h-4 ${bookmarked ? "fill-primary" : ""}`} />
+            <button onClick={() => setBookmarked(!bookmarked)} className={`flex items-center gap-1 sm:gap-1.5 text-xs transition-colors cursor-pointer ${bookmarked ? "text-primary font-bold" : "text-muted-foreground hover:text-primary"}`}>
+              <Bookmark className={`w-4 h-4 ${bookmarked ? "fill-primary text-primary" : ""}`} />
             </button>
           </div>
+        </div>
+      </div>
     </div>
   );
 }
