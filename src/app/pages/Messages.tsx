@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useSearchParams } from "react-router";
+import { useSearchParams, useNavigate } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
   Search, Send, Paperclip, Mic, MicOff, Languages, MoreHorizontal,
@@ -120,6 +120,7 @@ function ChatScreen({
   pinnedIds: number[];
   onTogglePin: (id: number) => void;
 }) {
+  const navigate = useNavigate();
   const conv = conversations.find(c => c.id === convId)!;
   const [messagesList, setMessagesList] = useState<MessageItem[]>(initialMessages);
   const [inputText, setInputText] = useState("");
@@ -144,8 +145,12 @@ function ChatScreen({
   const [isMuted, setIsMuted] = useState(false);
   const [showSearchOverlay, setShowSearchOverlay] = useState(false);
   const [inChatSearch, setInChatSearch] = useState("");
-  const [showUserProfile, setShowUserProfile] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const handleOpenUserProfile = () => {
+    const handleClean = (conv.handle || conv.name).replace('@', '').toLowerCase().replace(/\s+/g, '_');
+    navigate(`/profile/${handleClean}`);
+  };
 
   // WhatsApp-style Message Options Popup State
   const [selectedMsgForAction, setSelectedMsgForAction] = useState<MessageItem | null>(null);
@@ -369,15 +374,15 @@ function ChatScreen({
         <button onClick={onBack} className="p-1.5 rounded-xl hover:bg-secondary text-foreground transition-colors flex items-center justify-center cursor-pointer">
           <ChevronLeft className="w-5 h-5 text-foreground" />
         </button>
-        <div className="relative cursor-pointer" onClick={() => setShowUserProfile(true)}>
+        <div className="relative cursor-pointer" onClick={handleOpenUserProfile} title={`View ${conv.name}'s Profile`}>
           <div className="w-10 h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs">
             <User className="w-5 h-5 text-slate-500" />
           </div>
           {conv.online && <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" />}
         </div>
-        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setShowUserProfile(true)}>
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={handleOpenUserProfile} title={`View ${conv.name}'s Profile`}>
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-semibold text-foreground truncate">{conv.name}</span>
+            <span className="text-sm font-semibold text-foreground truncate hover:underline">{conv.name}</span>
             {isMuted && <BellOff className="w-3.5 h-3.5 text-amber-500" />}
           </div>
           <div className="text-xs text-muted-foreground">{conv.online ? "Online now" : "Last seen 5h ago"}</div>
@@ -417,7 +422,7 @@ function ChatScreen({
             {showMoreMenu && (
               <div className="absolute right-0 top-11 w-52 bg-white rounded-2xl shadow-xl border border-slate-100 py-1.5 z-40 animate-fadeIn text-xs font-semibold text-slate-700">
                 <button
-                  onClick={() => { setShowUserProfile(true); setShowMoreMenu(false); }}
+                  onClick={() => { setShowMoreMenu(false); handleOpenUserProfile(); }}
                   className="w-full px-3.5 py-2.5 flex items-center gap-2.5 hover:bg-slate-50 transition text-left cursor-pointer"
                 >
                   <User className="w-4 h-4 text-slate-500" /> View Profile
@@ -1012,47 +1017,6 @@ function ChatScreen({
                 className="w-14 h-14 rounded-full bg-red-600 text-white flex items-center justify-center transition hover:bg-red-700 cursor-pointer active:scale-95 shadow-lg"
               >
                 <PhoneOff className="w-6 h-6" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── User Profile Drawer Modal Popup ── */}
-      {showUserProfile && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-center space-y-4 relative border border-slate-200 shadow-2xl">
-            <button
-              onClick={() => setShowUserProfile(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-slate-100 text-slate-500 cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <div className="w-20 h-20 rounded-full bg-slate-100 border-2 border-[#C04A22] mx-auto flex items-center justify-center text-slate-500 shadow-md">
-              <User className="w-10 h-10 text-slate-500" />
-            </div>
-
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">{conv.name}</h3>
-              <p className="text-xs text-[#C04A22] font-semibold">{conv.handle}</p>
-              <p className="text-xs text-slate-600 mt-2 font-medium bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                {conv.bio}
-              </p>
-            </div>
-
-            <div className="pt-2 flex gap-2">
-              <button
-                onClick={() => { setShowUserProfile(false); setIsCallingAudio(true); }}
-                className="flex-1 py-2.5 rounded-xl bg-[#C04A22]/15 text-[#8C3015] border border-[#C04A22]/30 text-xs font-bold hover:bg-[#C04A22]/25 cursor-pointer"
-              >
-                Audio Call
-              </button>
-              <button
-                onClick={() => { setShowUserProfile(false); setIsCallingVideo(true); }}
-                className="flex-1 py-2.5 rounded-xl bg-[#C04A22] text-white text-xs font-bold hover:bg-[#8C3015] cursor-pointer"
-              >
-                Video Call
               </button>
             </div>
           </div>

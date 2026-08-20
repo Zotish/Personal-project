@@ -692,12 +692,20 @@ function PostCard({ post }: { post: Post; key?: string | number }) {
 
       {/* Author Header */}
       <div className="flex items-center justify-between mb-2.5">
-        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            const userHandle = (post.author.handle || post.author.name).toLowerCase().replace(/[@\s]/g, "_");
+            navigate(`/profile/${userHandle}`);
+          }}
+          className="flex items-center gap-2.5 sm:gap-3 min-w-0 cursor-pointer hover:opacity-85 transition"
+          title={`View ${post.author.name}'s Profile`}
+        >
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs">
             <User className="w-5 h-5 text-slate-500" />
           </div>
           <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap min-w-0">
-            <span className="text-sm font-bold text-foreground">{post.author.name}</span>
+            <span className="text-sm font-bold text-foreground hover:underline">{post.author.name}</span>
             {post.author.verified && (
               <GoldenBadge size={16} title="Verified Account" />
             )}

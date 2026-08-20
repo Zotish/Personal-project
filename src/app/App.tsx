@@ -60,6 +60,8 @@ export default function App() {
         <Route path="/messages" element={<Messages />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/:userId" element={<Profile />} />
+        <Route path="/user/:username" element={<Profile />} />
         <Route path="/orders" element={<BuyerOrders />} />
         <Route path="/communities" element={<Communities />} />
         <Route path="/qa" element={<QandA />} />

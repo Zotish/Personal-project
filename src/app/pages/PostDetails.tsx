@@ -91,6 +91,7 @@ const relatedPosts = [
 ];
 
 function ReplyCard({ reply }: { reply: typeof replies[0]; key?: string | number }) {
+  const navigate = useNavigate();
   const [liked, setLiked] = useState(reply.liked);
   const [likeCount, setLikeCount] = useState(reply.likes);
 
@@ -115,8 +116,11 @@ function ReplyCard({ reply }: { reply: typeof replies[0]; key?: string | number 
         </div>
         <div className="flex-1 min-w-0 pb-3">
           <div className="flex items-center justify-between mb-1.5">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-sm font-semibold text-foreground">{reply.author.name}</span>
+            <div
+              onClick={() => navigate(`/profile/${reply.author.handle.replace('@', '')}`)}
+              className="flex items-center gap-1.5 flex-wrap cursor-pointer hover:opacity-85"
+            >
+              <span className="text-sm font-semibold text-foreground hover:underline">{reply.author.name}</span>
               {reply.author.verified && (
                 <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
                   <CheckCircle className="w-2.5 h-2.5 text-white" />
@@ -184,13 +188,17 @@ export function PostDetails() {
         <div className="bg-white border-b border-border">
           {/* Author */}
           <div className="flex items-center justify-between p-4 pb-3">
-            <div className="flex items-center gap-3">
+            <div
+              onClick={() => navigate(`/profile/${post.author.handle.replace('@', '')}`)}
+              className="flex items-center gap-3 cursor-pointer hover:opacity-85 transition"
+              title={`View ${post.author.name}'s Profile`}
+            >
               <div className="w-12 h-12 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs">
                 <User className="w-6 h-6 text-slate-500" />
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-foreground">{post.author.name}</span>
+                  <span className="font-bold text-foreground hover:underline">{post.author.name}</span>
                   {post.author.verified && (
                     <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
                       <CheckCircle className="w-3 h-3 text-white" />
