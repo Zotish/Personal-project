@@ -11,10 +11,10 @@ import { Logo } from "../ui/Logo";
 
 const navKeys = [
   { icon: Home,          tKey: "home",          path: "/feed" },
-  { icon: Search,        tKey: "search",        path: "/explore" },
-  { icon: Clapperboard,  tKey: "reels",         path: "/reels" },
-  { icon: Map,           tKey: "map",           path: "/map" },
   { icon: Briefcase,     tKey: "services",      path: "/services" },
+  { icon: Map,           tKey: "map",           path: "/map" },
+  { icon: Clapperboard,  tKey: "reels",         path: "/reels" },
+  { icon: Search,        tKey: "explore",       path: "/explore" },
   { icon: Users,         tKey: "communities",   path: "/communities" },
   { icon: MessageCircle, tKey: "messages",      path: "/messages" },
   { icon: Bell,          tKey: "notifications", path: "/notifications" },

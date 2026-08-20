@@ -3,20 +3,21 @@ import { useNavigate, useLocation } from "react-router";
 import {
   Home, Search, Map, Briefcase, Clapperboard, MoreHorizontal,
   Users, MessageCircle, Bell, User, Settings, Bookmark,
-  HelpCircle, Shield, X
+  HelpCircle, Shield, X, ShoppingBag
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { LanguageToggle } from "../ui/LanguageToggle";
 
 const mainKeys = [
   { icon: Home,         tKey: "home",     path: "/feed" },
-  { icon: Search,       tKey: "search",   path: "/explore" },
-  { icon: Clapperboard, tKey: "reels",    path: "/reels" },
-  { icon: Map,          tKey: "map",      path: "/map" },
   { icon: Briefcase,    tKey: "services", path: "/services" },
+  { icon: Map,          tKey: "map",      path: "/map" },
+  { icon: Clapperboard, tKey: "reels",    path: "/reels" },
+  { icon: ShoppingBag,  tKey: "orders",   path: "/orders" },
 ];
 
 const moreKeys = [
+  { icon: Search,       tKey: "explore",       path: "/explore",       badge: null },
   { icon: Users,        tKey: "communities",   path: "/communities",   badge: null },
   { icon: MessageCircle,tKey: "messages",      path: "/messages",      badge: "2" },
   { icon: Bell,         tKey: "notifications", path: "/notifications", badge: "4" },

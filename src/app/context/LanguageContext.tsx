@@ -48,10 +48,12 @@ type TranslationMap = Record<string, string>;
 const en: TranslationMap = {
   // ── Navigation ──
   home: "Home",
-  search: "Search",
+  search: "Explore",
+  explore: "Explore",
   map: "Map",
   services: "Services",
   reels: "Reels",
+  orders: "Orders",
   more: "More",
   communities: "Communities",
   messages: "Messages",

@@ -6,7 +6,7 @@ import {
   Bell, Settings, Plus, Globe, X, Lock, ChevronRight, Hash,
   Image, AlertCircle, Smile, Languages, Shield, Eye, EyeOff,
   Heart, Repeat2, Share2, Bookmark, Calendar, Clock, MoreHorizontal,
-  Crown, BadgeCheck
+  Crown, BadgeCheck, Sparkles
 } from "lucide-react";
 
 const allCommunities = [
@@ -379,29 +379,24 @@ function JoinedCard({
   onLeave: () => void;
   key?: string | number;
 }) {
-  const grad = communityGradients[community.id] ?? "from-blue-400 to-indigo-500";
+  const grad = communityGradients[community.id] ?? "from-[#C04A22] to-amber-500";
   const lastActive = ["2m ago", "15m ago", "1h ago", "3h ago", "Today"][community.id % 5];
 
   return (
     <div
-      className="bg-white rounded-2xl border border-border hover:shadow-md transition-all cursor-pointer group overflow-hidden"
+      className="bg-white rounded-2xl border border-border hover:shadow-md transition-all cursor-pointer group overflow-hidden p-4"
       onClick={onOpen}
     >
-      <div className="flex gap-0">
-        {/* Colored left accent bar */}
-        <div className={`w-1.5 flex-shrink-0 bg-gradient-to-b ${grad}`} />
-
-        <div className="flex-1 p-4">
-          <div className="flex gap-3">
-            {/* Icon in gradient circle */}
-            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${grad} flex items-center justify-center text-2xl flex-shrink-0 shadow-sm`}>
+      <div className="flex gap-3">
+            {/* Icon box */}
+            <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-2xl flex-shrink-0">
               {community.image}
             </div>
 
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-bold text-foreground group-hover:text-primary transition-colors leading-snug">
+                  <div className="text-sm font-bold text-foreground group-hover:text-[#C04A22] transition-colors leading-snug">
                     {community.name}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
@@ -418,26 +413,16 @@ function JoinedCard({
                 </div>
                 <button
                   onClick={e => { e.stopPropagation(); onLeave(); }}
-                  className="px-3 py-1.5 rounded-full text-xs font-semibold border border-primary text-primary hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all flex-shrink-0"
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all flex-shrink-0 cursor-pointer"
                 >
                   ✓ Joined
                 </button>
               </div>
 
-              <p className="text-xs text-muted-foreground mt-2 line-clamp-2 leading-relaxed">
+              <p className="text-xs text-muted-foreground mt-2 line-clamp-2 leading-relaxed max-w-[70%]">
                 {community.desc}
               </p>
-
-              <div className="flex gap-1.5 mt-2 flex-wrap">
-                {community.tags.slice(0, 3).map(t => (
-                  <span key={t} className="text-xs bg-blue-50 text-primary px-2 py-0.5 rounded-full font-medium">
-                    {t}
-                  </span>
-                ))}
-              </div>
             </div>
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -461,15 +446,14 @@ function DiscoverCard({
       className="bg-white rounded-2xl border border-border overflow-hidden hover:shadow-sm transition-all cursor-pointer group"
       onClick={onOpen}
     >
-      <div className="h-2 w-full bg-gradient-to-r from-blue-400 via-violet-400 to-indigo-500" />
       <div className="p-4 flex gap-3">
-        <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-2xl flex-shrink-0">
+        <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-2xl flex-shrink-0">
           {community.image}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+              <div className="text-sm font-semibold text-foreground group-hover:text-[#C04A22] transition-colors truncate">
                 {community.name}
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
@@ -480,22 +464,13 @@ function DiscoverCard({
             </div>
             <button
               onClick={e => { e.stopPropagation(); onJoin(); }}
-              className="px-3 py-1.5 rounded-full text-xs font-semibold bg-primary text-white hover:opacity-90 transition-all flex-shrink-0"
+              className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#C04A22]/15 text-[#8C3015] border border-[#C04A22]/30 hover:bg-[#C04A22]/25 transition-all flex-shrink-0 cursor-pointer active:scale-95"
             >
               + Join
             </button>
           </div>
 
-          <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">{community.desc}</p>
-
-          <div className="flex items-center justify-between mt-2">
-            <div className="flex gap-1 flex-wrap">
-              {community.tags.slice(0, 2).map(t => (
-                <span key={t} className="text-xs bg-secondary text-muted-foreground px-2 py-0.5 rounded-full">{t}</span>
-              ))}
-            </div>
-            <span className="text-[10px] text-primary font-medium bg-blue-50 px-2 py-0.5 rounded-full flex-shrink-0">{reason}</span>
-          </div>
+          <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed max-w-[70%]">{community.desc}</p>
         </div>
       </div>
     </div>
@@ -529,6 +504,7 @@ function CreateCommunityModal({ onClose, onCreate }: {
   const [newRule, setNewRule] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [showPublicPreview, setShowPublicPreview] = useState(false);
 
   const toggleCategory = (c: string) =>
     setSelectedCategories(s => s.includes(c) ? s.filter(x => x !== c) : s.length < 3 ? [...s, c] : s);
@@ -567,17 +543,17 @@ function CreateCommunityModal({ onClose, onCreate }: {
             <h2 className="text-base font-bold text-foreground" style={{ fontFamily: "var(--font-display)" }}>
               Create Community
             </h2>
-            <p className="text-xs text-muted-foreground">Step {step} of 3 — {steps[step - 1].label}</p>
+            <p className="text-xs text-muted-foreground">Step {step} of 3</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary transition-colors">
-            <X className="w-4 h-4 text-muted-foreground" />
+          <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100/80 hover:bg-slate-200 text-slate-700 transition cursor-pointer active:scale-95">
+            <X className="w-5 h-5 stroke-[2.5]" />
           </button>
         </div>
 
         {/* Progress bar */}
-        <div className="h-1 bg-secondary flex-shrink-0">
+        <div className="h-0.5 bg-slate-100 flex-shrink-0">
           <div
-            className="h-full bg-primary transition-all duration-500"
+            className="h-full bg-[#C04A22] transition-all duration-500"
             style={{ width: `${(step / 3) * 100}%` }}
           />
         </div>
@@ -585,7 +561,7 @@ function CreateCommunityModal({ onClose, onCreate }: {
         {/* Success screen */}
         {done ? (
           <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 text-center">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center text-4xl shadow-lg mb-5">
+            <div className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center text-4xl shadow-md mb-5">
               {emoji}
             </div>
             <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center mb-4 -mt-4 ml-12">
@@ -597,7 +573,7 @@ function CreateCommunityModal({ onClose, onCreate }: {
             </p>
             <button
               onClick={() => { onCreate(name, emoji); onClose(); }}
-              className="w-full py-3 rounded-2xl bg-primary text-white font-semibold hover:opacity-90 transition"
+              className="w-full py-3 rounded-2xl bg-[#C04A22] text-white font-semibold hover:bg-[#8C3015] transition cursor-pointer"
             >
               Go to My Community
             </button>
@@ -613,10 +589,10 @@ function CreateCommunityModal({ onClose, onCreate }: {
                 <div className="flex flex-col items-center gap-2 pb-2">
                   <button
                     onClick={() => setShowEmojiPicker(s => !s)}
-                    className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center text-4xl shadow-md hover:scale-105 transition-transform relative"
+                    className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center text-4xl shadow-md hover:scale-105 transition-transform relative"
                   >
                     {emoji}
-                    <span className="absolute -bottom-1 -right-1 w-6 h-6 bg-white border border-border rounded-full flex items-center justify-center text-xs shadow-sm">✏️</span>
+                    <span className="absolute -bottom-1 -right-1 w-6 h-6 bg-white border border-border rounded-full flex items-center justify-center text-xs shadow-xs">✏️</span>
                   </button>
                   <p className="text-xs text-muted-foreground">Tap to choose icon</p>
                   {showEmojiPicker && (
@@ -625,7 +601,7 @@ function CreateCommunityModal({ onClose, onCreate }: {
                         <button
                           key={e}
                           onClick={() => { setEmoji(e); setShowEmojiPicker(false); }}
-                          className={`w-8 h-8 rounded-xl flex items-center justify-center text-lg hover:bg-white transition-colors ${emoji === e ? "bg-white shadow-sm ring-2 ring-primary" : ""}`}
+                          className={`w-8 h-8 rounded-xl flex items-center justify-center text-lg hover:bg-white transition-colors ${emoji === e ? "bg-white shadow-xs ring-2 ring-[#C04A22]" : ""}`}
                         >
                           {e}
                         </button>
@@ -636,14 +612,14 @@ function CreateCommunityModal({ onClose, onCreate }: {
 
                 {/* Name */}
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1.5 block">Community Name <span className="text-red-500">*</span></label>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Community Name <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     value={name}
                     onChange={e => setName(e.target.value)}
                     maxLength={50}
                     placeholder="e.g. Bangladeshi New Yorkers"
-                    className="w-full px-4 py-3 rounded-xl border border-border bg-secondary text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary focus:bg-white transition"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-secondary text-sm focus:outline-none focus:border-[#C04A22]/50 focus:shadow-[0_0_10px_rgba(192,74,34,0.2)] focus:bg-white transition-all"
                   />
                   <div className="flex justify-between mt-1">
                     {name.length > 0 && name.length < 3 && <p className="text-xs text-red-500">At least 3 characters required</p>}
@@ -653,21 +629,21 @@ function CreateCommunityModal({ onClose, onCreate }: {
 
                 {/* Description */}
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1.5 block">Description <span className="text-red-500">*</span></label>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Description <span className="text-red-500">*</span></label>
                   <textarea
                     value={desc}
                     onChange={e => setDesc(e.target.value)}
                     maxLength={300}
                     rows={3}
                     placeholder="What is this community about? Who should join?"
-                    className="w-full px-4 py-3 rounded-xl border border-border bg-secondary text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary focus:bg-white transition"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-secondary text-sm resize-none focus:outline-none focus:border-[#C04A22]/50 focus:shadow-[0_0_10px_rgba(192,74,34,0.2)] focus:bg-white transition-all"
                   />
                   <span className="text-xs text-muted-foreground float-right">{desc.length}/300</span>
                 </div>
 
                 {/* Privacy */}
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-2 block">Privacy</label>
+                  <label className="text-xs font-semibold text-foreground mb-1.5 block">Privacy</label>
                   <div className="grid grid-cols-2 gap-2">
                     {([
                       { val: "public", icon: Globe, label: "Public", sub: "Anyone can find & join" },
@@ -676,12 +652,12 @@ function CreateCommunityModal({ onClose, onCreate }: {
                       <button
                         key={val}
                         onClick={() => setPrivacy(val)}
-                        className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${privacy === val ? "border-primary bg-blue-50" : "border-border bg-secondary hover:border-primary/40"
+                        className={`flex items-center gap-3 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${privacy === val ? "border-[#C04A22]/50 bg-[#C04A22]/10 shadow-[0_0_10px_rgba(192,74,34,0.18)]" : "border-slate-200 bg-secondary hover:border-[#C04A22]/30"
                           }`}
                       >
-                        <Icon className={`w-4 h-4 flex-shrink-0 ${privacy === val ? "text-primary" : "text-muted-foreground"}`} />
+                        <Icon className={`w-4 h-4 flex-shrink-0 ${privacy === val ? "text-[#8C3015]" : "text-muted-foreground"}`} />
                         <div>
-                          <div className={`text-xs font-semibold ${privacy === val ? "text-primary" : "text-foreground"}`}>{label}</div>
+                          <div className={`text-xs font-semibold ${privacy === val ? "text-[#8C3015]" : "text-foreground"}`}>{label}</div>
                           <div className="text-[10px] text-muted-foreground">{sub}</div>
                         </div>
                       </button>
@@ -691,7 +667,7 @@ function CreateCommunityModal({ onClose, onCreate }: {
 
                 {/* Location */}
                 <div>
-                  <label className="text-xs font-semibold text-foreground mb-1.5 block">Location <span className="text-muted-foreground font-normal">(optional)</span></label>
+                  <label className="text-xs font-semibold text-foreground mb-1 block">Location <span className="text-muted-foreground font-normal">(optional)</span></label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
@@ -699,7 +675,7 @@ function CreateCommunityModal({ onClose, onCreate }: {
                       value={location}
                       onChange={e => setLocation(e.target.value)}
                       placeholder="e.g. New York, NY or National"
-                      className="w-full pl-9 pr-4 py-3 rounded-xl border border-border bg-secondary text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary focus:bg-white transition"
+                      className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 bg-secondary text-sm focus:outline-none focus:border-[#C04A22]/50 focus:shadow-[0_0_10px_rgba(192,74,34,0.2)] focus:bg-white transition-all"
                     />
                   </div>
                 </div>
@@ -710,12 +686,8 @@ function CreateCommunityModal({ onClose, onCreate }: {
             {step === 2 && (
               <>
                 {/* Categories */}
-                <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">
-                    Categories <span className="text-red-500">*</span>
-                    <span className="text-muted-foreground font-normal ml-1">— pick up to 3</span>
-                  </label>
-                  <p className="text-xs text-muted-foreground mb-2">Selected: {selectedCategories.length}/3</p>
+                <div className="space-y-2.5">
+                  <label className="text-xs font-bold text-slate-900 block">Categories</label>
                   <div className="flex flex-wrap gap-2">
                     {CATEGORY_OPTIONS.map(c => {
                       const active = selectedCategories.includes(c);
@@ -724,11 +696,11 @@ function CreateCommunityModal({ onClose, onCreate }: {
                         <button
                           key={c}
                           onClick={() => !maxed && toggleCategory(c)}
-                          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${active
-                              ? "bg-primary text-white border-primary"
+                          className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border duration-150 cursor-pointer active:scale-95 ${active
+                              ? "bg-[#C04A22]/15 text-[#8C3015] border-[#C04A22]/40 font-semibold shadow-2xs"
                               : maxed
-                                ? "bg-secondary text-muted-foreground/40 border-border cursor-not-allowed"
-                                : "bg-white text-muted-foreground border-border hover:border-primary hover:text-primary"
+                                ? "bg-slate-100 text-slate-400 border-slate-200/50 cursor-not-allowed"
+                                : "bg-slate-50 text-slate-700 border-slate-200/90 hover:border-[#C04A22]/50 hover:bg-white hover:text-[#8C3015]"
                             }`}
                         >
                           {c}
@@ -739,9 +711,9 @@ function CreateCommunityModal({ onClose, onCreate }: {
                 </div>
 
                 {/* Languages */}
-                <div>
-                  <label className="text-xs font-semibold text-foreground mb-1.5 block flex items-center gap-1.5">
-                    <Languages className="w-3.5 h-3.5" /> Community Languages <span className="text-red-500">*</span>
+                <div className="space-y-2.5 pt-1">
+                  <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <Languages className="w-4 h-4 text-[#C04A22]" /> Community Languages <span className="text-red-500">*</span>
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {LANGUAGE_OPTIONS.map(l => {
@@ -750,9 +722,9 @@ function CreateCommunityModal({ onClose, onCreate }: {
                         <button
                           key={l}
                           onClick={() => toggleLanguage(l)}
-                          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${active
-                              ? "bg-primary/10 text-primary border-primary/40"
-                              : "bg-white text-muted-foreground border-border hover:border-primary hover:text-primary"
+                          className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border duration-150 cursor-pointer active:scale-95 ${active
+                              ? "bg-[#C04A22]/15 text-[#8C3015] border-[#C04A22]/40 shadow-2xs"
+                              : "bg-slate-50 text-slate-700 border-slate-200/90 hover:border-[#C04A22]/50 hover:bg-white hover:text-[#8C3015]"
                             }`}
                         >
                           {l}
@@ -762,21 +734,23 @@ function CreateCommunityModal({ onClose, onCreate }: {
                   </div>
                 </div>
 
-                {/* Preview card */}
-                <div className="bg-secondary rounded-2xl p-4">
-                  <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Preview</p>
-                  <div className="bg-white rounded-xl border border-border p-3 flex gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center text-2xl flex-shrink-0">
+                {/* Live Preview Card */}
+                <div className="bg-gradient-to-br from-slate-50 to-orange-50/40 rounded-2xl border border-slate-200/90 p-4 shadow-2xs pt-3">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#C04A22]" /> Live Preview
+                  </div>
+                  <div className="bg-white rounded-xl border border-slate-200 p-3.5 flex gap-3 shadow-xs">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200/60 flex items-center justify-center text-2xl flex-shrink-0 shadow-2xs">
                       {emoji}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-bold text-foreground truncate">{name || "Community Name"}</div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        {selectedCategories.join(", ") || "No categories yet"} · {privacy === "public" ? "Public" : "Private"}
+                      <div className="text-sm font-bold text-slate-900 truncate">{name || "Community Name"}</div>
+                      <div className="text-xs text-slate-500 mt-0.5 truncate">
+                        {selectedCategories.join(", ") || "No categories selected"} · {privacy === "public" ? "Public" : "Private"}
                       </div>
-                      <div className="flex gap-1 mt-1.5 flex-wrap">
+                      <div className="flex gap-1.5 mt-2 flex-wrap">
                         {selectedLanguages.slice(0, 3).map(l => (
-                          <span key={l} className="text-[10px] bg-blue-50 text-primary px-1.5 py-0.5 rounded-full">{l}</span>
+                          <span key={l} className="text-[10px] font-semibold bg-[#C04A22]/10 text-[#8C3015] border border-[#C04A22]/20 px-2 py-0.5 rounded-full">{l}</span>
                         ))}
                       </div>
                     </div>
@@ -788,25 +762,19 @@ function CreateCommunityModal({ onClose, onCreate }: {
             {/* ── STEP 3: Rules ── */}
             {step === 3 && (
               <>
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 flex gap-2">
-                  <Shield className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-700 leading-relaxed">
-                    Clear community rules help keep your community safe and welcoming for all immigrants.
-                  </p>
-                </div>
 
                 <div>
                   <label className="text-xs font-semibold text-foreground mb-2 block">Community Rules</label>
                   <div className="space-y-2">
                     {rules.map((rule, i) => (
                       <div key={i} className="flex items-center gap-2 bg-secondary rounded-xl px-3 py-2.5">
-                        <span className="w-5 h-5 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                        <span className="w-5.5 h-5.5 rounded-full bg-[#C04A22]/15 text-[#8C3015] border border-[#C04A22]/30 text-xs font-bold flex items-center justify-center flex-shrink-0">
                           {i + 1}
                         </span>
                         <span className="text-xs text-foreground flex-1">{rule}</span>
                         <button
                           onClick={() => setRules(s => s.filter((_, j) => j !== i))}
-                          className="text-muted-foreground hover:text-red-500 transition-colors"
+                          className="text-muted-foreground hover:text-red-500 transition-colors cursor-pointer"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -822,35 +790,18 @@ function CreateCommunityModal({ onClose, onCreate }: {
                       onChange={e => setNewRule(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && addRule()}
                       placeholder="Add a new rule..."
-                      className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-secondary text-xs focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary focus:bg-white transition"
+                      className="flex-1 px-3.5 py-2 rounded-xl border border-slate-200 bg-secondary text-xs focus:outline-none focus:border-[#C04A22]/50 focus:shadow-[0_0_10px_rgba(192,74,34,0.2)] focus:bg-white transition-all"
                     />
                     <button
                       onClick={addRule}
                       disabled={!newRule.trim()}
-                      className="px-3 py-2.5 rounded-xl bg-primary text-white text-xs font-semibold hover:opacity-90 disabled:opacity-40 transition"
+                      className="px-3 py-2 rounded-xl bg-[#C04A22]/15 text-[#8C3015] border border-[#C04A22]/30 hover:bg-[#C04A22]/25 text-xs font-semibold disabled:opacity-40 transition cursor-pointer active:scale-95"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
-                {/* Final summary */}
-                <div className="bg-secondary rounded-2xl p-4 space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Summary</p>
-                  {[
-                    { label: "Name", value: name },
-                    { label: "Privacy", value: privacy === "public" ? "🌍 Public" : "🔒 Private" },
-                    { label: "Location", value: location || "Not specified" },
-                    { label: "Categories", value: selectedCategories.join(", ") || "None" },
-                    { label: "Languages", value: selectedLanguages.join(", ") },
-                    { label: "Rules", value: `${rules.length} rules` },
-                  ].map(({ label, value }) => (
-                    <div key={label} className="flex items-start justify-between gap-4">
-                      <span className="text-xs text-muted-foreground flex-shrink-0">{label}</span>
-                      <span className="text-xs font-medium text-foreground text-right">{value}</span>
-                    </div>
-                  ))}
-                </div>
               </>
             )}
           </div>
@@ -859,39 +810,171 @@ function CreateCommunityModal({ onClose, onCreate }: {
         {/* Footer buttons */}
         {!done && (
           <div className="px-5 py-4 border-t border-border flex gap-2 flex-shrink-0 bg-white">
-            {step > 1 && (
-              <button
-                onClick={() => setStep(s => (s - 1) as Step)}
-                className="px-4 py-3 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-secondary transition"
-              >
-                Back
-              </button>
-            )}
-            {step < 3 ? (
-              <button
-                onClick={() => setStep(s => (s + 1) as Step)}
-                disabled={step === 1 ? !canNext1 : !canNext2}
-                className="flex-1 py-3 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-40 transition flex items-center justify-center gap-2"
-              >
-                Continue <ChevronRight className="w-4 h-4" />
-              </button>
+            {step === 3 ? (
+              <div className="flex items-center justify-between gap-2 w-full">
+                <button
+                  onClick={() => setStep(2)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition cursor-pointer active:scale-95 flex-shrink-0"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={() => setShowPublicPreview(true)}
+                  className="px-3.5 py-2.5 rounded-xl bg-[#C04A22]/15 text-[#8C3015] border border-[#C04A22]/30 hover:bg-[#C04A22]/25 text-xs font-bold transition cursor-pointer active:scale-95 shadow-2xs flex items-center justify-center gap-1.5 flex-shrink-0"
+                >
+                  <Eye className="w-4 h-4 text-[#C04A22]" /> Preview
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="flex-1 py-2.5 rounded-xl bg-[#C04A22] text-white text-xs font-bold hover:bg-[#8C3015] disabled:opacity-70 transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.99] shadow-xs"
+                >
+                  {submitting ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      Creating…
+                    </>
+                  ) : "🚀 Create Community"}
+                </button>
+              </div>
             ) : (
-              <button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="flex-1 py-3 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-70 transition flex items-center justify-center gap-2"
-              >
-                {submitting ? (
-                  <>
-                    <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    Creating…
-                  </>
-                ) : "🚀 Create Community"}
-              </button>
+              <>
+                {step > 1 && (
+                  <button
+                    onClick={() => setStep(s => (s - 1) as Step)}
+                    className="px-4 py-3 rounded-xl border border-border text-sm font-medium text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                  >
+                    Back
+                  </button>
+                )}
+                <button
+                  onClick={() => setStep(s => (s + 1) as Step)}
+                  disabled={step === 1 ? !canNext1 : !canNext2}
+                  className="flex-1 py-3 rounded-xl bg-[#C04A22] text-white text-sm font-semibold hover:bg-[#8C3015] disabled:opacity-40 transition flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+                >
+                  Continue <ChevronRight className="w-4 h-4" />
+                </button>
+              </>
             )}
           </div>
         )}
       </div>
+
+      {/* ── Public View Preview Modal Popup ── */}
+      {showPublicPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="relative bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] border border-slate-200">
+            {/* Header Banner */}
+            <div className="h-24 bg-gradient-to-r from-orange-500 via-[#C04A22] to-amber-600 relative p-4 flex justify-between items-start flex-shrink-0">
+              <span className="bg-white/20 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1 border border-white/30">
+                <Eye className="w-3 h-3" /> Public Preview Mode
+              </span>
+              <button
+                onClick={() => setShowPublicPreview(false)}
+                className="w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 text-white flex items-center justify-center transition cursor-pointer active:scale-95"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Profile Body */}
+            <div className="px-5 py-4 flex-1 overflow-y-auto space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-16 h-16 rounded-2xl bg-slate-100 border border-slate-200 shadow-xs flex items-center justify-center text-3xl flex-shrink-0">
+                  {emoji}
+                </div>
+                <span className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#C04A22]/15 text-[#8C3015] border border-[#C04A22]/30 flex items-center gap-1">
+                  + Join Community
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 leading-snug">
+                  {name || "Community Name"}
+                </h3>
+                <div className="flex items-center gap-2 text-xs text-slate-500 mt-1 flex-wrap font-medium">
+                  <span>1 member (You)</span>
+                  <span>·</span>
+                  <span className="flex items-center gap-1">
+                    {privacy === "public" ? <Globe className="w-3.5 h-3.5 text-slate-400" /> : <Lock className="w-3.5 h-3.5 text-slate-400" />}
+                    {privacy === "public" ? "Public Community" : "Private Community"}
+                  </span>
+                  {location && (
+                    <>
+                      <span>·</span>
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                        {location}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200/80">
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {desc || "No description provided yet."}
+                </p>
+              </div>
+
+              {/* Categories & Languages */}
+              <div className="space-y-2">
+                {selectedCategories.length > 0 && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mr-1">Categories:</span>
+                    {selectedCategories.map(c => (
+                      <span key={c} className="text-xs bg-[#C04A22]/15 text-[#8C3015] border border-[#C04A22]/30 px-2.5 py-0.5 rounded-full font-semibold">
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {selectedLanguages.length > 0 && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mr-1">Languages:</span>
+                    {selectedLanguages.map(l => (
+                      <span key={l} className="text-xs bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-0.5 rounded-full font-medium">
+                        🌐 {l}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Rules Section Preview */}
+              {rules.length > 0 && (
+                <div className="bg-slate-50/80 rounded-2xl p-3.5 border border-slate-200/80 space-y-2">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5 text-[#C04A22]" /> Community Rules ({rules.length})
+                  </h4>
+                  <div className="space-y-1.5">
+                    {rules.map((rule, idx) => (
+                      <div key={idx} className="flex items-start gap-2 text-xs text-slate-700">
+                        <span className="w-4 h-4 rounded-full bg-[#C04A22]/15 text-[#8C3015] font-bold text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">
+                          {idx + 1}
+                        </span>
+                        <span className="leading-snug">{rule}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Preview Footer */}
+            <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end">
+              <button
+                onClick={() => setShowPublicPreview(false)}
+                className="w-full py-2.5 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition cursor-pointer active:scale-95"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -947,7 +1030,7 @@ export function Communities() {
               </h1>
               <button
                 onClick={() => setShowCreate(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-white text-xs font-semibold hover:opacity-90 transition"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#C04A22]/15 text-[#8C3015] border border-[#C04A22]/30 hover:bg-[#C04A22]/25 text-xs font-semibold transition cursor-pointer active:scale-95 flex-shrink-0"
               >
                 <Plus className="w-3.5 h-3.5" /> Create
               </button>
@@ -969,18 +1052,18 @@ export function Communities() {
             <div className="flex gap-2 bg-secondary rounded-2xl p-1">
               <button
                 onClick={() => setActiveTab("discover")}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === "discover"
-                    ? "bg-white text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                className={`flex-1 py-2.5 rounded-xl text-sm transition-all ${activeTab === "discover"
+                    ? "bg-white text-[#8C3015] font-bold shadow-xs"
+                    : "text-slate-600 hover:text-[#8C3015] font-medium"
                   }`}
               >
                 Discover
               </button>
               <button
                 onClick={() => setActiveTab("joined")}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === "joined"
-                    ? "bg-white text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                className={`flex-1 py-2.5 rounded-xl text-sm transition-all ${activeTab === "joined"
+                    ? "bg-white text-[#8C3015] font-bold shadow-xs"
+                    : "text-slate-600 hover:text-[#8C3015] font-medium"
                   }`}
               >
                 Joined ({joinedIds.length})
@@ -1021,13 +1104,6 @@ export function Communities() {
           {/* ── DISCOVER TAB ── */}
           {activeTab === "discover" && (
             <>
-              {/* Section label */}
-              <div className="flex items-center gap-2 pb-1">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Suggested communities for you
-                </span>
-              </div>
-
               {visibleDiscover.length === 0 ? (
                 <div className="bg-white rounded-2xl border border-border p-12 text-center">
                   <div className="text-4xl mb-3">🔍</div>
