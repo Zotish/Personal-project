@@ -1,11 +1,13 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
+import { AppLayout } from "../components/layout/AppLayout";
 import {
   Heart, MessageCircle, Share2, Bookmark, Volume2, VolumeX,
   Play, MoreHorizontal, MapPin, ChevronUp, ChevronDown,
   CheckCircle, Send, X, Search, Flag, Link, Globe, Music2,
   Clapperboard, TrendingUp, Flame, Clock, Star, ArrowLeft,
-  Plus, Video, Upload, Eye, EyeOff, MessageSquareOff, Loader2, CheckCircle2
+  Plus, Video, Upload, Eye, EyeOff, MessageSquareOff, Loader2, CheckCircle2,
+  RefreshCw
 } from "lucide-react";
 
 // ── Data ───────────────────────────────────────────────────────────────────────
@@ -185,7 +187,7 @@ function CommentSheet({ reel, onClose }: { reel: Reel; onClose: () => void }) {
             <input value={text} onChange={e => setText(e.target.value)} placeholder="Add a comment…"
               className="flex-1 text-sm bg-transparent outline-none text-white placeholder:text-white/40" />
             {text.trim() && (
-              <button onClick={() => setText("")} className="text-primary font-semibold text-xs">Post</button>
+              <button onClick={() => setText("")} className="text-[#C04A22] hover:text-[#d4522a] font-bold text-xs">Post</button>
             )}
           </div>
         </div>
@@ -197,7 +199,7 @@ function CommentSheet({ reel, onClose }: { reel: Reel; onClose: () => void }) {
 // ── Share Sheet ───────────────────────────────────────────────────────────────
 function ShareSheet({ onClose }: { onClose: () => void }) {
   const opts = [
-    { icon: MessageCircle, label: "Send in Chat", sub: "Share privately", color: "bg-primary/20 text-primary" },
+    { icon: MessageCircle, label: "Send in Chat", sub: "Share privately", color: "bg-[#C04A22]/20 text-[#d4522a]" },
     { icon: Link, label: "Copy Link", sub: "Copy to clipboard", color: "bg-white/10 text-white" },
     { icon: Globe, label: "Share to Feed", sub: "Post on your feed", color: "bg-white/10 text-white" },
     { icon: Flag, label: "Report", sub: "Report this reel", color: "bg-red-500/20 text-red-400" },
@@ -228,7 +230,7 @@ function ShareSheet({ onClose }: { onClose: () => void }) {
 
 // ── Single Reel Player ────────────────────────────────────────────────────────
 function ReelPlayer({ reel, active, muted, onMuteToggle }: {
-  reel: Reel; active: boolean; muted: boolean; onMuteToggle: () => void;
+  reel: Reel; active: boolean; muted: boolean; onMuteToggle: () => void; key?: React.Key;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
@@ -309,19 +311,6 @@ function ReelPlayer({ reel, active, muted, onMuteToggle }: {
         </div>
       )}
 
-      {/* Top bar */}
-      <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
-        {reel.location && (
-          <div className="pointer-events-auto flex items-center gap-1.5 bg-black/40 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-full border border-white/10">
-            <MapPin className="w-3 h-3" />{reel.location}
-          </div>
-        )}
-        <button className="pointer-events-auto ml-auto w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white"
-          onClick={e => { e.stopPropagation(); onMuteToggle(); }}>
-          {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-        </button>
-      </div>
-
       {/* Right action bar */}
       <div className="absolute right-3 bottom-32 z-20 flex flex-col items-center gap-6">
         {[
@@ -367,11 +356,11 @@ function ReelPlayer({ reel, active, muted, onMuteToggle }: {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="text-white font-bold text-sm drop-shadow">{reel.author.name}</span>
-              {reel.author.verified && <CheckCircle className="w-3.5 h-3.5 fill-primary text-white" />}
+              {reel.author.verified && <CheckCircle className="w-3.5 h-3.5 fill-[#C04A22] text-white" />}
             </div>
             <span className="text-white/60 text-xs">{reel.author.handle}</span>
           </div>
-          <button className="px-4 py-1.5 rounded-full border border-white/70 text-white text-xs font-bold hover:bg-white hover:text-black transition-all">
+          <button className="px-4 py-1.5 rounded-full border border-white/70 text-white text-xs font-bold hover:bg-[#C04A22] hover:border-[#C04A22] transition-all cursor-pointer">
             Follow
           </button>
         </div>
@@ -403,7 +392,7 @@ function ReelPlayer({ reel, active, muted, onMuteToggle }: {
 
       {/* Progress bar */}
       <div className="absolute bottom-0 left-0 right-0 z-20 h-[2px] bg-white/20">
-        <div className="h-full bg-white transition-all duration-100" style={{ width: `${progress}%` }} />
+        <div className="h-full bg-[#C04A22] transition-all duration-100" style={{ width: `${progress}%` }} />
       </div>
 
       {showComments && <CommentSheet reel={reel} onClose={() => setShowComments(false)} />}
@@ -422,7 +411,7 @@ function ReelPlayer({ reel, active, muted, onMuteToggle }: {
 }
 
 // ── Grid Thumbnail ────────────────────────────────────────────────────────────
-function ReelThumb({ reel, onClick }: { reel: Reel; onClick: () => void }) {
+function ReelThumb({ reel, onClick }: { reel: Reel; onClick: () => void; key?: React.Key }) {
   const [hovered, setHovered] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -480,7 +469,7 @@ function ReelThumb({ reel, onClick }: { reel: Reel; onClick: () => void }) {
             {reel.author.avatar[0]}
           </div>
           <span className="text-white text-xs font-semibold truncate">{reel.author.name}</span>
-          {reel.author.verified && <CheckCircle className="w-3 h-3 fill-primary text-white flex-shrink-0" />}
+          {reel.author.verified && <CheckCircle className="w-3 h-3 fill-[#C04A22] text-white flex-shrink-0" />}
         </div>
 
         {/* Caption preview */}
@@ -507,13 +496,15 @@ function ReelUploadModal({ onClose }: { onClose: () => void }) {
   const [isDragging, setIsDragging] = useState(false);
 
   // Edit form state
+  const [title, setTitle] = useState("");
   const [caption, setCaption] = useState("");
   const [hashtagInput, setHashtagInput] = useState("");
-  const [hashtags, setHashtags] = useState<string[]>([]);
-  const [location, setLocation] = useState("");
-  const [audioName, setAudioName] = useState("Original Audio · Your Name");
+  const [hashtags, setHashtags] = useState<string[]>(["ImmigrantLife", "NYC", "Community"]);
+  const [location, setLocation] = useState("Queens, New York");
+  const [audioName, setAudioName] = useState("Original Sound · Rafiq Ahmed");
   const [visibility, setVisibility] = useState<Visibility>("everyone");
   const [allowComments, setAllowComments] = useState(true);
+  const [allowDuet, setAllowDuet] = useState(true);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -536,7 +527,7 @@ function ReelUploadModal({ onClose }: { onClose: () => void }) {
   }
 
   function handleHashtagKey(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === " " || e.key === "Enter") {
+    if (e.key === " " || e.key === "Enter" || e.key === ",") {
       e.preventDefault();
       const tag = hashtagInput.trim().replace(/^#/, "");
       if (tag && !hashtags.includes(tag)) {
@@ -555,25 +546,27 @@ function ReelUploadModal({ onClose }: { onClose: () => void }) {
     setFile(null);
     if (videoUrl) URL.revokeObjectURL(videoUrl);
     setVideoUrl(null);
+    setTitle("");
     setCaption("");
     setHashtagInput("");
-    setHashtags([]);
-    setLocation("");
-    setAudioName("Original Audio · Your Name");
+    setHashtags(["ImmigrantLife", "NYC"]);
+    setLocation("Queens, New York");
+    setAudioName("Original Sound · Rafiq Ahmed");
     setVisibility("everyone");
     setAllowComments(true);
+    setAllowDuet(true);
     setIsDragging(false);
   }
 
   return (
-    <div className="fixed inset-0 z-[60] bg-[#0a0a0a] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-[60] bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-0 sm:p-4 overflow-hidden animate-in fade-in duration-200">
       <style>{`
         @keyframes progressFill {
           from { width: 0%; }
           to { width: 100%; }
         }
         @keyframes scaleIn {
-          from { transform: scale(0.5); opacity: 0; }
+          from { transform: scale(0.6); opacity: 0; }
           to { transform: scale(1); opacity: 1; }
         }
         @keyframes pulse-slow {
@@ -582,332 +575,398 @@ function ReelUploadModal({ onClose }: { onClose: () => void }) {
         }
       `}</style>
 
-      {/* ── Step: Select ── */}
-      {step === "select" && (
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-            <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition">
-              <X className="w-5 h-5 text-white" />
-            </button>
-            <h2 className="text-white font-bold text-base">New Reel</h2>
-            <div className="w-9" />
-          </div>
+      {/* Modal Container with Clean White Background */}
+      <div className="bg-white w-full max-w-3xl h-full sm:h-auto sm:max-h-[92vh] sm:rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden text-slate-900">
 
-          {/* Upload zone */}
-          <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6">
-            <div
-              className={`w-full max-w-sm aspect-[4/3] rounded-3xl border-2 border-dashed flex flex-col items-center justify-center gap-4 cursor-pointer transition-all duration-200 ${
-                isDragging
-                  ? "border-emerald-300 bg-emerald-300/10 scale-[1.02]"
-                  : "border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/8"
-              }`}
-              onClick={() => fileInputRef.current?.click()}
-              onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={e => {
-                e.preventDefault();
-                setIsDragging(false);
-                const f = e.dataTransfer.files[0];
-                if (f?.type.startsWith("video/")) handleFile(f);
-              }}
-            >
-              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-colors ${isDragging ? "bg-emerald-300/20" : "bg-white/10"}`}>
-                <Video className={`w-8 h-8 ${isDragging ? "text-emerald-300" : "text-white/60"}`} />
-              </div>
-              <div className="text-center px-4">
-                <p className="text-white font-semibold text-sm mb-1">
-                  {isDragging ? "Drop to upload" : "Tap to select a video"}
-                </p>
-                <p className="text-white/40 text-xs leading-relaxed">
-                  Drag &amp; drop or click to upload
-                </p>
-                <p className="text-white/30 text-xs mt-1">MP4, MOV, WebM · Max 60 seconds</p>
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10">
-                <Upload className="w-3.5 h-3.5 text-white/60" />
-                <span className="text-white/60 text-xs font-medium">Browse files</span>
-              </div>
-            </div>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="video/*"
-              className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-            />
-
-            {/* Option buttons */}
-            <div className="flex gap-3 w-full max-w-sm">
-              <button
-                onClick={() => alert("Camera recording coming soon!")}
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-white/8 border border-white/10 text-white text-sm font-medium hover:bg-white/12 transition"
-              >
-                <Video className="w-4 h-4 text-emerald-300" />
-                Record Video
-              </button>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-white/8 border border-white/10 text-white text-sm font-medium hover:bg-white/12 transition"
-              >
-                <Upload className="w-4 h-4 text-white/60" />
-                Choose from Library
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Step: Edit ── */}
-      {step === "edit" && (
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 flex-shrink-0">
-            <button onClick={reset} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition">
-              <ArrowLeft className="w-5 h-5 text-white" />
-            </button>
-            <h2 className="text-white font-bold text-base">Edit Reel</h2>
-            <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition">
-              <X className="w-5 h-5 text-white" />
-            </button>
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="flex flex-col lg:flex-row h-full">
-              {/* Video preview — desktop left panel */}
-              {videoUrl && (
-                <div className="hidden lg:flex lg:w-64 xl:w-80 flex-shrink-0 bg-black items-center justify-center p-4">
-                  <div className="relative w-full aspect-[9/16] rounded-2xl overflow-hidden bg-black">
-                    <video
-                      src={videoUrl}
-                      controls
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                  </div>
+        {/* ── Step: Select / Upload Video ── */}
+        {step === "select" && (
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-[#C04A22]/10 text-[#C04A22] flex items-center justify-center font-bold">
+                  <Video className="w-4 h-4 text-[#C04A22]" />
                 </div>
-              )}
+                <h2 className="text-slate-900 font-extrabold text-base sm:text-lg">Create New Reel</h2>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              {/* Form */}
-              <div className="flex-1 px-5 py-5 space-y-5">
-                {/* Mobile video preview */}
+            {/* Upload Zone */}
+            <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-10 gap-6 bg-slate-50/40">
+              <div
+                className={`w-full max-w-md aspect-[4/3] rounded-3xl border-2 border-dashed flex flex-col items-center justify-center gap-4 cursor-pointer transition-all duration-200 bg-white ${
+                  isDragging
+                    ? "border-[#C04A22] bg-[#C04A22]/5 scale-[1.02] shadow-md"
+                    : "border-slate-300 hover:border-[#C04A22] hover:bg-[#C04A22]/5 shadow-2xs"
+                }`}
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={e => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  const f = e.dataTransfer.files[0];
+                  if (f?.type.startsWith("video/")) handleFile(f);
+                }}
+              >
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-colors ${isDragging ? "bg-[#C04A22]/20" : "bg-[#C04A22]/10"}`}>
+                  <Video className="w-8 h-8 text-[#C04A22]" />
+                </div>
+                <div className="text-center px-4">
+                  <p className="text-slate-900 font-bold text-base mb-1">
+                    {isDragging ? "Drop your video here" : "Tap or Drag & Drop to upload video"}
+                  </p>
+                  <p className="text-slate-500 text-xs leading-relaxed">
+                    Share your story, immigration tip, or community highlight
+                  </p>
+                  <p className="text-slate-400 text-[11px] mt-1 font-mono">MP4, MOV, WebM · Max 60 seconds</p>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 transition">
+                  <Upload className="w-3.5 h-3.5 text-slate-700" />
+                  <span className="text-slate-700 text-xs font-bold">Browse local files</span>
+                </div>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="video/*"
+                className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+              />
+
+              {/* Quick Action Buttons */}
+              <div className="flex gap-3 w-full max-w-md">
+                <button
+                  onClick={() => alert("Camera recording feature active! Select a video clip to continue.")}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-white border border-slate-200 text-slate-800 text-xs sm:text-sm font-bold hover:bg-slate-100 shadow-2xs transition cursor-pointer active:scale-95"
+                >
+                  <Video className="w-4 h-4 text-[#C04A22]" />
+                  Record Video
+                </button>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#C04A22] hover:bg-[#8C3015] text-white text-xs sm:text-sm font-bold shadow-xs transition cursor-pointer active:scale-95"
+                >
+                  <Upload className="w-4 h-4" />
+                  Select from Device
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Step: Edit Form with Comprehensive Information Inputs ── */}
+        {step === "edit" && (
+          <div className="flex flex-col h-full overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white flex-shrink-0">
+              <button onClick={reset} className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition cursor-pointer" title="Back">
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <h2 className="text-slate-900 font-extrabold text-base sm:text-lg">Reel Details & Information</h2>
+              <button onClick={onClose} className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer" title="Close">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Form Body */}
+            <div className="flex-1 overflow-y-auto bg-slate-50/50">
+              <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-slate-200">
+                
+                {/* Left Side: Video Preview (Phone Aspect Ratio) */}
                 {videoUrl && (
-                  <div className="lg:hidden w-full rounded-2xl overflow-hidden bg-black aspect-video">
-                    <video src={videoUrl} controls className="w-full h-full object-contain" />
+                  <div className="md:w-64 lg:w-72 p-5 flex flex-col items-center justify-start bg-white flex-shrink-0">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 self-start">Video Preview</span>
+                    <div className="relative w-full aspect-[9/16] rounded-2xl overflow-hidden bg-black shadow-md border border-slate-200">
+                      <video
+                        src={videoUrl}
+                        controls
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    </div>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="mt-3 text-xs font-bold text-[#C04A22] hover:underline flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Change Video
+                    </button>
                   </div>
                 )}
 
-                {/* Caption */}
-                <div>
-                  <label className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-2 block">Caption</label>
-                  <textarea
-                    value={caption}
-                    onChange={e => setCaption(e.target.value)}
-                    placeholder="Write a caption..."
-                    rows={4}
-                    className="w-full bg-white/8 border border-white/10 rounded-2xl px-4 py-3 text-white text-sm placeholder:text-white/30 outline-none focus:border-white/30 resize-none transition"
-                  />
-                </div>
-
-                {/* Hashtags */}
-                <div>
-                  <label className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-2 block">Hashtags</label>
-                  <div className="flex items-center gap-2 bg-white/8 border border-white/10 rounded-2xl px-4 py-3 focus-within:border-white/30 transition">
-                    <span className="text-white/40 text-sm font-semibold">#</span>
+                {/* Right Side: Form Inputs */}
+                <div className="flex-1 p-5 sm:p-6 space-y-4 bg-white">
+                  
+                  {/* 1. Title Input */}
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                      <span>Reel Title</span>
+                      <span className="text-[#C04A22]">*</span>
+                    </label>
                     <input
-                      value={hashtagInput}
-                      onChange={e => setHashtagInput(e.target.value)}
-                      onKeyDown={handleHashtagKey}
-                      placeholder="Add hashtags (press Space or Enter)"
-                      className="flex-1 bg-transparent text-white text-sm placeholder:text-white/30 outline-none"
+                      type="text"
+                      value={title}
+                      onChange={e => setTitle(e.target.value)}
+                      placeholder="e.g. 5 Things I Wish I Knew Before Moving to New York 🗽"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 outline-none focus:border-[#C04A22] focus:bg-white transition"
                     />
                   </div>
-                  {hashtags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2.5">
-                      {hashtags.map(tag => (
-                        <span key={tag} className="flex items-center gap-1.5 bg-emerald-300/15 border border-emerald-300/30 text-emerald-300 text-xs font-semibold px-3 py-1.5 rounded-full">
-                          #{tag}
-                          <button onClick={() => removeHashtag(tag)} className="hover:text-white transition">
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
+
+                  {/* 2. Description / Caption Textarea */}
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5 block">
+                      Description / Caption
+                    </label>
+                    <textarea
+                      value={caption}
+                      onChange={e => setCaption(e.target.value)}
+                      placeholder="Write your story, helpful guide, tips or message for the community..."
+                      rows={3}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 outline-none focus:border-[#C04A22] focus:bg-white resize-none transition"
+                    />
+                  </div>
+
+                  {/* 3. Music / Audio Track Input with Quick Presets */}
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                      <Music2 className="w-3.5 h-3.5 text-[#C04A22]" />
+                      <span>Music &amp; Audio Track</span>
+                    </label>
+                    <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 focus-within:border-[#C04A22] focus-within:bg-white transition">
+                      <Music2 className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                      <input
+                        value={audioName}
+                        onChange={e => setAudioName(e.target.value)}
+                        placeholder="e.g. Original Audio · Your Name or Trending Beat"
+                        className="flex-1 bg-transparent text-slate-900 text-sm placeholder:text-slate-400 outline-none"
+                      />
+                    </div>
+                    {/* Audio Quick Suggestions */}
+                    <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                      <span className="text-[10px] font-bold text-slate-400">Popular:</span>
+                      {[
+                        "🎙️ Original Voice",
+                        "🎵 NYC Chill Beats",
+                        "🎶 Deshi Folk Acoustic",
+                        "🎧 Trending Lo-Fi"
+                      ].map(preset => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setAudioName(preset)}
+                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-[#C04A22]/10 hover:text-[#C04A22] text-slate-700 text-[11px] font-semibold transition cursor-pointer"
+                        >
+                          {preset}
+                        </button>
                       ))}
                     </div>
-                  )}
-                </div>
-
-                {/* Location */}
-                <div>
-                  <label className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-2 block">Location</label>
-                  <div className="flex items-center gap-3 bg-white/8 border border-white/10 rounded-2xl px-4 py-3 focus-within:border-white/30 transition">
-                    <MapPin className="w-4 h-4 text-white/40 flex-shrink-0" />
-                    <input
-                      value={location}
-                      onChange={e => setLocation(e.target.value)}
-                      placeholder="Add location"
-                      className="flex-1 bg-transparent text-white text-sm placeholder:text-white/30 outline-none"
-                    />
                   </div>
-                </div>
 
-                {/* Audio */}
-                <div>
-                  <label className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-2 block">Audio</label>
-                  <div className="flex items-center gap-3 bg-white/8 border border-white/10 rounded-2xl px-4 py-3 focus-within:border-white/30 transition">
-                    <Music2 className="w-4 h-4 text-white/40 flex-shrink-0" />
-                    <input
-                      value={audioName}
-                      onChange={e => setAudioName(e.target.value)}
-                      placeholder="Original Audio · Your Name"
-                      className="flex-1 bg-transparent text-white text-sm placeholder:text-white/30 outline-none"
-                    />
+                  {/* 4. Hashtags */}
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5 block">
+                      Hashtags
+                    </label>
+                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 focus-within:border-[#C04A22] focus-within:bg-white transition">
+                      <span className="text-slate-400 font-bold text-sm">#</span>
+                      <input
+                        value={hashtagInput}
+                        onChange={e => setHashtagInput(e.target.value)}
+                        onKeyDown={handleHashtagKey}
+                        placeholder="Type tag &amp; press Enter (e.g. USATips, Foodie)"
+                        className="flex-1 bg-transparent text-slate-900 text-sm placeholder:text-slate-400 outline-none"
+                      />
+                    </div>
+                    {hashtags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {hashtags.map(tag => (
+                          <span key={tag} className="flex items-center gap-1 bg-[#C04A22]/10 border border-[#C04A22]/30 text-[#8C3015] text-xs font-bold px-2.5 py-1 rounded-lg">
+                            #{tag}
+                            <button onClick={() => removeHashtag(tag)} className="hover:text-red-600 transition cursor-pointer ml-0.5">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
 
-                {/* Visibility */}
-                <div>
-                  <label className="text-white/50 text-xs font-semibold uppercase tracking-wider mb-2 block">Audience</label>
-                  <div className="flex gap-2">
-                    {([
-                      { id: "everyone", label: "Everyone", icon: Globe },
-                      { id: "followers", label: "Followers", icon: Eye },
-                      { id: "only_me", label: "Only Me", icon: EyeOff },
-                    ] as { id: Visibility; label: string; icon: typeof Globe }[]).map(({ id, label, icon: Icon }) => (
-                      <button
-                        key={id}
-                        onClick={() => setVisibility(id)}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-2xl text-xs font-semibold border transition-all ${
-                          visibility === id
-                            ? "bg-emerald-300/20 border-emerald-300/50 text-emerald-300"
-                            : "bg-white/5 border-white/10 text-white/50 hover:text-white/70 hover:border-white/20"
-                        }`}
-                      >
-                        <Icon className="w-3.5 h-3.5" />
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Allow comments toggle */}
-                <div className="flex items-center justify-between py-1">
-                  <div className="flex items-center gap-3">
-                    {allowComments
-                      ? <MessageCircle className="w-4 h-4 text-white/50" />
-                      : <MessageSquareOff className="w-4 h-4 text-white/30" />
-                    }
-                    <div>
-                      <p className="text-white text-sm font-medium">Allow Comments</p>
-                      <p className="text-white/40 text-xs">{allowComments ? "Anyone can comment" : "Comments disabled"}</p>
+                  {/* 5. Location */}
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-[#C04A22]" />
+                      <span>Location</span>
+                    </label>
+                    <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 focus-within:border-[#C04A22] focus-within:bg-white transition">
+                      <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                      <input
+                        value={location}
+                        onChange={e => setLocation(e.target.value)}
+                        placeholder="Add location (e.g. Queens, Jackson Heights, Manhattan)"
+                        className="flex-1 bg-transparent text-slate-900 text-sm placeholder:text-slate-400 outline-none"
+                      />
                     </div>
                   </div>
-                  <div
-                    onClick={() => setAllowComments(c => !c)}
-                    className={`w-12 h-6 rounded-full cursor-pointer transition-all duration-300 flex items-center px-0.5 ${allowComments ? "bg-emerald-400" : "bg-white/20"}`}
-                  >
-                    <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${allowComments ? "translate-x-6" : "translate-x-0"}`} />
-                  </div>
-                </div>
 
-                {/* Bottom padding for buttons */}
-                <div className="h-4" />
+                  {/* 6. Visibility & Audience */}
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5 block">
+                      Who can watch this reel?
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {([
+                        { id: "everyone", label: "Everyone", icon: Globe },
+                        { id: "followers", label: "Followers", icon: Eye },
+                        { id: "only_me", label: "Only Me", icon: EyeOff },
+                      ] as { id: Visibility; label: string; icon: typeof Globe }[]).map(({ id, label, icon: Icon }) => (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => setVisibility(id)}
+                          className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                            visibility === id
+                              ? "bg-[#C04A22]/12 border-[#C04A22] text-[#8C3015] shadow-2xs"
+                              : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                          }`}
+                        >
+                          <Icon className="w-3.5 h-3.5" />
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 7. Engagement Settings */}
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <MessageCircle className="w-4 h-4 text-slate-600" />
+                        <div>
+                          <p className="text-xs font-bold text-slate-900">Allow Comments</p>
+                          <p className="text-[10px] text-slate-500">{allowComments ? "Anyone can write a comment" : "Comments turned off"}</p>
+                        </div>
+                      </div>
+                      <div
+                        onClick={() => setAllowComments(c => !c)}
+                        className={`w-11 h-6 rounded-full cursor-pointer transition-colors duration-200 flex items-center px-0.5 ${allowComments ? "bg-[#C04A22]" : "bg-slate-300"}`}
+                      >
+                        <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${allowComments ? "translate-x-5" : "translate-x-0"}`} />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
+                      <div className="flex items-center gap-2.5">
+                        <Share2 className="w-4 h-4 text-slate-600" />
+                        <div>
+                          <p className="text-xs font-bold text-slate-900">Allow Shares &amp; Reposts</p>
+                          <p className="text-[10px] text-slate-500">Enable community members to share this reel</p>
+                        </div>
+                      </div>
+                      <div
+                        onClick={() => setAllowDuet(d => !d)}
+                        className={`w-11 h-6 rounded-full cursor-pointer transition-colors duration-200 flex items-center px-0.5 ${allowDuet ? "bg-[#C04A22]" : "bg-slate-300"}`}
+                      >
+                        <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${allowDuet ? "translate-x-5" : "translate-x-0"}`} />
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Actions Bar */}
+            <div className="px-6 py-4 border-t border-slate-200 bg-white flex items-center justify-between gap-3 flex-shrink-0">
+              <button
+                onClick={reset}
+                className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-100 transition cursor-pointer active:scale-95"
+              >
+                Back
+              </button>
+              <button
+                onClick={() => setStep("processing")}
+                className="px-7 py-2.5 rounded-xl text-white font-bold text-xs sm:text-sm transition hover:opacity-95 shadow-md shadow-[#C04A22]/20 cursor-pointer active:scale-95"
+                style={{ background: "linear-gradient(135deg, #d4522a 0%, #C04A22 100%)" }}
+              >
+                Publish Reel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Step: Processing ── */}
+        {step === "processing" && (
+          <div className="flex-1 flex flex-col items-center justify-center gap-6 p-10 text-center bg-white">
+            <div style={{ animation: "pulse-slow 1.5s ease-in-out infinite" }}>
+              <div className="w-20 h-20 rounded-3xl bg-[#C04A22]/10 text-[#C04A22] flex items-center justify-center shadow-xs">
+                <Clapperboard className="w-10 h-10 text-[#C04A22]" />
+              </div>
+            </div>
+
+            <div className="text-center space-y-1.5">
+              <h2 className="text-slate-900 font-extrabold text-xl">Publishing your reel...</h2>
+              <p className="text-slate-500 text-xs">Optimizing video quality and audio synchronization</p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full max-w-xs space-y-2">
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    background: "linear-gradient(90deg, #d4522a 0%, #C04A22 100%)",
+                    animation: "progressFill 2s ease-in-out forwards",
+                  }}
+                />
+              </div>
+              <div className="flex items-center justify-center gap-1.5 text-slate-400 text-xs">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#C04A22]" />
+                <span>Processing upload…</span>
               </div>
             </div>
           </div>
+        )}
 
-          {/* Bottom actions */}
-          <div className="flex-shrink-0 px-5 py-4 border-t border-white/10 bg-[#0a0a0a] flex items-center gap-3">
-            <button
-              onClick={reset}
-              className="text-white/50 text-sm font-medium hover:text-white/80 transition px-4 py-2.5"
-            >
-              Back
-            </button>
-            <button
-              onClick={() => setStep("processing")}
-              className="flex-1 py-3 rounded-2xl text-white font-bold text-sm transition hover:opacity-90 active:scale-[0.98]"
-              style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
-            >
-              Post Reel
-            </button>
-          </div>
-        </div>
-      )}
+        {/* ── Step: Done ── */}
+        {step === "done" && (
+          <div className="flex-1 flex flex-col items-center justify-center gap-6 p-10 text-center bg-white">
+            <div className="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm border border-emerald-200" style={{ animation: "scaleIn 0.4s ease-out both" }}>
+              <CheckCircle2 className="w-10 h-10 text-emerald-600" />
+            </div>
 
-      {/* ── Step: Processing ── */}
-      {step === "processing" && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-8 px-8">
-          <div style={{ animation: "pulse-slow 1.5s ease-in-out infinite" }}>
-            <div className="w-20 h-20 rounded-3xl bg-white/10 flex items-center justify-center">
-              <Clapperboard className="w-10 h-10 text-white" />
+            <div style={{ animation: "scaleIn 0.4s ease-out 0.1s both" }} className="space-y-1.5">
+              <h2 className="text-slate-900 font-extrabold text-2xl">Reel Published!</h2>
+              <p className="text-slate-500 text-xs leading-relaxed max-w-xs mx-auto">
+                Your reel is now live on the Discovery feed and shared with your community.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2.5 w-full max-w-xs" style={{ animation: "scaleIn 0.4s ease-out 0.2s both" }}>
+              <button
+                onClick={onClose}
+                className="w-full py-3 rounded-xl text-white font-bold text-xs sm:text-sm transition hover:opacity-95 shadow-md shadow-[#C04A22]/20 cursor-pointer active:scale-95"
+                style={{ background: "linear-gradient(135deg, #d4522a 0%, #C04A22 100%)" }}
+              >
+                View Reel
+              </button>
+              <button
+                onClick={reset}
+                className="w-full py-2.5 rounded-xl text-slate-700 font-bold text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 transition cursor-pointer active:scale-95"
+              >
+                Upload Another
+              </button>
             </div>
           </div>
+        )}
 
-          <div className="text-center space-y-2">
-            <h2 className="text-white font-bold text-xl">Publishing your reel...</h2>
-            <p className="text-white/40 text-sm">This will just take a moment</p>
-          </div>
-
-          {/* Progress bar */}
-          <div className="w-full max-w-xs">
-            <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full"
-                style={{
-                  background: "linear-gradient(90deg, #2563eb 0%, #7c3aed 100%)",
-                  animation: "progressFill 2s ease-in-out forwards",
-                }}
-              />
-            </div>
-            <p className="text-white/30 text-xs text-center mt-3">Optimizing and uploading…</p>
-          </div>
-
-          <div className="flex items-center gap-2 text-white/30">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-xs">Processing video</span>
-          </div>
-        </div>
-      )}
-
-      {/* ── Step: Done ── */}
-      {step === "done" && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-6 px-8 text-center">
-          <div className="text-4xl" style={{ animation: "scaleIn 0.4s ease-out forwards" }}>
-            🎉
-          </div>
-
-          <div
-            className="w-20 h-20 rounded-full bg-emerald-400/20 flex items-center justify-center"
-            style={{ animation: "scaleIn 0.4s ease-out 0.1s both" }}
-          >
-            <CheckCircle2 className="w-10 h-10 text-emerald-400" />
-          </div>
-
-          <div style={{ animation: "scaleIn 0.4s ease-out 0.2s both" }} className="space-y-2">
-            <h2 className="text-white font-bold text-2xl">Reel Published!</h2>
-            <p className="text-white/50 text-sm leading-relaxed max-w-xs">
-              Your reel is now live and being shared with your community.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-3 w-full max-w-xs" style={{ animation: "scaleIn 0.4s ease-out 0.3s both" }}>
-            <button
-              onClick={onClose}
-              className="w-full py-3.5 rounded-2xl text-white font-bold text-sm transition hover:opacity-90"
-              style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
-            >
-              View Reel
-            </button>
-            <button
-              onClick={reset}
-              className="w-full py-3.5 rounded-2xl text-white/70 font-semibold text-sm bg-white/8 border border-white/10 hover:bg-white/12 transition"
-            >
-              Post Another
-            </button>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -927,28 +986,29 @@ function ReelsGrid({ onSelectReel, onUpload }: { onSelectReel: (idx: number) => 
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-border">
-        <div className="flex items-center justify-between px-4 py-3">
+    <div className="w-full max-w-2xl sm:max-w-3xl xl:max-w-4xl mx-auto min-h-screen flex flex-col py-3 sm:py-5 px-3 sm:px-4 space-y-4">
+      {/* Header Bar */}
+      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3">
           <div className="flex items-center gap-2.5">
             <button onClick={() => navigate(-1)}
-              className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center hover:bg-border transition flex-shrink-0">
-              <ArrowLeft className="w-4 h-4 text-foreground" />
+              className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition flex-shrink-0 cursor-pointer">
+              <ArrowLeft className="w-4 h-4 text-slate-700" />
             </button>
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#d4522a] to-[#C04A22] flex items-center justify-center shadow-xs">
               <Clapperboard className="w-4 h-4 text-white" />
             </div>
-            <h1 className="text-lg font-bold text-foreground">Reels</h1>
+            <h1 className="text-base sm:text-lg font-bold text-slate-900">Reels</h1>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => setShowSearch(s => !s)}
-              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${showSearch ? "bg-primary text-white" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${showSearch ? "bg-[#C04A22] text-white" : "bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200"}`}>
               <Search className="w-4 h-4" />
             </button>
             <button
               onClick={onUpload}
-              className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white shadow-md hover:opacity-90 transition"
+              className="w-9 h-9 rounded-full bg-[#C04A22] hover:bg-[#8C3015] flex items-center justify-center text-white shadow-xs transition cursor-pointer active:scale-95"
+              title="Upload Reel"
             >
               <Plus className="w-5 h-5" />
             </button>
@@ -957,25 +1017,25 @@ function ReelsGrid({ onSelectReel, onUpload }: { onSelectReel: (idx: number) => 
 
         {/* Search bar */}
         {showSearch && (
-          <div className="px-4 pb-3">
-            <div className="flex items-center gap-2 bg-secondary rounded-2xl px-3 py-2.5">
-              <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <div className="px-4 sm:px-5 pb-3">
+            <div className="flex items-center gap-2 bg-slate-100 rounded-2xl px-3.5 py-2.5">
+              <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
               <input autoFocus value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search reels, creators, topics…"
-                className="flex-1 bg-transparent text-sm outline-none text-foreground placeholder:text-muted-foreground" />
-              {searchQuery && <button onClick={() => setSearchQuery("")}><X className="w-4 h-4 text-muted-foreground" /></button>}
+                className="flex-1 bg-transparent text-sm outline-none text-slate-900 placeholder:text-slate-400" />
+              {searchQuery && <button onClick={() => setSearchQuery("")}><X className="w-4 h-4 text-slate-400" /></button>}
             </div>
           </div>
         )}
 
         {/* Category tabs */}
-        <div className="flex gap-1 px-4 pb-3 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-1.5 px-4 sm:px-5 pb-3 overflow-x-auto scrollbar-hide">
           {categories.map(({ id, label, icon: Icon }) => (
             <button key={id} onClick={() => setActiveCategory(id)}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 cursor-pointer ${
                 activeCategory === id
-                  ? "bg-primary text-white shadow-sm"
-                  : "bg-secondary text-muted-foreground hover:text-foreground"
+                  ? "bg-[#C04A22] text-white shadow-2xs"
+                  : "bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200"
               }`}>
               <Icon className="w-3 h-3" />{label}
             </button>
@@ -985,46 +1045,46 @@ function ReelsGrid({ onSelectReel, onUpload }: { onSelectReel: (idx: number) => 
 
       {/* Featured reel — top hero */}
       {!searchQuery && (
-        <div className="px-4 pt-4 pb-3">
-          <div className="relative rounded-3xl overflow-hidden cursor-pointer h-48 group"
-            onClick={() => onSelectReel(0)}>
-            <img src={reels[0].poster} alt="Featured" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent" />
-            <div className="absolute inset-0 flex flex-col justify-center px-5">
-              <div className="inline-flex items-center gap-1.5 bg-primary text-white text-[10px] font-bold px-2.5 py-1 rounded-full mb-2 w-fit">
-                <Flame className="w-3 h-3" /> FEATURED
-              </div>
-              <h2 className="text-white font-bold text-base leading-tight max-w-xs line-clamp-2">{reels[0].caption}</h2>
-              <div className="flex items-center gap-2 mt-2">
-                <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${reels[0].author.color} flex items-center justify-center text-white text-[10px] font-bold`}>{reels[0].author.avatar[0]}</div>
-                <span className="text-white/80 text-xs">{reels[0].author.name}</span>
-                <span className="text-white/50 text-xs">·</span>
-                <span className="text-white/60 text-xs">{reels[0].views} views</span>
-              </div>
+        <div className="relative rounded-3xl overflow-hidden cursor-pointer h-44 sm:h-52 group shadow-sm border border-slate-200/60"
+          onClick={() => onSelectReel(0)}>
+          <img src={reels[0].poster} alt="Featured" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/40 to-transparent" />
+          <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-8">
+            <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-[#d4522a] to-[#C04A22] text-white text-[10px] font-bold px-2.5 py-1 rounded-full mb-2 w-fit shadow-xs">
+              <Flame className="w-3 h-3" /> FEATURED
             </div>
-            <div className="absolute right-4 bottom-4">
-              <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
-                <Play className="w-5 h-5 text-white fill-white ml-0.5" />
-              </div>
+            <h2 className="text-white font-bold text-base sm:text-lg leading-tight max-w-md line-clamp-2 drop-shadow">{reels[0].caption}</h2>
+            <div className="flex items-center gap-2 mt-2">
+              <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${reels[0].author.color} flex items-center justify-center text-white text-[10px] font-bold shadow-xs`}>{reels[0].author.avatar[0]}</div>
+              <span className="text-white/90 text-xs font-medium">{reels[0].author.name}</span>
+              <span className="text-white/50 text-xs">·</span>
+              <span className="text-white/70 text-xs font-medium">{reels[0].views} views</span>
+            </div>
+          </div>
+          <div className="absolute right-5 bottom-5">
+            <div className="w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/40 flex items-center justify-center shadow-lg transition-transform group-hover:scale-110">
+              <Play className="w-5 h-5 text-white fill-white ml-0.5" />
             </div>
           </div>
         </div>
       )}
 
       {/* Grid */}
-      <div className="px-4 pb-24 lg:pb-6">
+      <div className="pb-16 flex-1">
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center py-20 text-center">
-            <Search className="w-12 h-12 text-border mb-3" />
-            <p className="font-semibold text-foreground">No reels found</p>
-            <p className="text-sm text-muted-foreground mt-1">Try a different search</p>
+          <div className="bg-white rounded-2xl border border-slate-200 p-12 flex flex-col items-center justify-center text-center shadow-2xs">
+            <Search className="w-10 h-10 text-slate-300 mb-3" />
+            <p className="font-bold text-slate-800 text-sm">No reels found</p>
+            <p className="text-xs text-slate-500 mt-1">Try a different keyword or category</p>
           </div>
         ) : (
           <>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-              {searchQuery ? `${filtered.length} results` : "Suggested for you"}
-            </p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="flex items-center justify-between mb-3 px-1">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                {searchQuery ? `${filtered.length} results found` : "Suggested for you"}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {filtered.map((reel) => (
                 <ReelThumb key={reel.id} reel={reel} onClick={() => onSelectReel(reels.indexOf(reel))} />
               ))}
@@ -1082,58 +1142,81 @@ function ReelsFeed({ startIdx, onClose }: { startIdx: number; onClose: () => voi
   }, [activeIdx, goTo]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col">
-      {/* Top controls */}
-      <div className="absolute top-0 left-0 right-0 z-40 flex items-center gap-3 px-4 pt-4 pointer-events-none">
-        <button onClick={onClose}
-          className="pointer-events-auto w-9 h-9 rounded-full bg-black/50 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-black/70 transition">
-          <X className="w-4 h-4" />
-        </button>
-        <span className="pointer-events-auto text-white font-bold text-sm flex-1">Reels</span>
-        <button onClick={() => setMuted(m => !m)}
-          className="pointer-events-auto w-9 h-9 rounded-full bg-black/50 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-black/70 transition">
-          {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-        </button>
-      </div>
+    <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex items-center justify-center overflow-hidden">
+      {/* Ambient Blurred Background for Desktop View */}
+      <div
+        className="absolute inset-0 opacity-25 blur-3xl pointer-events-none scale-125 hidden lg:block transition-all duration-700"
+        style={{
+          backgroundImage: `url(${reels[activeIdx]?.poster})`,
+          backgroundPosition: "center",
+          backgroundSize: "cover"
+        }}
+      />
 
-      {/* Dot indicators */}
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-1.5 items-center">
-        {reels.map((_, i) => (
-          <button key={i} onClick={() => goTo(i)}
-            className={`rounded-full transition-all duration-200 ${
-              i === activeIdx ? "w-[3px] h-5 bg-white" : "w-[3px] h-[3px] bg-white/35 hover:bg-white/60"
-            }`} />
-        ))}
-      </div>
-
-      {/* Desktop nav arrows */}
-      <div className="absolute right-12 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col gap-2">
-        <button onClick={() => goTo(activeIdx - 1)} disabled={activeIdx === 0}
-          className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-black/70 transition disabled:opacity-20">
-          <ChevronUp className="w-5 h-5" />
-        </button>
-        <button onClick={() => goTo(activeIdx + 1)} disabled={activeIdx === reels.length - 1}
-          className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-black/70 transition disabled:opacity-20">
-          <ChevronDown className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Reel counter */}
-      <div className="absolute top-5 left-1/2 -translate-x-1/2 z-40 bg-black/40 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-white/10">
-        {activeIdx + 1} / {reels.length}
-      </div>
-
-      {/* Video container */}
-      <div ref={containerRef} className="flex-1 relative overflow-hidden">
-        <div
-          className="flex flex-col transition-transform duration-[420ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
-          style={{ transform: `translateY(-${activeIdx * 100}%)`, height: `${reels.length * 100}%` }}
+      {/* Desktop Nav Arrows (Up / Down on Desktop) */}
+      <div className="absolute right-6 lg:right-10 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col gap-3">
+        <button
+          onClick={() => goTo(activeIdx - 1)}
+          disabled={activeIdx === 0}
+          className="w-12 h-12 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 flex items-center justify-center text-white transition disabled:opacity-20 cursor-pointer shadow-lg active:scale-95"
+          title="Previous Reel"
         >
-          {reels.map((reel, i) => (
-            <div key={reel.id} className="w-full flex-shrink-0" style={{ height: `${100 / reels.length}%` }}>
-              <ReelPlayer reel={reel} active={i === activeIdx} muted={muted} onMuteToggle={() => setMuted(m => !m)} />
-            </div>
-          ))}
+          <ChevronUp className="w-6 h-6" />
+        </button>
+        <button
+          onClick={() => goTo(activeIdx + 1)}
+          disabled={activeIdx === reels.length - 1}
+          className="w-12 h-12 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 flex items-center justify-center text-white transition disabled:opacity-20 cursor-pointer shadow-lg active:scale-95"
+          title="Next Reel"
+        >
+          <ChevronDown className="w-6 h-6" />
+        </button>
+      </div>
+
+      {/* Video Container Frame: Mobile = 100% full screen; Desktop = Sleek 9:16 Centered Phone Frame */}
+      <div className="relative w-full h-full lg:w-[420px] lg:h-[90vh] lg:max-h-[840px] lg:rounded-3xl lg:overflow-hidden lg:shadow-2xl lg:border lg:border-white/15 bg-black flex flex-col">
+        
+        {/* Inside Video Top Overlay: Close (X) + Location Badge on Right of X + Sound Button */}
+        <div className="absolute top-4 left-4 right-4 z-40 flex items-center justify-between pointer-events-none">
+          <div className="flex items-center gap-2 pointer-events-auto">
+            <button
+              onClick={onClose}
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 flex items-center justify-center text-white transition cursor-pointer active:scale-95 shadow-md flex-shrink-0"
+              title="Close player"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Location Tag on the Right Side of X Button */}
+            {reels[activeIdx]?.location && (
+              <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md text-white text-xs font-medium px-3 py-1.5 rounded-full border border-white/20 shadow-md">
+                <MapPin className="w-3.5 h-3.5 text-[#C04A22] flex-shrink-0" />
+                <span className="truncate max-w-[140px] sm:max-w-[200px]">{reels[activeIdx].location}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Sound / Mute Button at Right Top Corner of Video */}
+          <button
+            onClick={() => setMuted(m => !m)}
+            className="pointer-events-auto w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 flex items-center justify-center text-white transition cursor-pointer active:scale-95 shadow-md flex-shrink-0"
+            title={muted ? "Unmute" : "Mute"}
+          >
+            {muted ? <VolumeX className="w-4.5 h-4.5 sm:w-5 sm:h-5" /> : <Volume2 className="w-4.5 h-4.5 sm:w-5 sm:h-5" />}
+          </button>
+        </div>
+
+        <div ref={containerRef} className="flex-1 relative overflow-hidden">
+          <div
+            className="flex flex-col transition-transform duration-[420ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
+            style={{ transform: `translateY(-${activeIdx * 100}%)`, height: `${reels.length * 100}%` }}
+          >
+            {reels.map((reel, i) => (
+              <div key={reel.id} className="w-full flex-shrink-0" style={{ height: `${100 / reels.length}%` }}>
+                <ReelPlayer reel={reel} active={i === activeIdx} muted={muted} onMuteToggle={() => setMuted(m => !m)} />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -1146,21 +1229,12 @@ export function Reels() {
   const [showUpload, setShowUpload] = useState(false);
 
   return (
-    <>
+    <AppLayout hideNav={playerIdx !== null}>
       <ReelsGrid onSelectReel={idx => setPlayerIdx(idx)} onUpload={() => setShowUpload(true)} />
       {playerIdx !== null && (
         <ReelsFeed startIdx={playerIdx} onClose={() => setPlayerIdx(null)} />
       )}
       {showUpload && <ReelUploadModal onClose={() => setShowUpload(false)} />}
-      {playerIdx === null && (
-        <button
-          onClick={() => setShowUpload(true)}
-          className="fixed bottom-24 right-4 lg:bottom-8 z-30 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl text-white"
-          style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
-        >
-          <Plus className="w-6 h-6" />
-        </button>
-      )}
-    </>
+    </AppLayout>
   );
 }
