@@ -939,20 +939,20 @@ export function Profile() {
             )}
           </div>
 
-          {/* Following & Followers Counts */}
-          <div className="flex items-center gap-5 text-xs sm:text-sm font-medium mb-3">
+          {/* Following & Followers Counts - Smaller sleek font */}
+          <div className="flex items-center gap-4 text-[11px] sm:text-xs font-medium mb-3">
             <button
               onClick={() => setPeopleModal("following")}
               className="hover:underline cursor-pointer transition"
             >
-              <strong className="text-slate-900 font-extrabold">{profileData.followingCount}</strong>{" "}
+              <strong className="text-slate-900 font-bold">{profileData.followingCount}</strong>{" "}
               <span className="text-slate-500">Following</span>
             </button>
             <button
               onClick={() => setPeopleModal("followers")}
               className="hover:underline cursor-pointer transition"
             >
-              <strong className="text-slate-900 font-extrabold">{followersCount}</strong>{" "}
+              <strong className="text-slate-900 font-bold">{followersCount}</strong>{" "}
               <span className="text-slate-500">Followers</span>
             </button>
           </div>
@@ -976,7 +976,7 @@ export function Profile() {
             { id: "posts", label: "Posts" },
             { id: "replies", label: "Replies" },
             { id: "likes", label: "Likes" },
-            ...(isSelf ? [{ id: "orders", label: "📦 My Orders" }] : []),
+            ...(isSelf ? [{ id: "orders", label: "My Orders" }] : []),
           ].map(tab => (
             <button
               key={tab.id}
@@ -1007,7 +1007,7 @@ export function Profile() {
                   <textarea
                     value={newPostText}
                     onChange={e => setNewPostText(e.target.value)}
-                    placeholder="What is happening in your community?!"
+                    placeholder="What's on your mind?"
                     rows={2}
                     className="w-full resize-none text-sm text-slate-900 placeholder:text-slate-400 bg-transparent outline-none leading-relaxed focus:outline-none min-h-[52px]"
                   />
