@@ -939,21 +939,21 @@ export function Profile() {
             )}
           </div>
 
-          {/* Following & Followers Counts - Smaller sleek font */}
-          <div className="flex items-center gap-4 text-[11px] sm:text-xs font-medium mb-3">
+          {/* Following & Followers Counts - Exact same text size as bio (text-sm) */}
+          <div className="flex items-center gap-4 text-sm mb-3">
             <button
               onClick={() => setPeopleModal("following")}
-              className="hover:underline cursor-pointer transition"
+              className="hover:underline cursor-pointer transition flex items-center gap-1"
             >
-              <strong className="text-slate-900 font-bold">{profileData.followingCount}</strong>{" "}
-              <span className="text-slate-500">Following</span>
+              <span className="font-bold text-slate-900">{profileData.followingCount}</span>
+              <span className="text-slate-500 font-normal">Following</span>
             </button>
             <button
               onClick={() => setPeopleModal("followers")}
-              className="hover:underline cursor-pointer transition"
+              className="hover:underline cursor-pointer transition flex items-center gap-1"
             >
-              <strong className="text-slate-900 font-bold">{followersCount}</strong>{" "}
-              <span className="text-slate-500">Followers</span>
+              <span className="font-bold text-slate-900">{followersCount}</span>
+              <span className="text-slate-500 font-normal">Followers</span>
             </button>
           </div>
 
@@ -1360,14 +1360,13 @@ export function Profile() {
           {/* ── 6. ORDERS TAB (Buyer Universal User Only) ── */}
           {activeTab === "orders" && isSelf && (
             <div className="p-4 space-y-4">
-              <div className="bg-gradient-to-r from-[#8C3015] via-[#C04A22] to-[#D85A30] text-white p-4 rounded-2xl flex items-center justify-between shadow-sm">
+              <div className="bg-[#C04A22]/10 border border-[#C04A22]/20 p-4 rounded-2xl flex items-center justify-between shadow-2xs">
                 <div>
-                  <h4 className="font-bold text-sm">Package Tracking & Escrow Vault</h4>
-                  <p className="text-xs text-orange-100 mt-0.5">Track purchases, verify rider delivery OTPs & escrow</p>
+                  <h4 className="font-bold text-sm text-[#8C3015]">Trace Orders</h4>
                 </div>
                 <button
                   onClick={() => navigate("/orders")}
-                  className="px-3.5 py-1.5 rounded-xl bg-white text-[#8C3015] font-bold text-xs hover:bg-orange-50 transition cursor-pointer shadow-xs"
+                  className="px-3.5 py-1.5 rounded-xl bg-[#C04A22] text-white font-bold text-xs hover:bg-[#8C3015] transition cursor-pointer shadow-xs active:scale-95"
                 >
                   View All
                 </button>
@@ -1379,32 +1378,24 @@ export function Profile() {
                   <div className="flex items-center gap-3">
                     <img src="https://images.unsplash.com/photo-1617806118233-18e1de247200?w=500&h=300&fit=crop" alt="Item" className="w-12 h-12 rounded-xl object-cover border" />
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900 text-sm">#ORD-902</span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#C04A22]/15 text-[#8C3015] border border-[#C04A22]/30">In Transit</span>
-                      </div>
-                      <h5 className="text-xs font-semibold text-slate-700">Solid Oak Dining Table with 6 Chairs</h5>
+                      <span className="font-semibold text-slate-500 text-xs block">#ORD-902</span>
+                      <h5 className="text-xs font-semibold text-slate-800 mt-0.5">Solid Oak Dining Table with 6 Chairs</h5>
                     </div>
                   </div>
                   <span className="font-extrabold text-emerald-600 text-sm">$350.00</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
-                    <span className="text-[10px] font-bold text-emerald-800 uppercase block">Escrow Vault</span>
-                    <span className="font-bold text-emerald-900 text-[11px]">$350.00 Protected</span>
+                  <div className="bg-[#C04A22]/10 p-2.5 rounded-xl border border-[#C04A22]/20 flex items-center">
+                    <span className="font-bold text-[#8C3015] text-xs">$350.00 Protected</span>
                   </div>
                   <div className="bg-[#C04A22]/10 p-2.5 rounded-xl border border-[#C04A22]/20 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold text-[#8C3015] uppercase block">Delivery OTP</span>
-                      <span className="text-[10px] text-slate-600">Provide to rider</span>
-                    </div>
+                    <span className="text-xs font-bold text-[#8C3015]">Delivery OTP</span>
                     <span className="px-2 py-0.5 rounded-lg bg-[#C04A22] text-white font-mono font-bold text-xs">427189</span>
                   </div>
                 </div>
 
-                <div className="pt-1 flex items-center justify-between text-xs">
-                  <span className="text-slate-500">Pathao Express Rider #R-902</span>
+                <div className="pt-1 flex items-center justify-end text-xs">
                   <button
                     onClick={() => navigate("/orders")}
                     className="text-[#C04A22] font-bold hover:text-[#8C3015] hover:underline flex items-center gap-1 cursor-pointer"
