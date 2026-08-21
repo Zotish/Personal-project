@@ -4,7 +4,7 @@ import { AppLayout } from "../components/layout/AppLayout";
 import {
   Store, Star, MapPin, Phone, Mail, MessageSquare, Share2, ShieldCheck,
   Search, Filter, ShoppingBag, ShoppingCart, Check, ChevronRight, X,
-  Clock, ArrowLeft, Heart, CheckCircle2, Truck
+  Clock, ArrowLeft, Heart, CheckCircle2, Truck, Plus, Minus
 } from "lucide-react";
 import { INITIAL_SELLER_PRODUCTS, Product } from "./SellerDashboard";
 import { DeliverySecurityModal } from "../components/DeliverySecurityModal";
@@ -49,6 +49,20 @@ export function SellerProfile() {
       return [...prev, { product, qty: 1 }];
     });
     setIsCartOpen(true);
+  };
+
+  const handleUpdateQty = (id: number, delta: number) => {
+    setCart(prev => {
+      return prev
+        .map(item => {
+          if (item.product.id === id) {
+            const nextQty = item.qty + delta;
+            return nextQty > 0 ? { ...item, qty: nextQty } : null;
+          }
+          return item;
+        })
+        .filter(Boolean) as { product: Product; qty: number }[];
+    });
   };
 
   const handleRemoveFromCart = (id: number) => {
@@ -197,11 +211,11 @@ export function SellerProfile() {
         {cartItemCount > 0 && (
           <button
             onClick={() => setIsCartOpen(true)}
-            className="fixed bottom-6 right-6 z-40 px-5 py-3.5 rounded-2xl bg-slate-900 text-white font-bold text-sm shadow-xl hover:bg-slate-800 transition flex items-center gap-3 border border-slate-700"
+            className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-40 px-5 py-3.5 rounded-2xl bg-slate-900 text-white font-bold text-sm shadow-xl hover:bg-slate-800 transition flex items-center gap-3 border border-slate-700 active:scale-95 cursor-pointer"
           >
             <div className="relative">
               <ShoppingCart className="w-5 h-5" />
-              <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-extrabold flex items-center justify-center">
+              <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-[#C04A22] text-white text-[11px] font-extrabold flex items-center justify-center">
                 {cartItemCount}
               </span>
             </div>
@@ -209,18 +223,18 @@ export function SellerProfile() {
           </button>
         )}
 
-        {/* Shopping Cart Drawer */}
+        {/* Shopping Cart Drawer (Ends above mobile bottom navbar) */}
         {isCartOpen && (
-          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex justify-end">
+          <div className="fixed top-0 bottom-16 lg:bottom-0 left-0 right-0 z-40 bg-slate-900/60 backdrop-blur-xs flex justify-end">
             <div className="bg-white w-full max-w-md h-full shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-200">
               
               {/* Drawer Header */}
               <div className="p-4 sm:p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                 <div className="flex items-center gap-2">
-                  <ShoppingBag className="w-5 h-5 text-blue-600" />
+                  <ShoppingBag className="w-5 h-5 text-[#C04A22]" />
                   <h3 className="font-bold text-slate-900 text-base">Your Cart ({cartItemCount})</h3>
                 </div>
-                <button onClick={() => setIsCartOpen(false)} className="p-1 rounded-lg hover:bg-slate-200 text-slate-500 transition">
+                <button onClick={() => setIsCartOpen(false)} className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-500 transition cursor-pointer">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -228,16 +242,38 @@ export function SellerProfile() {
               {/* Items List */}
               <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
                 {cart.map(item => (
-                  <div key={item.product.id} className="flex items-center gap-3 p-3 rounded-2xl border border-slate-100 bg-slate-50/50">
-                    <img src={item.product.image} alt={item.product.name} className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
+                  <div key={item.product.id} className="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition shadow-2xs">
+                    <img src={item.product.image} alt={item.product.name} className="w-16 h-16 rounded-xl object-cover flex-shrink-0 border border-slate-200" />
                     <div className="flex-1 min-w-0">
                       <h4 className="text-xs font-bold text-slate-900 truncate">{item.product.name}</h4>
-                      <span className="text-xs font-extrabold text-emerald-600">${item.product.price.toFixed(2)}</span>
-                      <p className="text-[11px] text-slate-400 mt-0.5">Qty: {item.qty}</p>
+                      <span className="text-xs font-extrabold text-[#C04A22]">${(item.product.price * item.qty).toFixed(2)}</span>
+                      
+                      {/* Quantity Selector: Minus / Qty / Plus */}
+                      <div className="flex items-center gap-2 mt-2">
+                        <div className="flex items-center border border-slate-200 rounded-lg bg-white shadow-2xs overflow-hidden">
+                          <button
+                            onClick={() => handleUpdateQty(item.product.id, -1)}
+                            className="w-7 h-7 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition cursor-pointer active:scale-95 text-xs font-bold"
+                            title="Decrease quantity"
+                          >
+                            <Minus className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="w-8 text-center text-xs font-bold text-slate-800 select-none">{item.qty}</span>
+                          <button
+                            onClick={() => handleUpdateQty(item.product.id, 1)}
+                            className="w-7 h-7 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition cursor-pointer active:scale-95 text-xs font-bold"
+                            title="Increase quantity"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <span className="text-[11px] text-slate-400">(${item.product.price.toFixed(2)} ea)</span>
+                      </div>
                     </div>
                     <button
                       onClick={() => handleRemoveFromCart(item.product.id)}
-                      className="p-1 text-slate-400 hover:text-rose-600 transition"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer self-start"
+                      title="Remove item"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -252,12 +288,12 @@ export function SellerProfile() {
                 )}
               </div>
 
-              {/* Drawer Footer & Checkout */}
+              {/* Drawer Footer & Checkout (Visible across all devices with safe padding) */}
               {cart.length > 0 && (
-                <div className="p-4 sm:p-6 border-t border-slate-100 bg-slate-50 space-y-3">
+                <div className="p-4 sm:p-6 pb-6 sm:pb-6 border-t border-slate-100 bg-white space-y-3 shadow-lg">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600 font-medium">Subtotal</span>
-                    <span className="text-lg font-extrabold text-slate-900">${cartTotal.toFixed(2)}</span>
+                    <span className="text-slate-600 font-semibold">Subtotal</span>
+                    <span className="text-xl font-extrabold text-slate-900">${cartTotal.toFixed(2)}</span>
                   </div>
                   <button
                     onClick={() => {
@@ -265,10 +301,10 @@ export function SellerProfile() {
                       setIsSecurityModalOpen(true);
                       setCart([]);
                     }}
-                    className="w-full py-3.5 rounded-xl text-white font-bold text-sm shadow-md hover:opacity-95 transition flex items-center justify-center gap-2"
-                    style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
+                    className="w-full py-3.5 rounded-xl text-white font-bold text-sm shadow-md hover:opacity-95 transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                    style={{ background: "linear-gradient(135deg, #C04A22 0%, #8C3015 100%)" }}
                   >
-                    <ShieldCheck className="w-4 h-4" />
+                    <ShieldCheck className="w-4.5 h-4.5" />
                     <span>Place Order & Escrow Lock</span>
                   </button>
                 </div>

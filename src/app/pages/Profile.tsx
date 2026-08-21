@@ -874,7 +874,7 @@ export function Profile() {
 
                   {/* Direct Message Envelope Button */}
                   <button
-                    onClick={() => navigate(`/messages?user=${profileUser.handle?.replace('@', '') || ''}`)}
+                    onClick={() => navigate(`/messages?user=${activeUser.handle?.replace('@', '') || ''}`)}
                     className="p-2 rounded-full border border-slate-300 text-slate-700 hover:bg-slate-100 transition cursor-pointer active:scale-95"
                     title="Direct Message"
                   >
