@@ -8,8 +8,9 @@ import {
   HelpCircle, Zap, UserPlus, BarChart2, X, Search, UserCheck, ChevronRight, User,
   ArrowLeft, Mail, Bell, BellOff, Flag, UserX, VolumeX, Sparkles, Check, Play,
   Download, Eye, MessageSquare, ExternalLink, ShieldCheck, GraduationCap, Briefcase, Languages,
-  Video, Smile
+  Video, Smile, FileText
 } from "lucide-react";
+import { InvoiceModal, InvoiceData } from "../components/InvoiceModal";
 
 export interface UserProfileData {
   id: string | number;
@@ -578,6 +579,7 @@ export function Profile() {
   const [showMoreMenu, setShowMoreMenu] = useState<boolean>(false);
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
   const [peopleModal, setPeopleModal] = useState<"following" | "followers" | null>(null);
+  const [selectedInvoiceModal, setSelectedInvoiceModal] = useState<InvoiceData | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
@@ -1378,7 +1380,7 @@ export function Profile() {
                   <div className="flex items-center gap-3">
                     <img src="https://images.unsplash.com/photo-1617806118233-18e1de247200?w=500&h=300&fit=crop" alt="Item" className="w-12 h-12 rounded-xl object-cover border" />
                     <div>
-                      <span className="font-semibold text-slate-500 text-xs block">#ORD-902</span>
+                      <span className="font-semibold text-slate-800 text-xs block">#ORD-902</span>
                       <h5 className="text-xs font-semibold text-slate-800 mt-0.5">Solid Oak Dining Table with 6 Chairs</h5>
                     </div>
                   </div>
@@ -1395,7 +1397,21 @@ export function Profile() {
                   </div>
                 </div>
 
-                <div className="pt-1 flex items-center justify-end">
+                <div className="pt-1 flex items-center justify-end gap-3">
+                  <button
+                    onClick={() => setSelectedInvoiceModal({
+                      orderId: "ORD-902",
+                      buyerName: "Rafiq Ahmed",
+                      sellerName: "Gulshan Premium Furniture Mart",
+                      itemTitle: "Solid Oak Dining Table with 6 Chairs",
+                      price: "$350.00",
+                      quantity: 1,
+                      date: "Today, 4:15 PM"
+                    })}
+                    className="text-slate-600 hover:text-slate-900 font-semibold text-[11px] flex items-center gap-1 cursor-pointer transition active:scale-95"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-[#C04A22]" /> Invoice
+                  </button>
                   <button
                     onClick={() => navigate("/orders")}
                     className="text-[#C04A22] font-semibold text-[11px] hover:text-[#8C3015] hover:underline flex items-center gap-1 cursor-pointer"
@@ -1544,6 +1560,15 @@ export function Profile() {
               className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl"
             />
           </div>
+        )}
+
+        {/* ── Invoice / Cash Memo Modal ── */}
+        {selectedInvoiceModal && (
+          <InvoiceModal
+            isOpen={!!selectedInvoiceModal}
+            onClose={() => setSelectedInvoiceModal(null)}
+            invoice={selectedInvoiceModal}
+          />
         )}
       </div>
     </AppLayout>

@@ -112,100 +112,149 @@ export function DeliverySecurityModal({
         <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
 
           {/* ========================================================================= */}
-          {/* BUYER PERSPECTIVE VIEW */}
+          {/* BUYER PERSPECTIVE VIEW (Exact same format & styling as Seller view) */}
           {/* ========================================================================= */}
           {currentRole === "buyer" && (
             <>
-              {/* 1. BUYER ESCROW VAULT BANNER */}
-              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Lock className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-bold text-emerald-900 uppercase tracking-wider">Escrow Payment Locked</h4>
-                    <span className="text-xs font-extrabold text-emerald-700">{totalPrice} Secured</span>
+              {/* RIDER LIVE STATUS TRACKING STEPPER (TOP OF MODAL) */}
+              <div className="bg-[#C04A22]/5 border border-[#C04A22]/20 rounded-2xl p-4 space-y-3 shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Truck className="w-4.5 h-4.5 text-[#C04A22]" />
+                    <h4 className="text-xs font-extrabold text-slate-900 tracking-tight">Rider Live Order Status</h4>
                   </div>
-                  <p className="text-xs text-emerald-800 mt-1 leading-relaxed">
-                    Your money is safely locked in Escrow vault. Funds will only be released to the seller after you inspect the parcel and share your Secret Delivery OTP with the Rider.
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#C04A22]/10 text-[#8C3015] border border-[#C04A22]/30 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#C04A22] animate-ping inline-block" /> Live Tracking
+                  </span>
+                </div>
+
+                {/* 4-Step Progress Stepper */}
+                <div className="grid grid-cols-4 gap-1 relative pt-1">
+                  {/* Step 1: Placed */}
+                  <div className="flex flex-col items-center text-center space-y-1">
+                    <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                      ✓
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-900">Order Placed</span>
+                    <span className="text-[9px] text-slate-500">10:15 AM</span>
+                  </div>
+
+                  {/* Step 2: Handover */}
+                  <div className="flex flex-col items-center text-center space-y-1">
+                    <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                      ✓
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-900">Packed</span>
+                    <span className="text-[9px] text-slate-500">5:30 PM</span>
+                  </div>
+
+                  {/* Step 3: Out for Delivery (Active Step) */}
+                  <div className="flex flex-col items-center text-center space-y-1">
+                    <div className={`w-7 h-7 rounded-full text-white flex items-center justify-center text-xs font-bold shadow-xs ${
+                      deliveryStatus === "completed" ? "bg-emerald-600" : "bg-[#C04A22] ring-4 ring-[#C04A22]/20 animate-pulse"
+                    }`}>
+                      {deliveryStatus === "completed" ? "✓" : "🏍️"}
+                    </div>
+                    <span className={`text-[10px] ${deliveryStatus === "completed" ? "font-bold text-slate-900" : "font-extrabold text-[#8C3015]"}`}>
+                      Out for Delivery
+                    </span>
+                    <span className="text-[9px] text-[#8C3015] font-bold">Arif (Pathao)</span>
+                  </div>
+
+                  {/* Step 4: Delivered */}
+                  <div className="flex flex-col items-center text-center space-y-1">
+                    <div className={`w-7 h-7 rounded-full text-xs font-bold ${
+                      deliveryStatus === "completed" ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-200 text-slate-500 border border-slate-300"
+                    } flex items-center justify-center`}>
+                      {deliveryStatus === "completed" ? "✓" : "🏠"}
+                    </div>
+                    <span className={`text-[10px] ${deliveryStatus === "completed" ? "font-bold text-emerald-700" : "font-bold text-slate-600"}`}>
+                      {deliveryStatus === "completed" ? "Delivered" : "Pending OTP"}
+                    </span>
+                    <span className="text-[9px] text-slate-400">{deliveryStatus === "completed" ? "Completed" : "Doorstep"}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 1. BUYER ESCROW VAULT BANNER */}
+              <div className="bg-[#C04A22]/8 border border-[#C04A22]/20 rounded-2xl p-4 flex items-center gap-3">
+                <Lock className="w-5 h-5 text-[#C04A22] flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
+                    <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Escrow Payment Locked</h4>
+                    <span className="text-xs font-extrabold text-slate-900">{totalPrice} Secured</span>
+                  </div>
+                  <p className="text-xs text-slate-700 mt-0.5 font-medium">
+                    Funds release to seller only after you inspect the parcel and share your Secret Delivery OTP.
                   </p>
                 </div>
               </div>
 
               {/* 2. BUYER SECRET DELIVERY OTP CARD */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-5 space-y-2 relative overflow-hidden">
+              <div className="bg-gradient-to-br from-[#C04A22]/5 to-[#C04A22]/10 border-2 border-[#C04A22]/30 rounded-2xl p-5 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Key className="w-5 h-5 text-blue-600" />
-                    <h4 className="text-xs font-extrabold text-blue-950 uppercase tracking-wider">
+                    <Key className="w-5 h-5 text-[#C04A22]" />
+                    <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
                       Your Secret Delivery OTP
                     </h4>
                   </div>
-                  <span className="px-3 py-1 rounded-full text-sm font-mono font-extrabold bg-blue-600 text-white shadow-sm border border-blue-500 animate-pulse">
+                  <span className="text-base sm:text-lg font-mono font-extrabold text-slate-900 tracking-widest">
                     {BUYER_SECRET_OTP}
                   </span>
                 </div>
 
-                <p className="text-xs text-blue-900 leading-relaxed pt-1">
-                  <strong>Instructions for Buyer:</strong> When Rider #R-902 arrives at your doorstep, inspect your package. Tell or read this 6-digit OTP code <code className="bg-blue-200 px-1 py-0.5 rounded font-bold font-mono">{BUYER_SECRET_OTP}</code> to the rider so they can input it in the Rider App.
+                <p className="text-xs text-slate-700 pt-0.5 font-medium">
+                  <strong className="text-slate-900">Buyer Instruction:</strong> Share OTP <code className="bg-slate-200 text-slate-900 px-1.5 py-0.5 rounded font-extrabold font-mono border border-slate-300">{BUYER_SECRET_OTP}</code> with Rider #R-902 at your doorstep after inspecting your parcel.
                 </p>
               </div>
 
-              {/* 3. LOGISTICS RIDER INFO & NUMBER MASKED VOIP CALL */}
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Truck className="w-4 h-4 text-blue-600" />
-                    <span className="text-xs font-bold text-slate-800">Pathao Express Delivery Partner</span>
+              {/* 3. CALL COURIER DELIVERY RIDER VIA PROXY */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Truck className="w-5 h-5 text-[#C04A22]" />
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-900">Delivery Rider #R-902 (Ariful Islam)</h5>
                   </div>
-                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border ${
-                    deliveryStatus === "completed"
-                      ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                      : "bg-blue-100 text-blue-800 border-blue-300"
-                  }`}>
-                    {deliveryStatus === "completed" ? "✓ Delivered & Verified" : "🚚 Rider Approaching"}
-                  </span>
                 </div>
 
-                <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center">
-                      R
-                    </div>
-                    <div>
-                      <h5 className="text-xs font-bold text-slate-900">Rider #R-902 (Ariful Islam)</h5>
-                      <p className="text-[11px] text-slate-500">Pathao Courier Express</p>
-                    </div>
+                {deliveryStatus !== "completed" && (
+                  <button
+                    onClick={handleStartMaskedCall}
+                    className="px-3.5 py-2 rounded-xl bg-[#C04A22] hover:bg-[#a63c1a] text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer active:scale-95"
+                  >
+                    <PhoneCall className="w-3.5 h-3.5" /> Call Delivery Rider
+                  </button>
+                )}
+              </div>
+
+              {/* 4. PRIVACY & SECURITY GUARANTEE */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2 text-xs">
+                <h4 className="font-bold text-slate-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" /> Buyer Protection & Privacy Record
+                </h4>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                    <span className="text-slate-400 block text-[10px]">VoIP Masked Proxy</span>
+                    <span className="font-bold text-slate-800 text-xs">+1 (800) 555-0199</span>
                   </div>
-
-                  {deliveryStatus !== "completed" && (
-                    <button
-                      onClick={handleStartMaskedCall}
-                      className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition"
-                    >
-                      <PhoneCall className="w-3.5 h-3.5" /> Call via Proxy
-                    </button>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2 text-[11px] text-slate-600 bg-blue-50/80 p-2.5 rounded-xl border border-blue-100">
-                  <ShieldAlert className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                  <span>
-                    <strong>Privacy Guarantee:</strong> Calls route through PathaSathi Proxy. Rider sees proxy number <code className="bg-white px-1 py-0.5 rounded font-mono font-bold">+1 (800) 555-0199</code>. Your personal mobile number is 100% hidden.
-                  </span>
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                    <span className="text-slate-400 block text-[10px]">Escrow Security</span>
+                    <span className="font-bold text-emerald-600 text-xs">✓ 100% Protected</span>
+                  </div>
                 </div>
               </div>
 
               {/* SIMULATED RIDER APP VERIFICATION MODAL TRIGGER */}
               {deliveryStatus !== "completed" && (
-                <div className="bg-slate-100 p-4 rounded-2xl border border-slate-300 space-y-2 text-center">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2 text-center">
                   <span className="text-xs font-bold text-slate-700 block">
                     🧪 Interactive Test: Simulate Rider App Entering Buyer OTP
                   </span>
                   {!showRiderSim ? (
                     <button
                       onClick={() => setShowRiderSim(true)}
-                      className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm transition"
+                      className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xs transition cursor-pointer active:scale-95"
                     >
                       Simulate Rider App OTP Entry
                     </button>
@@ -224,13 +273,13 @@ export function DeliverySecurityModal({
                               next[index] = e.target.value;
                               setInputOtp(next);
                             }}
-                            className="w-9 h-11 text-center text-base font-bold border-2 rounded-xl bg-white border-slate-300 focus:border-blue-600 focus:outline-none"
+                            className="w-9 h-11 text-center text-base font-bold border-2 rounded-xl bg-white border-slate-300 focus:border-[#C04A22] focus:outline-none"
                           />
                         ))}
                       </div>
                       <button
                         onClick={handleVerifyOtp}
-                        className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5"
+                        className="w-full py-2.5 rounded-xl bg-[#C04A22] hover:bg-[#a63c1a] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
                       >
                         <CheckCircle2 className="w-4 h-4" /> Validate OTP in Rider App
                       </button>

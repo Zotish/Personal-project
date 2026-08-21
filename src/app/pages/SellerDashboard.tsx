@@ -6,9 +6,10 @@ import {
   Eye, Star, Search, Filter, CheckCircle2, AlertCircle, Clock, MapPin,
   Phone, Mail, Globe, Image as ImageIcon, ChevronRight, ChevronLeft, Settings, BarChart2,
   X, Check, ShieldCheck, ArrowUpRight, ArrowDownRight, MessageSquare, ExternalLink,
-  Tag, RefreshCw, Upload, Camera, ToggleLeft, ToggleRight, Lock, Key, LayoutGrid, List, User
+  Tag, RefreshCw, Upload, Camera, ToggleLeft, ToggleRight, Lock, Key, LayoutGrid, List, User, FileText
 } from "lucide-react";
 import { DeliverySecurityModal } from "../components/DeliverySecurityModal";
+import { InvoiceModal, InvoiceData } from "../components/InvoiceModal";
 import { ProductCard } from "../components/ProductCard";
 import { GoldenBadge } from "../components/ui/GoldenBadge";
 import { LanguageToggle } from "../components/ui/LanguageToggle";
@@ -246,6 +247,7 @@ export function SellerDashboard() {
   // Add / Edit Product Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
+  const [selectedInvoiceModal, setSelectedInvoiceModal] = useState<InvoiceData | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   // Upload Refs
@@ -792,12 +794,26 @@ export function SellerDashboard() {
                         {order.status}
                       </span>
                       <button
+                        onClick={() => setSelectedInvoiceModal({
+                          orderId: order.id,
+                          buyerName: order.buyer,
+                          sellerName: shopName || "Gulshan Resale & Grocery Mart",
+                          itemTitle: order.item,
+                          price: order.price,
+                          quantity: 1,
+                          date: order.date,
+                        })}
+                        className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 transition flex items-center gap-1 shadow-2xs cursor-pointer active:scale-95 bg-white"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-[#D85A30]" /> Invoice
+                      </button>
+                      <button
                         onClick={() => setIsSecurityModalOpen(true)}
-                        className="px-3 py-1.5 rounded-lg bg-[#D85A30] text-white text-xs font-bold hover:bg-[#c24f28] transition flex items-center gap-1 shadow-xs"
+                        className="px-3 py-1.5 rounded-lg bg-[#D85A30] text-white text-xs font-bold hover:bg-[#c24f28] transition flex items-center gap-1 shadow-xs cursor-pointer active:scale-95"
                       >
                         <ShieldCheck className="w-3.5 h-3.5" /> Logistics Portal
                       </button>
-                      <button onClick={() => setActiveTab("messages")} className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium hover:bg-slate-100 transition flex items-center gap-1">
+                      <button onClick={() => setActiveTab("messages")} className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium hover:bg-slate-100 transition flex items-center gap-1 cursor-pointer">
                         <MessageSquare className="w-3.5 h-3.5 text-slate-500" /> Chat Buyer
                       </button>
                     </div>
@@ -1194,6 +1210,15 @@ export function SellerDashboard() {
           itemTitle="Solid Oak Dining Table with 6 Chairs"
           totalPrice="$350.00"
         />
+
+        {/* SELLER INVOICE / CASH MEMO MODAL */}
+        {selectedInvoiceModal && (
+          <InvoiceModal
+            isOpen={!!selectedInvoiceModal}
+            onClose={() => setSelectedInvoiceModal(null)}
+            invoice={selectedInvoiceModal}
+          />
+        )}
 
       </div>
     </AppLayout>

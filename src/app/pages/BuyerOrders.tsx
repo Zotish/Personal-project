@@ -4,14 +4,16 @@ import { AppLayout } from "../components/layout/AppLayout";
 import {
   ShoppingBag, Package, Lock, Key, Truck, PhoneCall, ShieldCheck,
   ChevronRight, ArrowLeft, Clock, MapPin, CheckCircle2, ShieldAlert,
-  AlertTriangle, RefreshCw, MessageSquare
+  AlertTriangle, RefreshCw, MessageSquare, FileText
 } from "lucide-react";
 import { DeliverySecurityModal } from "../components/DeliverySecurityModal";
+import { InvoiceModal, InvoiceData } from "../components/InvoiceModal";
 
 export function BuyerOrders() {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<"all" | "active" | "completed">("active");
   const [selectedOrderModal, setSelectedOrderModal] = useState<any | null>(null);
+  const [selectedInvoiceModal, setSelectedInvoiceModal] = useState<InvoiceData | null>(null);
 
   const buyerOrders = [
     {
@@ -118,7 +120,7 @@ export function BuyerOrders() {
                   <div className="flex items-center gap-3 min-w-0">
                     <img src={order.image} alt={order.item} className="w-12 h-12 rounded-xl object-cover border border-slate-200 flex-shrink-0" />
                     <div className="min-w-0">
-                      <span className="font-semibold text-slate-500 text-xs block">#{order.id.replace(/^#/, '')}</span>
+                      <span className="font-semibold text-slate-800 text-xs block">#{order.id.replace(/^#/, '')}</span>
                       <h4 className="text-xs font-semibold text-slate-800 mt-0.5 truncate">{order.item}</h4>
                     </div>
                   </div>
@@ -180,8 +182,22 @@ export function BuyerOrders() {
                     </div>
                   </div>
 
-                  {/* Bottom Action: Track & Security Details Button */}
-                  <div className="pt-1 flex items-center justify-end">
+                  {/* Bottom Action: Invoice & Track & Security Details Button */}
+                  <div className="pt-1 flex items-center justify-end gap-2.5 flex-wrap">
+                    <button
+                      onClick={() => setSelectedInvoiceModal({
+                        orderId: order.id,
+                        buyerName: "Rafiq Ahmed",
+                        sellerName: order.seller,
+                        itemTitle: order.item,
+                        price: order.price,
+                        quantity: 1,
+                        date: order.date,
+                      })}
+                      className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold shadow-2xs transition flex items-center gap-1.5 cursor-pointer active:scale-95 border border-slate-200/80"
+                    >
+                      <FileText className="w-4 h-4 text-[#C04A22]" /> Invoice
+                    </button>
                     <button
                       onClick={() => setSelectedOrderModal(order)}
                       className="px-4 py-2 rounded-xl bg-[#C04A22] hover:bg-[#8C3015] text-white text-xs font-bold shadow-xs transition cursor-pointer active:scale-95"
@@ -207,6 +223,15 @@ export function BuyerOrders() {
             orderId={selectedOrderModal.id}
             itemTitle={selectedOrderModal.item}
             totalPrice={selectedOrderModal.price}
+          />
+        )}
+
+        {/* BUYER INVOICE / CASH MEMO MODAL */}
+        {selectedInvoiceModal && (
+          <InvoiceModal
+            isOpen={!!selectedInvoiceModal}
+            onClose={() => setSelectedInvoiceModal(null)}
+            invoice={selectedInvoiceModal}
           />
         )}
 
