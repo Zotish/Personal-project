@@ -141,11 +141,11 @@ function FacebookCommentCard({
         </div>
 
         {/* Facebook-style Micro-actions below bubble */}
-        <div className="flex items-center gap-3 text-xs text-slate-500 mt-1 pl-2">
-          <span className="text-[11px] text-slate-400 font-normal">{reply.time}</span>
+        <div className="flex items-center gap-3.5 text-xs text-slate-500 mt-1 pl-2">
+          <span className="text-[11px] text-slate-400 font-medium">{reply.time}</span>
           <button
             onClick={handleLike}
-            className={`text-[11px] font-semibold transition-colors cursor-pointer ${
+            className={`font-bold transition-colors cursor-pointer ${
               liked ? "text-[#C04A22]" : "text-slate-600 hover:underline"
             }`}
           >
@@ -153,15 +153,15 @@ function FacebookCommentCard({
           </button>
           <button
             onClick={() => onReplyClick?.(reply.author.name)}
-            className="text-[11px] font-semibold text-slate-600 hover:underline cursor-pointer"
+            className="font-bold text-slate-600 hover:underline cursor-pointer"
           >
             Reply
           </button>
 
           {/* Floating Reaction Pill */}
           {likeCount > 0 && (
-            <span className="flex items-center gap-1 text-[11px] font-medium text-slate-600 bg-white border border-slate-200/90 shadow-2xs rounded-full px-2 py-0.5 ml-auto">
-              <span className="text-rose-500 text-[11px]">❤️</span> {likeCount}
+            <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-white border border-slate-200/90 shadow-2xs rounded-full px-2 py-0.5 ml-auto">
+              <span className="text-rose-500 text-xs">❤️</span> {likeCount}
             </span>
           )}
         </div>

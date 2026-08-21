@@ -727,17 +727,19 @@ export function Profile() {
           </div>
         )}
 
-        {/* ── Cover / Banner Image ── */}
-        <div className="relative h-36 sm:h-52 w-full bg-slate-900 overflow-hidden group">
-          {/* Floating Back Button */}
+        {/* ── Top Header Bar ── */}
+        <div className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-border px-4 py-2.5 flex items-center">
           <button
             onClick={() => navigate(-1)}
-            className="absolute top-3 left-3 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-xs transition cursor-pointer active:scale-95 shadow-md z-20"
+            className="p-2 rounded-full hover:bg-slate-100 transition cursor-pointer text-slate-700 active:scale-95"
             title="Back"
           >
-            <ArrowLeft className="w-4.5 h-4.5" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
+        </div>
 
+        {/* ── Cover / Banner Image ── */}
+        <div className="relative h-36 sm:h-52 w-full bg-slate-900 overflow-hidden group">
           {profileData.bannerImage ? (
             <img
               src={profileData.bannerImage}
@@ -754,7 +756,7 @@ export function Profile() {
           {isSelf && (
             <button
               onClick={() => setShowEditModal(true)}
-              className="absolute top-3 right-3 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-xs transition cursor-pointer text-xs flex items-center gap-1.5 font-medium shadow-md z-20"
+              className="absolute top-3 right-3 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-xs transition cursor-pointer text-xs flex items-center gap-1.5 font-medium shadow-md"
             >
               <ImageIcon className="w-3.5 h-3.5" /> Change Header
             </button>
