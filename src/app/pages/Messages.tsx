@@ -1028,9 +1028,38 @@ function ChatScreen({
 
 export function Messages() {
   const [searchParams] = useSearchParams();
-  const [selectedConv, setSelectedConv] = useState<number | null>(1);
+  const chatParam = searchParams.get("chat") || searchParams.get("user") || searchParams.get("id");
+
+  const getInitialConv = () => {
+    if (chatParam) {
+      const match = conversations.find(
+        c => c.handle.replace('@', '').toLowerCase() === chatParam.toLowerCase() ||
+             c.id.toString() === chatParam ||
+             c.name.toLowerCase().includes(chatParam.toLowerCase())
+      );
+      if (match) return match.id;
+    }
+    // On desktop screens, select the first conversation; on mobile screens, show the users list first (null)
+    if (typeof window !== "undefined" && window.innerWidth >= 1024) {
+      return 1;
+    }
+    return null;
+  };
+
+  const [selectedConv, setSelectedConv] = useState<number | null>(getInitialConv);
   const [pinnedIds, setPinnedIds] = useState<number[]>([1]);
   const isSeller = searchParams.get("role") === "seller";
+
+  useEffect(() => {
+    if (chatParam) {
+      const match = conversations.find(
+        c => c.handle.replace('@', '').toLowerCase() === chatParam.toLowerCase() ||
+             c.id.toString() === chatParam ||
+             c.name.toLowerCase().includes(chatParam.toLowerCase())
+      );
+      if (match) setSelectedConv(match.id);
+    }
+  }, [chatParam]);
 
   const handleTogglePin = (id: number) => {
     setPinnedIds(prev =>

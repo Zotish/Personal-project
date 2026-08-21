@@ -798,7 +798,7 @@ function PostCard({ post }: { post: Post; key?: string | number }) {
             </div>
           )}
 
-          <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100 max-w-md" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 -ml-13 sm:ml-0 w-[calc(100%+52px)] sm:w-auto max-w-md" onClick={e => e.stopPropagation()}>
             <button onClick={() => setLiked(!liked)} className={`flex items-center gap-1 sm:gap-1.5 text-xs transition-colors cursor-pointer ${liked ? "text-red-500 font-bold" : "text-muted-foreground hover:text-red-500"}`}>
               <Heart className={`w-4 h-4 ${liked ? "fill-red-500 text-red-500" : ""}`} />
               <span className="hidden sm:inline">{post.likes + (liked ? 1 : 0)}</span>

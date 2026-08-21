@@ -874,7 +874,7 @@ export function Profile() {
 
                   {/* Direct Message Envelope Button */}
                   <button
-                    onClick={() => navigate(`/messages`)}
+                    onClick={() => navigate(`/messages?user=${profileUser.handle?.replace('@', '') || ''}`)}
                     className="p-2 rounded-full border border-slate-300 text-slate-700 hover:bg-slate-100 transition cursor-pointer active:scale-95"
                     title="Direct Message"
                   >
@@ -1167,22 +1167,22 @@ export function Profile() {
                         </div>
                       )}
 
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 items-start">
                         {/* Left Column: Author Avatar (Default User Icon) */}
                         <div
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/profile/${tweet.author.handle.replace("@", "")}`);
                           }}
-                          className="w-10 h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs hover:opacity-90"
+                          className="w-10 h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs hover:opacity-90 mt-0.5"
                         >
                           <User className="w-5 h-5 text-slate-500" />
                         </div>
 
                         {/* Right Column: Tweet Details */}
                         <div className="flex-1 min-w-0">
-                          {/* Header: Name, Badge, Handle, Time */}
-                          <div className="flex items-center justify-between">
+                          {/* Header: Name, Badge, Handle, Time - centered vertically with avatar */}
+                          <div className="flex items-center justify-between min-h-[38px] mb-1">
                             <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                               <span
                                 onClick={(e) => {
@@ -1214,7 +1214,7 @@ export function Profile() {
                           </div>
 
                           {/* Tweet Content */}
-                          <p className="text-sm text-slate-900 leading-relaxed mt-1 whitespace-pre-line font-normal">
+                          <p className="text-sm text-slate-900 leading-relaxed whitespace-pre-line font-normal">
                             {tweet.content}
                           </p>
 
@@ -1235,20 +1235,20 @@ export function Profile() {
                             </div>
                           )}
 
-                          {/* Twitter Action Bar */}
-                          <div className="flex items-center justify-between text-xs text-slate-500 mt-3 pt-1 max-w-md">
+                          {/* Action Bar - shifted left on mobile for balanced spacing and breathing room */}
+                          <div className="flex items-center justify-between text-xs text-slate-500 mt-3 pt-2.5 border-t border-slate-100/80 -ml-13 sm:ml-0 w-[calc(100%+52px)] sm:w-auto max-w-md">
                             {/* Reply */}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 navigate(`/post/${tweet.id}?focus=comment`);
                               }}
-                              className="flex items-center gap-1.5 transition group cursor-pointer hover:text-[#C04A22]"
+                              className="flex items-center gap-1 sm:gap-1.5 transition group cursor-pointer hover:text-[#C04A22]"
                             >
                               <div className="p-1.5 rounded-full group-hover:bg-[#C04A22]/10">
                                 <MessageCircle className="w-4 h-4" />
                               </div>
-                              <span>{tweet.comments}</span>
+                              <span className="font-semibold">{tweet.comments}</span>
                             </button>
 
                             {/* Repost */}
@@ -1257,14 +1257,14 @@ export function Profile() {
                                 e.stopPropagation();
                                 handleToggleRepost(tweet.id);
                               }}
-                              className={`flex items-center gap-1.5 transition group cursor-pointer ${
+                              className={`flex items-center gap-1 sm:gap-1.5 transition group cursor-pointer ${
                                 tweet.isReposted ? "text-emerald-600 font-bold" : "hover:text-emerald-600"
                               }`}
                             >
                               <div className="p-1.5 rounded-full group-hover:bg-emerald-50">
                                 <Repeat2 className="w-4 h-4" />
                               </div>
-                              <span>{tweet.reposts}</span>
+                              <span className="font-semibold">{tweet.reposts}</span>
                             </button>
 
                             {/* Like */}
@@ -1273,20 +1273,20 @@ export function Profile() {
                                 e.stopPropagation();
                                 handleToggleLike(tweet.id);
                               }}
-                              className={`flex items-center gap-1.5 transition group cursor-pointer ${
+                              className={`flex items-center gap-1 sm:gap-1.5 transition group cursor-pointer ${
                                 tweet.isLiked ? "text-rose-600 font-bold" : "hover:text-rose-600"
                               }`}
                             >
                               <div className="p-1.5 rounded-full group-hover:bg-rose-50">
                                 <Heart className={`w-4 h-4 ${tweet.isLiked ? "fill-rose-600 text-rose-600" : ""}`} />
                               </div>
-                              <span>{tweet.likes}</span>
+                              <span className="font-semibold">{tweet.likes}</span>
                             </button>
 
                             {/* Views */}
                             <div className="flex items-center gap-1 text-slate-400">
                               <Eye className="w-3.5 h-3.5" />
-                              <span>{tweet.views}</span>
+                              <span className="font-semibold">{tweet.views}</span>
                             </div>
 
                             {/* Bookmark */}

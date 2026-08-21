@@ -370,7 +370,7 @@ export function Explore() {
                           )}
 
                           {/* Action Bar */}
-                          <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 text-slate-500 max-w-md">
+                          <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 text-slate-500 -ml-13 sm:ml-0 w-[calc(100%+52px)] sm:w-auto max-w-md">
                             <button 
                               onClick={() => toggleLike(post.id, post.likes)} 
                               className={`flex items-center gap-1.5 text-xs transition-colors cursor-pointer ${
