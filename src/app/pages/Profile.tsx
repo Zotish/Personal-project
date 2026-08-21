@@ -1004,18 +1004,13 @@ export function Profile() {
               {/* Tweet Composer (when viewing own profile) */}
               {isSelf && (
                 <div className="p-3.5 sm:p-4 border-b border-border/80 bg-white">
-                  <div className="flex gap-3 items-start">
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs mt-0.5">
-                      <User className="w-5 h-5 text-slate-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <textarea
-                        value={newPostText}
-                        onChange={e => setNewPostText(e.target.value)}
-                        placeholder="What is happening in your community?!"
-                        rows={2}
-                        className="w-full resize-none text-sm text-slate-900 placeholder:text-slate-400 bg-transparent outline-none leading-relaxed focus:outline-none min-h-[52px] pt-1"
-                      />
+                  <textarea
+                    value={newPostText}
+                    onChange={e => setNewPostText(e.target.value)}
+                    placeholder="What is happening in your community?!"
+                    rows={2}
+                    className="w-full resize-none text-sm text-slate-900 placeholder:text-slate-400 bg-transparent outline-none leading-relaxed focus:outline-none min-h-[52px]"
+                  />
 
                       {/* Media Preview Box */}
                       {mediaPreview && (
@@ -1128,8 +1123,6 @@ export function Profile() {
                           Post
                         </button>
                       </div>
-                    </div>
-                  </div>
                 </div>
               )}
 

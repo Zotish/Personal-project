@@ -897,12 +897,8 @@ function PostComposer({ onAddPost }: { onAddPost?: (newPost: any) => void }) {
 
   return (
     <div className="bg-white rounded-2xl border border-border p-3 sm:p-4 mb-3 sm:mb-4">
-      {/* Top Header: Avatar + Post Type Buttons vertically centered */}
-      <div className="flex items-center gap-2.5 sm:gap-3 mb-3">
-        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0">
-          <User className="w-5 h-5 text-slate-500" />
-        </div>
-        <div className="flex gap-1.5 sm:gap-2 flex-wrap items-center flex-1">
+      {/* Top Header: Post Type Buttons */}
+      <div className="flex gap-1.5 sm:gap-2 flex-wrap items-center mb-3">
           {postTypes.map(({ id, tKey, icon: Icon }) => (
             <button
               key={id}
@@ -918,7 +914,6 @@ function PostComposer({ onAddPost }: { onAddPost?: (newPost: any) => void }) {
             </button>
           ))}
         </div>
-      </div>
 
       <textarea
         value={text}
