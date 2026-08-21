@@ -66,61 +66,41 @@ export function BuyerOrders() {
         
         {/* Header */}
         <div className="bg-white border-b border-border sticky top-0 z-30 shadow-xs">
-          <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="max-w-4xl mx-auto px-3.5 sm:px-4 py-3 sm:py-4 flex items-center justify-between">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
               <button
                 onClick={() => navigate(-1)}
-                className="p-2 rounded-xl bg-secondary text-foreground hover:bg-secondary/80 transition"
+                className="p-1.5 sm:p-2 rounded-xl bg-secondary text-foreground hover:bg-secondary/80 transition flex-shrink-0 cursor-pointer active:scale-95"
+                title="Back"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">My Orders & Package Tracking</h1>
-                <p className="text-xs text-muted-foreground">Real-time status, Escrow security & Delivery OTPs</p>
+              <div className="min-w-0">
+                <h1 className="text-sm sm:text-base md:text-lg font-bold text-foreground truncate">
+                  My Orders & Package Tracking
+                </h1>
               </div>
             </div>
-
-            <button
-              onClick={() => navigate("/profile")}
-              className="px-3.5 py-2 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold flex items-center gap-1.5"
-            >
-              <Package className="w-4 h-4" /> Profile Orders
-            </button>
           </div>
         </div>
 
         {/* Main Content Body */}
         <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
           
-          {/* Escrow Buyer Protection Info Box */}
-          <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700 text-white rounded-3xl p-5 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 flex-shrink-0">
-                <ShieldCheck className="w-6 h-6 text-emerald-300" />
-              </div>
-              <div>
-                <h3 className="font-extrabold text-base">Buyer Protection Guarantee</h3>
-                <p className="text-xs text-blue-100 mt-0.5 max-w-lg leading-relaxed">
-                  Your payments are safely locked in Escrow. Give your 6-digit Secret OTP to the delivery rider only after inspecting your parcel at your doorstep.
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Filter Pills */}
           <div className="flex items-center gap-2 border-b border-border pb-3">
             {[
-              { id: "active", label: "Active & In-Transit Orders (1)" },
-              { id: "completed", label: "Completed Orders (1)" },
-              { id: "all", label: "All Orders (2)" },
+              { id: "active", label: "Active (1)" },
+              { id: "completed", label: "Completed (1)" },
+              { id: "all", label: "All (2)" },
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveFilter(tab.id as any)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
                   activeFilter === tab.id
-                    ? "bg-slate-900 text-white shadow-xs"
-                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                    ? "bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/30 shadow-2xs"
+                    : "bg-white text-slate-600 border border-slate-200 hover:bg-[#C04A22]/10 hover:text-[#8C3015]"
                 }`}
               >
                 {tab.label}
@@ -134,29 +114,16 @@ export function BuyerOrders() {
               <div key={order.id} className="bg-white rounded-3xl border border-border shadow-xs overflow-hidden">
                 
                 {/* Order Top Bar */}
-                <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/60">
-                  <div className="flex items-center gap-3">
-                    <img src={order.image} alt={order.item} className="w-14 h-14 rounded-2xl object-cover border border-slate-200 flex-shrink-0" />
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-extrabold text-slate-900 text-sm">{order.id}</span>
-                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-                          {order.status}
-                        </span>
-                      </div>
-                      <h4 className="text-sm font-bold text-slate-800 line-clamp-1 mt-0.5">{order.item}</h4>
-                      <p className="text-xs text-slate-500">{order.seller} • <span className="font-extrabold text-emerald-600">{order.price}</span></p>
+                <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between gap-3 bg-slate-50/60">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <img src={order.image} alt={order.item} className="w-12 h-12 rounded-xl object-cover border border-slate-200 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <span className="font-semibold text-slate-500 text-xs block">#{order.id.replace(/^#/, '')}</span>
+                      <h4 className="text-xs font-semibold text-slate-800 mt-0.5 truncate">{order.item}</h4>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setSelectedOrderModal(order)}
-                      className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5"
-                    >
-                      <ShieldCheck className="w-4 h-4" /> Track & Security Details
-                    </button>
-                  </div>
+                  <span className="font-extrabold text-emerald-600 text-sm flex-shrink-0">{order.price}</span>
                 </div>
 
                 {/* Order Body Details */}
@@ -166,21 +133,21 @@ export function BuyerOrders() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     
                     {/* Escrow Status Box */}
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 flex items-center gap-3">
-                      <Lock className="w-5 h-5 text-emerald-700 flex-shrink-0" />
+                    <div className="bg-[#C04A22]/10 border border-[#C04A22]/20 rounded-2xl p-3.5 flex items-center gap-3">
+                      <Lock className="w-5 h-5 text-[#8C3015] flex-shrink-0" />
                       <div>
-                        <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">Escrow Status</span>
-                        <span className="font-extrabold text-emerald-900 text-xs">{order.escrowStatus}</span>
+                        <span className="text-[10px] font-bold text-[#8C3015] uppercase tracking-wider block">Escrow Status</span>
+                        <span className="font-extrabold text-[#8C3015] text-xs">{order.escrowStatus}</span>
                       </div>
                     </div>
 
                     {/* Buyer Secret Delivery OTP Box */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-2xl p-3.5 flex items-center justify-between">
+                    <div className="bg-[#C04A22]/10 border border-[#C04A22]/20 rounded-2xl p-3.5 flex items-center justify-between">
                       <div>
-                        <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider block">Your Delivery OTP</span>
-                        <span className="text-[11px] text-blue-900">Give to rider at delivery</span>
+                        <span className="text-[10px] font-bold text-[#8C3015] uppercase tracking-wider block">Your Delivery OTP</span>
+                        <span className="text-[11px] text-slate-600">Give to rider at delivery</span>
                       </div>
-                      <span className="px-3 py-1 rounded-xl text-base font-mono font-extrabold bg-blue-600 text-white shadow-xs">
+                      <span className="px-3 py-1 rounded-xl text-base font-mono font-extrabold bg-[#C04A22] text-white shadow-xs">
                         {order.otp}
                       </span>
                     </div>
@@ -190,7 +157,7 @@ export function BuyerOrders() {
                   {/* Tracking Timeline */}
                   <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
                     <h5 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                      <Truck className="w-4 h-4 text-blue-600" /> Package Tracking Timeline
+                      <Truck className="w-4 h-4 text-[#C04A22]" /> Package Tracking Timeline
                     </h5>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-1">
@@ -198,7 +165,7 @@ export function BuyerOrders() {
                         <div key={idx} className="flex flex-col space-y-1 bg-white p-2.5 rounded-xl border border-slate-200">
                           <div className="flex items-center gap-1.5">
                             {step.done ? (
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[#C04A22] flex-shrink-0" />
                             ) : (
                               <Clock className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                             )}
@@ -211,6 +178,16 @@ export function BuyerOrders() {
                         </div>
                       ))}
                     </div>
+                  </div>
+
+                  {/* Bottom Action: Track & Security Details Button */}
+                  <div className="pt-1 flex items-center justify-end">
+                    <button
+                      onClick={() => setSelectedOrderModal(order)}
+                      className="px-4 py-2 rounded-xl bg-[#C04A22] hover:bg-[#8C3015] text-white text-xs font-bold shadow-xs transition cursor-pointer active:scale-95"
+                    >
+                      Track & Security Details
+                    </button>
                   </div>
 
                 </div>

@@ -1395,12 +1395,12 @@ export function Profile() {
                   </div>
                 </div>
 
-                <div className="pt-1 flex items-center justify-end text-xs">
+                <div className="pt-1 flex items-center justify-end">
                   <button
                     onClick={() => navigate("/orders")}
-                    className="text-[#C04A22] font-bold hover:text-[#8C3015] hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-[#C04A22] font-semibold text-[11px] hover:text-[#8C3015] hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    Track Package <ChevronRight className="w-3.5 h-3.5" />
+                    Track Package <ChevronRight className="w-3 h-3" />
                   </button>
                 </div>
               </div>
