@@ -1595,66 +1595,66 @@ export function HomeFeed() {
             <>
               <PostComposer onAddPost={handleAddPost} />
 
-              {/* Mobile quick-access icon bar — icon-only buttons with floating popup */}
-              <div className="xl:hidden flex items-center justify-between">
-                {/* Calendar icon → popup */}
-                <div className="relative">
-                  <button
-                    onClick={() => { setMobileCalOpen(v => !v); setMobileWeatherOpen(false); }}
-                    className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all shadow-sm group ${
-                      mobileCalOpen
-                        ? "bg-secondary border border-border shadow-md"
-                        : "bg-white border border-border hover:shadow-md"
-                    }`}
-                  >
-                    <Calendar className="w-5 h-5 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
-                  </button>
-
-                  {mobileCalOpen && (
-                    <>
-                      {/* Backdrop */}
-                      <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setMobileCalOpen(false)}
-                      />
-                      {/* Floating popup */}
-                      <div className="absolute left-0 top-14 z-50 w-[min(340px,calc(100vw-1.5rem))] bg-white rounded-2xl shadow-2xl border border-border overflow-hidden animate-in slide-in-from-top-3 fade-in duration-200">
-                        <MiniCalendar selectedDate={selectedDate} onSelect={(d) => { setSelectedDate(d); setMobileCalOpen(false); }} />
-                      </div>
-                    </>
-                  )}
-                </div>
+              {/* Mobile quick-access icon bar — icon-only buttons with centered floating popups */}
+              <div className="xl:hidden relative flex items-center justify-between">
+                {/* Calendar icon button */}
+                <button
+                  onClick={() => { setMobileCalOpen(v => !v); setMobileWeatherOpen(false); }}
+                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all shadow-sm group cursor-pointer ${
+                    mobileCalOpen
+                      ? "bg-secondary border border-border shadow-md"
+                      : "bg-white border border-border hover:shadow-md"
+                  }`}
+                  title="Calendar"
+                >
+                  <Calendar className="w-5 h-5 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
+                </button>
 
                 {/* Quick Access Center Box */}
                 <QuickAccessBox navigate={navigate} />
 
-                {/* Weather icon → popup */}
-                <div className="relative">
-                  <button
-                    onClick={() => { setMobileWeatherOpen(v => !v); setMobileCalOpen(false); }}
-                    className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all shadow-sm group ${
-                      mobileWeatherOpen
-                        ? "bg-secondary border border-border shadow-md"
-                        : "bg-white border border-border hover:shadow-md"
-                    }`}
-                  >
-                    <Thermometer className="w-5 h-5 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
-                  </button>
+                {/* Weather icon button */}
+                <button
+                  onClick={() => { setMobileWeatherOpen(v => !v); setMobileCalOpen(false); }}
+                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all shadow-sm group cursor-pointer ${
+                    mobileWeatherOpen
+                      ? "bg-secondary border border-border shadow-md"
+                      : "bg-white border border-border hover:shadow-md"
+                  }`}
+                  title="Weather"
+                >
+                  <Thermometer className="w-5 h-5 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
+                </button>
 
-                  {mobileWeatherOpen && (
-                    <>
-                      {/* Backdrop */}
-                      <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setMobileWeatherOpen(false)}
-                      />
-                      {/* Floating popup */}
-                      <div className="absolute right-0 top-14 z-50 w-[min(360px,calc(100vw-1.5rem))] bg-white rounded-2xl shadow-2xl border border-border overflow-hidden animate-in slide-in-from-top-3 fade-in duration-200">
-                        <WeatherWidget />
-                      </div>
-                    </>
-                  )}
-                </div>
+                {/* Centered Floating Calendar Popover on Mobile */}
+                {mobileCalOpen && (
+                  <>
+                    {/* Backdrop */}
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setMobileCalOpen(false)}
+                    />
+                    {/* Centered floating popup */}
+                    <div className="absolute left-1/2 -translate-x-1/2 top-14 z-50 w-[min(360px,calc(100vw-2rem))] bg-white rounded-2xl shadow-2xl border border-border overflow-hidden animate-in slide-in-from-top-3 fade-in duration-200">
+                      <MiniCalendar selectedDate={selectedDate} onSelect={(d) => { setSelectedDate(d); setMobileCalOpen(false); }} />
+                    </div>
+                  </>
+                )}
+
+                {/* Centered Floating Weather Popover on Mobile */}
+                {mobileWeatherOpen && (
+                  <>
+                    {/* Backdrop */}
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setMobileWeatherOpen(false)}
+                    />
+                    {/* Centered floating popup */}
+                    <div className="absolute left-1/2 -translate-x-1/2 top-14 z-50 w-[min(360px,calc(100vw-2rem))] bg-white rounded-2xl shadow-2xl border border-border overflow-hidden animate-in slide-in-from-top-3 fade-in duration-200">
+                      <WeatherWidget />
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Tab-specific banner */}
