@@ -316,68 +316,59 @@ export function Explore() {
                       key={post.id} 
                       className="bg-white rounded-2xl border border-slate-200/90 p-3.5 sm:p-4 transition-all hover:shadow-sm cursor-pointer"
                     >
-                      <div className="flex gap-3 items-start">
-                        {/* Left Column: Avatar */}
+                      {/* Top Row: Author Avatar + Name & Info (Vertically Centered) */}
+                      <div className="flex items-center justify-between">
                         <div
                           onClick={(e) => {
                             e.stopPropagation();
                             const handleClean = (post.handle || post.author).replace('@', '').toLowerCase().replace(/\s+/g, '_');
                             navigate(`/profile/${handleClean}`);
                           }}
-                          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs hover:opacity-85 cursor-pointer mt-0.5"
+                          className="flex items-center gap-3 min-w-0 cursor-pointer group"
                           title={`View ${post.author}'s Profile`}
                         >
-                          <User className="w-5 h-5 text-slate-500" />
+                          <div className="w-10 h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs group-hover:opacity-85 transition">
+                            <User className="w-5 h-5 text-slate-500" />
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                            <span className="text-sm font-bold text-slate-900 truncate group-hover:underline">{post.author}</span>
+                            {post.verified && (
+                              <GoldenBadge size={16} title="Verified Account" />
+                            )}
+                            <span className="text-xs text-slate-400">· {post.time}</span>
+                          </div>
                         </div>
 
-                        {/* Right Column: All Content Aligned Under Name */}
-                        <div className="flex-1 min-w-0">
-                          {/* Author Header */}
-                          <div className="flex items-center justify-between mb-1">
-                            <div
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const handleClean = (post.handle || post.author).replace('@', '').toLowerCase().replace(/\s+/g, '_');
-                                navigate(`/profile/${handleClean}`);
-                              }}
-                              className="flex items-center gap-1 sm:gap-1.5 flex-wrap min-w-0 cursor-pointer"
-                            >
-                              <span className="text-sm font-bold text-slate-900 truncate hover:underline">{post.author}</span>
-                              {post.verified && (
-                                <GoldenBadge size={16} title="Verified Account" />
-                              )}
-                              <span className="text-xs text-slate-400">· {post.time}</span>
-                            </div>
-                            <button className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </button>
-                          </div>
+                        <button className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                      </div>
 
-                          {/* Content text */}
-                          <p className="text-sm text-slate-900 leading-relaxed whitespace-pre-line">
-                            {post.content}
-                          </p>
+                      {/* Content text: Starts full-width below the logo with clean left alignment */}
+                      <p className="text-sm text-slate-900 leading-relaxed whitespace-pre-line text-left mt-3 font-normal">
+                        {post.content}
+                      </p>
 
-                          {/* Post Image Attachment */}
-                          {post.image && (
-                            <div className="mt-3 rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-100">
-                              <img
-                                src={post.image}
-                                alt="Post attachment"
-                                className="w-full max-h-64 sm:max-h-72 object-cover hover:scale-[1.01] transition-transform duration-300"
-                              />
-                            </div>
-                          )}
+                      {/* Post Image Attachment */}
+                      {post.image && (
+                        <div className="mt-3 rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-100">
+                          <img
+                            src={post.image}
+                            alt="Post attachment"
+                            className="w-full max-h-64 sm:max-h-72 object-cover hover:scale-[1.01] transition-transform duration-300"
+                          />
+                        </div>
+                      )}
 
-                          {/* Action Bar */}
-                          <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 text-slate-500 -ml-13 sm:ml-0 w-[calc(100%+52px)] sm:w-auto max-w-md">
-                            <button 
-                              onClick={() => toggleLike(post.id, post.likes)} 
-                              className={`flex items-center gap-1.5 text-xs transition-colors cursor-pointer ${
-                                isLiked ? "text-red-600 font-bold" : "hover:text-red-600"
-                              }`}
-                            >
-                              <Heart className={`w-4 h-4 ${isLiked ? "fill-red-600 text-red-600" : ""}`} />
+                      {/* Action Bar */}
+                      <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 text-slate-500 max-w-md">
+                        <button 
+                          onClick={() => toggleLike(post.id, post.likes)} 
+                          className={`flex items-center gap-1.5 text-xs transition-colors cursor-pointer ${
+                            isLiked ? "text-red-600 font-bold" : "hover:text-red-600"
+                          }`}
+                        >
+                          <Heart className={`w-4 h-4 ${isLiked ? "fill-red-600 text-red-600" : ""}`} />
                               <span>{currentLikes}</span>
                             </button>
                             <button
@@ -402,12 +393,10 @@ export function Explore() {
                               <Bookmark className="w-4 h-4" />
                             </button>
                           </div>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })
-              )}
+                        </article>
+                      );
+                    })
+                  )}
             </div>
           </div>
         ) : (

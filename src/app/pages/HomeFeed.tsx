@@ -690,143 +690,134 @@ function PostCard({ post }: { post: Post; key?: string | number }) {
         </div>
       )}
 
-      {/* Two Column Layout: Left Avatar, Right Column for all content */}
-      <div className="flex gap-3 items-start">
-        {/* Left Column: Author Avatar */}
+      {/* Top Row: Author Avatar + Name & Info (Vertically Centered) */}
+      <div className="flex items-center justify-between">
         <div
           onClick={(e) => {
             e.stopPropagation();
             const userHandle = (post.author.handle || post.author.name).toLowerCase().replace(/[@\s]/g, "_");
             navigate(`/profile/${userHandle}`);
           }}
-          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs hover:opacity-85 cursor-pointer mt-0.5"
+          className="flex items-center gap-3 min-w-0 cursor-pointer group"
           title={`View ${post.author.name}'s Profile`}
         >
-          <User className="w-5 h-5 text-slate-500" />
-        </div>
-
-        {/* Right Column: Name, Text, Media, Poll, Tags, Actions */}
-        <div className="flex-1 min-w-0">
-          {/* Author Header */}
-          <div className="flex items-center justify-between mb-1">
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-                const userHandle = (post.author.handle || post.author.name).toLowerCase().replace(/[@\s]/g, "_");
-                navigate(`/profile/${userHandle}`);
-              }}
-              className="flex items-center gap-1.5 flex-wrap min-w-0 cursor-pointer"
-            >
-              <span className="text-sm font-bold text-foreground hover:underline">{post.author.name}</span>
-              {post.author.verified && (
-                <GoldenBadge size={16} title="Verified Account" />
-              )}
-              <span className="text-xs text-muted-foreground">· {post.time}</span>
-            </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-              className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-slate-100 transition-colors"
-            >
-              <MoreHorizontal className="w-4 h-4" />
-            </button>
+          <div className="w-10 h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs group-hover:opacity-85 transition">
+            <User className="w-5 h-5 text-slate-500" />
           </div>
-
-          {/* Content text aligned under the name */}
-          <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{post.content}</p>
-
-          {/* Attached image */}
-          {post.image && (
-            <div className="mt-3 rounded-2xl overflow-hidden border border-border/50 bg-muted">
-              <img
-                src={post.image}
-                alt="Post attachment"
-                className="w-full object-cover max-h-64 sm:max-h-72 hover:scale-[1.02] transition-transform duration-300"
-              />
-            </div>
-          )}
-
-          {/* Attached video */}
-          {post.video && (
-            <div className="mt-3 rounded-2xl overflow-hidden border border-border/50 bg-slate-950">
-              <video
-                src={post.video}
-                controls
-                className="w-full object-cover max-h-64 sm:max-h-80"
-              />
-            </div>
-          )}
-
-          {/* Poll */}
-          {post.poll && (
-            <div className="mt-3 space-y-2" onClick={e => e.stopPropagation()}>
-              {post.poll.options.map((opt, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setVotedOption(idx)}
-                  className={`w-full text-left rounded-xl border overflow-hidden transition-all ${votedOption === idx ? "border-primary" : "border-border"}`}
-                >
-                  <div className="relative px-3 py-2">
-                    <div
-                      className={`absolute inset-0 ${votedOption === idx ? "bg-primary/10" : "bg-secondary/60"}`}
-                      style={{ width: votedOption !== null ? `${opt.pct}%` : "0%", transition: "width 0.6s ease" }}
-                    />
-                    <div className="relative flex items-center justify-between">
-                      <span className={`text-xs font-medium ${votedOption === idx ? "text-primary" : "text-foreground"}`}>{opt.label}</span>
-                      {votedOption !== null && <span className="text-xs text-muted-foreground font-semibold">{opt.pct}%</span>}
-                    </div>
-                  </div>
-                </button>
-              ))}
-              <p className="text-xs text-muted-foreground pl-1">{votedOption !== null ? "You voted · " : ""}Tap to vote</p>
-            </div>
-          )}
-
-          {post.location && (
-            <div className="flex items-center gap-1 mt-2">
-              <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">{post.location}</span>
-            </div>
-          )}
-
-          {post.tags && (
-            <div className="flex gap-2 mt-2 flex-wrap">
-              {post.tags.map(t => (
-                <span key={t} className="text-xs font-semibold text-foreground cursor-pointer hover:text-[#D85A30]">#{t}</span>
-              ))}
-            </div>
-          )}
-
-          <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 -ml-13 sm:ml-0 w-[calc(100%+52px)] sm:w-auto max-w-md" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setLiked(!liked)} className={`flex items-center gap-1 sm:gap-1.5 text-xs transition-colors cursor-pointer ${liked ? "text-red-500 font-bold" : "text-muted-foreground hover:text-red-500"}`}>
-              <Heart className={`w-4 h-4 ${liked ? "fill-red-500 text-red-500" : ""}`} />
-              <span className="hidden sm:inline">{post.likes + (liked ? 1 : 0)}</span>
-              <span className="sm:hidden">{post.likes + (liked ? 1 : 0) > 999 ? `${Math.round((post.likes + (liked ? 1 : 0)) / 1000)}k` : post.likes + (liked ? 1 : 0)}</span>
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/post/${post.id || 1}?focus=comment`);
-              }}
-              className="flex items-center gap-1 sm:gap-1.5 text-xs text-muted-foreground hover:text-[#C04A22] transition-colors cursor-pointer"
-              title="Comment on post"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">{post.comments}</span>
-              <span className="sm:hidden">{post.comments > 999 ? `${Math.round(post.comments / 1000)}k` : post.comments}</span>
-            </button>
-            <button className="flex items-center gap-1 sm:gap-1.5 text-xs text-muted-foreground hover:text-emerald-600 transition-colors cursor-pointer">
-              <Repeat2 className="w-4 h-4" /><span className="hidden sm:inline">{post.reposts}</span><span className="sm:hidden">{post.reposts > 999 ? `${Math.round(post.reposts / 1000)}k` : post.reposts}</span>
-            </button>
-            <button className="flex items-center gap-1 sm:gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer">
-              <Share2 className="w-4 h-4" />
-            </button>
-            <button onClick={() => setBookmarked(!bookmarked)} className={`flex items-center gap-1 sm:gap-1.5 text-xs transition-colors cursor-pointer ${bookmarked ? "text-primary font-bold" : "text-muted-foreground hover:text-primary"}`}>
-              <Bookmark className={`w-4 h-4 ${bookmarked ? "fill-primary text-primary" : ""}`} />
-            </button>
+          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+            <span className="text-sm font-bold text-foreground group-hover:underline truncate">{post.author.name}</span>
+            {post.author.verified && (
+              <GoldenBadge size={16} title="Verified Account" />
+            )}
+            <span className="text-xs text-muted-foreground">· {post.time}</span>
           </div>
         </div>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+          className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-slate-100 transition-colors"
+        >
+          <MoreHorizontal className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Content text: Starts full-width from below the logo with clean left alignment */}
+      <p className="text-sm text-foreground leading-relaxed whitespace-pre-line text-left mt-3 font-normal">
+        {post.content}
+      </p>
+
+      {/* Attached image */}
+      {post.image && (
+        <div className="mt-3 rounded-2xl overflow-hidden border border-border/50 bg-muted">
+          <img
+            src={post.image}
+            alt="Post attachment"
+            className="w-full object-cover max-h-64 sm:max-h-72 hover:scale-[1.02] transition-transform duration-300"
+          />
+        </div>
+      )}
+
+      {/* Attached video */}
+      {post.video && (
+        <div className="mt-3 rounded-2xl overflow-hidden border border-border/50 bg-slate-950">
+          <video
+            src={post.video}
+            controls
+            className="w-full object-cover max-h-64 sm:max-h-80"
+          />
+        </div>
+      )}
+
+      {/* Poll */}
+      {post.poll && (
+        <div className="mt-3 space-y-2" onClick={e => e.stopPropagation()}>
+          {post.poll.options.map((opt, idx) => (
+            <button
+              key={idx}
+              onClick={() => setVotedOption(idx)}
+              className={`w-full text-left rounded-xl border overflow-hidden transition-all ${votedOption === idx ? "border-primary" : "border-border"}`}
+            >
+              <div className="relative px-3 py-2">
+                <div
+                  className={`absolute inset-0 ${votedOption === idx ? "bg-primary/10" : "bg-secondary/60"}`}
+                  style={{ width: votedOption !== null ? `${opt.pct}%` : "0%", transition: "width 0.6s ease" }}
+                />
+                <div className="relative flex items-center justify-between">
+                  <span className={`text-xs font-medium ${votedOption === idx ? "text-primary" : "text-foreground"}`}>{opt.label}</span>
+                  {votedOption !== null && <span className="text-xs text-muted-foreground font-semibold">{opt.pct}%</span>}
+                </div>
+              </div>
+            </button>
+          ))}
+          <p className="text-xs text-muted-foreground pl-1">{votedOption !== null ? "You voted · " : ""}Tap to vote</p>
+        </div>
+      )}
+
+      {post.location && (
+        <div className="flex items-center gap-1 mt-2">
+          <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">{post.location}</span>
+        </div>
+      )}
+
+      {post.tags && (
+        <div className="flex gap-2 mt-2 flex-wrap">
+          {post.tags.map(t => (
+            <span key={t} className="text-xs font-semibold text-foreground cursor-pointer hover:text-[#D85A30]">#{t}</span>
+          ))}
+        </div>
+      )}
+
+      {/* Action Bar */}
+      <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 max-w-md" onClick={e => e.stopPropagation()}>
+        <button onClick={() => setLiked(!liked)} className={`flex items-center gap-1 sm:gap-1.5 text-xs transition-colors cursor-pointer ${liked ? "text-red-500 font-bold" : "text-muted-foreground hover:text-red-500"}`}>
+          <Heart className={`w-4 h-4 ${liked ? "fill-red-500 text-red-500" : ""}`} />
+          <span className="hidden sm:inline">{post.likes + (liked ? 1 : 0)}</span>
+          <span className="sm:hidden">{post.likes + (liked ? 1 : 0) > 999 ? `${Math.round((post.likes + (liked ? 1 : 0)) / 1000)}k` : post.likes + (liked ? 1 : 0)}</span>
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/post/${post.id || 1}?focus=comment`);
+          }}
+          className="flex items-center gap-1 sm:gap-1.5 text-xs text-muted-foreground hover:text-[#C04A22] transition-colors cursor-pointer"
+          title="Comment on post"
+        >
+          <MessageCircle className="w-4 h-4" />
+          <span className="hidden sm:inline">{post.comments}</span>
+          <span className="sm:hidden">{post.comments > 999 ? `${Math.round(post.comments / 1000)}k` : post.comments}</span>
+        </button>
+        <button className="flex items-center gap-1 sm:gap-1.5 text-xs text-muted-foreground hover:text-emerald-600 transition-colors cursor-pointer">
+          <Repeat2 className="w-4 h-4" /><span className="hidden sm:inline">{post.reposts}</span><span className="sm:hidden">{post.reposts > 999 ? `${Math.round(post.reposts / 1000)}k` : post.reposts}</span>
+        </button>
+        <button className="flex items-center gap-1 sm:gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer">
+          <Share2 className="w-4 h-4" />
+        </button>
+        <button onClick={() => setBookmarked(!bookmarked)} className={`flex items-center gap-1 sm:gap-1.5 text-xs transition-colors cursor-pointer ${bookmarked ? "text-primary font-bold" : "text-muted-foreground hover:text-primary"}`}>
+          <Bookmark className={`w-4 h-4 ${bookmarked ? "fill-primary text-primary" : ""}`} />
+        </button>
       </div>
     </div>
   );

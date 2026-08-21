@@ -1167,139 +1167,110 @@ export function Profile() {
                         </div>
                       )}
 
-                      <div className="flex gap-3 items-start">
-                        {/* Left Column: Author Avatar (Default User Icon) */}
+                      {/* Top Row: Author Avatar + Name & Info (Vertically Centered) */}
+                      <div className="flex items-center justify-between">
                         <div
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/profile/${tweet.author.handle.replace("@", "")}`);
                           }}
-                          className="w-10 h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs hover:opacity-90 mt-0.5"
+                          className="flex items-center gap-3 min-w-0 cursor-pointer group"
+                          title={`View ${tweet.author.name}'s Profile`}
                         >
-                          <User className="w-5 h-5 text-slate-500" />
+                          <div className="w-10 h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs group-hover:opacity-85 transition">
+                            <User className="w-5 h-5 text-slate-500" />
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                            <span className="font-bold text-sm text-slate-900 truncate group-hover:underline">
+                              {tweet.author.name}
+                            </span>
+                            {tweet.author.verified && (
+                              <GoldenBadge size={15} title="Verified Account" />
+                            )}
+                            <span className="text-xs text-slate-500">{tweet.author.handle}</span>
+                            <span className="text-slate-300">·</span>
+                            <span className="text-xs text-slate-400">{tweet.time}</span>
+                          </div>
                         </div>
 
-                        {/* Right Column: Tweet Details */}
-                        <div className="flex-1 min-w-0">
-                          {/* Header: Name, Badge, Handle, Time - centered vertically with avatar */}
-                          <div className="flex items-center justify-between min-h-[38px] mb-1">
-                            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-                              <span
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/profile/${tweet.author.handle.replace("@", "")}`);
-                                }}
-                                className="font-bold text-sm text-slate-900 truncate hover:underline"
-                              >
-                                {tweet.author.name}
-                              </span>
-                              {tweet.author.verified && (
-                                <GoldenBadge size={15} title="Verified Account" />
-                              )}
-                              <span className="text-xs text-slate-500">{tweet.author.handle}</span>
-                              <span className="text-slate-300">·</span>
-                              <span className="text-xs text-slate-400">{tweet.time}</span>
-                            </div>
+                        {/* More Options dropdown */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            showToast("Post options");
+                          }}
+                          className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                      </div>
 
-                            {/* More Options dropdown */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                showToast("Post options");
-                              }}
-                              className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-                            >
-                              <MoreHorizontal className="w-4 h-4" />
-                            </button>
-                          </div>
+                      {/* Tweet Content: Starts full-width from below the logo with clean left alignment */}
+                      <p className="text-sm text-slate-900 leading-relaxed whitespace-pre-line text-left mt-3 font-normal">
+                        {tweet.content}
+                      </p>
 
-                          {/* Tweet Content */}
-                          <p className="text-sm text-slate-900 leading-relaxed whitespace-pre-line font-normal">
-                            {tweet.content}
-                          </p>
+                      {/* Attached Image / Media */}
+                      {tweet.image && (
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setLightboxImage(tweet.image || null);
+                          }}
+                          className="mt-3 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 cursor-zoom-in max-h-80"
+                        >
+                          <img
+                            src={tweet.image}
+                            alt="Post attachment"
+                            className="w-full h-full object-cover hover:scale-[1.01] transition-transform duration-300"
+                          />
+                        </div>
+                      )}
 
-                          {/* Attached Image / Media */}
-                          {tweet.image && (
-                            <div
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setLightboxImage(tweet.image || null);
-                              }}
-                              className="mt-3 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 cursor-zoom-in max-h-80"
-                            >
-                              <img
-                                src={tweet.image}
-                                alt="Post attachment"
-                                className="w-full h-full object-cover hover:scale-[1.01] transition-transform duration-300"
-                              />
-                            </div>
-                          )}
-
-                          {/* Action Bar - shifted left on mobile for balanced spacing and breathing room */}
-                          <div className="flex items-center justify-between text-xs text-slate-500 mt-3 pt-2.5 border-t border-slate-100/80 -ml-13 sm:ml-0 w-[calc(100%+52px)] sm:w-auto max-w-md">
-                            {/* Reply */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/post/${tweet.id}?focus=comment`);
-                              }}
-                              className="flex items-center gap-1 sm:gap-1.5 transition group cursor-pointer hover:text-[#C04A22]"
-                            >
-                              <div className="p-1.5 rounded-full group-hover:bg-[#C04A22]/10">
-                                <MessageCircle className="w-4 h-4" />
-                              </div>
-                              <span className="font-semibold">{tweet.comments}</span>
-                            </button>
-
-                            {/* Repost */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleToggleRepost(tweet.id);
-                              }}
-                              className={`flex items-center gap-1 sm:gap-1.5 transition group cursor-pointer ${
-                                tweet.isReposted ? "text-emerald-600 font-bold" : "hover:text-emerald-600"
-                              }`}
-                            >
-                              <div className="p-1.5 rounded-full group-hover:bg-emerald-50">
-                                <Repeat2 className="w-4 h-4" />
-                              </div>
-                              <span className="font-semibold">{tweet.reposts}</span>
-                            </button>
-
+                      {/* Action Bar - Matching Home Feed Style */}
+                      <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 max-w-md" onClick={e => e.stopPropagation()}>
                             {/* Like */}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleToggleLike(tweet.id);
                               }}
-                              className={`flex items-center gap-1 sm:gap-1.5 transition group cursor-pointer ${
-                                tweet.isLiked ? "text-rose-600 font-bold" : "hover:text-rose-600"
+                              className={`flex items-center gap-1 sm:gap-1.5 text-xs transition-colors cursor-pointer ${
+                                tweet.isLiked ? "text-red-500 font-bold" : "text-muted-foreground hover:text-red-500"
                               }`}
                             >
-                              <div className="p-1.5 rounded-full group-hover:bg-rose-50">
-                                <Heart className={`w-4 h-4 ${tweet.isLiked ? "fill-rose-600 text-rose-600" : ""}`} />
-                              </div>
-                              <span className="font-semibold">{tweet.likes}</span>
+                              <Heart className={`w-4 h-4 ${tweet.isLiked ? "fill-red-500 text-red-500" : ""}`} />
+                              <span className="hidden sm:inline">{tweet.likes}</span>
+                              <span className="sm:hidden">{tweet.likes > 999 ? `${Math.round(tweet.likes / 1000)}k` : tweet.likes}</span>
                             </button>
 
-                            {/* Views */}
-                            <div className="flex items-center gap-1 text-slate-400">
-                              <Eye className="w-3.5 h-3.5" />
-                              <span className="font-semibold">{tweet.views}</span>
-                            </div>
-
-                            {/* Bookmark */}
+                            {/* Comment */}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleToggleBookmark(tweet.id);
+                                navigate(`/post/${tweet.id}?focus=comment`);
                               }}
-                              className={`p-1.5 rounded-full hover:bg-[#C04A22]/10 transition cursor-pointer ${
-                                tweet.isBookmarked ? "text-[#C04A22]" : "hover:text-[#C04A22]"
+                              className="flex items-center gap-1 sm:gap-1.5 text-xs text-muted-foreground hover:text-[#C04A22] transition-colors cursor-pointer"
+                              title="Comment on post"
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                              <span className="hidden sm:inline">{tweet.comments}</span>
+                              <span className="sm:hidden">{tweet.comments > 999 ? `${Math.round(tweet.comments / 1000)}k` : tweet.comments}</span>
+                            </button>
+
+                            {/* Repost / Retweet */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleRepost(tweet.id);
+                              }}
+                              className={`flex items-center gap-1 sm:gap-1.5 text-xs transition-colors cursor-pointer ${
+                                tweet.isReposted ? "text-emerald-600 font-bold" : "text-muted-foreground hover:text-emerald-600"
                               }`}
                             >
-                              <Bookmark className={`w-4 h-4 ${tweet.isBookmarked ? "fill-[#C04A22] text-[#C04A22]" : ""}`} />
+                              <Repeat2 className="w-4 h-4" />
+                              <span className="hidden sm:inline">{tweet.reposts}</span>
+                              <span className="sm:hidden">{tweet.reposts > 999 ? `${Math.round(tweet.reposts / 1000)}k` : tweet.reposts}</span>
                             </button>
 
                             {/* Share */}
@@ -1309,16 +1280,29 @@ export function Profile() {
                                 navigator.clipboard.writeText(window.location.origin + `/post/${tweet.id}`);
                                 showToast("Post link copied to clipboard");
                               }}
-                              className="p-1.5 rounded-full hover:bg-slate-100 transition cursor-pointer"
+                              className="flex items-center gap-1 sm:gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                              title="Share post"
                             >
                               <Share2 className="w-4 h-4" />
                             </button>
+
+                            {/* Bookmark / Save */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleBookmark(tweet.id);
+                              }}
+                              className={`flex items-center gap-1 sm:gap-1.5 text-xs transition-colors cursor-pointer ${
+                                tweet.isBookmarked ? "text-primary font-bold" : "text-muted-foreground hover:text-primary"
+                              }`}
+                              title="Save post"
+                            >
+                              <Bookmark className={`w-4 h-4 ${tweet.isBookmarked ? "fill-primary text-primary" : ""}`} />
+                            </button>
                           </div>
-                        </div>
-                      </div>
-                    </article>
-                  ))}
-                </div>
+                        </article>
+                      ))}
+                    </div>
               )}
             </div>
           )}

@@ -242,88 +242,82 @@ export function PostDetails() {
           <h1 className="font-bold text-foreground text-lg">Post</h1>
         </div>
 
-        {/* Main post with 2-column layout */}
-        <div className="bg-white border-b border-border p-4">
-          <div className="flex gap-3 items-start">
-            {/* Left Column: Author Avatar */}
+        {/* Main post with full-width responsive layout */}
+        <div className="bg-white border-b border-border p-4 sm:p-5">
+          {/* Top Row: Author Avatar + Name & Follow (Vertically Centered) */}
+          <div className="flex items-center justify-between">
             <div
               onClick={() => navigate(`/profile/${post.author.handle.replace('@', '')}`)}
-              className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs hover:opacity-85 cursor-pointer mt-0.5"
+              className="flex items-center gap-3 min-w-0 cursor-pointer group"
               title={`View ${post.author.name}'s Profile`}
             >
-              <User className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500" />
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs group-hover:opacity-85 transition">
+                <User className="w-6 h-6 text-slate-500" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-base text-slate-900 group-hover:underline truncate">{post.author.name}</span>
+                  {post.author.verified && (
+                    <GoldenBadge size={16} title="Verified Account" />
+                  )}
+                </div>
+                <div className="text-xs text-slate-500">{post.author.handle}</div>
+              </div>
             </div>
 
-            {/* Right Column: Name, Handle, Content, Location, Tags, Stats, Actions */}
-            <div className="flex-1 min-w-0">
-              {/* Author Header */}
-              <div className="flex items-center justify-between mb-2">
-                <div
-                  onClick={() => navigate(`/profile/${post.author.handle.replace('@', '')}`)}
-                  className="cursor-pointer hover:opacity-85 transition"
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsFollowing(!isFollowing)}
+                className="px-4 py-1.5 rounded-full border border-[#C04A22]/40 text-[#8C3015] hover:bg-[#C04A22]/10 bg-transparent text-xs font-bold transition cursor-pointer"
+              >
+                {isFollowing ? "Following" : "Follow"}
+              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setShowReportMenu(!showReportMenu)}
+                  className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors cursor-pointer"
                 >
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-base text-slate-900 hover:underline">{post.author.name}</span>
-                    {post.author.verified && (
-                      <GoldenBadge size={16} title="Verified Account" />
-                    )}
+                  <MoreHorizontal className="w-5 h-5" />
+                </button>
+                {showReportMenu && (
+                  <div className="absolute right-0 top-full mt-1 bg-white border border-border rounded-2xl shadow-lg z-10 w-48 overflow-hidden">
+                    {[
+                      { icon: Flag, label: "Report post", color: "text-foreground" },
+                      { icon: Ban, label: "Block @nadia_nyc", color: "text-red-500" },
+                      { icon: Share2, label: "Share post", color: "text-foreground" },
+                    ].map(({ icon: Icon, label, color }) => (
+                      <button
+                        key={label}
+                        onClick={() => setShowReportMenu(false)}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-slate-50 transition-colors text-left cursor-pointer"
+                      >
+                        <Icon className={`w-4 h-4 ${color}`} />
+                        <span className={color}>{label}</span>
+                      </button>
+                    ))}
                   </div>
-                  <div className="text-xs text-slate-500">{post.author.handle}</div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setIsFollowing(!isFollowing)}
-                    className="px-4 py-1.5 rounded-full border border-[#C04A22]/40 text-[#8C3015] hover:bg-[#C04A22]/10 bg-transparent text-xs font-bold transition cursor-pointer"
-                  >
-                    {isFollowing ? "Following" : "Follow"}
-                  </button>
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowReportMenu(!showReportMenu)}
-                      className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors cursor-pointer"
-                    >
-                      <MoreHorizontal className="w-5 h-5" />
-                    </button>
-                    {showReportMenu && (
-                      <div className="absolute right-0 top-full mt-1 bg-white border border-border rounded-2xl shadow-lg z-10 w-48 overflow-hidden">
-                        {[
-                          { icon: Flag, label: "Report post", color: "text-foreground" },
-                          { icon: Ban, label: "Block @nadia_nyc", color: "text-red-500" },
-                          { icon: Share2, label: "Share post", color: "text-foreground" },
-                        ].map(({ icon: Icon, label, color }) => (
-                          <button
-                            key={label}
-                            onClick={() => setShowReportMenu(false)}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-slate-50 transition-colors text-left cursor-pointer"
-                          >
-                            <Icon className={`w-4 h-4 ${color}`} />
-                            <span className={color}>{label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                )}
               </div>
+            </div>
+          </div>
 
-              {/* Post Content Aligned Under Author Name */}
-              <p className="text-sm sm:text-base text-slate-900 leading-relaxed whitespace-pre-line font-normal">
-                {post.content}
-              </p>
+          {/* Post Content: Starts full-width from below the logo with clean left alignment */}
+          <p className="text-sm sm:text-base text-slate-900 leading-relaxed whitespace-pre-line text-left mt-3.5 font-normal">
+            {post.content}
+          </p>
 
-              {/* Location + Tags in brand coral color without background */}
-              <div className="mt-3 space-y-1.5">
-                <div className="flex items-center gap-1.5 text-xs sm:text-sm text-[#C04A22] font-medium cursor-pointer hover:underline">
-                  <MapPin className="w-3.5 h-3.5 text-[#C04A22]" />
-                  {post.location}
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  {post.tags.map(t => (
-                    <span key={t} className="text-xs sm:text-sm text-[#C04A22] font-medium cursor-pointer hover:underline">#{t}</span>
-                  ))}
-                </div>
-              </div>
+          {/* Location + Tags in brand coral color without background */}
+          <div className="mt-3 space-y-1.5">
+            <div className="flex items-center gap-1.5 text-xs sm:text-sm text-[#C04A22] font-medium cursor-pointer hover:underline">
+              <MapPin className="w-3.5 h-3.5 text-[#C04A22]" />
+              {post.location}
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {post.tags.map(t => (
+                <span key={t} className="text-xs sm:text-sm text-[#C04A22] font-medium cursor-pointer hover:underline">#{t}</span>
+              ))}
+            </div>
+          </div>
 
               {/* Timestamp */}
               <div className="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-400">
@@ -378,8 +372,6 @@ export function PostDetails() {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
 
         {/* Facebook-style Comment Input Box */}
         <div className="bg-white border-b border-border p-3.5 sm:p-4">
