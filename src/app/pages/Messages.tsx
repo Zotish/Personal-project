@@ -736,7 +736,7 @@ function ChatScreen({
       </div>
 
       {/* Input Bar Section */}
-      <div className="p-4 border-t border-border bg-white relative">
+      <div className="p-2 sm:p-3.5 border-t border-border bg-white relative">
         {/* Quoted Reply Banner above input */}
         {replyingToMsg && (
           <div className="flex items-center justify-between bg-slate-100 border-l-4 border-l-[#C04A22] px-3.5 py-2 rounded-xl text-xs mb-2 animate-fadeIn">
@@ -756,7 +756,7 @@ function ChatScreen({
 
         {/* Image Upload Option Popup */}
         {showImagePicker && (
-          <div className="absolute bottom-16 left-12 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 z-40 animate-fadeIn flex gap-2">
+          <div className="absolute bottom-16 left-2 sm:left-12 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 z-40 animate-fadeIn flex gap-2">
             <button
               onClick={() => cameraInputRef.current?.click()}
               className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 hover:bg-[#C04A22]/10 text-xs font-semibold text-slate-700 hover:text-[#8C3015] transition cursor-pointer"
@@ -774,33 +774,33 @@ function ChatScreen({
 
         {/* Voice Recording Mode Bar */}
         {isRecordingVoice ? (
-          <div className="flex items-center justify-between gap-3 bg-red-50 border border-red-200 rounded-2xl px-4 py-2.5 animate-fadeIn">
-            <div className="flex items-center gap-2 text-red-600 font-semibold text-xs">
-              <span className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
-              <span>Recording Voice Note... ({formatSeconds(recordTime)})</span>
+          <div className="flex items-center justify-between gap-2 bg-red-50 border border-red-200 rounded-2xl px-3 sm:px-4 py-2 animate-fadeIn">
+            <div className="flex items-center gap-2 text-red-600 font-semibold text-xs min-w-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping flex-shrink-0" />
+              <span className="truncate">Recording... ({formatSeconds(recordTime)})</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 flex-shrink-0">
               <button
                 onClick={() => setIsRecordingVoice(false)}
-                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                className="px-2.5 py-1 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-600 hover:bg-slate-100 transition cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSendVoiceNote}
-                className="px-4 py-1.5 rounded-xl bg-[#C04A22] text-white text-xs font-bold hover:bg-[#8C3015] transition flex items-center gap-1 cursor-pointer active:scale-95 shadow-xs"
+                className="px-3 py-1 rounded-xl bg-[#C04A22] text-white text-xs font-bold hover:bg-[#8C3015] transition flex items-center gap-1 cursor-pointer active:scale-95 shadow-xs"
               >
-                <Send className="w-3.5 h-3.5" /> Send Voice
+                <Send className="w-3.5 h-3.5" /> Send
               </button>
             </div>
           </div>
         ) : (
           /* Normal Chat Input Row */
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             {/* File Upload Button */}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="p-2 rounded-xl hover:bg-secondary text-slate-500 hover:text-[#C04A22] transition-colors flex-shrink-0 cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl hover:bg-secondary text-slate-500 hover:text-[#C04A22] transition-colors flex-shrink-0 cursor-pointer"
               title="Attach File (PDF, DOCX)"
             >
               <Paperclip className="w-4.5 h-4.5" />
@@ -809,7 +809,7 @@ function ChatScreen({
             {/* Image Upload (Camera / Gallery) Button */}
             <button
               onClick={() => setShowImagePicker(!showImagePicker)}
-              className="p-2 rounded-xl hover:bg-secondary text-slate-500 hover:text-[#C04A22] transition-colors flex-shrink-0 cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl hover:bg-secondary text-slate-500 hover:text-[#C04A22] transition-colors flex-shrink-0 cursor-pointer"
               title="Send Image (Camera or Gallery)"
             >
               <ImageIcon className="w-4.5 h-4.5" />
@@ -822,7 +822,7 @@ function ChatScreen({
               onChange={e => setInputText(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleSendText()}
               placeholder="Type a message..."
-              className="flex-1 px-4 py-2.5 bg-input-background rounded-xl border border-border text-sm focus:outline-none focus:ring-1 focus:ring-[#C04A22] focus:border-[#C04A22] transition"
+              className="flex-1 min-w-0 px-2.5 sm:px-4 py-2 sm:py-2.5 bg-input-background rounded-xl border border-border text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-[#C04A22] focus:border-[#C04A22] transition"
             />
 
             {/* Auto Translation Toggle Button */}
@@ -831,27 +831,31 @@ function ChatScreen({
                 setIsTranslating(!isTranslating);
                 showToast(isTranslating ? "Auto Translation disabled" : "Auto Translation enabled (English ⇄ Bangla)");
               }}
-              className={`p-2 rounded-xl transition-colors flex-shrink-0 cursor-pointer ${isTranslating
+              className={`p-1.5 sm:p-2 rounded-xl transition-colors flex-shrink-0 cursor-pointer relative ${isTranslating
                   ? "bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/40"
                   : "hover:bg-secondary text-slate-500 hover:text-[#C04A22]"
                 }`}
-              title="Toggle Auto Translation (Bangla)"
+              title="Toggle Auto Translation (English ⇄ Bangla)"
             >
               <Languages className="w-4.5 h-4.5" />
+              {isTranslating && (
+                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[#C04A22]" />
+              )}
             </button>
 
             {/* Send Text or Mic Button */}
             {inputText.trim() ? (
               <button
                 onClick={handleSendText}
-                className="p-2.5 rounded-xl bg-[#C04A22] text-white flex-shrink-0 hover:bg-[#8C3015] transition cursor-pointer active:scale-95 shadow-xs"
+                className="p-2 sm:p-2.5 rounded-xl bg-[#C04A22] text-white flex-shrink-0 hover:bg-[#8C3015] transition cursor-pointer active:scale-95 shadow-xs"
+                title="Send message"
               >
                 <Send className="w-4 h-4" />
               </button>
             ) : (
               <button
                 onClick={() => setIsRecordingVoice(true)}
-                className="p-2.5 rounded-xl border border-border text-slate-600 hover:text-[#C04A22] flex-shrink-0 hover:bg-secondary transition cursor-pointer active:scale-95"
+                className="p-2 sm:p-2.5 rounded-xl border border-border text-slate-600 hover:text-[#C04A22] flex-shrink-0 hover:bg-secondary transition cursor-pointer active:scale-95 bg-white"
                 title="Record Voice Note"
               >
                 <Mic className="w-4 h-4" />
