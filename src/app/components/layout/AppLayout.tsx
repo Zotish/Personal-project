@@ -3,6 +3,7 @@ import { Sidebar } from "./Sidebar";
 import { MobileNav } from "./MobileNav";
 import { SellerSidebar } from "./SellerSidebar";
 import { SellerMobileNav } from "./SellerMobileNav";
+import { SmartEdgeSidebar } from "../smart-sidebar/SmartEdgeSidebar";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -53,6 +54,9 @@ export function AppLayout({
           <MobileNav />
         )
       )}
+
+      {/* Floating Smart Edge Sidebar & Freeform Window */}
+      <SmartEdgeSidebar />
     </div>
   );
 }
