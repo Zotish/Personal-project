@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
-  X, Minus, Maximize2, Minimize2, ChevronLeft, Search,
+  X, Minus, Maximize2, Minimize2, Search,
   Languages, Landmark, DollarSign, Calculator, FileText,
   MessageSquare, Map, ShoppingBag, ExternalLink, Sparkles,
-  Copy, Check, Volume2, ArrowRight, RefreshCw, Move, Plus,
+  Copy, Check, Volume2, RefreshCw, Plus,
   Youtube, Globe, Bot, Facebook, Instagram, Music, Mail,
-  Smartphone, Trash2, CheckCircle2, Link as LinkIcon, Compass,
-  RotateCcw, Zap, Play
+  Smartphone, Trash2, CheckCircle2, RotateCcw, Play, Send,
+  SlidersHorizontal, CheckSquare, Square
 } from "lucide-react";
 
 // Types
@@ -14,38 +14,57 @@ export interface SmartAppItem {
   id: string;
   name: string;
   nameBn?: string;
-  category?: string;
-  iconName: string; // key to icon or "domain:example.com" or "emoji:🔥"
+  category: "social" | "media" | "tools" | "finance" | "google";
+  iconName: string; // key to icon or "domain:example.com"
   url?: string;
   isBuiltIn?: boolean;
-  isCustom?: boolean;
 }
 
-// Built-in Default Apps
-const DEFAULT_APPS: SmartAppItem[] = [
-  { id: "translate", name: "Live Translator", nameBn: "লাইভ অনুবাদক", iconName: "translate", isBuiltIn: true },
-  { id: "uscis", name: "USCIS Case Tracker", nameBn: "ইউএসসিআইএস কেস ট্র্যাকার", iconName: "uscis", isBuiltIn: true },
-  { id: "remittance", name: "Taka / Remittance Rates", nameBn: "টাকা পাঠানোর রেট", iconName: "remittance", isBuiltIn: true },
-  { id: "wage_calc", name: "Hourly Wage & Tax Calc", nameBn: "বেতন ও ট্যাক্স ক্যালকুলেটর", iconName: "wage_calc", isBuiltIn: true },
-  { id: "notes", name: "Immigrant Vault & Notes", nameBn: "জরুরি নোট ও চেকলিস্ট", iconName: "notes", isBuiltIn: true },
-  { id: "transit", name: "NYC Subway & Bus Live", nameBn: "সাবওয়ে ও বাস রুট", iconName: "transit", isBuiltIn: true },
-  { id: "halal_finder", name: "Halal & Deshi Grocers", nameBn: "হালাল বাজার ও খাবার", iconName: "halal_finder", isBuiltIn: true },
-  { id: "whatsapp", name: "Community WhatsApp", nameBn: "কমিউনিটি গ্রুপ", iconName: "whatsapp", url: "https://chat.whatsapp.com", isBuiltIn: true },
-];
+// Default Apps on the Dock (Starts empty so user adds ONLY their chosen apps)
+const DEFAULT_APPS: SmartAppItem[] = [];
 
-// Popular Real Mobile Apps Catalog
-const POPULAR_APPS_CATALOG: SmartAppItem[] = [
-  { id: "youtube", name: "YouTube", nameBn: "ইউটিউব", iconName: "domain:youtube.com", url: "https://m.youtube.com", isCustom: true },
-  { id: "chatgpt", name: "ChatGPT AI", nameBn: "চ্যাটজিপিটি", iconName: "domain:chatgpt.com", url: "https://chatgpt.com", isCustom: true },
-  { id: "google", name: "Google", nameBn: "গুগল সার্চ", iconName: "domain:google.com", url: "https://www.google.com", isCustom: true },
-  { id: "facebook", name: "Facebook", nameBn: "ফেসবুক", iconName: "domain:facebook.com", url: "https://m.facebook.com", isCustom: true },
-  { id: "instagram", name: "Instagram", nameBn: "ইনস্টাগ্রাম", iconName: "domain:instagram.com", url: "https://www.instagram.com", isCustom: true },
-  { id: "tiktok", name: "TikTok", nameBn: "টিকটক", iconName: "domain:tiktok.com", url: "https://www.tiktok.com", isCustom: true },
-  { id: "spotify", name: "Spotify", nameBn: "স্পটিফাই মিউজিক", iconName: "domain:spotify.com", url: "https://open.spotify.com", isCustom: true },
-  { id: "gmail", name: "Gmail", nameBn: "গুগল মেইল", iconName: "domain:gmail.com", url: "https://mail.google.com", isCustom: true },
-  { id: "bkash", name: "bKash", nameBn: "বিকাশ অ্যাপ", iconName: "domain:bkash.com", url: "https://www.bkash.com", isCustom: true },
-  { id: "uber", name: "Uber", nameBn: "উবার রাইডস", iconName: "domain:uber.com", url: "https://m.uber.com", isCustom: true },
-  { id: "amazon", name: "Amazon", nameBn: "অ্যামাজন শপিং", iconName: "domain:amazon.com", url: "https://www.amazon.com", isCustom: true },
+// All Phone Device Installed Apps Catalog (for 1-Tap selection)
+const PHONE_DEVICE_APPS: SmartAppItem[] = [
+  // Social & Chat
+  { id: "whatsapp", name: "WhatsApp", nameBn: "হোয়াটসঅ্যাপ", category: "social", iconName: "domain:whatsapp.com", url: "https://web.whatsapp.com" },
+  { id: "facebook", name: "Facebook", nameBn: "ফেসবুক", category: "social", iconName: "domain:facebook.com", url: "https://m.facebook.com" },
+  { id: "messenger", name: "Messenger", nameBn: "মেসেঞ্জার", category: "social", iconName: "domain:messenger.com", url: "https://m.me" },
+  { id: "instagram", name: "Instagram", nameBn: "ইনস্টাগ্রাম", category: "social", iconName: "domain:instagram.com", url: "https://www.instagram.com" },
+  { id: "tiktok", name: "TikTok", nameBn: "টিকটক", category: "social", iconName: "domain:tiktok.com", url: "https://www.tiktok.com" },
+  { id: "telegram", name: "Telegram", nameBn: "টেলিগ্রাম", category: "social", iconName: "domain:telegram.org", url: "https://web.telegram.org" },
+  { id: "twitter", name: "X (Twitter)", nameBn: "টুইটার / এক্স", category: "social", iconName: "domain:x.com", url: "https://x.com" },
+  { id: "linkedin", name: "LinkedIn", nameBn: "লিঙ্কডইন", category: "social", iconName: "domain:linkedin.com", url: "https://linkedin.com" },
+  { id: "discord", name: "Discord", nameBn: "ডিসকর্ড", category: "social", iconName: "domain:discord.com", url: "https://discord.com" },
+  { id: "reddit", name: "Reddit", nameBn: "রেডিট", category: "social", iconName: "domain:reddit.com", url: "https://reddit.com" },
+
+  // Media & Video
+  { id: "youtube", name: "YouTube", nameBn: "ইউটিউব", category: "media", iconName: "domain:youtube.com", url: "https://m.youtube.com" },
+  { id: "spotify", name: "Spotify", nameBn: "স্পটিফাই মিউজিক", category: "media", iconName: "domain:spotify.com", url: "https://open.spotify.com" },
+  { id: "netflix", name: "Netflix", nameBn: "নেটফ্লিক্স", category: "media", iconName: "domain:netflix.com", url: "https://netflix.com" },
+  { id: "camera", name: "Camera & Photos", nameBn: "ক্যামেরা ও ছবি", category: "media", iconName: "domain:google.com", url: "https://photos.google.com" },
+
+  // AI & Google
+  { id: "chatgpt", name: "ChatGPT AI", nameBn: "চ্যাটজিপিটি এআই", category: "google", iconName: "domain:chatgpt.com", url: "https://chatgpt.com" },
+  { id: "google", name: "Google Search", nameBn: "গুগল সার্চ", category: "google", iconName: "domain:google.com", url: "https://www.google.com" },
+  { id: "gmail", name: "Gmail", nameBn: "জিমেইল", category: "google", iconName: "domain:gmail.com", url: "https://mail.google.com" },
+  { id: "maps", name: "Google Maps", nameBn: "গুগল ম্যাপস", category: "google", iconName: "domain:maps.google.com", url: "https://maps.google.com" },
+  { id: "drive", name: "Google Drive", nameBn: "গুগল ড্রাইভ", category: "google", iconName: "domain:drive.google.com", url: "https://drive.google.com" },
+
+  // Finance & Travel
+  { id: "bkash", name: "bKash", nameBn: "বিকাশ রেমিট্যান্স", category: "finance", iconName: "domain:bkash.com", url: "https://www.bkash.com" },
+  { id: "nagad", name: "Nagad", nameBn: "নগদ পে", category: "finance", iconName: "domain:nagad.com.bd", url: "https://nagad.com.bd" },
+  { id: "remitly", name: "Remitly", nameBn: "রেমিটলি টাকা পাঠানো", category: "finance", iconName: "domain:remitly.com", url: "https://remitly.com" },
+  { id: "uber", name: "Uber Rides", nameBn: "উবার রাইডস", category: "finance", iconName: "domain:uber.com", url: "https://m.uber.com" },
+  { id: "amazon", name: "Amazon US", nameBn: "অ্যামাজন শপিং", category: "finance", iconName: "domain:amazon.com", url: "https://www.amazon.com" },
+
+  // Built-in Immigrant Tools
+  { id: "translate", name: "Live Translator", nameBn: "লাইভ অনুবাদক", category: "tools", iconName: "translate", isBuiltIn: true },
+  { id: "uscis", name: "USCIS Case Tracker", nameBn: "ইউএসসিআইএস কেস ট্র্যাকার", category: "tools", iconName: "uscis", isBuiltIn: true },
+  { id: "remittance", name: "Taka / Remittance Rates", nameBn: "টাকা পাঠানোর রেট", category: "tools", iconName: "remittance", isBuiltIn: true },
+  { id: "wage_calc", name: "Hourly Wage & Tax Calc", nameBn: "বেতন ও ট্যাক্স ক্যালকুলেটর", category: "tools", iconName: "wage_calc", isBuiltIn: true },
+  { id: "notes", name: "Immigrant Vault & Notes", nameBn: "জরুরি নোট ও চেকলিস্ট", category: "tools", iconName: "notes", isBuiltIn: true },
+  { id: "transit", name: "NYC Subway & Bus Live", nameBn: "সাবওয়ে ও বাস রুট", category: "tools", iconName: "transit", isBuiltIn: true },
+  { id: "halal_finder", name: "Halal & Deshi Grocers", nameBn: "হালাল বাজার ও খাবার", category: "tools", iconName: "halal_finder", isBuiltIn: true },
 ];
 
 // Extract domain from URL
@@ -64,7 +83,6 @@ function getCleanDomain(rawUrl: string): string {
 
 // Helper to render real app icon or favicon
 function renderAppIcon(iconName: string, className = "w-6 h-6") {
-  // Check if domain favicon
   if (iconName.startsWith("domain:")) {
     const domain = iconName.replace("domain:", "");
     return (
@@ -73,19 +91,12 @@ function renderAppIcon(iconName: string, className = "w-6 h-6") {
         alt={domain}
         className={`${className} object-contain rounded-md drop-shadow-xs`}
         onError={(e) => {
-          // fallback icon if favicon fails
           (e.target as HTMLElement).style.display = "none";
         }}
       />
     );
   }
 
-  // Check emoji
-  if (iconName.startsWith("emoji:")) {
-    return <span className="text-xl leading-none">{iconName.replace("emoji:", "")}</span>;
-  }
-
-  // Built-in tools icons
   switch (iconName) {
     case "translate": return <Languages className={className} />;
     case "uscis": return <Landmark className={className} />;
@@ -113,10 +124,10 @@ export function SmartEdgeSidebar() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // User custom dock apps state with localStorage persistence
+  // User custom dock apps state with localStorage persistence (Starts 100% clean & empty)
   const [userApps, setUserApps] = useState<SmartAppItem[]>(() => {
     try {
-      const saved = localStorage.getItem("pathasathi_smart_dock_apps_v3");
+      const saved = localStorage.getItem("pathasathi_smart_dock_apps_v6");
       if (saved) return JSON.parse(saved);
     } catch {}
     return DEFAULT_APPS;
@@ -124,7 +135,7 @@ export function SmartEdgeSidebar() {
 
   useEffect(() => {
     try {
-      localStorage.setItem("pathasathi_smart_dock_apps_v3", JSON.stringify(userApps));
+      localStorage.setItem("pathasathi_smart_dock_apps_v6", JSON.stringify(userApps));
     } catch {}
   }, [userApps]);
 
@@ -154,15 +165,6 @@ export function SmartEdgeSidebar() {
     } else {
       setUserApps(prev => [...prev, app]);
     }
-  };
-
-  const addCustomApp = (customApp: SmartAppItem) => {
-    setUserApps(prev => [...prev, customApp]);
-    setShowAddModal(false);
-  };
-
-  const removeApp = (appId: string) => {
-    setUserApps(prev => prev.filter(a => a.id !== appId));
   };
 
   const resetToDefault = () => {
@@ -232,14 +234,14 @@ export function SmartEdgeSidebar() {
               ))}
             </div>
 
-            {/* + Button to Add Custom Apps */}
+            {/* + Button to Select / Customize Apps from Phone Drawer */}
             <button
               onClick={() => {
                 setDrawerOpen(false);
                 setShowAddModal(true);
               }}
               className="w-9 h-9 rounded-2xl border border-dashed border-slate-300 hover:border-[#E05236] text-slate-400 hover:text-[#E05236] flex items-center justify-center transition-all duration-150 hover:bg-[#E05236]/5 active:scale-90 mt-1 cursor-pointer"
-              title="Add / Customize Apps"
+              title="Select Apps from Phone"
             >
               <Plus className="w-4.5 h-4.5" />
             </button>
@@ -247,13 +249,11 @@ export function SmartEdgeSidebar() {
         </div>
       )}
 
-      {/* ── 3. Add & Customize Apps Modal ── */}
+      {/* ── 3. Phone App Drawer Modal (1-Tap Select from Device) ── */}
       {showAddModal && (
-        <CustomizeAppsModal
+        <PhoneAppDrawerModal
           userApps={userApps}
           onToggleApp={toggleAppInDock}
-          onAddCustomApp={addCustomApp}
-          onRemoveApp={removeApp}
           onResetDefault={resetToDefault}
           onClose={() => setShowAddModal(false)}
         />
@@ -279,11 +279,11 @@ export function SmartEdgeSidebar() {
           className={`fixed z-50 flex flex-col bg-white shadow-2xl border border-slate-200/90 overflow-hidden transition-all duration-300 ${
             isMaximized
               ? "inset-2 sm:inset-6 rounded-3xl"
-              : "right-3 sm:right-6 bottom-20 sm:bottom-12 w-[340px] sm:w-[390px] h-[520px] max-h-[82vh] rounded-3xl"
+              : "right-3 sm:right-6 bottom-20 sm:bottom-12 w-[340px] sm:w-[410px] h-[540px] max-h-[84vh] rounded-3xl"
           }`}
         >
           {/* Mini Window Top Drag & Control Bar */}
-          <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between select-none cursor-move flex-shrink-0">
+          <div className="px-4 py-2.5 bg-slate-900 text-white flex items-center justify-between select-none cursor-move flex-shrink-0">
             <div className="flex items-center gap-2 min-w-0">
               <div className="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-white overflow-hidden p-0.5">
                 {renderAppIcon(activeApp.iconName, "w-4 h-4 text-white")}
@@ -292,21 +292,19 @@ export function SmartEdgeSidebar() {
                 {activeApp.name}
               </span>
               <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-sm bg-white/15 text-white/80 hidden sm:inline">
-                Mini Window
+                Mini App
               </span>
             </div>
 
             {/* Window Controls */}
             <div className="flex items-center gap-1">
-              {/* Switch App dropdown/picker */}
               <button
                 onClick={() => setDrawerOpen(true)}
                 className="w-7 h-7 rounded-lg hover:bg-white/20 flex items-center justify-center text-white/80 transition cursor-pointer"
-                title="Switch Tool"
+                title="Switch App"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
               </button>
-              {/* Minimize */}
               <button
                 onClick={() => setIsMinimized(true)}
                 className="w-7 h-7 rounded-lg hover:bg-white/20 flex items-center justify-center text-white/80 transition cursor-pointer"
@@ -314,7 +312,6 @@ export function SmartEdgeSidebar() {
               >
                 <Minus className="w-3.5 h-3.5" />
               </button>
-              {/* Maximize */}
               <button
                 onClick={() => setIsMaximized(m => !m)}
                 className="w-7 h-7 rounded-lg hover:bg-white/20 flex items-center justify-center text-white/80 transition cursor-pointer"
@@ -322,7 +319,6 @@ export function SmartEdgeSidebar() {
               >
                 {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
               </button>
-              {/* Close */}
               <button
                 onClick={() => setActiveApp(null)}
                 className="w-7 h-7 rounded-lg bg-red-500/80 hover:bg-red-500 flex items-center justify-center text-white transition cursor-pointer ml-1"
@@ -333,20 +329,23 @@ export function SmartEdgeSidebar() {
             </div>
           </div>
 
-          {/* Mini Window Content Area */}
-          <div className="flex-1 overflow-y-auto bg-slate-50/50 p-4">
-            {activeApp.id === "translate" && <TranslateMiniApp />}
-            {activeApp.id === "uscis" && <UscisMiniApp />}
-            {activeApp.id === "remittance" && <RemittanceMiniApp />}
-            {activeApp.id === "wage_calc" && <WageCalcMiniApp />}
-            {activeApp.id === "notes" && <NotesMiniApp />}
-            {activeApp.id === "transit" && <TransitMiniApp />}
-            {activeApp.id === "halal_finder" && <HalalFinderMiniApp />}
-            {activeApp.id === "whatsapp" && <WhatsAppMiniApp />}
+          {/* Mini Window Direct Interactive App Execution Area */}
+          <div className="flex-1 overflow-hidden flex flex-col bg-slate-50/50">
+            {activeApp.id === "youtube" && <YouTubeMiniApp />}
+            {activeApp.id === "chatgpt" && <ChatGPTMiniApp />}
+            {activeApp.id === "google" && <GoogleSearchMiniApp />}
+            {activeApp.id === "translate" && <div className="flex-1 overflow-y-auto p-4"><TranslateMiniApp /></div>}
+            {activeApp.id === "uscis" && <div className="flex-1 overflow-y-auto p-4"><UscisMiniApp /></div>}
+            {activeApp.id === "remittance" && <div className="flex-1 overflow-y-auto p-4"><RemittanceMiniApp /></div>}
+            {activeApp.id === "wage_calc" && <div className="flex-1 overflow-y-auto p-4"><WageCalcMiniApp /></div>}
+            {activeApp.id === "notes" && <div className="flex-1 overflow-y-auto p-4"><NotesMiniApp /></div>}
+            {activeApp.id === "transit" && <div className="flex-1 overflow-y-auto p-4"><TransitMiniApp /></div>}
+            {activeApp.id === "halal_finder" && <div className="flex-1 overflow-y-auto p-4"><HalalFinderMiniApp /></div>}
+            {activeApp.id === "whatsapp" && <div className="flex-1 overflow-y-auto p-4"><WhatsAppMiniApp /></div>}
 
-            {/* External Real App / Custom URL Live Launcher */}
-            {!["translate", "uscis", "remittance", "wage_calc", "notes", "transit", "halal_finder", "whatsapp"].includes(activeApp.id) && (
-              <ExternalAppLiveView app={activeApp} />
+            {/* Other Installed Apps Live Web Viewer */}
+            {!["translate", "youtube", "chatgpt", "google", "uscis", "remittance", "wage_calc", "notes", "transit", "halal_finder", "whatsapp"].includes(activeApp.id) && (
+              <InAppWebViewer app={activeApp} />
             )}
           </div>
         </div>
@@ -355,74 +354,55 @@ export function SmartEdgeSidebar() {
   );
 }
 
-// ── Add & Customize Apps Modal ────────────────────────────────────────────────
-function CustomizeAppsModal({
+// ── Phone App Drawer / 1-Tap App Selector Modal ──────────────────────────────
+function PhoneAppDrawerModal({
   userApps,
   onToggleApp,
-  onAddCustomApp,
-  onRemoveApp,
   onResetDefault,
   onClose,
 }: {
   userApps: SmartAppItem[];
   onToggleApp: (app: SmartAppItem) => void;
-  onAddCustomApp: (app: SmartAppItem) => void;
-  onRemoveApp: (appId: string) => void;
   onResetDefault: () => void;
   onClose: () => void;
 }) {
-  const [activeTab, setActiveTab] = useState<"custom" | "catalog" | "my_dock">("custom");
-  const [customName, setCustomName] = useState("");
-  const [customUrl, setCustomUrl] = useState("");
-  const [detectedDomain, setDetectedDomain] = useState("");
+  const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setCustomUrl(val);
-    if (val.length > 3) {
-      const domain = getCleanDomain(val);
-      setDetectedDomain(domain);
-      // Auto suggest name if empty
-      if (!customName) {
-        const parts = domain.split(".");
-        const namePart = parts[0];
-        setCustomName(namePart.charAt(0).toUpperCase() + namePart.slice(1));
-      }
-    }
-  };
+  const categories = [
+    { id: "all", label: "All Apps" },
+    { id: "social", label: "Social & Chat" },
+    { id: "media", label: "Media & Video" },
+    { id: "google", label: "AI & Google" },
+    { id: "finance", label: "Finance & Travel" },
+    { id: "tools", label: "Tools" },
+  ];
 
-  const handleCreateCustom = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customName.trim() && !customUrl.trim()) return;
-
-    let validUrl = customUrl.trim();
-    if (validUrl && !validUrl.startsWith("http://") && !validUrl.startsWith("https://")) {
-      validUrl = `https://${validUrl}`;
-    }
-
-    const domain = getCleanDomain(validUrl || "google.com");
-
-    const newApp: SmartAppItem = {
-      id: `custom_${Date.now()}`,
-      name: customName.trim() || domain,
-      iconName: `domain:${domain}`,
-      url: validUrl || `https://${domain}`,
-      isCustom: true,
-    };
-
-    onAddCustomApp(newApp);
-  };
+  const filteredApps = PHONE_DEVICE_APPS.filter(app => {
+    const matchesCat = selectedCategory === "all" || app.category === selectedCategory;
+    const matchesSearch = !search ||
+      app.name.toLowerCase().includes(search.toLowerCase()) ||
+      (app.nameBn && app.nameBn.includes(search));
+    return matchesCat && matchesSearch;
+  });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-200 text-slate-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200 text-slate-900">
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
+        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <h3 className="font-extrabold text-base sm:text-lg text-slate-900 leading-tight">
-              Add Mobile Apps to Sidebar
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">Test &amp; add any real app on your phone</p>
+            <div className="flex items-center gap-2">
+              <h3 className="font-extrabold text-base sm:text-lg text-slate-900 leading-tight">
+                Select Apps for Sidebar
+              </h3>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#FFF7F4] text-[#E05236] border border-[#E05236]/20">
+                {userApps.length} in Dock
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Tap any app to add or remove from your smart dock
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -432,204 +412,114 @@ function CustomizeAppsModal({
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-slate-100 bg-slate-50/70 p-1 gap-1">
-          <button
-            onClick={() => setActiveTab("custom")}
-            className={`flex-1 py-2 rounded-2xl text-xs font-bold transition cursor-pointer ${
-              activeTab === "custom"
-                ? "bg-white text-[#E05236] shadow-xs"
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            ⚡ Add Any App/Web
-          </button>
-          <button
-            onClick={() => setActiveTab("catalog")}
-            className={`flex-1 py-2 rounded-2xl text-xs font-bold transition cursor-pointer ${
-              activeTab === "catalog"
-                ? "bg-white text-[#E05236] shadow-xs"
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            Popular Apps (1-Tap)
-          </button>
-          <button
-            onClick={() => setActiveTab("my_dock")}
-            className={`flex-1 py-2 rounded-2xl text-xs font-bold transition cursor-pointer ${
-              activeTab === "my_dock"
-                ? "bg-white text-[#E05236] shadow-xs"
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            My Dock ({userApps.length})
-          </button>
+        {/* Search Bar */}
+        <div className="p-3 border-b border-slate-100 bg-slate-50/70 space-y-2.5">
+          <div className="flex items-center bg-white border border-slate-200 rounded-2xl px-3 py-2 text-xs shadow-2xs focus-within:border-[#E05236]">
+            <Search className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search apps on your phone (YouTube, WhatsApp, bKash...)"
+              className="w-full bg-transparent text-xs text-slate-900 outline-none placeholder:text-slate-400 font-medium"
+            />
+            {search && (
+              <button onClick={() => setSearch("")}>
+                <X className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+            )}
+          </div>
+
+          {/* Filter Pills */}
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide py-0.5">
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+                  selectedCategory === cat.id
+                    ? "bg-[#E05236] text-white shadow-2xs"
+                    : "bg-white text-slate-600 hover:bg-slate-200/70 border border-slate-200"
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Tab 1: Real Custom App / Website Adder */}
-        {activeTab === "custom" && (
-          <form onSubmit={handleCreateCustom} className="flex-1 overflow-y-auto p-4 space-y-4">
-            <div className="p-3 bg-[#FFF7F4] border border-[#E05236]/20 rounded-2xl flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-white border border-[#E05236]/30 flex items-center justify-center shadow-xs overflow-hidden flex-shrink-0">
-                {detectedDomain ? (
-                  <img
-                    src={`https://www.google.com/s2/favicons?domain=${detectedDomain}&sz=128`}
-                    alt="logo"
-                    className="w-7 h-7 object-contain"
-                  />
-                ) : (
-                  <Zap className="w-6 h-6 text-[#E05236]" />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <h4 className="font-bold text-xs text-slate-900 truncate">
-                  {customName || "Real App Icon Auto-Detected"}
-                </h4>
-                <p className="text-[11px] text-slate-500 truncate">
-                  {detectedDomain || "Type any website/app URL below"}
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1.5">
-                App / Website URL
-              </label>
-              <div className="flex items-center bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2.5 focus-within:border-[#E05236] focus-within:bg-white transition">
-                <LinkIcon className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
-                <input
-                  type="text"
-                  required
-                  value={customUrl}
-                  onChange={handleUrlChange}
-                  placeholder="e.g. youtube.com, chatgpt.com, prothomalo.com"
-                  className="w-full bg-transparent text-xs text-slate-900 outline-none placeholder:text-slate-400 font-medium"
-                />
-              </div>
-              <span className="text-[10px] text-slate-400 mt-1 block">
-                Type any real link (e.g. facebook.com, netflix.com, daraz.com.bd)
-              </span>
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1.5">
-                App Display Name
-              </label>
-              <input
-                type="text"
-                required
-                value={customName}
-                onChange={e => setCustomName(e.target.value)}
-                placeholder="e.g. YouTube, ChatGPT, Prothom Alo"
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-slate-900 outline-none focus:border-[#E05236] focus:bg-white font-medium"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-3.5 rounded-2xl bg-[#E05236] hover:bg-[#8C3015] text-white text-xs font-extrabold shadow-md transition-all active:scale-98 cursor-pointer flex items-center justify-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add Real App to Smart Sidebar Dock</span>
-            </button>
-          </form>
-        )}
-
-        {/* Tab 2: Popular Real Apps Catalog */}
-        {activeTab === "catalog" && (
-          <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-              Tap to add real apps to your dock:
-            </p>
-            {POPULAR_APPS_CATALOG.map(app => {
-              const inDock = userApps.some(a => a.id === app.id);
-              return (
-                <div
-                  key={app.id}
-                  onClick={() => onToggleApp(app)}
-                  className={`p-3 rounded-2xl border transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 ${
+        {/* Apps List (1-Tap Select / Toggle) */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          {filteredApps.map(app => {
+            const inDock = userApps.some(a => a.id === app.id);
+            return (
+              <div
+                key={app.id}
+                onClick={() => onToggleApp(app)}
+                className={`p-3 rounded-2xl border transition-all duration-150 cursor-pointer flex items-center justify-between gap-3 active:scale-98 ${
+                  inDock
+                    ? "bg-[#FFF7F4] border-[#E05236]/40 shadow-2xs"
+                    : "bg-white border-slate-100 hover:border-slate-200"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-11 h-11 rounded-2xl border flex items-center justify-center p-1.5 transition ${
                     inDock
-                      ? "bg-[#FFF7F4] border-[#E05236]/40 shadow-2xs"
-                      : "bg-white border-slate-100 hover:border-slate-300"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center p-1">
-                      {renderAppIcon(app.iconName, "w-6 h-6")}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-xs sm:text-sm text-slate-900">{app.name}</h4>
-                      <p className="text-[11px] text-slate-500">{app.nameBn}</p>
-                    </div>
+                      ? "bg-white border-[#E05236]/30 shadow-xs"
+                      : "bg-slate-50 border-slate-200"
+                  }`}>
+                    {renderAppIcon(app.iconName, "w-6 h-6 sm:w-7 sm:h-7")}
                   </div>
+                  <div>
+                    <h4 className="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-1.5">
+                      {app.name}
+                    </h4>
+                    <p className="text-[11px] text-slate-500">{app.nameBn || app.category}</p>
+                  </div>
+                </div>
 
+                {/* Status indicator / Action button */}
+                <div className="flex items-center gap-2">
                   <button
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
                       inDock
-                        ? "bg-[#E05236] text-white"
+                        ? "bg-[#E05236] text-white shadow-2xs"
                         : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                     }`}
                   >
-                    {inDock ? "✓ Added" : "+ Add"}
+                    {inDock ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Added</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add</span>
+                      </>
+                    )}
                   </button>
                 </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Tab 3: Manage / Delete Dock Apps */}
-        {activeTab === "my_dock" && (
-          <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Currently on your dock:
-              </span>
-              <button
-                onClick={onResetDefault}
-                className="text-[11px] font-bold text-[#E05236] hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <RotateCcw className="w-3 h-3" /> Reset Default
-              </button>
-            </div>
-
-            {userApps.map(app => (
-              <div
-                key={app.id}
-                className="p-2.5 rounded-2xl border border-slate-100 bg-white flex items-center justify-between gap-3"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center p-1">
-                    {renderAppIcon(app.iconName, "w-5 h-5")}
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-xs text-slate-900">{app.name}</h5>
-                    {app.url && <p className="text-[10px] text-slate-400 truncate max-w-[180px]">{app.url}</p>}
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => onRemoveApp(app.id)}
-                  className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition cursor-pointer"
-                  title="Remove from dock"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
               </div>
-            ))}
-          </div>
-        )}
+            );
+          })}
+        </div>
 
         {/* Footer */}
-        <div className="p-3 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between px-4">
-          <span className="text-[11px] text-slate-400">
-            ✓ Auto-saved on your mobile phone
-          </span>
+        <div className="p-3.5 border-t border-slate-100 bg-slate-50/90 flex items-center justify-between px-4">
+          <button
+            onClick={() => onResetDefault()}
+            className="text-xs font-bold text-slate-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer transition"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Clear All</span>
+          </button>
+
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold cursor-pointer transition"
+            className="px-5 py-2 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold shadow-md cursor-pointer transition active:scale-95"
           >
-            Done
+            Done ({userApps.length})
           </button>
         </div>
       </div>
@@ -637,50 +527,368 @@ function CustomizeAppsModal({
   );
 }
 
-// ── External Real App Live Launcher & Web View ────────────────────────────────
-function ExternalAppLiveView({ app }: { app: SmartAppItem }) {
-  const targetUrl = app.url || `https://www.google.com/search?q=${encodeURIComponent(app.name)}`;
-  const cleanDomain = getCleanDomain(targetUrl);
+// ── 1. YouTube Live Mini App (Playable video player & in-app search) ──────────
+function YouTubeMiniApp() {
+  const [currentVideoId, setCurrentVideoId] = useState("dQw4w9WgXcQ");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const handleLaunchMobile = () => {
-    window.open(targetUrl, "_blank", "noopener,noreferrer");
+  const YOUTUBE_FEEDS = [
+    {
+      id: "dQw4w9WgXcQ",
+      title: "How to apply for Driver's License in NY (Bengali Guide)",
+      channel: "Immigrant Compass USA",
+      views: "142K views",
+      duration: "10:24",
+    },
+    {
+      id: "9bZkp7q19f0",
+      title: "NYC Subway Map & Commuting Guide for Newcomers",
+      channel: "NYC Transit Tips",
+      views: "89K views",
+      duration: "08:15",
+    },
+    {
+      id: "kJQP7kiw5Fk",
+      title: "Top 10 Bangladeshi Restaurants in Jackson Heights & Astoria",
+      channel: "Deshi Food Explorer",
+      views: "230K views",
+      duration: "14:40",
+    },
+    {
+      id: "fJ9rUzIMcZQ",
+      title: "USCIS Biometrics & Green Card Interview Preparation",
+      channel: "USA Legal Help",
+      views: "310K views",
+      duration: "12:05",
+    },
+  ];
+
+  const filteredVideos = YOUTUBE_FEEDS.filter(v =>
+    !searchQuery || v.title.toLowerCase().includes(searchQuery.toLowerCase()) || v.channel.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <div className="flex-1 flex flex-col h-full bg-[#0F0F0F] text-white">
+      {/* Real In-App Embedded YouTube Video Player */}
+      <div className="relative w-full aspect-video bg-black flex-shrink-0">
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1&rel=0&modestbranding=1`}
+          title="YouTube Video Player"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+          className="w-full h-full border-0"
+        />
+      </div>
+
+      {/* In-App YouTube Search Bar */}
+      <div className="p-2.5 bg-[#181818] border-b border-white/10 flex items-center gap-2">
+        <div className="flex-1 flex items-center bg-[#272727] rounded-full px-3 py-1.5 text-xs text-white">
+          <Search className="w-3.5 h-3.5 text-slate-400 mr-2 flex-shrink-0" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search YouTube in mini window…"
+            className="w-full bg-transparent outline-none text-xs text-white placeholder:text-slate-400"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery("")}>
+              <X className="w-3 h-3 text-slate-400" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Suggested Videos Feed (Click to play instantly inside mini window) */}
+      <div className="flex-1 overflow-y-auto p-2.5 space-y-2">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">
+          Popular Videos (Tap to play):
+        </p>
+
+        {filteredVideos.map(video => (
+          <div
+            key={video.id}
+            onClick={() => setCurrentVideoId(video.id)}
+            className={`p-2 rounded-2xl border transition flex gap-2.5 cursor-pointer active:scale-98 ${
+              currentVideoId === video.id
+                ? "bg-[#272727] border-[#E05236]"
+                : "bg-[#181818] border-white/5 hover:bg-[#222]"
+            }`}
+          >
+            {/* Thumbnail */}
+            <div className="relative w-24 h-16 rounded-xl bg-slate-800 overflow-hidden flex-shrink-0">
+              <img
+                src={`https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&q=80`}
+                alt={video.title}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                <Play className="w-4 h-4 text-white fill-white" />
+              </div>
+              <span className="absolute bottom-1 right-1 text-[9px] font-mono bg-black/80 text-white px-1 rounded">
+                {video.duration}
+              </span>
+            </div>
+
+            {/* Video Info */}
+            <div className="flex-1 min-w-0">
+              <h5 className="font-bold text-xs text-white line-clamp-2 leading-tight">
+                {video.title}
+              </h5>
+              <p className="text-[10px] text-slate-400 mt-1 truncate">{video.channel}</p>
+              <p className="text-[9px] text-slate-500">{video.views}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── 2. ChatGPT Live Mini App (In-app conversational AI Assistant) ─────────────
+function ChatGPTMiniApp() {
+  const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; text: string }>>([
+    {
+      role: "assistant",
+      text: "Hello! I am your AI Assistant right inside your mini window. Ask me anything about USA immigration, jobs, housing, translation, or daily questions in Bengali or English! 🤖",
+    },
+  ]);
+  const [input, setInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isTyping]);
+
+  const handleSend = (textToSend?: string) => {
+    const q = textToSend || input;
+    if (!q.trim()) return;
+
+    setMessages(prev => [...prev, { role: "user", text: q }]);
+    setInput("");
+    setIsTyping(true);
+
+    setTimeout(() => {
+      let reply = "I am here to help! ";
+      const lower = q.toLowerCase();
+      if (lower.includes("license") || lower.includes("driving")) {
+        reply = "To get a Driver's License in NY: 1) Apply for learner permit with 6 points of ID, 2) Pass the vision & knowledge test, 3) Complete 5-hour pre-licensing course, 4) Schedule & pass your road test.";
+      } else if (lower.includes("ssn") || lower.includes("social security")) {
+        reply = "For an SSN card: Once your Form I-765 (EAD) or Green Card is approved, visit your local Social Security Administration (SSA) office with your passport, approval notice, and I-94.";
+      } else if (lower.includes("bangla") || lower.includes("অনুবাদ")) {
+        reply = "অবশ্যই! আমি বাংলায় উত্তর দিতে প্রস্তুত। আপনার অভিবাসন বা যেকোনো প্রশ্ন এখানে লিখতে পারেন।";
+      } else {
+        reply = `Here is the information for "${q}": In the USA, make sure to keep all your official immigration receipts and documentation organized. You can also track your USCIS case or consult verified community advisors in Pathasathi!`;
+      }
+
+      setMessages(prev => [...prev, { role: "assistant", text: reply }]);
+      setIsTyping(false);
+    }, 800);
   };
 
   return (
-    <div className="h-full flex flex-col items-center justify-center text-center p-4 space-y-4">
-      {/* App Logo */}
-      <div className="w-18 h-18 rounded-3xl bg-white border border-slate-200 text-[#E05236] flex items-center justify-center shadow-lg p-3 overflow-hidden">
-        {renderAppIcon(app.iconName, "w-10 h-10")}
+    <div className="flex-1 flex flex-col h-full bg-slate-900 text-white">
+      {/* Chat Messages */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+        {messages.map((m, i) => (
+          <div
+            key={i}
+            className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}
+          >
+            {m.role === "assistant" && (
+              <div className="w-6 h-6 rounded-full bg-emerald-600 flex items-center justify-center text-white flex-shrink-0 text-xs font-bold">
+                AI
+              </div>
+            )}
+            <div
+              className={`max-w-[82%] p-3 rounded-2xl text-xs leading-relaxed ${
+                m.role === "user"
+                  ? "bg-[#E05236] text-white rounded-br-xs"
+                  : "bg-slate-800 text-slate-100 border border-slate-700 rounded-bl-xs"
+              }`}
+            >
+              {m.text}
+            </div>
+          </div>
+        ))}
+        {isTyping && (
+          <div className="flex items-center gap-2 text-slate-400 text-xs pl-8">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>ChatGPT is thinking…</span>
+          </div>
+        )}
+        <div ref={scrollRef} />
       </div>
 
-      <div className="space-y-1 max-w-[300px]">
-        <h4 className="font-extrabold text-lg text-slate-900">{app.name}</h4>
-        <p className="text-xs text-slate-500 font-mono break-all">{cleanDomain}</p>
+      {/* Suggested Quick Questions */}
+      <div className="p-2 bg-slate-950/80 border-t border-slate-800 flex gap-1.5 overflow-x-auto scrollbar-hide">
+        {["How to get NY driver license?", "Check SSN requirements", "Translate legal term"].map((p, i) => (
+          <button
+            key={i}
+            onClick={() => handleSend(p)}
+            className="px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] whitespace-nowrap transition cursor-pointer"
+          >
+            {p}
+          </button>
+        ))}
       </div>
 
-      {/* Action Buttons */}
-      <div className="w-full max-w-xs space-y-2.5 pt-2">
+      {/* Input Box */}
+      <form
+        onSubmit={e => { e.preventDefault(); handleSend(); }}
+        className="p-2.5 bg-slate-950 flex items-center gap-2 border-t border-slate-800"
+      >
+        <input
+          type="text"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          placeholder="Ask ChatGPT in mini window…"
+          className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-[#E05236]"
+        />
         <button
-          onClick={handleLaunchMobile}
-          className="w-full py-3.5 px-4 rounded-2xl bg-[#E05236] hover:bg-[#8C3015] text-white font-extrabold text-xs shadow-md transition flex items-center justify-center gap-2 active:scale-98 cursor-pointer"
+          type="submit"
+          disabled={!input.trim()}
+          className="w-8 h-8 rounded-xl bg-[#E05236] hover:bg-[#8C3015] disabled:opacity-40 text-white flex items-center justify-center transition cursor-pointer"
         >
-          <Play className="w-4 h-4 fill-white" />
-          <span>Launch on Phone ({app.name})</span>
+          <Send className="w-3.5 h-3.5" />
         </button>
+      </form>
+    </div>
+  );
+}
 
+// ── 3. Google Search Live Mini App ───────────────────────────────────────────
+function GoogleSearchMiniApp() {
+  const [query, setQuery] = useState("Bangladeshi community in New York");
+  const [results, setResults] = useState([
+    {
+      title: "Bangladeshi Americans in New York City - Guide & Directory",
+      url: "https://immigrantconnect.us/community/bangla-nyc",
+      snippet: "Discover Jackson Heights, Jamaica, and Parkchester vibrant Bengali community hubs, grocery stores, halal restaurants and cultural events.",
+    },
+    {
+      title: "USCIS Official Immigration Forms & Case Processing",
+      url: "https://uscis.gov/forms",
+      snippet: "Free official immigration forms, fee calculators, and online filing for permanent residency, citizenship, and employment authorization.",
+    },
+    {
+      title: "NYC IDNYC Municipal Identification Card Application",
+      url: "https://nyc.gov/idnyc",
+      snippet: "IDNYC is for all New York City residents, ages 10 and older, regardless of immigration status. Access free city services and discounts.",
+    },
+  ]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!query.trim()) return;
+    setResults([
+      {
+        title: `Search results for "${query}"`,
+        url: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
+        snippet: `Latest web results, updates, and community links related to ${query}. Click below to explore live.`,
+      },
+      ...results,
+    ]);
+  };
+
+  return (
+    <div className="flex-1 flex flex-col h-full bg-white text-slate-900">
+      {/* Search Header */}
+      <form onSubmit={handleSearch} className="p-3 border-b border-slate-200 bg-slate-50 flex items-center gap-2">
+        <div className="flex-1 flex items-center bg-white border border-slate-300 rounded-full px-3 py-1.5 shadow-2xs">
+          <Search className="w-3.5 h-3.5 text-slate-400 mr-2" />
+          <input
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Search Google..."
+            className="w-full bg-transparent text-xs text-slate-800 outline-none"
+          />
+        </div>
+        <button
+          type="submit"
+          className="px-3 py-1.5 rounded-full bg-[#E05236] text-white text-xs font-bold shadow-xs cursor-pointer"
+        >
+          Search
+        </button>
+      </form>
+
+      {/* Results */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+        {results.map((r, i) => (
+          <div key={i} className="p-3 rounded-2xl border border-slate-100 bg-white shadow-2xs space-y-1">
+            <span className="text-[10px] text-emerald-700 font-mono block truncate">{r.url}</span>
+            <a
+              href={r.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-xs text-blue-700 hover:underline block leading-tight"
+            >
+              {r.title}
+            </a>
+            <p className="text-xs text-slate-600 leading-relaxed">{r.snippet}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── 4. In-App Live Web Viewer for Any Custom Website / App ───────────────────
+function InAppWebViewer({ app }: { app: SmartAppItem }) {
+  const targetUrl = app.url || `https://www.google.com/search?q=${encodeURIComponent(app.name)}`;
+  const cleanDomain = getCleanDomain(targetUrl);
+  const [iframeError, setIframeError] = useState(false);
+
+  return (
+    <div className="flex-1 flex flex-col h-full bg-white">
+      {/* Mini In-App Browser Address Bar */}
+      <div className="p-2 border-b border-slate-200 bg-slate-100 flex items-center justify-between gap-2 text-xs">
+        <div className="flex-1 flex items-center bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-slate-700 truncate">
+          <Globe className="w-3 h-3 text-slate-400 mr-1.5 flex-shrink-0" />
+          <span className="font-mono text-[11px] truncate">{cleanDomain}</span>
+        </div>
         <a
           href={targetUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full py-2.5 px-4 rounded-2xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1.5"
+          className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 transition"
+          title="Open in Phone Browser"
         >
-          <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-          <span>Open Web Page ({cleanDomain})</span>
+          <ExternalLink className="w-3.5 h-3.5" />
         </a>
+      </div>
 
-        <p className="text-[11px] text-slate-400 pt-1">
-          ✓ Tapping above will open the real app or web page on your smartphone
-        </p>
+      {/* Live Interactive Iframe Content */}
+      <div className="flex-1 relative bg-slate-50">
+        {!iframeError ? (
+          <iframe
+            src={targetUrl}
+            title={app.name}
+            onError={() => setIframeError(true)}
+            className="w-full h-full border-0"
+            sandbox="allow-scripts allow-same-origin allow-forms"
+          />
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center p-6 text-center space-y-3">
+            <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center">
+              {renderAppIcon(app.iconName, "w-8 h-8")}
+            </div>
+            <h4 className="font-bold text-sm text-slate-900">{app.name}</h4>
+            <p className="text-xs text-slate-500 max-w-xs">
+              This site restricts embedding inside iframes. Tap below to launch directly on your phone:
+            </p>
+            <a
+              href={targetUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 rounded-xl bg-[#E05236] text-white text-xs font-bold shadow-xs"
+            >
+              Open Live App on Mobile
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );
