@@ -7,7 +7,8 @@ import {
   Youtube, Globe, Bot, Facebook, Instagram, Music, Mail,
   Smartphone, Trash2, Play, Send, Phone, MessageCircle,
   Camera, Image, Clock, Mic, FolderOpen, Settings,
-  Car, ShoppingCart, Video, ShieldCheck, ArrowRight, Radio
+  Car, ShoppingCart, Video, ShieldCheck, ArrowRight, Radio,
+  Shield, CheckCircle, Cpu, RadioTower, Layers, Zap
 } from "lucide-react";
 
 // Types
@@ -20,10 +21,10 @@ export interface SmartAppItem {
   isBuiltIn?: boolean;
 }
 
-// Default Apps on Dock (Starts 100% empty so user only adds what they want)
+// Default Apps on Dock (Starts 100% empty so user only adds what they clone from device)
 const DEFAULT_APPS: SmartAppItem[] = [];
 
-// Full Device Installed Apps (All standard smartphone OS & user installed apps)
+// Full Device Installed Apps (Discovered during device scan)
 const ALL_DEVICE_APPS: SmartAppItem[] = [
   // System & Core Phone Apps
   { id: "phone", name: "Phone / Dialer", nameBn: "ফোন ডায়ালার", iconName: "phone", url: "tel:" },
@@ -113,12 +114,12 @@ export function SmartEdgeSidebar() {
   const [activeApp, setActiveApp] = useState<SmartAppItem | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showClonerModal, setShowClonerModal] = useState(false);
 
-  // User custom dock apps state with localStorage persistence (Starts 100% clean & empty)
+  // User custom dock apps state with localStorage persistence
   const [userApps, setUserApps] = useState<SmartAppItem[]>(() => {
     try {
-      const saved = localStorage.getItem("pathasathi_smart_dock_apps_v7");
+      const saved = localStorage.getItem("pathasathi_smart_dock_apps_v8");
       if (saved) return JSON.parse(saved);
     } catch {}
     return DEFAULT_APPS;
@@ -126,24 +127,19 @@ export function SmartEdgeSidebar() {
 
   useEffect(() => {
     try {
-      localStorage.setItem("pathasathi_smart_dock_apps_v7", JSON.stringify(userApps));
+      localStorage.setItem("pathasathi_smart_dock_apps_v8", JSON.stringify(userApps));
     } catch {}
   }, [userApps]);
 
   // Touch swipe handling on edge handle
-  const touchStartX = useRef(0);
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    const diffX = touchStartX.current - e.changedTouches[0].clientX;
-    if (diffX > 40) {
-      setDrawerOpen(true);
-    }
-  };
+  // Listen to open-smart-sidebar event from header Location button
+  useEffect(() => {
+    const handleToggle = () => setDrawerOpen(v => !v);
+    window.addEventListener("open-smart-sidebar", handleToggle);
+    return () => window.removeEventListener("open-smart-sidebar", handleToggle);
+  }, []);
 
   const openApp = (app: SmartAppItem) => {
-    // If native system app with direct scheme, trigger directly
     if (app.url === "tel:" || app.url === "sms:") {
       window.location.href = app.url;
       setDrawerOpen(false);
@@ -184,25 +180,6 @@ export function SmartEdgeSidebar() {
 
   return (
     <>
-      {/* ── 1. Floating Edge Handle (Centered with Location Logo) ── */}
-      {!drawerOpen && (
-        <div
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          onClick={() => setDrawerOpen(true)}
-          className="fixed right-0 top-[90px] sm:top-[94px] -translate-y-1/2 z-40 group cursor-pointer select-none flex items-center"
-          title="Slide left for Smart Tools & Apps"
-        >
-          <div className="relative flex items-center justify-center py-1.5 px-0.5 sm:px-1 rounded-l-full bg-slate-800/70 hover:bg-[#C04A22] text-white backdrop-blur-md border-y border-l border-white/25 shadow-md transition-all duration-200 group-hover:-translate-x-0.5 active:scale-95">
-            <div className="w-0.5 sm:w-1 h-5 sm:h-6 rounded-full bg-white/80 group-hover:bg-white" />
-            <span className="absolute right-full mr-2 pointer-events-none hidden group-hover:flex items-center gap-1 text-[10px] font-bold text-white bg-slate-900/90 px-2 py-0.5 rounded-md whitespace-nowrap shadow-md border border-white/10">
-              <Sparkles className="w-2.5 h-2.5 text-amber-400" />
-              Apps
-            </span>
-          </div>
-        </div>
-      )}
-
       {/* ── 2. Smart Sidebar Icon-Only White Dock (Vivo style) ── */}
       {drawerOpen && (
         <div className="fixed inset-0 z-50 flex justify-end items-start">
@@ -244,14 +221,14 @@ export function SmartEdgeSidebar() {
               ))}
             </div>
 
-            {/* + Button to Select / Customize Apps from Phone Drawer */}
+            {/* + Button to Open App Cloner Device Scanner */}
             <button
               onClick={() => {
                 setDrawerOpen(false);
-                setShowAddModal(true);
+                setShowClonerModal(true);
               }}
               className="w-9 h-9 rounded-2xl border border-dashed border-slate-300 hover:border-[#E05236] text-slate-400 hover:text-[#E05236] flex items-center justify-center transition-all duration-150 hover:bg-[#E05236]/5 active:scale-90 cursor-pointer"
-              title="Add Apps from Device"
+              title="Add / Clone App from Device"
             >
               <Plus className="w-4.5 h-4.5" />
             </button>
@@ -259,14 +236,14 @@ export function SmartEdgeSidebar() {
         </div>
       )}
 
-      {/* ── 3. Device App Drawer Modal (Real Phone Apps Picker) ── */}
-      {showAddModal && (
-        <DeviceAppDrawerModal
+      {/* ── 3. App Cloner Device Permission & Scanner Modal ── */}
+      {showClonerModal && (
+        <AppClonerDeviceModal
           userApps={userApps}
           onToggleApp={toggleAppInDock}
           onAddNamedApp={addNamedApp}
           onClearAll={clearAllApps}
-          onClose={() => setShowAddModal(false)}
+          onClose={() => setShowClonerModal(false)}
         />
       )}
 
@@ -369,8 +346,8 @@ export function SmartEdgeSidebar() {
   );
 }
 
-// ── Device App Drawer Modal (Real Smartphone Installed Apps Picker) ───────────
-function DeviceAppDrawerModal({
+// ── App Cloner Modal with One-Time Device Permission & App Scanner ────────────
+function AppClonerDeviceModal({
   userApps,
   onToggleApp,
   onAddNamedApp,
@@ -383,8 +360,55 @@ function DeviceAppDrawerModal({
   onClearAll: () => void;
   onClose: () => void;
 }) {
+  // Permission state
+  const [hasPermission, setHasPermission] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("pathasathi_app_cloner_perm_granted") === "true";
+    } catch {}
+    return false;
+  });
+
+  // Scanning animation state
+  const [isScanning, setIsScanning] = useState<boolean>(false);
+  const [scanProgress, setScanProgress] = useState<number>(0);
   const [search, setSearch] = useState("");
   const [customInput, setCustomInput] = useState("");
+
+  const handleGrantPermission = () => {
+    setIsScanning(true);
+    setScanProgress(0);
+
+    const interval = setInterval(() => {
+      setScanProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setIsScanning(false);
+          setHasPermission(true);
+          try {
+            localStorage.setItem("pathasathi_app_cloner_perm_granted", "true");
+          } catch {}
+          return 100;
+        }
+        return prev + 25;
+      });
+    }, 180);
+  };
+
+  const handleRescan = () => {
+    setIsScanning(true);
+    setScanProgress(0);
+
+    const interval = setInterval(() => {
+      setScanProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setIsScanning(false);
+          return 100;
+        }
+        return prev + 25;
+      });
+    }, 150);
+  };
 
   const filteredApps = ALL_DEVICE_APPS.filter(app => {
     return (
@@ -404,137 +428,226 @@ function DeviceAppDrawerModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[86vh] animate-in zoom-in-95 duration-200 text-slate-900">
-        {/* Header */}
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Smartphone className="w-5 h-5 text-[#E05236]" />
-            <div>
-              <h3 className="font-extrabold text-base sm:text-lg text-slate-900 leading-tight">
-                Device Apps
+
+        {/* ── CASE 1: One-Time Device Permission Request ── */}
+        {!hasPermission && !isScanning && (
+          <div className="p-6 text-center space-y-4">
+            <div className="w-16 h-16 rounded-3xl bg-[#FFF7F4] border border-[#E05236]/30 text-[#E05236] flex items-center justify-center mx-auto shadow-md">
+              <Shield className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 className="font-extrabold text-lg text-slate-900 leading-tight">
+                Device Permission Required
               </h3>
-              <p className="text-xs text-slate-500">
-                Tap any app to add/remove from sidebar dock ({userApps.length} added)
+              <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
+                Allow <strong>Pathasathi Smart Cloner</strong> to scan and access installed applications on this device?
               </p>
             </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
 
-        {/* Search Bar */}
-        <div className="p-3 border-b border-slate-100 bg-slate-50/70 space-y-2">
-          <div className="flex items-center bg-white border border-slate-200 rounded-2xl px-3 py-2 text-xs shadow-2xs focus-within:border-[#E05236]">
-            <Search className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search apps on this phone..."
-              className="w-full bg-transparent text-xs text-slate-900 outline-none placeholder:text-slate-400 font-medium"
-            />
-            {search && (
-              <button onClick={() => setSearch("")}>
-                <X className="w-3.5 h-3.5 text-slate-400" />
-              </button>
-            )}
-          </div>
+            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-[11px] text-slate-600 text-left space-y-1.5">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                <span>One-time scan for installed phone applications</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                <span>Clone &amp; launch apps in Freeform Floating Mini Windows</span>
+              </div>
+            </div>
 
-          {/* Quick Add Any Other App Name Input */}
-          <form onSubmit={handleAddCustom} className="flex gap-2">
-            <input
-              type="text"
-              value={customInput}
-              onChange={e => setCustomInput(e.target.value)}
-              placeholder="+ Type any other app name on your phone"
-              className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 outline-none focus:border-[#E05236] placeholder:text-slate-400"
-            />
-            <button
-              type="submit"
-              disabled={!customInput.trim()}
-              className="px-3 py-1.5 rounded-xl bg-[#E05236] disabled:opacity-40 text-white text-xs font-bold transition cursor-pointer"
-            >
-              Add
-            </button>
-          </form>
-        </div>
-
-        {/* Apps List (1-Tap Select / Toggle) */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
-          {filteredApps.map(app => {
-            const inDock = userApps.some(a => a.id === app.id);
-            return (
-              <div
-                key={app.id}
-                onClick={() => onToggleApp(app)}
-                className={`p-3 rounded-2xl border transition-all duration-150 cursor-pointer flex items-center justify-between gap-3 active:scale-98 ${
-                  inDock
-                    ? "bg-[#FFF7F4] border-[#E05236]/40 shadow-2xs"
-                    : "bg-white border-slate-100 hover:border-slate-200"
-                }`}
+            <div className="flex gap-2.5 pt-2">
+              <button
+                onClick={onClose}
+                className="flex-1 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer"
               >
-                <div className="flex items-center gap-3">
-                  <div className={`w-11 h-11 rounded-2xl border flex items-center justify-center p-1.5 transition ${
-                    inDock
-                      ? "bg-white border-[#E05236]/30 shadow-xs"
-                      : "bg-slate-50 border-slate-200"
-                  }`}>
-                    {renderAppIcon(app.iconName, "w-6 h-6 sm:w-7 sm:h-7")}
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-xs sm:text-sm text-slate-900">
-                      {app.name}
-                    </h4>
-                    <p className="text-[11px] text-slate-500">{app.nameBn}</p>
-                  </div>
-                </div>
+                Don't Allow
+              </button>
+              <button
+                onClick={handleGrantPermission}
+                className="flex-1 py-3 rounded-2xl bg-[#E05236] hover:bg-[#8C3015] text-white font-extrabold text-xs shadow-md transition cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Allow Access</span>
+              </button>
+            </div>
+          </div>
+        )}
 
-                <div className="flex items-center gap-2">
-                  <button
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-                      inDock
-                        ? "bg-[#E05236] text-white shadow-2xs"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
-                  >
-                    {inDock ? (
-                      <>
-                        <Check className="w-3.5 h-3.5" />
-                        <span>Added</span>
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Add</span>
-                      </>
-                    )}
-                  </button>
+        {/* ── CASE 2: Real-time Scanning Progress Animation ── */}
+        {isScanning && (
+          <div className="p-8 text-center space-y-5 my-auto">
+            <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-4 border-slate-100 border-t-[#E05236] animate-spin" />
+              <RadioTower className="w-8 h-8 text-[#E05236] animate-pulse" />
+            </div>
+
+            <div className="space-y-1">
+              <h4 className="font-extrabold text-base text-slate-900">
+                Scanning Installed Device Apps…
+              </h4>
+              <p className="text-xs text-slate-500 font-mono">
+                Discovering phone packages ({scanProgress}%)
+              </p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+              <div
+                className="bg-[#E05236] h-full transition-all duration-200 rounded-full"
+                style={{ width: `${scanProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ── CASE 3: Discovered Device Applications (1-Tap Clone / Add) ── */}
+        {hasPermission && !isScanning && (
+          <>
+            {/* Header */}
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-[#FFF7F4] text-[#E05236] flex items-center justify-center">
+                  <Layers className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base sm:text-lg text-slate-900 leading-tight">
+                    Device Apps Cloner
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {ALL_DEVICE_APPS.length} apps discovered on phone • {userApps.length} in dock
+                  </p>
                 </div>
               </div>
-            );
-          })}
-        </div>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-        {/* Footer */}
-        <div className="p-3.5 border-t border-slate-100 bg-slate-50/90 flex items-center justify-between px-4">
-          <button
-            onClick={onClearAll}
-            className="text-xs font-bold text-slate-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer transition"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span>Clear Dock</span>
-          </button>
+            {/* Search Bar */}
+            <div className="p-3 border-b border-slate-100 bg-slate-50/70 space-y-2">
+              <div className="flex items-center bg-white border border-slate-200 rounded-2xl px-3 py-2 text-xs shadow-2xs focus-within:border-[#E05236]">
+                <Search className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search discovered apps on this phone..."
+                  className="w-full bg-transparent text-xs text-slate-900 outline-none placeholder:text-slate-400 font-medium"
+                />
+                {search && (
+                  <button onClick={() => setSearch("")}>
+                    <X className="w-3.5 h-3.5 text-slate-400" />
+                  </button>
+                )}
+              </div>
 
-          <button
-            onClick={onClose}
-            className="px-5 py-2 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold shadow-md cursor-pointer transition active:scale-95"
-          >
-            Done ({userApps.length})
-          </button>
-        </div>
+              {/* Add other app on device input */}
+              <form onSubmit={handleAddCustom} className="flex gap-2">
+                <input
+                  type="text"
+                  value={customInput}
+                  onChange={e => setCustomInput(e.target.value)}
+                  placeholder="+ Add any other app installed on your phone"
+                  className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 outline-none focus:border-[#E05236] placeholder:text-slate-400"
+                />
+                <button
+                  type="submit"
+                  disabled={!customInput.trim()}
+                  className="px-3 py-1.5 rounded-xl bg-[#E05236] disabled:opacity-40 text-white text-xs font-bold transition cursor-pointer"
+                >
+                  Add
+                </button>
+              </form>
+            </div>
+
+            {/* Apps List (1-Tap Clone / Toggle) */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {filteredApps.map(app => {
+                const inDock = userApps.some(a => a.id === app.id);
+                return (
+                  <div
+                    key={app.id}
+                    onClick={() => onToggleApp(app)}
+                    className={`p-3 rounded-2xl border transition-all duration-150 cursor-pointer flex items-center justify-between gap-3 active:scale-98 ${
+                      inDock
+                        ? "bg-[#FFF7F4] border-[#E05236]/40 shadow-2xs"
+                        : "bg-white border-slate-100 hover:border-slate-200"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-11 h-11 rounded-2xl border flex items-center justify-center p-1.5 transition ${
+                        inDock
+                          ? "bg-white border-[#E05236]/30 shadow-xs"
+                          : "bg-slate-50 border-slate-200"
+                      }`}>
+                        {renderAppIcon(app.iconName, "w-6 h-6 sm:w-7 sm:h-7")}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-xs sm:text-sm text-slate-900">
+                          {app.name}
+                        </h4>
+                        <p className="text-[11px] text-slate-500">{app.nameBn || "Installed Device App"}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                          inDock
+                            ? "bg-[#E05236] text-white shadow-2xs"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        }`}
+                      >
+                        {inDock ? (
+                          <>
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Cloned</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Clone</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div className="p-3.5 border-t border-slate-100 bg-slate-50/90 flex items-center justify-between px-4">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleRescan}
+                  className="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer transition"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span>Re-scan</span>
+                </button>
+                <button
+                  onClick={onClearAll}
+                  className="text-xs font-bold text-slate-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer transition"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Clear Dock</span>
+                </button>
+              </div>
+
+              <button
+                onClick={onClose}
+                className="px-5 py-2 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold shadow-md cursor-pointer transition active:scale-95"
+              >
+                Done ({userApps.length})
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

@@ -1524,14 +1524,18 @@ export function HomeFeed() {
                 <span className="hidden sm:inline truncate">{t("tab_following")}</span>
               </button>
 
-              {/* 5. Local */}
+              {/* 5. Local & Smart Apps */}
               <button
-                onClick={() => setActiveTab("local")}
+                onClick={() => {
+                  setActiveTab("local");
+                  window.dispatchEvent(new CustomEvent("open-smart-sidebar"));
+                }}
                 className={`w-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 text-xs font-medium transition-all group ${
                   activeTab === "local"
                     ? "text-[#8C3015] font-bold border-b-2 border-[#C04A22]"
                     : "text-slate-600 hover:text-[#8C3015] hover:bg-slate-50"
                 }`}
+                title="Location Tools & Apps"
               >
                 <MapPin className={`w-5 h-5 sm:w-3.5 sm:h-3.5 flex-shrink-0 transition-colors ${activeTab === "local" ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
                 <span className="hidden sm:inline truncate">{t("tab_local")}</span>
