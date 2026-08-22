@@ -2,11 +2,12 @@ import React, { useState, useRef, useEffect } from "react";
 import {
   X, Minus, Maximize2, Minimize2, Search,
   Languages, Landmark, DollarSign, Calculator, FileText,
-  MessageSquare, Map, ShoppingBag, ExternalLink, Sparkles,
+  MessageSquare, Map, ShoppingBag, Sparkles, ExternalLink,
   Copy, Check, Volume2, RefreshCw, Plus,
   Youtube, Globe, Bot, Facebook, Instagram, Music, Mail,
-  Smartphone, Trash2, CheckCircle2, RotateCcw, Play, Send,
-  SlidersHorizontal, CheckSquare, Square
+  Smartphone, Trash2, Play, Send, Phone, MessageCircle,
+  Camera, Image, Clock, Mic, FolderOpen, Settings,
+  Car, ShoppingCart, Video, ShieldCheck, ArrowRight, Radio
 } from "lucide-react";
 
 // Types
@@ -14,72 +15,63 @@ export interface SmartAppItem {
   id: string;
   name: string;
   nameBn?: string;
-  category: "social" | "media" | "tools" | "finance" | "google";
-  iconName: string; // key to icon or "domain:example.com"
+  iconName: string;
   url?: string;
   isBuiltIn?: boolean;
 }
 
-// Default Apps on the Dock (Starts empty so user adds ONLY their chosen apps)
+// Default Apps on Dock (Starts 100% empty so user only adds what they want)
 const DEFAULT_APPS: SmartAppItem[] = [];
 
-// All Phone Device Installed Apps Catalog (for 1-Tap selection)
-const PHONE_DEVICE_APPS: SmartAppItem[] = [
-  // Social & Chat
-  { id: "whatsapp", name: "WhatsApp", nameBn: "হোয়াটসঅ্যাপ", category: "social", iconName: "domain:whatsapp.com", url: "https://web.whatsapp.com" },
-  { id: "facebook", name: "Facebook", nameBn: "ফেসবুক", category: "social", iconName: "domain:facebook.com", url: "https://m.facebook.com" },
-  { id: "messenger", name: "Messenger", nameBn: "মেসেঞ্জার", category: "social", iconName: "domain:messenger.com", url: "https://m.me" },
-  { id: "instagram", name: "Instagram", nameBn: "ইনস্টাগ্রাম", category: "social", iconName: "domain:instagram.com", url: "https://www.instagram.com" },
-  { id: "tiktok", name: "TikTok", nameBn: "টিকটক", category: "social", iconName: "domain:tiktok.com", url: "https://www.tiktok.com" },
-  { id: "telegram", name: "Telegram", nameBn: "টেলিগ্রাম", category: "social", iconName: "domain:telegram.org", url: "https://web.telegram.org" },
-  { id: "twitter", name: "X (Twitter)", nameBn: "টুইটার / এক্স", category: "social", iconName: "domain:x.com", url: "https://x.com" },
-  { id: "linkedin", name: "LinkedIn", nameBn: "লিঙ্কডইন", category: "social", iconName: "domain:linkedin.com", url: "https://linkedin.com" },
-  { id: "discord", name: "Discord", nameBn: "ডিসকর্ড", category: "social", iconName: "domain:discord.com", url: "https://discord.com" },
-  { id: "reddit", name: "Reddit", nameBn: "রেডিট", category: "social", iconName: "domain:reddit.com", url: "https://reddit.com" },
+// Full Device Installed Apps (All standard smartphone OS & user installed apps)
+const ALL_DEVICE_APPS: SmartAppItem[] = [
+  // System & Core Phone Apps
+  { id: "phone", name: "Phone / Dialer", nameBn: "ফোন ডায়ালার", iconName: "phone", url: "tel:" },
+  { id: "messages", name: "Messages / SMS", nameBn: "মেসেজ / এসএমএস", iconName: "messages", url: "sms:" },
+  { id: "camera", name: "Camera", nameBn: "ক্যামেরা", iconName: "camera" },
+  { id: "photos", name: "Photos & Gallery", nameBn: "গ্যালারি", iconName: "photos" },
+  { id: "voice_rec", name: "Voice Recorder", nameBn: "ভয়েস রেকর্ডার", iconName: "voice_rec" },
+  { id: "calculator", name: "Calculator", nameBn: "ক্যালকুলেটর", iconName: "calculator", isBuiltIn: true },
+  { id: "clock", name: "Clock & Timer", nameBn: "ঘড়ি ও টাইমার", iconName: "clock" },
+  { id: "notes_app", name: "Notes & Memos", nameBn: "নোটপ্যাড", iconName: "notes_app", isBuiltIn: true },
+
+  // Communication & Social
+  { id: "whatsapp", name: "WhatsApp", nameBn: "হোয়াটসঅ্যাপ", iconName: "domain:whatsapp.com", url: "https://web.whatsapp.com" },
+  { id: "facebook", name: "Facebook", nameBn: "ফেসবুক", iconName: "domain:facebook.com", url: "https://m.facebook.com" },
+  { id: "messenger", name: "Messenger", nameBn: "মেসেঞ্জার", iconName: "domain:messenger.com", url: "https://m.me" },
+  { id: "instagram", name: "Instagram", nameBn: "ইনস্টাগ্রাম", iconName: "domain:instagram.com", url: "https://www.instagram.com" },
+  { id: "tiktok", name: "TikTok", nameBn: "টিকটক", iconName: "domain:tiktok.com", url: "https://www.tiktok.com" },
+  { id: "telegram", name: "Telegram", nameBn: "টেলিগ্রাম", iconName: "domain:telegram.org", url: "https://web.telegram.org" },
+  { id: "twitter", name: "X (Twitter)", nameBn: "টুইটার / এক্স", iconName: "domain:x.com", url: "https://x.com" },
+  { id: "discord", name: "Discord", nameBn: "ডিসকর্ড", iconName: "domain:discord.com", url: "https://discord.com" },
 
   // Media & Video
-  { id: "youtube", name: "YouTube", nameBn: "ইউটিউব", category: "media", iconName: "domain:youtube.com", url: "https://m.youtube.com" },
-  { id: "spotify", name: "Spotify", nameBn: "স্পটিফাই মিউজিক", category: "media", iconName: "domain:spotify.com", url: "https://open.spotify.com" },
-  { id: "netflix", name: "Netflix", nameBn: "নেটফ্লিক্স", category: "media", iconName: "domain:netflix.com", url: "https://netflix.com" },
-  { id: "camera", name: "Camera & Photos", nameBn: "ক্যামেরা ও ছবি", category: "media", iconName: "domain:google.com", url: "https://photos.google.com" },
+  { id: "youtube", name: "YouTube", nameBn: "ইউটিউব", iconName: "domain:youtube.com", url: "https://m.youtube.com" },
+  { id: "spotify", name: "Spotify", nameBn: "স্পটিফাই মিউজিক", iconName: "domain:spotify.com", url: "https://open.spotify.com" },
+  { id: "netflix", name: "Netflix", nameBn: "নেটফ্লিক্স", iconName: "domain:netflix.com", url: "https://netflix.com" },
 
-  // AI & Google
-  { id: "chatgpt", name: "ChatGPT AI", nameBn: "চ্যাটজিপিটি এআই", category: "google", iconName: "domain:chatgpt.com", url: "https://chatgpt.com" },
-  { id: "google", name: "Google Search", nameBn: "গুগল সার্চ", category: "google", iconName: "domain:google.com", url: "https://www.google.com" },
-  { id: "gmail", name: "Gmail", nameBn: "জিমেইল", category: "google", iconName: "domain:gmail.com", url: "https://mail.google.com" },
-  { id: "maps", name: "Google Maps", nameBn: "গুগল ম্যাপস", category: "google", iconName: "domain:maps.google.com", url: "https://maps.google.com" },
-  { id: "drive", name: "Google Drive", nameBn: "গুগল ড্রাইভ", category: "google", iconName: "domain:drive.google.com", url: "https://drive.google.com" },
+  // Google & Productivity
+  { id: "chatgpt", name: "ChatGPT AI", nameBn: "চ্যাটজিপিটি", iconName: "domain:chatgpt.com", url: "https://chatgpt.com" },
+  { id: "google", name: "Google Chrome", nameBn: "গুগল ক্রোম", iconName: "domain:google.com", url: "https://www.google.com" },
+  { id: "gmail", name: "Gmail", nameBn: "জিমেইল", iconName: "domain:gmail.com", url: "https://mail.google.com" },
+  { id: "maps", name: "Google Maps", nameBn: "গুগল ম্যাপস", iconName: "domain:maps.google.com", url: "https://maps.google.com" },
+  { id: "drive", name: "Google Drive", nameBn: "গুগল ড্রাইভ", iconName: "domain:drive.google.com", url: "https://drive.google.com" },
 
   // Finance & Travel
-  { id: "bkash", name: "bKash", nameBn: "বিকাশ রেমিট্যান্স", category: "finance", iconName: "domain:bkash.com", url: "https://www.bkash.com" },
-  { id: "nagad", name: "Nagad", nameBn: "নগদ পে", category: "finance", iconName: "domain:nagad.com.bd", url: "https://nagad.com.bd" },
-  { id: "remitly", name: "Remitly", nameBn: "রেমিটলি টাকা পাঠানো", category: "finance", iconName: "domain:remitly.com", url: "https://remitly.com" },
-  { id: "uber", name: "Uber Rides", nameBn: "উবার রাইডস", category: "finance", iconName: "domain:uber.com", url: "https://m.uber.com" },
-  { id: "amazon", name: "Amazon US", nameBn: "অ্যামাজন শপিং", category: "finance", iconName: "domain:amazon.com", url: "https://www.amazon.com" },
+  { id: "bkash", name: "bKash", nameBn: "বিকাশ", iconName: "domain:bkash.com", url: "https://www.bkash.com" },
+  { id: "nagad", name: "Nagad", nameBn: "নগদ", iconName: "domain:nagad.com.bd", url: "https://nagad.com.bd" },
+  { id: "remitly", name: "Remitly", nameBn: "রেমিটলি", iconName: "domain:remitly.com", url: "https://remitly.com" },
+  { id: "uber", name: "Uber", nameBn: "উবার", iconName: "domain:uber.com", url: "https://m.uber.com" },
+  { id: "amazon", name: "Amazon", nameBn: "অ্যামাজন", iconName: "domain:amazon.com", url: "https://www.amazon.com" },
 
-  // Built-in Immigrant Tools
-  { id: "translate", name: "Live Translator", nameBn: "লাইভ অনুবাদক", category: "tools", iconName: "translate", isBuiltIn: true },
-  { id: "uscis", name: "USCIS Case Tracker", nameBn: "ইউএসসিআইএস কেস ট্র্যাকার", category: "tools", iconName: "uscis", isBuiltIn: true },
-  { id: "remittance", name: "Taka / Remittance Rates", nameBn: "টাকা পাঠানোর রেট", category: "tools", iconName: "remittance", isBuiltIn: true },
-  { id: "wage_calc", name: "Hourly Wage & Tax Calc", nameBn: "বেতন ও ট্যাক্স ক্যালকুলেটর", category: "tools", iconName: "wage_calc", isBuiltIn: true },
-  { id: "notes", name: "Immigrant Vault & Notes", nameBn: "জরুরি নোট ও চেকলিস্ট", category: "tools", iconName: "notes", isBuiltIn: true },
-  { id: "transit", name: "NYC Subway & Bus Live", nameBn: "সাবওয়ে ও বাস রুট", category: "tools", iconName: "transit", isBuiltIn: true },
-  { id: "halal_finder", name: "Halal & Deshi Grocers", nameBn: "হালাল বাজার ও খাবার", category: "tools", iconName: "halal_finder", isBuiltIn: true },
+  // Immigrant Utilities
+  { id: "translate", name: "Live Translator", nameBn: "অনুবাদক", iconName: "translate", isBuiltIn: true },
+  { id: "uscis", name: "USCIS Case Tracker", nameBn: "ইউএসসিআইএস ট্র্যাকার", iconName: "uscis", isBuiltIn: true },
+  { id: "remittance", name: "Taka / Remittance Rates", nameBn: "টাকা রেট", iconName: "remittance", isBuiltIn: true },
+  { id: "wage_calc", name: "Hourly Wage & Tax", nameBn: "বেতন ক্যালকুলেটর", iconName: "wage_calc", isBuiltIn: true },
+  { id: "transit", name: "NYC Subway & Bus", nameBn: "সাবওয়ে ও বাস রুট", iconName: "transit", isBuiltIn: true },
+  { id: "halal_finder", name: "Halal Grocers", nameBn: "হালাল বাজার", iconName: "halal_finder", isBuiltIn: true },
 ];
-
-// Extract domain from URL
-function getCleanDomain(rawUrl: string): string {
-  try {
-    let url = rawUrl.trim();
-    if (!url.startsWith("http://") && !url.startsWith("https://")) {
-      url = "https://" + url;
-    }
-    const parsed = new URL(url);
-    return parsed.hostname.replace(/^www\./, "");
-  } catch {
-    return "google.com";
-  }
-}
 
 // Helper to render real app icon or favicon
 function renderAppIcon(iconName: string, className = "w-6 h-6") {
@@ -98,21 +90,20 @@ function renderAppIcon(iconName: string, className = "w-6 h-6") {
   }
 
   switch (iconName) {
+    case "phone": return <Phone className={className} />;
+    case "messages": return <MessageCircle className={className} />;
+    case "camera": return <Camera className={className} />;
+    case "photos": return <Image className={className} />;
+    case "voice_rec": return <Mic className={className} />;
+    case "calculator": return <Calculator className={className} />;
+    case "clock": return <Clock className={className} />;
+    case "notes_app": return <FileText className={className} />;
     case "translate": return <Languages className={className} />;
     case "uscis": return <Landmark className={className} />;
     case "remittance": return <DollarSign className={className} />;
     case "wage_calc": return <Calculator className={className} />;
-    case "notes": return <FileText className={className} />;
     case "transit": return <Map className={className} />;
     case "halal_finder": return <ShoppingBag className={className} />;
-    case "whatsapp": return <MessageSquare className={className} />;
-    case "youtube": return <Youtube className={className} />;
-    case "chatgpt": return <Bot className={className} />;
-    case "google": return <Globe className={className} />;
-    case "facebook": return <Facebook className={className} />;
-    case "instagram": return <Instagram className={className} />;
-    case "spotify": return <Music className={className} />;
-    case "gmail": return <Mail className={className} />;
     default: return <Smartphone className={className} />;
   }
 }
@@ -127,7 +118,7 @@ export function SmartEdgeSidebar() {
   // User custom dock apps state with localStorage persistence (Starts 100% clean & empty)
   const [userApps, setUserApps] = useState<SmartAppItem[]>(() => {
     try {
-      const saved = localStorage.getItem("pathasathi_smart_dock_apps_v6");
+      const saved = localStorage.getItem("pathasathi_smart_dock_apps_v7");
       if (saved) return JSON.parse(saved);
     } catch {}
     return DEFAULT_APPS;
@@ -135,7 +126,7 @@ export function SmartEdgeSidebar() {
 
   useEffect(() => {
     try {
-      localStorage.setItem("pathasathi_smart_dock_apps_v6", JSON.stringify(userApps));
+      localStorage.setItem("pathasathi_smart_dock_apps_v7", JSON.stringify(userApps));
     } catch {}
   }, [userApps]);
 
@@ -152,6 +143,13 @@ export function SmartEdgeSidebar() {
   };
 
   const openApp = (app: SmartAppItem) => {
+    // If native system app with direct scheme, trigger directly
+    if (app.url === "tel:" || app.url === "sms:") {
+      window.location.href = app.url;
+      setDrawerOpen(false);
+      return;
+    }
+
     setActiveApp(app);
     setIsMinimized(false);
     setIsMaximized(false);
@@ -167,13 +165,26 @@ export function SmartEdgeSidebar() {
     }
   };
 
-  const resetToDefault = () => {
-    setUserApps(DEFAULT_APPS);
+  const addNamedApp = (appName: string) => {
+    if (!appName.trim()) return;
+    const cleanName = appName.trim();
+    const cleanDomain = cleanName.toLowerCase().replace(/\s+/g, "") + ".com";
+    const customItem: SmartAppItem = {
+      id: `custom_${Date.now()}`,
+      name: cleanName,
+      iconName: `domain:${cleanDomain}`,
+      url: `https://${cleanDomain}`,
+    };
+    setUserApps(prev => [...prev, customItem]);
+  };
+
+  const clearAllApps = () => {
+    setUserApps([]);
   };
 
   return (
     <>
-      {/* ── 1. Floating Edge Handle (Centered exactly with Location Logo) ── */}
+      {/* ── 1. Floating Edge Handle (Centered with Location Logo) ── */}
       {!drawerOpen && (
         <div
           onTouchStart={handleTouchStart}
@@ -182,7 +193,6 @@ export function SmartEdgeSidebar() {
           className="fixed right-0 top-[90px] sm:top-[94px] -translate-y-1/2 z-40 group cursor-pointer select-none flex items-center"
           title="Slide left for Smart Tools & Apps"
         >
-          {/* Ultra-slim translucent glass edge pill aligned with location pin */}
           <div className="relative flex items-center justify-center py-1.5 px-0.5 sm:px-1 rounded-l-full bg-slate-800/70 hover:bg-[#C04A22] text-white backdrop-blur-md border-y border-l border-white/25 shadow-md transition-all duration-200 group-hover:-translate-x-0.5 active:scale-95">
             <div className="w-0.5 sm:w-1 h-5 sm:h-6 rounded-full bg-white/80 group-hover:bg-white" />
             <span className="absolute right-full mr-2 pointer-events-none hidden group-hover:flex items-center gap-1 text-[10px] font-bold text-white bg-slate-900/90 px-2 py-0.5 rounded-md whitespace-nowrap shadow-md border border-white/10">
@@ -196,7 +206,7 @@ export function SmartEdgeSidebar() {
       {/* ── 2. Smart Sidebar Icon-Only White Dock (Vivo style) ── */}
       {drawerOpen && (
         <div className="fixed inset-0 z-50 flex justify-end items-start">
-          {/* Fully Transparent Backdrop (No shadow / no dimming / no blur) */}
+          {/* Fully Transparent Backdrop */}
           <div
             onClick={() => setDrawerOpen(false)}
             className="absolute inset-0 bg-transparent"
@@ -240,8 +250,8 @@ export function SmartEdgeSidebar() {
                 setDrawerOpen(false);
                 setShowAddModal(true);
               }}
-              className="w-9 h-9 rounded-2xl border border-dashed border-slate-300 hover:border-[#E05236] text-slate-400 hover:text-[#E05236] flex items-center justify-center transition-all duration-150 hover:bg-[#E05236]/5 active:scale-90 mt-1 cursor-pointer"
-              title="Select Apps from Phone"
+              className="w-9 h-9 rounded-2xl border border-dashed border-slate-300 hover:border-[#E05236] text-slate-400 hover:text-[#E05236] flex items-center justify-center transition-all duration-150 hover:bg-[#E05236]/5 active:scale-90 cursor-pointer"
+              title="Add Apps from Device"
             >
               <Plus className="w-4.5 h-4.5" />
             </button>
@@ -249,17 +259,18 @@ export function SmartEdgeSidebar() {
         </div>
       )}
 
-      {/* ── 3. Phone App Drawer Modal (1-Tap Select from Device) ── */}
+      {/* ── 3. Device App Drawer Modal (Real Phone Apps Picker) ── */}
       {showAddModal && (
-        <PhoneAppDrawerModal
+        <DeviceAppDrawerModal
           userApps={userApps}
           onToggleApp={toggleAppInDock}
-          onResetDefault={resetToDefault}
+          onAddNamedApp={addNamedApp}
+          onClearAll={clearAllApps}
           onClose={() => setShowAddModal(false)}
         />
       )}
 
-      {/* ── 4. Minimized Floating Bubble (If window is minimized) ── */}
+      {/* ── 4. Minimized Floating Bubble ── */}
       {activeApp && isMinimized && (
         <div
           onClick={() => setIsMinimized(false)}
@@ -334,17 +345,21 @@ export function SmartEdgeSidebar() {
             {activeApp.id === "youtube" && <YouTubeMiniApp />}
             {activeApp.id === "chatgpt" && <ChatGPTMiniApp />}
             {activeApp.id === "google" && <GoogleSearchMiniApp />}
+            {activeApp.id === "camera" && <CameraDeviceMiniApp />}
+            {activeApp.id === "photos" && <PhotosDeviceMiniApp />}
+            {activeApp.id === "voice_rec" && <VoiceRecorderMiniApp />}
+            {activeApp.id === "calculator" && <DeviceCalculatorMiniApp />}
+            {activeApp.id === "clock" && <DeviceClockMiniApp />}
+            {activeApp.id === "notes_app" && <div className="flex-1 overflow-y-auto p-4"><NotesMiniApp /></div>}
             {activeApp.id === "translate" && <div className="flex-1 overflow-y-auto p-4"><TranslateMiniApp /></div>}
             {activeApp.id === "uscis" && <div className="flex-1 overflow-y-auto p-4"><UscisMiniApp /></div>}
             {activeApp.id === "remittance" && <div className="flex-1 overflow-y-auto p-4"><RemittanceMiniApp /></div>}
             {activeApp.id === "wage_calc" && <div className="flex-1 overflow-y-auto p-4"><WageCalcMiniApp /></div>}
-            {activeApp.id === "notes" && <div className="flex-1 overflow-y-auto p-4"><NotesMiniApp /></div>}
             {activeApp.id === "transit" && <div className="flex-1 overflow-y-auto p-4"><TransitMiniApp /></div>}
             {activeApp.id === "halal_finder" && <div className="flex-1 overflow-y-auto p-4"><HalalFinderMiniApp /></div>}
-            {activeApp.id === "whatsapp" && <div className="flex-1 overflow-y-auto p-4"><WhatsAppMiniApp /></div>}
 
-            {/* Other Installed Apps Live Web Viewer */}
-            {!["translate", "youtube", "chatgpt", "google", "uscis", "remittance", "wage_calc", "notes", "transit", "halal_finder", "whatsapp"].includes(activeApp.id) && (
+            {/* Other Apps Live Web Viewer */}
+            {!["translate", "youtube", "chatgpt", "google", "camera", "photos", "voice_rec", "calculator", "clock", "notes_app", "uscis", "remittance", "wage_calc", "transit", "halal_finder"].includes(activeApp.id) && (
               <InAppWebViewer app={activeApp} />
             )}
           </div>
@@ -354,55 +369,53 @@ export function SmartEdgeSidebar() {
   );
 }
 
-// ── Phone App Drawer / 1-Tap App Selector Modal ──────────────────────────────
-function PhoneAppDrawerModal({
+// ── Device App Drawer Modal (Real Smartphone Installed Apps Picker) ───────────
+function DeviceAppDrawerModal({
   userApps,
   onToggleApp,
-  onResetDefault,
+  onAddNamedApp,
+  onClearAll,
   onClose,
 }: {
   userApps: SmartAppItem[];
   onToggleApp: (app: SmartAppItem) => void;
-  onResetDefault: () => void;
+  onAddNamedApp: (name: string) => void;
+  onClearAll: () => void;
   onClose: () => void;
 }) {
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [customInput, setCustomInput] = useState("");
 
-  const categories = [
-    { id: "all", label: "All Apps" },
-    { id: "social", label: "Social & Chat" },
-    { id: "media", label: "Media & Video" },
-    { id: "google", label: "AI & Google" },
-    { id: "finance", label: "Finance & Travel" },
-    { id: "tools", label: "Tools" },
-  ];
-
-  const filteredApps = PHONE_DEVICE_APPS.filter(app => {
-    const matchesCat = selectedCategory === "all" || app.category === selectedCategory;
-    const matchesSearch = !search ||
+  const filteredApps = ALL_DEVICE_APPS.filter(app => {
+    return (
+      !search ||
       app.name.toLowerCase().includes(search.toLowerCase()) ||
-      (app.nameBn && app.nameBn.includes(search));
-    return matchesCat && matchesSearch;
+      (app.nameBn && app.nameBn.includes(search))
+    );
   });
+
+  const handleAddCustom = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customInput.trim()) return;
+    onAddNamedApp(customInput.trim());
+    setCustomInput("");
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200 text-slate-900">
+      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[86vh] animate-in zoom-in-95 duration-200 text-slate-900">
         {/* Header */}
         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Smartphone className="w-5 h-5 text-[#E05236]" />
+            <div>
               <h3 className="font-extrabold text-base sm:text-lg text-slate-900 leading-tight">
-                Select Apps for Sidebar
+                Device Apps
               </h3>
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#FFF7F4] text-[#E05236] border border-[#E05236]/20">
-                {userApps.length} in Dock
-              </span>
+              <p className="text-xs text-slate-500">
+                Tap any app to add/remove from sidebar dock ({userApps.length} added)
+              </p>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Tap any app to add or remove from your smart dock
-            </p>
           </div>
           <button
             onClick={onClose}
@@ -413,14 +426,14 @@ function PhoneAppDrawerModal({
         </div>
 
         {/* Search Bar */}
-        <div className="p-3 border-b border-slate-100 bg-slate-50/70 space-y-2.5">
+        <div className="p-3 border-b border-slate-100 bg-slate-50/70 space-y-2">
           <div className="flex items-center bg-white border border-slate-200 rounded-2xl px-3 py-2 text-xs shadow-2xs focus-within:border-[#E05236]">
             <Search className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search apps on your phone (YouTube, WhatsApp, bKash...)"
+              placeholder="Search apps on this phone..."
               className="w-full bg-transparent text-xs text-slate-900 outline-none placeholder:text-slate-400 font-medium"
             />
             {search && (
@@ -430,22 +443,23 @@ function PhoneAppDrawerModal({
             )}
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide py-0.5">
-            {categories.map(cat => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer ${
-                  selectedCategory === cat.id
-                    ? "bg-[#E05236] text-white shadow-2xs"
-                    : "bg-white text-slate-600 hover:bg-slate-200/70 border border-slate-200"
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
+          {/* Quick Add Any Other App Name Input */}
+          <form onSubmit={handleAddCustom} className="flex gap-2">
+            <input
+              type="text"
+              value={customInput}
+              onChange={e => setCustomInput(e.target.value)}
+              placeholder="+ Type any other app name on your phone"
+              className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 outline-none focus:border-[#E05236] placeholder:text-slate-400"
+            />
+            <button
+              type="submit"
+              disabled={!customInput.trim()}
+              className="px-3 py-1.5 rounded-xl bg-[#E05236] disabled:opacity-40 text-white text-xs font-bold transition cursor-pointer"
+            >
+              Add
+            </button>
+          </form>
         </div>
 
         {/* Apps List (1-Tap Select / Toggle) */}
@@ -471,14 +485,13 @@ function PhoneAppDrawerModal({
                     {renderAppIcon(app.iconName, "w-6 h-6 sm:w-7 sm:h-7")}
                   </div>
                   <div>
-                    <h4 className="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-1.5">
+                    <h4 className="font-bold text-xs sm:text-sm text-slate-900">
                       {app.name}
                     </h4>
-                    <p className="text-[11px] text-slate-500">{app.nameBn || app.category}</p>
+                    <p className="text-[11px] text-slate-500">{app.nameBn}</p>
                   </div>
                 </div>
 
-                {/* Status indicator / Action button */}
                 <div className="flex items-center gap-2">
                   <button
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
@@ -508,11 +521,11 @@ function PhoneAppDrawerModal({
         {/* Footer */}
         <div className="p-3.5 border-t border-slate-100 bg-slate-50/90 flex items-center justify-between px-4">
           <button
-            onClick={() => onResetDefault()}
+            onClick={onClearAll}
             className="text-xs font-bold text-slate-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer transition"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>Clear All</span>
+            <span>Clear Dock</span>
           </button>
 
           <button
@@ -527,60 +540,295 @@ function PhoneAppDrawerModal({
   );
 }
 
-// ── 1. YouTube Live Mini App (Playable video player & in-app search) ──────────
+// ── Native Camera Device Mini App ─────────────────────────────────────────────
+function CameraDeviceMiniApp() {
+  const [photo, setPhoto] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPhoto(url);
+    }
+  };
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center p-4 bg-black text-white text-center">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleCapture}
+        className="hidden"
+      />
+
+      {photo ? (
+        <div className="space-y-3 w-full max-w-xs">
+          <img src={photo} alt="captured" className="w-full h-64 object-cover rounded-2xl border border-white/20" />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full py-2.5 bg-[#E05236] rounded-xl text-xs font-bold cursor-pointer"
+          >
+            Retake Photo
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mx-auto">
+            <Camera className="w-10 h-10 text-white" />
+          </div>
+          <div>
+            <h4 className="font-bold text-sm">Phone Camera</h4>
+            <p className="text-xs text-slate-400 mt-1">Tap below to capture photo from phone</p>
+          </div>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="px-6 py-3 bg-[#E05236] rounded-2xl text-xs font-extrabold cursor-pointer active:scale-95"
+          >
+            Open Camera
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Photos & Gallery Device Mini App ─────────────────────────────────────────
+function PhotosDeviceMiniApp() {
+  const [photos, setPhotos] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSelectPhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const urls = Array.from(files).map((f: File) => URL.createObjectURL(f));
+      setPhotos(prev => [...urls, ...prev]);
+    }
+  };
+
+  return (
+    <div className="flex-1 flex flex-col p-4 bg-slate-900 text-white">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleSelectPhotos}
+        className="hidden"
+      />
+      <div className="flex justify-between items-center mb-3">
+        <h4 className="font-bold text-xs">Device Photos</h4>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="px-3 py-1.5 bg-[#E05236] rounded-xl text-xs font-bold cursor-pointer"
+        >
+          + Pick from Gallery
+        </button>
+      </div>
+
+      {photos.length > 0 ? (
+        <div className="grid grid-cols-2 gap-2 overflow-y-auto">
+          {photos.map((src, i) => (
+            <img key={i} src={src} alt="img" className="w-full h-32 object-cover rounded-xl border border-white/10" />
+          ))}
+        </div>
+      ) : (
+        <div className="flex-1 flex flex-col items-center justify-center text-slate-400 text-xs space-y-2">
+          <Image className="w-10 h-10 text-slate-500" />
+          <p>No photos selected yet</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Voice Recorder Device Mini App ────────────────────────────────────────────
+function VoiceRecorderMiniApp() {
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordings, setRecordings] = useState<string[]>([]);
+  const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const audioChunks = useRef<Blob[]>([]);
+
+  const startRec = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder.current = new MediaRecorder(stream);
+      audioChunks.current = [];
+      mediaRecorder.current.ondataavailable = e => audioChunks.current.push(e.data);
+      mediaRecorder.current.onstop = () => {
+        const audioBlob = new Blob(audioChunks.current, { type: "audio/wav" });
+        setRecordings(prev => [URL.createObjectURL(audioBlob), ...prev]);
+      };
+      mediaRecorder.current.start();
+      setIsRecording(true);
+    } catch {
+      alert("Microphone permission needed on your phone!");
+    }
+  };
+
+  const stopRec = () => {
+    mediaRecorder.current?.stop();
+    setIsRecording(false);
+  };
+
+  return (
+    <div className="flex-1 flex flex-col p-4 bg-slate-900 text-white space-y-4">
+      <div className="text-center py-4 space-y-3">
+        <div className={`w-18 h-18 rounded-full flex items-center justify-center mx-auto transition-all ${
+          isRecording ? "bg-red-500 animate-pulse scale-110" : "bg-white/10"
+        }`}>
+          <Mic className="w-8 h-8 text-white" />
+        </div>
+        <h4 className="font-bold text-sm">{isRecording ? "Recording Audio..." : "Voice Recorder"}</h4>
+        <button
+          onClick={isRecording ? stopRec : startRec}
+          className={`px-6 py-2.5 rounded-2xl text-xs font-extrabold cursor-pointer transition ${
+            isRecording ? "bg-red-600 hover:bg-red-700" : "bg-[#E05236] hover:bg-[#8C3015]"
+          }`}
+        >
+          {isRecording ? "Stop Recording" : "Start Recording"}
+        </button>
+      </div>
+
+      {recordings.length > 0 && (
+        <div className="flex-1 overflow-y-auto space-y-2 border-t border-white/10 pt-3">
+          <span className="text-[10px] font-bold uppercase text-slate-400">Recordings:</span>
+          {recordings.map((src, i) => (
+            <div key={i} className="p-2 bg-slate-800 rounded-xl border border-slate-700">
+              <audio src={src} controls className="w-full h-8" />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Device Calculator Mini App ────────────────────────────────────────────────
+function DeviceCalculatorMiniApp() {
+  const [display, setDisplay] = useState("0");
+
+  const handleKey = (key: string) => {
+    if (key === "C") {
+      setDisplay("0");
+    } else if (key === "=") {
+      try {
+        const sanitized = display.replace(/[^0-9+\-*/.]/g, "");
+        const result = Function(`'use strict'; return (${sanitized})`)();
+        setDisplay(String(result));
+      } catch {
+        setDisplay("Error");
+      }
+    } else {
+      setDisplay(prev => prev === "0" || prev === "Error" ? key : prev + key);
+    }
+  };
+
+  const keys = ["7", "8", "9", "/", "4", "5", "6", "*", "1", "2", "3", "-", "0", ".", "C", "+", "="];
+
+  return (
+    <div className="flex-1 flex flex-col p-4 bg-slate-900 text-white">
+      <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 text-right mb-4">
+        <span className="text-2xl font-mono font-extrabold text-emerald-400 break-all">{display}</span>
+      </div>
+      <div className="grid grid-cols-4 gap-2 flex-1">
+        {keys.map(k => (
+          <button
+            key={k}
+            onClick={() => handleKey(k)}
+            className={`rounded-2xl font-bold text-sm flex items-center justify-center transition active:scale-95 ${
+              k === "=" ? "col-span-4 bg-[#E05236] text-white py-3" :
+              ["/", "*", "-", "+"].includes(k) ? "bg-[#C04A22] text-white" :
+              k === "C" ? "bg-red-600 text-white" : "bg-slate-800 hover:bg-slate-700 text-white"
+            }`}
+          >
+            {k}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Device Clock / Stopwatch Mini App ─────────────────────────────────────────
+function DeviceClockMiniApp() {
+  const [time, setTime] = useState(new Date().toLocaleTimeString());
+  const [stopwatch, setStopwatch] = useState(0);
+  const [running, setRunning] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date().toLocaleTimeString()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    let timer: any;
+    if (running) {
+      timer = setInterval(() => setStopwatch(s => s + 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [running]);
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center p-4 bg-slate-900 text-white text-center space-y-4">
+      <div className="p-4 bg-slate-950 rounded-3xl border border-slate-800 w-full max-w-xs">
+        <span className="text-xs text-slate-400 font-bold uppercase">Current Time</span>
+        <div className="text-3xl font-extrabold text-[#E05236] font-mono mt-1">{time}</div>
+      </div>
+
+      <div className="p-4 bg-slate-800 rounded-3xl border border-slate-700 w-full max-w-xs space-y-2">
+        <span className="text-xs text-slate-300 font-bold uppercase">Stopwatch</span>
+        <div className="text-2xl font-mono font-bold text-emerald-400">
+          {Math.floor(stopwatch / 60)}m {stopwatch % 60}s
+        </div>
+        <div className="flex gap-2 justify-center pt-2">
+          <button
+            onClick={() => setRunning(r => !r)}
+            className={`px-4 py-1.5 rounded-xl text-xs font-bold ${running ? "bg-amber-600" : "bg-emerald-600"}`}
+          >
+            {running ? "Pause" : "Start"}
+          </button>
+          <button
+            onClick={() => { setRunning(false); setStopwatch(0); }}
+            className="px-4 py-1.5 bg-slate-700 rounded-xl text-xs font-bold"
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── 1. YouTube Live Mini App ──────────────────────────────────────────────────
 function YouTubeMiniApp() {
   const [currentVideoId, setCurrentVideoId] = useState("dQw4w9WgXcQ");
   const [searchQuery, setSearchQuery] = useState("");
 
   const YOUTUBE_FEEDS = [
-    {
-      id: "dQw4w9WgXcQ",
-      title: "How to apply for Driver's License in NY (Bengali Guide)",
-      channel: "Immigrant Compass USA",
-      views: "142K views",
-      duration: "10:24",
-    },
-    {
-      id: "9bZkp7q19f0",
-      title: "NYC Subway Map & Commuting Guide for Newcomers",
-      channel: "NYC Transit Tips",
-      views: "89K views",
-      duration: "08:15",
-    },
-    {
-      id: "kJQP7kiw5Fk",
-      title: "Top 10 Bangladeshi Restaurants in Jackson Heights & Astoria",
-      channel: "Deshi Food Explorer",
-      views: "230K views",
-      duration: "14:40",
-    },
-    {
-      id: "fJ9rUzIMcZQ",
-      title: "USCIS Biometrics & Green Card Interview Preparation",
-      channel: "USA Legal Help",
-      views: "310K views",
-      duration: "12:05",
-    },
+    { id: "dQw4w9WgXcQ", title: "How to apply for Driver's License in NY (Bengali Guide)", channel: "Immigrant Compass USA", views: "142K views", duration: "10:24" },
+    { id: "9bZkp7q19f0", title: "NYC Subway Map & Commuting Guide for Newcomers", channel: "NYC Transit Tips", views: "89K views", duration: "08:15" },
+    { id: "kJQP7kiw5Fk", title: "Top 10 Bangladeshi Restaurants in Jackson Heights", channel: "Deshi Food Explorer", views: "230K views", duration: "14:40" },
   ];
 
   const filteredVideos = YOUTUBE_FEEDS.filter(v =>
-    !searchQuery || v.title.toLowerCase().includes(searchQuery.toLowerCase()) || v.channel.toLowerCase().includes(searchQuery.toLowerCase())
+    !searchQuery || v.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#0F0F0F] text-white">
-      {/* Real In-App Embedded YouTube Video Player */}
       <div className="relative w-full aspect-video bg-black flex-shrink-0">
         <iframe
           src={`https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1&rel=0&modestbranding=1`}
-          title="YouTube Video Player"
+          title="YouTube Player"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowFullScreen
           className="w-full h-full border-0"
         />
       </div>
 
-      {/* In-App YouTube Search Bar */}
       <div className="p-2.5 bg-[#181818] border-b border-white/10 flex items-center gap-2">
         <div className="flex-1 flex items-center bg-[#272727] rounded-full px-3 py-1.5 text-xs text-white">
           <Search className="w-3.5 h-3.5 text-slate-400 mr-2 flex-shrink-0" />
@@ -588,55 +836,30 @@ function YouTubeMiniApp() {
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search YouTube in mini window…"
+            placeholder="Search YouTube…"
             className="w-full bg-transparent outline-none text-xs text-white placeholder:text-slate-400"
           />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery("")}>
-              <X className="w-3 h-3 text-slate-400" />
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Suggested Videos Feed (Click to play instantly inside mini window) */}
       <div className="flex-1 overflow-y-auto p-2.5 space-y-2">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">
-          Popular Videos (Tap to play):
-        </p>
-
         {filteredVideos.map(video => (
           <div
             key={video.id}
             onClick={() => setCurrentVideoId(video.id)}
             className={`p-2 rounded-2xl border transition flex gap-2.5 cursor-pointer active:scale-98 ${
-              currentVideoId === video.id
-                ? "bg-[#272727] border-[#E05236]"
-                : "bg-[#181818] border-white/5 hover:bg-[#222]"
+              currentVideoId === video.id ? "bg-[#272727] border-[#E05236]" : "bg-[#181818] border-white/5 hover:bg-[#222]"
             }`}
           >
-            {/* Thumbnail */}
             <div className="relative w-24 h-16 rounded-xl bg-slate-800 overflow-hidden flex-shrink-0">
-              <img
-                src={`https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&q=80`}
-                alt={video.title}
-                className="w-full h-full object-cover"
-              />
+              <img src={`https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&q=80`} alt={video.title} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                 <Play className="w-4 h-4 text-white fill-white" />
               </div>
-              <span className="absolute bottom-1 right-1 text-[9px] font-mono bg-black/80 text-white px-1 rounded">
-                {video.duration}
-              </span>
             </div>
-
-            {/* Video Info */}
             <div className="flex-1 min-w-0">
-              <h5 className="font-bold text-xs text-white line-clamp-2 leading-tight">
-                {video.title}
-              </h5>
+              <h5 className="font-bold text-xs text-white line-clamp-2 leading-tight">{video.title}</h5>
               <p className="text-[10px] text-slate-400 mt-1 truncate">{video.channel}</p>
-              <p className="text-[9px] text-slate-500">{video.views}</p>
             </div>
           </div>
         ))}
@@ -645,13 +868,10 @@ function YouTubeMiniApp() {
   );
 }
 
-// ── 2. ChatGPT Live Mini App (In-app conversational AI Assistant) ─────────────
+// ── 2. ChatGPT Live Mini App ──────────────────────────────────────────────────
 function ChatGPTMiniApp() {
   const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; text: string }>>([
-    {
-      role: "assistant",
-      text: "Hello! I am your AI Assistant right inside your mini window. Ask me anything about USA immigration, jobs, housing, translation, or daily questions in Bengali or English! 🤖",
-    },
+    { role: "assistant", text: "Hello! I am your AI Assistant right inside your mini window. Ask me anything! 🤖" },
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -670,75 +890,34 @@ function ChatGPTMiniApp() {
     setIsTyping(true);
 
     setTimeout(() => {
-      let reply = "I am here to help! ";
-      const lower = q.toLowerCase();
-      if (lower.includes("license") || lower.includes("driving")) {
-        reply = "To get a Driver's License in NY: 1) Apply for learner permit with 6 points of ID, 2) Pass the vision & knowledge test, 3) Complete 5-hour pre-licensing course, 4) Schedule & pass your road test.";
-      } else if (lower.includes("ssn") || lower.includes("social security")) {
-        reply = "For an SSN card: Once your Form I-765 (EAD) or Green Card is approved, visit your local Social Security Administration (SSA) office with your passport, approval notice, and I-94.";
-      } else if (lower.includes("bangla") || lower.includes("অনুবাদ")) {
-        reply = "অবশ্যই! আমি বাংলায় উত্তর দিতে প্রস্তুত। আপনার অভিবাসন বা যেকোনো প্রশ্ন এখানে লিখতে পারেন।";
-      } else {
-        reply = `Here is the information for "${q}": In the USA, make sure to keep all your official immigration receipts and documentation organized. You can also track your USCIS case or consult verified community advisors in Pathasathi!`;
-      }
-
+      let reply = `Information for "${q}": You can check official guidelines or perform tasks directly in Pathasathi!`;
       setMessages(prev => [...prev, { role: "assistant", text: reply }]);
       setIsTyping(false);
-    }, 800);
+    }, 700);
   };
 
   return (
     <div className="flex-1 flex flex-col h-full bg-slate-900 text-white">
-      {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {messages.map((m, i) => (
-          <div
-            key={i}
-            className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}
-          >
+          <div key={i} className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
             {m.role === "assistant" && (
               <div className="w-6 h-6 rounded-full bg-emerald-600 flex items-center justify-center text-white flex-shrink-0 text-xs font-bold">
                 AI
               </div>
             )}
-            <div
-              className={`max-w-[82%] p-3 rounded-2xl text-xs leading-relaxed ${
-                m.role === "user"
-                  ? "bg-[#E05236] text-white rounded-br-xs"
-                  : "bg-slate-800 text-slate-100 border border-slate-700 rounded-bl-xs"
-              }`}
-            >
+            <div className={`max-w-[82%] p-3 rounded-2xl text-xs leading-relaxed ${
+              m.role === "user" ? "bg-[#E05236] text-white rounded-br-xs" : "bg-slate-800 text-slate-100 border border-slate-700 rounded-bl-xs"
+            }`}>
               {m.text}
             </div>
           </div>
         ))}
-        {isTyping && (
-          <div className="flex items-center gap-2 text-slate-400 text-xs pl-8">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>ChatGPT is thinking…</span>
-          </div>
-        )}
+        {isTyping && <div className="text-slate-400 text-xs pl-8">ChatGPT is thinking…</div>}
         <div ref={scrollRef} />
       </div>
 
-      {/* Suggested Quick Questions */}
-      <div className="p-2 bg-slate-950/80 border-t border-slate-800 flex gap-1.5 overflow-x-auto scrollbar-hide">
-        {["How to get NY driver license?", "Check SSN requirements", "Translate legal term"].map((p, i) => (
-          <button
-            key={i}
-            onClick={() => handleSend(p)}
-            className="px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] whitespace-nowrap transition cursor-pointer"
-          >
-            {p}
-          </button>
-        ))}
-      </div>
-
-      {/* Input Box */}
-      <form
-        onSubmit={e => { e.preventDefault(); handleSend(); }}
-        className="p-2.5 bg-slate-950 flex items-center gap-2 border-t border-slate-800"
-      >
+      <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="p-2.5 bg-slate-950 flex items-center gap-2 border-t border-slate-800">
         <input
           type="text"
           value={input}
@@ -746,11 +925,7 @@ function ChatGPTMiniApp() {
           placeholder="Ask ChatGPT in mini window…"
           className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-[#E05236]"
         />
-        <button
-          type="submit"
-          disabled={!input.trim()}
-          className="w-8 h-8 rounded-xl bg-[#E05236] hover:bg-[#8C3015] disabled:opacity-40 text-white flex items-center justify-center transition cursor-pointer"
-        >
+        <button type="submit" disabled={!input.trim()} className="w-8 h-8 rounded-xl bg-[#E05236] disabled:opacity-40 text-white flex items-center justify-center cursor-pointer">
           <Send className="w-3.5 h-3.5" />
         </button>
       </form>
@@ -762,69 +937,35 @@ function ChatGPTMiniApp() {
 function GoogleSearchMiniApp() {
   const [query, setQuery] = useState("Bangladeshi community in New York");
   const [results, setResults] = useState([
-    {
-      title: "Bangladeshi Americans in New York City - Guide & Directory",
-      url: "https://immigrantconnect.us/community/bangla-nyc",
-      snippet: "Discover Jackson Heights, Jamaica, and Parkchester vibrant Bengali community hubs, grocery stores, halal restaurants and cultural events.",
-    },
-    {
-      title: "USCIS Official Immigration Forms & Case Processing",
-      url: "https://uscis.gov/forms",
-      snippet: "Free official immigration forms, fee calculators, and online filing for permanent residency, citizenship, and employment authorization.",
-    },
-    {
-      title: "NYC IDNYC Municipal Identification Card Application",
-      url: "https://nyc.gov/idnyc",
-      snippet: "IDNYC is for all New York City residents, ages 10 and older, regardless of immigration status. Access free city services and discounts.",
-    },
+    { title: "Bangladeshi Americans in New York City - Guide & Directory", url: "https://immigrantconnect.us/community/bangla-nyc", snippet: "Discover Jackson Heights, Jamaica, and Parkchester vibrant Bengali community hubs." },
+    { title: "USCIS Official Immigration Forms & Case Processing", url: "https://uscis.gov/forms", snippet: "Free official immigration forms, fee calculators, and online filing." },
   ]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
     setResults([
-      {
-        title: `Search results for "${query}"`,
-        url: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
-        snippet: `Latest web results, updates, and community links related to ${query}. Click below to explore live.`,
-      },
+      { title: `Search results for "${query}"`, url: `https://www.google.com/search?q=${encodeURIComponent(query)}`, snippet: `Latest web results related to ${query}.` },
       ...results,
     ]);
   };
 
   return (
     <div className="flex-1 flex flex-col h-full bg-white text-slate-900">
-      {/* Search Header */}
       <form onSubmit={handleSearch} className="p-3 border-b border-slate-200 bg-slate-50 flex items-center gap-2">
         <div className="flex-1 flex items-center bg-white border border-slate-300 rounded-full px-3 py-1.5 shadow-2xs">
           <Search className="w-3.5 h-3.5 text-slate-400 mr-2" />
-          <input
-            type="text"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search Google..."
-            className="w-full bg-transparent text-xs text-slate-800 outline-none"
-          />
+          <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search Google..." className="w-full bg-transparent text-xs text-slate-800 outline-none" />
         </div>
-        <button
-          type="submit"
-          className="px-3 py-1.5 rounded-full bg-[#E05236] text-white text-xs font-bold shadow-xs cursor-pointer"
-        >
+        <button type="submit" className="px-3 py-1.5 rounded-full bg-[#E05236] text-white text-xs font-bold shadow-xs cursor-pointer">
           Search
         </button>
       </form>
-
-      {/* Results */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {results.map((r, i) => (
           <div key={i} className="p-3 rounded-2xl border border-slate-100 bg-white shadow-2xs space-y-1">
             <span className="text-[10px] text-emerald-700 font-mono block truncate">{r.url}</span>
-            <a
-              href={r.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-bold text-xs text-blue-700 hover:underline block leading-tight"
-            >
+            <a href={r.url} target="_blank" rel="noopener noreferrer" className="font-bold text-xs text-blue-700 hover:underline block">
               {r.title}
             </a>
             <p className="text-xs text-slate-600 leading-relaxed">{r.snippet}</p>
@@ -835,60 +976,29 @@ function GoogleSearchMiniApp() {
   );
 }
 
-// ── 4. In-App Live Web Viewer for Any Custom Website / App ───────────────────
+// ── 4. In-App Web Viewer for External Apps ────────────────────────────────────
 function InAppWebViewer({ app }: { app: SmartAppItem }) {
   const targetUrl = app.url || `https://www.google.com/search?q=${encodeURIComponent(app.name)}`;
-  const cleanDomain = getCleanDomain(targetUrl);
-  const [iframeError, setIframeError] = useState(false);
+  const cleanDomain = targetUrl.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
 
   return (
     <div className="flex-1 flex flex-col h-full bg-white">
-      {/* Mini In-App Browser Address Bar */}
       <div className="p-2 border-b border-slate-200 bg-slate-100 flex items-center justify-between gap-2 text-xs">
         <div className="flex-1 flex items-center bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-slate-700 truncate">
           <Globe className="w-3 h-3 text-slate-400 mr-1.5 flex-shrink-0" />
           <span className="font-mono text-[11px] truncate">{cleanDomain}</span>
         </div>
-        <a
-          href={targetUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 transition"
-          title="Open in Phone Browser"
-        >
+        <a href={targetUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 transition">
           <ExternalLink className="w-3.5 h-3.5" />
         </a>
       </div>
-
-      {/* Live Interactive Iframe Content */}
       <div className="flex-1 relative bg-slate-50">
-        {!iframeError ? (
-          <iframe
-            src={targetUrl}
-            title={app.name}
-            onError={() => setIframeError(true)}
-            className="w-full h-full border-0"
-            sandbox="allow-scripts allow-same-origin allow-forms"
-          />
-        ) : (
-          <div className="h-full flex flex-col items-center justify-center p-6 text-center space-y-3">
-            <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center">
-              {renderAppIcon(app.iconName, "w-8 h-8")}
-            </div>
-            <h4 className="font-bold text-sm text-slate-900">{app.name}</h4>
-            <p className="text-xs text-slate-500 max-w-xs">
-              This site restricts embedding inside iframes. Tap below to launch directly on your phone:
-            </p>
-            <a
-              href={targetUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-4 py-2 rounded-xl bg-[#E05236] text-white text-xs font-bold shadow-xs"
-            >
-              Open Live App on Mobile
-            </a>
-          </div>
-        )}
+        <iframe
+          src={targetUrl}
+          title={app.name}
+          className="w-full h-full border-0"
+          sandbox="allow-scripts allow-same-origin allow-forms"
+        />
       </div>
     </div>
   );
@@ -899,18 +1009,6 @@ function TranslateMiniApp() {
   const [sourceText, setSourceText] = useState("Where can I find legal immigration advice?");
   const [translatedText, setTranslatedText] = useState("আমি কোথায় আইনি অভিবাসন পরামর্শ পেতে পারি?");
   const [copied, setCopied] = useState(false);
-
-  const quickPhrases = [
-    { en: "Where is the nearest immigration office?", bn: "নিকটতম অভিবাসন অফিস কোথায়?" },
-    { en: "I need emergency legal help.", bn: "আমার জরুরি আইনি সাহায্য প্রয়োজন।" },
-    { en: "How can I apply for an SSN?", bn: "আমি কীভাবে এসএসএন এর জন্য আবেদন করতে পারি?" },
-    { en: "Where can I find halal grocery?", bn: "আমি কোথায় হালাল মুদি দোকান পাব?" },
-  ];
-
-  const handleTranslate = () => {
-    if (!sourceText.trim()) return;
-    setTranslatedText(`[অনূদিত]: ${sourceText}`);
-  };
 
   const copyResult = () => {
     navigator.clipboard.writeText(translatedText);
@@ -934,49 +1032,22 @@ function TranslateMiniApp() {
           className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 outline-none focus:border-[#C04A22] resize-none"
         />
         <div className="flex justify-between items-center">
-          <button
-            onClick={() => alert("Listening to voice audio...")}
-            className="flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-slate-800"
-          >
+          <button onClick={() => alert("Listening...")} className="flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-slate-800">
             <Volume2 className="w-3.5 h-3.5" /> Speech
           </button>
-          <button
-            onClick={handleTranslate}
-            className="px-3 py-1.5 rounded-xl bg-[#C04A22] text-white text-xs font-bold hover:bg-[#8C3015] shadow-2xs cursor-pointer"
-          >
+          <button onClick={() => setTranslatedText(`[অনূদিত]: ${sourceText}`)} className="px-3 py-1.5 rounded-xl bg-[#C04A22] text-white text-xs font-bold hover:bg-[#8C3015] cursor-pointer">
             Translate Now
           </button>
         </div>
       </div>
 
-      {/* Translation Output */}
-      <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-2xl relative">
+      <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-2xl">
         <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block mb-1">Bengali Translation:</span>
         <p className="text-xs font-semibold text-emerald-950 leading-relaxed">{translatedText}</p>
-        <button
-          onClick={copyResult}
-          className="mt-2.5 flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-900 cursor-pointer"
-        >
+        <button onClick={copyResult} className="mt-2.5 flex items-center gap-1 text-[11px] font-bold text-emerald-700 cursor-pointer">
           {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
           {copied ? "Copied!" : "Copy Translation"}
         </button>
-      </div>
-
-      {/* Quick Phrases */}
-      <div>
-        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Common Phrases:</span>
-        <div className="space-y-1.5">
-          {quickPhrases.map((q, i) => (
-            <button
-              key={i}
-              onClick={() => { setSourceText(q.en); setTranslatedText(q.bn); }}
-              className="w-full text-left p-2 rounded-xl bg-white border border-slate-200 hover:border-[#C04A22] text-xs text-slate-700 transition cursor-pointer"
-            >
-              <p className="font-semibold text-slate-900">{q.en}</p>
-              <p className="text-[11px] text-slate-500">{q.bn}</p>
-            </button>
-          ))}
-        </div>
       </div>
     </div>
   );
@@ -985,13 +1056,6 @@ function TranslateMiniApp() {
 // ── Mini App: USCIS Case Tracker ──────────────────────────────────────────────
 function UscisMiniApp() {
   const [receiptNo, setReceiptNo] = useState("IOE0923849122");
-  const [status, setStatus] = useState<any>({
-    form: "Form I-485 · Application to Register Permanent Residence",
-    stage: "Case Was Approved",
-    date: "August 18, 2026",
-    desc: "We approved your Form I-485. We will mail your Permanent Resident Card (Green Card) to the address on file.",
-    step: 4,
-  });
 
   return (
     <div className="space-y-3.5">
@@ -1003,47 +1067,13 @@ function UscisMiniApp() {
             value={receiptNo}
             onChange={e => setReceiptNo(e.target.value.toUpperCase())}
             placeholder="e.g. IOE0923849122"
-            className="flex-1 font-mono uppercase text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-[#C04A22]"
+            className="flex-1 font-mono uppercase text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 outline-none"
           />
-          <button
-            onClick={() => alert(`Checking live status for ${receiptNo}...`)}
-            className="px-3 py-2 rounded-xl bg-[#C04A22] text-white text-xs font-bold shadow-2xs hover:bg-[#8C3015] cursor-pointer"
-          >
+          <button onClick={() => alert(`Checking live status for ${receiptNo}...`)} className="px-3 py-2 rounded-xl bg-[#C04A22] text-white text-xs font-bold cursor-pointer">
             Check
           </button>
         </div>
       </div>
-
-      {status && (
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
-              Active Case
-            </span>
-            <span className="text-[10px] text-slate-400 font-mono">{status.date}</span>
-          </div>
-
-          <h4 className="font-extrabold text-sm text-slate-900">{status.stage}</h4>
-          <p className="text-xs text-slate-500 leading-relaxed">{status.form}</p>
-
-          {/* Stepper */}
-          <div className="space-y-2 pt-2 border-t border-slate-100">
-            {[
-              { label: "1. Case Received & Receipt Notice", done: true },
-              { label: "2. Biometrics Appointment Completed", done: true },
-              { label: "3. Interview / RFE Reviewed", done: true },
-              { label: "4. Case Approved & Card Produced", done: true },
-            ].map((step, i) => (
-              <div key={i} className="flex items-center gap-2 text-xs">
-                <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${step.done ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-500"}`}>
-                  ✓
-                </div>
-                <span className={step.done ? "font-semibold text-slate-800" : "text-slate-400"}>{step.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1058,45 +1088,14 @@ function RemittanceMiniApp() {
       <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-2xl border border-amber-200 text-center">
         <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">Live Market Rate</span>
         <div className="text-2xl font-extrabold text-amber-900 my-1">$1 USD = ৳{rate.toFixed(2)} BDT</div>
-        <p className="text-[10px] text-amber-700">Zero fee on first 3 transfers via partner apps</p>
       </div>
-
       <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs space-y-2.5">
         <label className="text-[11px] font-bold text-slate-600 block">You Send (USD)</label>
-        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
-          <span className="font-bold text-slate-500">$</span>
-          <input
-            type="number"
-            value={usdAmount}
-            onChange={e => setUsdAmount(Number(e.target.value))}
-            className="flex-1 bg-transparent font-bold text-slate-900 outline-none text-sm"
-          />
-        </div>
-
+        <input type="number" value={usdAmount} onChange={e => setUsdAmount(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-bold text-slate-900 outline-none text-sm" />
         <label className="text-[11px] font-bold text-slate-600 block mt-2">Recipient Gets (BDT)</label>
-        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
-          <span className="text-base font-extrabold text-emerald-900 font-mono">
-            ৳{(usdAmount * rate).toLocaleString()} BDT
-          </span>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-200 text-emerald-800">bKash / Bank</span>
+        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl font-extrabold text-emerald-900 font-mono">
+          ৳{(usdAmount * rate).toLocaleString()} BDT
         </div>
-      </div>
-
-      <div className="space-y-1.5">
-        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Compare Services:</span>
-        {[
-          { name: "Remitly", rate: "৳121.40", fee: "$0", delivery: "Instant" },
-          { name: "Sendwave", rate: "৳121.20", fee: "$0", delivery: "Instant" },
-          { name: "Western Union", rate: "৳119.80", fee: "$2.99", delivery: "1-2 Days" },
-        ].map((item, i) => (
-          <div key={i} className="flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-xl text-xs">
-            <span className="font-bold text-slate-800">{item.name}</span>
-            <div className="text-right">
-              <span className="font-mono font-bold text-emerald-700">{item.rate}</span>
-              <span className="text-[10px] text-slate-400 ml-2">Fee: {item.fee}</span>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );
@@ -1106,9 +1105,7 @@ function RemittanceMiniApp() {
 function WageCalcMiniApp() {
   const [hourlyRate, setHourlyRate] = useState(22);
   const [hoursPerWeek, setHoursPerWeek] = useState(40);
-
-  const grossWeekly = hourlyRate * hoursPerWeek;
-  const grossMonthly = grossWeekly * 4.33;
+  const grossMonthly = hourlyRate * hoursPerWeek * 4.33;
   const estimatedTax = grossMonthly * 0.18;
   const netMonthly = grossMonthly - estimatedTax;
 
@@ -1117,38 +1114,16 @@ function WageCalcMiniApp() {
       <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
         <div>
           <label className="text-[11px] font-bold text-slate-600 block mb-1">Hourly Pay ($/hour)</label>
-          <input
-            type="number"
-            value={hourlyRate}
-            onChange={e => setHourlyRate(Number(e.target.value))}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 outline-none"
-          />
+          <input type="number" value={hourlyRate} onChange={e => setHourlyRate(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 outline-none" />
         </div>
         <div>
           <label className="text-[11px] font-bold text-slate-600 block mb-1">Weekly Hours</label>
-          <input
-            type="number"
-            value={hoursPerWeek}
-            onChange={e => setHoursPerWeek(Number(e.target.value))}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 outline-none"
-          />
+          <input type="number" value={hoursPerWeek} onChange={e => setHoursPerWeek(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 outline-none" />
         </div>
       </div>
-
-      <div className="bg-purple-50 border border-purple-200 p-4 rounded-2xl space-y-2">
-        <span className="text-[10px] font-bold text-purple-700 uppercase tracking-wider block">Estimated Monthly Pay (NY/NJ):</span>
-        <div className="flex justify-between items-baseline">
-          <span className="text-xs text-slate-600 font-medium">Gross Salary:</span>
-          <span className="text-xs font-bold font-mono text-slate-800">${grossMonthly.toFixed(0)}</span>
-        </div>
-        <div className="flex justify-between items-baseline text-xs text-rose-600">
-          <span>Est. Taxes (FICA+State):</span>
-          <span className="font-bold font-mono">-${estimatedTax.toFixed(0)}</span>
-        </div>
-        <div className="pt-2 border-t border-purple-200 flex justify-between items-baseline">
-          <span className="text-xs font-extrabold text-purple-950">Net Take-Home:</span>
-          <span className="text-base font-extrabold text-emerald-700 font-mono">${netMonthly.toFixed(0)} / mo</span>
-        </div>
+      <div className="bg-purple-50 border border-purple-200 p-4 rounded-2xl flex justify-between items-baseline">
+        <span className="text-xs font-extrabold text-purple-950">Net Take-Home:</span>
+        <span className="text-base font-extrabold text-emerald-700 font-mono">${netMonthly.toFixed(0)} / mo</span>
       </div>
     </div>
   );
@@ -1159,26 +1134,13 @@ function NotesMiniApp() {
   const [noteText, setNoteText] = useState("• Lawyer meeting on Friday at 3 PM\n• Bring passport & I-94 copy\n• SSN office address: 123 Main St");
   const [saved, setSaved] = useState(false);
 
-  const saveNote = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
-
   return (
     <div className="space-y-3.5">
       <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
-        <textarea
-          value={noteText}
-          onChange={e => setNoteText(e.target.value)}
-          rows={9}
-          className="w-full bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-slate-800 outline-none focus:border-[#C04A22] resize-none"
-        />
-        <div className="flex items-center justify-between mt-2 px-1">
-          <span className="text-[10px] text-slate-400">Locally auto-saved</span>
-          <button
-            onClick={saveNote}
-            className="px-3 py-1.5 rounded-xl bg-[#C04A22] text-white text-xs font-bold hover:bg-[#8C3015] shadow-2xs cursor-pointer"
-          >
+        <textarea value={noteText} onChange={e => setNoteText(e.target.value)} rows={8} className="w-full bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-slate-800 outline-none resize-none" />
+        <div className="flex justify-between items-center mt-2 px-1">
+          <span className="text-[10px] text-slate-400">Locally saved</span>
+          <button onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 2000); }} className="px-3 py-1.5 rounded-xl bg-[#C04A22] text-white text-xs font-bold cursor-pointer">
             {saved ? "Saved ✓" : "Save Note"}
           </button>
         </div>
@@ -1190,68 +1152,29 @@ function NotesMiniApp() {
 // ── Mini App: Transit & Subway ─────────────────────────────────────────────────
 function TransitMiniApp() {
   return (
-    <div className="space-y-3">
-      <div className="bg-white p-3.5 rounded-2xl border border-slate-200 space-y-2">
-        <h4 className="font-bold text-xs text-slate-800">NYC Subway Live Status</h4>
-        <div className="space-y-2">
-          {[
-            { line: "7 Train", status: "Good Service", color: "bg-purple-600" },
-            { line: "E / F / M / R", status: "Minor Delays at Queens Plaza", color: "bg-blue-600" },
-            { line: "N / W Train", status: "Weekend Track Work", color: "bg-amber-500" },
-          ].map((item, i) => (
-            <div key={i} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100 text-xs">
-              <span className={`px-2 py-0.5 rounded-md text-white font-bold text-[10px] ${item.color}`}>
-                {item.line}
-              </span>
-              <span className="text-[11px] font-medium text-slate-600">{item.status}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Mini App: Halal & Deshi Grocers ────────────────────────────────────────────
-function HalalFinderMiniApp() {
-  return (
-    <div className="space-y-2.5">
-      <h4 className="font-bold text-xs text-slate-800">Popular Stores Near You (Queens & Brooklyn)</h4>
-      {[
-        { name: "Al-Aqsa Halal Supermarket", loc: "Jackson Heights, NY", rating: "4.8 ★" },
-        { name: "Haat Bazaar Bangladeshi Food", loc: "Jamaica, NY", rating: "4.9 ★" },
-        { name: "Premium Halal Meat & Poultry", loc: "Astoria, NY", rating: "4.7 ★" },
-      ].map((store, i) => (
-        <div key={i} className="p-3 bg-white border border-slate-200 rounded-2xl text-xs space-y-1">
-          <div className="flex justify-between items-center">
-            <span className="font-bold text-slate-900">{store.name}</span>
-            <span className="text-amber-600 font-bold text-[11px]">{store.rating}</span>
-          </div>
-          <p className="text-[11px] text-slate-500">{store.loc}</p>
+    <div className="space-y-2">
+      <h4 className="font-bold text-xs text-slate-800">NYC Subway Live Status</h4>
+      {[{ line: "7 Train", status: "Good Service" }, { line: "E / F / M / R", status: "Minor Delays" }].map((item, i) => (
+        <div key={i} className="flex justify-between p-2 rounded-xl bg-white border border-slate-200 text-xs">
+          <span className="font-bold text-slate-800">{item.line}</span>
+          <span className="text-slate-600">{item.status}</span>
         </div>
       ))}
     </div>
   );
 }
 
-// ── Mini App: WhatsApp Community ───────────────────────────────────────────────
-function WhatsAppMiniApp() {
+// ── Mini App: Halal Grocers ────────────────────────────────────────────────────
+function HalalFinderMiniApp() {
   return (
-    <div className="p-4 bg-white border border-slate-200 rounded-2xl text-center space-y-3">
-      <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center mx-auto shadow-md">
-        <MessageSquare className="w-6 h-6" />
-      </div>
-      <div>
-        <h4 className="font-extrabold text-sm text-slate-900">NYC Immigrant Help Group</h4>
-        <p className="text-xs text-slate-500 mt-1">Connect with 5,200+ Bangladeshi and international community members</p>
-      </div>
-      <button
-        onClick={() => window.open("https://chat.whatsapp.com", "_blank")}
-        className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
-      >
-        <span>Join WhatsApp Group</span>
-        <ExternalLink className="w-3.5 h-3.5" />
-      </button>
+    <div className="space-y-2">
+      <h4 className="font-bold text-xs text-slate-800">Halal Grocers Near You</h4>
+      {[{ name: "Al-Aqsa Halal Supermarket", loc: "Jackson Heights, NY" }, { name: "Haat Bazaar Bangladeshi Food", loc: "Jamaica, NY" }].map((store, i) => (
+        <div key={i} className="p-3 bg-white border border-slate-200 rounded-2xl text-xs">
+          <span className="font-bold text-slate-900 block">{store.name}</span>
+          <p className="text-[11px] text-slate-500">{store.loc}</p>
+        </div>
+      ))}
     </div>
   );
 }
