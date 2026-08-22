@@ -1,6 +1,7 @@
 /* MARKER-MAKE-KIT-INVOKED */
 import { BrowserRouter, Routes, Route, Navigate } from "react-router";
 import { LanguageProvider } from "./context/LanguageContext";
+import { AppSplash } from "./pages/AppSplash";
 import { Landing } from "./pages/Landing";
 import { Login, SignUp, EmailVerification } from "./pages/Auth";
 import {
@@ -41,7 +42,8 @@ export default function App() {
       <PWAInstallPrompt />
       <Routes>
         {/* Public */}
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<AppSplash />} />
+        <Route path="/landing" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/verify-email" element={<EmailVerification />} />
