@@ -806,42 +806,52 @@ export function Profile() {
                     </button>
 
                     {showMoreMenu && (
-                      <div className="absolute right-0 top-10 w-52 bg-white rounded-2xl shadow-2xl border border-slate-200 py-1.5 z-40 animate-fadeIn text-xs font-semibold text-slate-700">
-                        <button
-                          onClick={handleCopyProfileLink}
-                          className="w-full px-3.5 py-2.5 flex items-center gap-2.5 hover:bg-slate-50 transition text-left cursor-pointer"
-                        >
-                          <Share2 className="w-4 h-4 text-slate-500" /> Copy link to profile
-                        </button>
-                        <button
-                          onClick={() => {
-                            setIsMuted(!isMuted);
-                            setShowMoreMenu(false);
-                            showToast(isMuted ? `Unmuted ${activeUser.handle}` : `Muted ${activeUser.handle}`);
-                          }}
-                          className="w-full px-3.5 py-2.5 flex items-center gap-2.5 hover:bg-slate-50 transition text-left cursor-pointer"
-                        >
-                          <VolumeX className="w-4 h-4 text-slate-500" /> {isMuted ? `Unmute ${activeUser.handle}` : `Mute ${activeUser.handle}`}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setShowMoreMenu(false);
-                            showToast(`Blocked ${activeUser.handle}`);
-                          }}
-                          className="w-full px-3.5 py-2.5 flex items-center gap-2.5 hover:bg-red-50 text-red-600 transition text-left cursor-pointer"
-                        >
-                          <UserX className="w-4 h-4 text-red-500" /> Block {activeUser.handle}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setShowMoreMenu(false);
-                            showToast("Report submitted to moderation");
-                          }}
-                          className="w-full px-3.5 py-2.5 flex items-center gap-2.5 hover:bg-red-50 text-red-600 transition text-left cursor-pointer"
-                        >
-                          <Flag className="w-4 h-4 text-red-500" /> Report {activeUser.handle}
-                        </button>
-                      </div>
+                      <>
+                        <div className="fixed inset-0 z-30" onClick={() => setShowMoreMenu(false)} />
+                        <div className="absolute left-0 top-11 w-52 sm:w-56 bg-white rounded-2xl shadow-2xl border border-slate-200 py-1.5 z-40 animate-in fade-in zoom-in-95 duration-150 text-xs font-semibold text-slate-700">
+                          <button
+                            onClick={() => {
+                              handleCopyProfileLink();
+                              setShowMoreMenu(false);
+                            }}
+                            className="w-full px-3.5 py-2.5 flex items-center gap-2.5 hover:bg-slate-50 transition text-left cursor-pointer"
+                          >
+                            <Share2 className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                            <span className="truncate">Copy link to profile</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setIsMuted(!isMuted);
+                              setShowMoreMenu(false);
+                              showToast(isMuted ? `Unmuted ${activeUser.handle}` : `Muted ${activeUser.handle}`);
+                            }}
+                            className="w-full px-3.5 py-2.5 flex items-center gap-2.5 hover:bg-slate-50 transition text-left cursor-pointer"
+                          >
+                            <VolumeX className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                            <span className="truncate">{isMuted ? `Unmute ${activeUser.handle}` : `Mute ${activeUser.handle}`}</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowMoreMenu(false);
+                              showToast(`Blocked ${activeUser.handle}`);
+                            }}
+                            className="w-full px-3.5 py-2.5 flex items-center gap-2.5 hover:bg-red-50 text-red-600 transition text-left cursor-pointer"
+                          >
+                            <UserX className="w-4 h-4 text-red-500 flex-shrink-0" />
+                            <span className="truncate">Block {activeUser.handle}</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowMoreMenu(false);
+                              showToast("Report submitted to moderation");
+                            }}
+                            className="w-full px-3.5 py-2.5 flex items-center gap-2.5 hover:bg-red-50 text-red-600 transition text-left cursor-pointer"
+                          >
+                            <Flag className="w-4 h-4 text-red-500 flex-shrink-0" />
+                            <span className="truncate">Report {activeUser.handle}</span>
+                          </button>
+                        </div>
+                      </>
                     )}
                   </div>
 
@@ -863,20 +873,23 @@ export function Profile() {
 
                   {/* Direct Message Envelope Button */}
                   <button
-                    onClick={() => navigate(`/messages?user=${activeUser.handle?.replace('@', '') || ''}`)}
+                    onClick={() => {
+                      const cleanHandle = String(activeUser.handle || activeUser.id || "").replace('@', '');
+                      navigate(`/messages?user=${cleanHandle}&name=${encodeURIComponent(activeUser.name || '')}`);
+                    }}
                     className="p-2 rounded-full border border-slate-300 text-slate-700 hover:bg-slate-100 transition cursor-pointer active:scale-95"
                     title="Direct Message"
                   >
                     <Mail className="w-4 h-4" />
                   </button>
 
-                  {/* Twitter Follow / Following Pill Button */}
+                  {/* Brand Theme Follow / Following Pill Button */}
                   <button
                     onClick={handleToggleFollow}
-                    className={`px-5 py-2 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer active:scale-95 shadow-sm ${
+                    className={`px-5 py-2 rounded-full text-xs sm:text-sm font-extrabold transition-all cursor-pointer active:scale-95 shadow-sm ${
                       isFollowing
                         ? "border border-slate-300 bg-white text-slate-900 hover:bg-red-50 hover:text-red-600 hover:border-red-200 group/btn"
-                        : "bg-slate-950 text-white hover:bg-slate-800"
+                        : "bg-[#E05236] hover:bg-[#8C3015] text-white shadow-md shadow-[#E05236]/25"
                     }`}
                   >
                     {isFollowing ? (

@@ -493,8 +493,8 @@ const localPosts: Post[] = [
 ];
 
 const suggestedPeople = [
-  { name: "Nadia Islam", handle: "@nadia_nyc", avatar: "NI", color: "from-emerald-400 to-teal-500", bio: "Immigration Attorney" },
-  { name: "Dr. Priya Menon", handle: "@dr_priya", avatar: "PM", color: "from-purple-400 to-indigo-500", bio: "Healthcare Navigator" },
+  { id: "nadia_islam_nyc", name: "Nadia Islam", handle: "@nadia_islam_nyc", avatar: "NI", color: "from-emerald-400 to-teal-500", bio: "Immigration Attorney" },
+  { id: "dr_priya_health", name: "Dr. Priya Menon", handle: "@dr_priya_health", avatar: "PM", color: "from-purple-400 to-indigo-500", bio: "Healthcare Navigator" },
 ];
 
 // ─── Mini Calendar ────────────────────────────────────────────────────────────
@@ -1085,6 +1085,14 @@ function RightPanel({
 }) {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const [followedUsers, setFollowedUsers] = useState<string[]>([]);
+
+  const handleToggleFollow = (e: React.MouseEvent, handle: string) => {
+    e.stopPropagation();
+    setFollowedUsers(prev =>
+      prev.includes(handle) ? prev.filter(h => h !== handle) : [...prev, handle]
+    );
+  };
 
   return (
     <div className="space-y-4 pt-4 pb-8 sticky top-4">
@@ -1092,26 +1100,41 @@ function RightPanel({
 
       <WeatherWidget />
 
-      <div className="bg-white rounded-2xl border border-border p-4 group cursor-pointer">
+      <div className="bg-white rounded-2xl border border-border p-4">
         <div className="flex items-center gap-2 mb-3">
-          <Users className="w-4 h-4 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
+          <Users className="w-4 h-4 text-slate-600" />
           <h3 className="font-semibold text-sm text-foreground">{t("widget_who_to_follow")}</h3>
         </div>
-        <div className="space-y-3">
-          {suggestedPeople.map(p => (
-            <div key={p.name} className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs">
-                <User className="w-4.5 h-4.5 text-slate-500" />
+        <div className="space-y-2.5">
+          {suggestedPeople.map(p => {
+            const isFollowing = followedUsers.includes(p.handle);
+            const profileKey = p.id || p.handle.replace('@', '');
+            return (
+              <div
+                key={p.name}
+                onClick={() => navigate(`/profile/${profileKey}`)}
+                className="flex items-center gap-2.5 p-1.5 -mx-1.5 rounded-xl hover:bg-slate-50 transition cursor-pointer group/row"
+              >
+                <div className="w-9 h-9 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs group-hover/row:scale-105 transition-transform">
+                  <User className="w-4.5 h-4.5 text-slate-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-bold text-foreground truncate group-hover/row:text-[#E05236] transition-colors">{p.name}</div>
+                  <div className="text-xs text-muted-foreground truncate">{p.bio}</div>
+                </div>
+                <button
+                  onClick={(e) => handleToggleFollow(e, p.handle)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition flex-shrink-0 cursor-pointer active:scale-95 shadow-xs ${
+                    isFollowing
+                      ? "border border-slate-300 bg-white text-slate-800 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                      : "bg-[#E05236] hover:bg-[#8C3015] text-white"
+                  }`}
+                >
+                  {isFollowing ? "Following" : "Follow"}
+                </button>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-foreground truncate">{p.name}</div>
-                <div className="text-xs text-muted-foreground truncate">{p.bio}</div>
-              </div>
-              <button className="px-2.5 py-1 rounded-full text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 transition flex-shrink-0">
-                {t("widget_follow")}
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -1258,14 +1281,10 @@ function QuickAccessBox({ navigate, variant = "mobile" }: { navigate: (p: string
 
       {open && (
         <>
-          {/* Full-screen backdrop (mobile only to not block tab interactions) */}
-          <div className="fixed inset-0 z-40 xl:hidden" onClick={() => setOpen(false)} />
+          {/* Fully transparent backdrop so top bar and screen remain 100% bright */}
+          <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setOpen(false)} />
           <div
-            className={`absolute z-50 bg-white rounded-2xl shadow-2xl border border-border overflow-hidden animate-in slide-in-from-top-3 fade-in duration-200 ${
-              variant === "desktop"
-                ? "left-1/2 -translate-x-1/2 top-full mt-2 w-[min(340px,calc(100vw-2rem))]"
-                : "left-1/2 -translate-x-1/2 top-14 w-[min(320px,calc(100vw-2rem))]"
-            }`}
+            className="fixed sm:absolute z-50 bg-white rounded-3xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 sm:slide-in-from-top-3 fade-in duration-200 left-1/2 -translate-x-1/2 top-24 sm:top-full sm:mt-2 w-[calc(100vw-2rem)] max-w-sm sm:w-[340px]"
           >
             {/* Header */}
             <div className="px-4 pt-4 pb-0">
@@ -1434,6 +1453,14 @@ export function HomeFeed() {
   const [mobileCalOpen, setMobileCalOpen] = useState(false);
   const [mobileWeatherOpen, setMobileWeatherOpen] = useState(false);
   const [customPosts, setCustomPosts] = useState<any[]>([]);
+  const [mobileFollowedUsers, setMobileFollowedUsers] = useState<string[]>([]);
+
+  const handleToggleMobileFollow = (e: React.MouseEvent, handle: string) => {
+    e.stopPropagation();
+    setMobileFollowedUsers(prev =>
+      prev.includes(handle) ? prev.filter(h => h !== handle) : [...prev, handle]
+    );
+  };
 
   const handleAddPost = (newPost: any) => {
     setCustomPosts(prev => [newPost, ...prev]);
@@ -1674,28 +1701,46 @@ export function HomeFeed() {
 
                   {/* Who to Follow — injected after 2nd post, mobile only */}
                   {idx === 1 && (
-                    <div className="xl:hidden bg-white rounded-2xl border border-border p-4 group cursor-pointer">
+                    <div className="xl:hidden bg-white rounded-2xl border border-border p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <Users className="w-4 h-4 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
+                        <Users className="w-4 h-4 text-slate-600" />
                         <h3 className="font-semibold text-sm text-foreground">{t("widget_who_to_follow")}</h3>
                       </div>
-                      <div className="space-y-3">
-                        {suggestedPeople.slice(0, 4).map(p => (
-                          <div key={p.name} className="flex items-center gap-2.5">
-                            <div className="w-9 h-9 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs">
-                              <User className="w-4.5 h-4.5 text-slate-500" />
+                      <div className="space-y-2.5">
+                        {suggestedPeople.map(p => {
+                          const isFollowing = mobileFollowedUsers.includes(p.handle);
+                          const profileKey = p.id || p.handle.replace('@', '');
+                          return (
+                            <div
+                              key={p.name}
+                              onClick={() => navigate(`/profile/${profileKey}`)}
+                              className="flex items-center gap-2.5 p-1.5 -mx-1.5 rounded-xl hover:bg-slate-50 transition cursor-pointer group/row"
+                            >
+                              <div className="w-9 h-9 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs group-hover/row:scale-105 transition-transform">
+                                <User className="w-4.5 h-4.5 text-slate-500" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-bold text-foreground truncate group-hover/row:text-[#E05236] transition-colors">{p.name}</div>
+                                <div className="text-xs text-muted-foreground truncate">{p.bio}</div>
+                              </div>
+                              <button
+                                onClick={(e) => handleToggleMobileFollow(e, p.handle)}
+                                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition flex-shrink-0 cursor-pointer active:scale-95 shadow-xs ${
+                                  isFollowing
+                                    ? "border border-slate-300 bg-white text-slate-800 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                                    : "bg-[#E05236] hover:bg-[#8C3015] text-white"
+                                }`}
+                              >
+                                {isFollowing ? "Following" : "Follow"}
+                              </button>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium text-foreground truncate">{p.name}</div>
-                              <div className="text-xs text-muted-foreground truncate">{p.bio}</div>
-                            </div>
-                            <button className="px-2.5 py-1 rounded-full text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 transition flex-shrink-0">
-                              {t("widget_follow")}
-                            </button>
-                          </div>
-                        ))}
-                        <button className="w-full text-center text-xs text-muted-foreground font-medium py-1.5 hover:bg-secondary rounded-xl transition-colors">
-                          {t("widget_see_more")}
+                          );
+                        })}
+                        <button
+                          onClick={() => navigate("/explore")}
+                          className="w-full text-center text-xs text-slate-500 font-bold py-2 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer"
+                        >
+                          {t("widget_see_more")} →
                         </button>
                       </div>
                     </div>

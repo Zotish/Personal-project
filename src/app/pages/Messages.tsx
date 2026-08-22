@@ -28,8 +28,19 @@ interface MessageItem {
   replyToSender?: string;
 }
 
-const conversations = [
-  { id: 1, name: "Nadia Islam", handle: "@nadia_nyc", bio: "Immigration Attorney & Community Legal Advisor", lastMsg: "Yes, I can help you with your I-485 application. Please send me...", time: "2m", unread: 2, online: true },
+export interface ConversationItem {
+  id: number;
+  name: string;
+  handle: string;
+  bio?: string;
+  lastMsg: string;
+  time: string;
+  unread: number;
+  online: boolean;
+}
+
+const initialConversations: ConversationItem[] = [
+  { id: 1, name: "Nadia Islam, Esq.", handle: "@nadia_islam_nyc", bio: "Immigration Attorney & Community Legal Advisor", lastMsg: "Yes, I can help you with your I-485 application. Please send me...", time: "2m", unread: 2, online: true },
   { id: 2, name: "Carlos Rivera", handle: "@carlos_helps", bio: "Community Housing Coordinator", lastMsg: "The housing application requires the following documents...", time: "1h", unread: 0, online: false },
   { id: 3, name: "Dr. Priya Menon", handle: "@dr_priya_health", bio: "Healthcare Specialist & Advisor", lastMsg: "For your insurance question, you need to contact...", time: "3h", unread: 0, online: true },
   { id: 4, name: "Rahim Chowdhury", handle: "@rahim_bdconnect", bio: "Community Leader & Event Organizer", lastMsg: "Ami ektu pore call korbo. Community meeting ace.", time: "5h", unread: 0, online: false },
@@ -46,11 +57,21 @@ const initialMessages: MessageItem[] = [
   { id: 7, from: "me", text: "Yes please! That would be incredibly helpful. When are you available?", time: "10:45 AM", read: false },
 ];
 
-function InboxList({ onSelect, selected, pinnedIds }: { onSelect: (id: number) => void; selected: number | null; pinnedIds: number[] }) {
+function InboxList({
+  conversations,
+  onSelect,
+  selected,
+  pinnedIds
+}: {
+  conversations: ConversationItem[];
+  onSelect: (id: number) => void;
+  selected: number | null;
+  pinnedIds: number[];
+}) {
   const [search, setSearch] = useState("");
 
   const filteredConversations = conversations
-    .filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.lastMsg.toLowerCase().includes(search.toLowerCase()))
+    .filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.lastMsg.toLowerCase().includes(search.toLowerCase()) || c.handle.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => (pinnedIds.includes(b.id) ? 1 : 0) - (pinnedIds.includes(a.id) ? 1 : 0));
 
   return (
@@ -111,17 +132,28 @@ function InboxList({ onSelect, selected, pinnedIds }: { onSelect: (id: number) =
 
 function ChatScreen({
   convId,
+  conversations,
   onBack,
   pinnedIds,
   onTogglePin
 }: {
   convId: number;
+  conversations: ConversationItem[];
   onBack: () => void;
   pinnedIds: number[];
   onTogglePin: (id: number) => void;
 }) {
   const navigate = useNavigate();
-  const conv = conversations.find(c => c.id === convId)!;
+  const conv = conversations.find(c => c.id === convId) || {
+    id: convId,
+    name: "User",
+    handle: "@user",
+    bio: "Community Member",
+    lastMsg: "",
+    time: "now",
+    unread: 0,
+    online: true,
+  };
   const [messagesList, setMessagesList] = useState<MessageItem[]>(initialMessages);
   const [inputText, setInputText] = useState("");
 
@@ -1033,37 +1065,75 @@ function ChatScreen({
 export function Messages() {
   const [searchParams] = useSearchParams();
   const chatParam = searchParams.get("chat") || searchParams.get("user") || searchParams.get("id");
+  const nameParam = searchParams.get("name");
 
-  const getInitialConv = () => {
+  const [conversationsList, setConversationsList] = useState<ConversationItem[]>(() => {
+    try {
+      const saved = localStorage.getItem("pathasathi_user_conversations_v2");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return initialConversations;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("pathasathi_user_conversations_v2", JSON.stringify(conversationsList));
+    } catch {}
+  }, [conversationsList]);
+
+  const [selectedConv, setSelectedConv] = useState<number | null>(() => {
     if (chatParam) {
-      const match = conversations.find(
-        c => c.handle.replace('@', '').toLowerCase() === chatParam.toLowerCase() ||
-             c.id.toString() === chatParam ||
-             c.name.toLowerCase().includes(chatParam.toLowerCase())
+      const cleanParam = chatParam.replace('@', '').toLowerCase();
+      const match = initialConversations.find(
+        c => c.handle.replace('@', '').toLowerCase() === cleanParam ||
+             c.handle.toLowerCase().includes(cleanParam) ||
+             cleanParam.includes(c.handle.replace('@', '').toLowerCase()) ||
+             c.name.toLowerCase().includes(cleanParam.replace(/_/g, ' ').toLowerCase()) ||
+             c.id.toString() === chatParam
       );
       if (match) return match.id;
     }
-    // On desktop screens, select the first conversation; on mobile screens, show the users list first (null)
+    // On desktop screens, select the first conversation
     if (typeof window !== "undefined" && window.innerWidth >= 1024) {
       return 1;
     }
     return null;
-  };
+  });
 
-  const [selectedConv, setSelectedConv] = useState<number | null>(getInitialConv);
   const [pinnedIds, setPinnedIds] = useState<number[]>([1]);
   const isSeller = searchParams.get("role") === "seller";
 
   useEffect(() => {
     if (chatParam) {
-      const match = conversations.find(
-        c => c.handle.replace('@', '').toLowerCase() === chatParam.toLowerCase() ||
-             c.id.toString() === chatParam ||
-             c.name.toLowerCase().includes(chatParam.toLowerCase())
+      const cleanParam = chatParam.replace('@', '').toLowerCase();
+      const match = conversationsList.find(
+        c => c.handle.replace('@', '').toLowerCase() === cleanParam ||
+             c.handle.toLowerCase().includes(cleanParam) ||
+             cleanParam.includes(c.handle.replace('@', '').toLowerCase()) ||
+             c.name.toLowerCase().includes(cleanParam.replace(/_/g, ' ').toLowerCase()) ||
+             c.id.toString() === chatParam
       );
-      if (match) setSelectedConv(match.id);
+      if (match) {
+        setSelectedConv(match.id);
+      } else {
+        // Dynamically add and open new conversation for this user
+        const newId = Date.now();
+        const displayName = nameParam ? decodeURIComponent(nameParam) : cleanParam.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        const newConv: ConversationItem = {
+          id: newId,
+          name: displayName,
+          handle: `@${cleanParam}`,
+          bio: "Community Member",
+          lastMsg: "Start a conversation…",
+          time: "Just now",
+          unread: 0,
+          online: true,
+        };
+        setConversationsList(prev => [newConv, ...prev]);
+        setSelectedConv(newId);
+      }
     }
-  }, [chatParam]);
+  }, [chatParam, nameParam]);
 
   const handleTogglePin = (id: number) => {
     setPinnedIds(prev =>
@@ -1076,7 +1146,7 @@ export function Messages() {
       <div className="flex h-screen max-h-screen overflow-hidden">
         {/* Inbox - always visible on desktop, hidden on mobile when chat is open */}
         <div className={`${selectedConv ? "hidden lg:flex" : "flex"} flex-col w-full lg:w-80 xl:w-96 border-r border-border bg-white flex-shrink-0`}>
-          <InboxList onSelect={setSelectedConv} selected={selectedConv} pinnedIds={pinnedIds} />
+          <InboxList conversations={conversationsList} onSelect={setSelectedConv} selected={selectedConv} pinnedIds={pinnedIds} />
         </div>
 
         {/* Chat view */}
@@ -1084,6 +1154,7 @@ export function Messages() {
           <div className="flex-1 flex flex-col min-w-0">
             <ChatScreen
               convId={selectedConv}
+              conversations={conversationsList}
               onBack={() => setSelectedConv(null)}
               pinnedIds={pinnedIds}
               onTogglePin={handleTogglePin}

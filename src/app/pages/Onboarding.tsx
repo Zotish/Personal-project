@@ -253,15 +253,15 @@ export function OnboardingTopics() {
             <button
               key={label}
               onClick={() => toggle(label)}
-              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-sm font-medium border transition-all ${
+              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-sm font-semibold border transition-all cursor-pointer ${
                 active
-                  ? "border-primary bg-primary text-white shadow-sm"
-                  : "border-border bg-white text-foreground hover:border-primary hover:text-primary"
+                  ? "border-[#E05236]/30 bg-[#FFF7F4] text-[#8C3015] shadow-2xs"
+                  : "border-slate-200 bg-white text-slate-700 hover:border-[#E05236]/30 hover:bg-[#FFF7F4]/60 hover:text-[#8C3015]"
               }`}
             >
               <span>{icon}</span>
               {label}
-              {active && <Check className="w-3 h-3" />}
+              {active && <Check className="w-3.5 h-3.5 text-[#E05236]" />}
             </button>
           );
         })}

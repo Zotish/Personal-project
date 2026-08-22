@@ -13,7 +13,7 @@ import {
 // ── Toggle ────────────────────────────────────────────────────────────────────
 function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} className={`w-11 h-6 rounded-full transition-all relative flex-shrink-0 ${on ? "bg-primary" : "bg-border"}`}>
+    <button onClick={onClick} className={`w-11 h-6 rounded-full transition-all relative flex-shrink-0 cursor-pointer ${on ? "bg-[#E05236]" : "bg-border"}`}>
       <div className={`w-4 h-4 bg-white rounded-full absolute top-1 shadow transition-all ${on ? "left-6" : "left-1"}`} />
     </button>
   );
@@ -23,8 +23,8 @@ function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
 function BackHeader({ title, onBack, action }: { title: string; onBack: () => void; action?: ReactNode }) {
   return (
     <div className="sticky top-0 z-10 bg-white border-b border-border px-4 py-3 flex items-center gap-3">
-      <button onClick={onBack} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center hover:bg-border transition">
-        <ChevronLeft className="w-4 h-4" />
+      <button onClick={onBack} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center hover:bg-border transition cursor-pointer">
+        <ChevronLeft className="w-4 h-4 text-slate-700" />
       </button>
       <h2 className="flex-1 font-bold text-foreground text-base">{title}</h2>
       {action}
@@ -61,14 +61,16 @@ function AccountInfoSection({ onBack }: { onBack: () => void }) {
   return (
     <AppLayout>
       <BackHeader title="Account Information" onBack={onBack}
-        action={<button onClick={handleSave} className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${saved ? "bg-emerald-500 text-white" : "bg-primary text-white hover:opacity-90"}`}>{saved ? "✓ Saved" : "Save"}</button>}
+        action={<button onClick={handleSave} className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${saved ? "bg-emerald-500 text-white" : "bg-[#E05236] hover:bg-[#8C3015] text-white shadow-xs"}`}>{saved ? "✓ Saved" : "Save"}</button>}
       />
       <div className="max-w-lg mx-auto p-4 space-y-4">
         {/* Avatar */}
         <div className="flex flex-col items-center py-4">
           <div className="relative">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-2xl font-bold">RA</div>
-            <button className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary flex items-center justify-center border-2 border-white shadow">
+            <div className="w-20 h-20 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
+              <User className="w-10 h-10 text-slate-400" />
+            </div>
+            <button className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#E05236] hover:bg-[#8C3015] flex items-center justify-center border-2 border-white shadow cursor-pointer">
               <Camera className="w-3.5 h-3.5 text-white" />
             </button>
           </div>
@@ -85,7 +87,7 @@ function AccountInfoSection({ onBack }: { onBack: () => void }) {
             <div key={key} className="border-b border-border last:border-0 px-4 py-3">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</label>
               <div className="flex items-center gap-2 mt-1">
-                <Icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <Icon className="w-4 h-4 text-slate-600 flex-shrink-0" />
                 {prefix && <span className="text-muted-foreground text-sm">{prefix}</span>}
                 <input
                   value={form[key as keyof typeof form]}
@@ -121,7 +123,7 @@ function AccountInfoSection({ onBack }: { onBack: () => void }) {
             <div className="flex items-center gap-2">
               <span className="text-lg">🇧🇩</span>
               <span className="text-sm text-foreground">Bangladesh</span>
-              <ChevronDown className="w-4 h-4 text-muted-foreground ml-auto" />
+              <ChevronDown className="w-4 h-4 text-slate-500 ml-auto" />
             </div>
           </div>
         </SectionCard>
@@ -162,8 +164,8 @@ function PasswordSection({ onBack }: { onBack: () => void }) {
                 <div className="flex items-center border border-border rounded-xl px-3 py-2.5 mt-1 bg-secondary/30">
                   <input type={show ? "text" : "password"} value={val} onChange={e => set(e.target.value)}
                     className="flex-1 text-sm bg-transparent outline-none" placeholder="••••••••" />
-                  <button onClick={toggle} className="text-muted-foreground">
-                    {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  <button onClick={toggle} className="text-slate-500 cursor-pointer">
+                    {show ? <EyeOff className="w-4 h-4 text-slate-500" /> : <Eye className="w-4 h-4 text-slate-500" />}
                   </button>
                 </div>
               </div>
@@ -180,7 +182,7 @@ function PasswordSection({ onBack }: { onBack: () => void }) {
             )}
             <button onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 2000); }}
               disabled={!strong || confirm !== newPw || !current}
-              className={`w-full py-2.5 rounded-xl text-sm font-semibold mb-3 transition-all ${strong && confirm === newPw && current ? "bg-primary text-white hover:opacity-90" : "bg-secondary text-muted-foreground cursor-not-allowed"}`}>
+              className={`w-full py-2.5 rounded-xl text-sm font-semibold mb-3 transition-all cursor-pointer ${strong && confirm === newPw && current ? "bg-[#E05236] hover:bg-[#8C3015] text-white shadow-xs" : "bg-secondary text-muted-foreground cursor-not-allowed"}`}>
               {saved ? "✓ Password Updated" : "Update Password"}
             </button>
           </div>
@@ -190,16 +192,16 @@ function PasswordSection({ onBack }: { onBack: () => void }) {
         </SectionCard>
 
         <SectionCard>
-          <button className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-secondary transition border-b border-border">
-            <Key className="w-4 h-4 text-primary" />
+          <button className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-secondary transition border-b border-border cursor-pointer">
+            <Key className="w-4 h-4 text-slate-600" />
             <div className="flex-1 text-left">
               <div className="text-sm font-medium">Passkey Login</div>
               <div className="text-xs text-muted-foreground">Use Face ID or fingerprint instead</div>
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-secondary transition text-red-600">
-            <AlertTriangle className="w-4 h-4" />
+          <button className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-secondary transition text-red-600 cursor-pointer">
+            <AlertTriangle className="w-4 h-4 text-red-500" />
             <span className="text-sm font-medium">Sign out all other devices</span>
           </button>
         </SectionCard>
@@ -222,9 +224,9 @@ function DevicesSection({ onBack }: { onBack: () => void }) {
   function remove(id: number) { setDevices(d => d.filter(x => x.id !== id)); }
 
   const TypeIcon = ({ type }: { type: string }) => {
-    if (type === "mobile") return <Smartphone className="w-5 h-5 text-primary" />;
-    if (type === "tablet") return <Tablet className="w-5 h-5 text-primary" />;
-    return <Monitor className="w-5 h-5 text-primary" />;
+    if (type === "mobile") return <Smartphone className="w-5 h-5 text-slate-600 flex-shrink-0" />;
+    if (type === "tablet") return <Tablet className="w-5 h-5 text-slate-600 flex-shrink-0" />;
+    return <Monitor className="w-5 h-5 text-slate-600 flex-shrink-0" />;
   };
 
   return (
@@ -235,20 +237,18 @@ function DevicesSection({ onBack }: { onBack: () => void }) {
         <SectionCard>
           {devices.map((d, i) => (
             <div key={d.id} className={`flex items-center gap-3 px-4 py-3.5 ${i < devices.length - 1 ? "border-b border-border" : ""}`}>
-              <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0">
-                <TypeIcon type={d.type} />
-              </div>
+              <TypeIcon type={d.type} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-foreground">{d.name}</span>
                   {d.current && <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full font-semibold">This device</span>}
                 </div>
                 <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                  <MapPin className="w-3 h-3" />{d.location} · {d.lastActive}
+                  <MapPin className="w-3 h-3 text-slate-400" />{d.location} · {d.lastActive}
                 </div>
               </div>
               {!d.current && (
-                <button onClick={() => remove(d.id)} className="w-7 h-7 rounded-full bg-red-50 flex items-center justify-center hover:bg-red-100 transition">
+                <button onClick={() => remove(d.id)} className="w-7 h-7 rounded-full bg-red-50 flex items-center justify-center hover:bg-red-100 transition cursor-pointer">
                   <X className="w-3.5 h-3.5 text-red-500" />
                 </button>
               )}
@@ -257,7 +257,7 @@ function DevicesSection({ onBack }: { onBack: () => void }) {
         </SectionCard>
         {devices.length > 1 && (
           <button onClick={() => setDevices(d => d.filter(x => x.current))}
-            className="w-full py-3 rounded-xl border border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 transition">
+            className="w-full py-3 rounded-xl border border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 transition cursor-pointer">
             Sign out all other devices
           </button>
         )}
@@ -290,13 +290,13 @@ function LanguageSection({ onBack }: { onBack: () => void }) {
         <SectionCard>
           {langs.map((l, i) => (
             <button key={l.code} onClick={() => setSelected(l.name)}
-              className={`w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-secondary transition ${i > 0 ? "border-t border-border" : ""}`}>
+              className={`w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-secondary transition cursor-pointer ${i > 0 ? "border-t border-border" : ""}`}>
               <span className="text-2xl">{l.flag}</span>
               <div className="flex-1">
                 <div className="text-sm font-medium text-foreground">{l.name}</div>
                 <div className="text-xs text-muted-foreground">{l.native}</div>
               </div>
-              {selected === l.name && <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div>}
+              {selected === l.name && <div className="w-5 h-5 rounded-full bg-[#E05236] flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div>}
             </button>
           ))}
         </SectionCard>
@@ -330,12 +330,12 @@ function ContentSection({ onBack }: { onBack: () => void }) {
           <SectionCard>
             {[{ id: "nearby", label: "Nearby", desc: "Show content from your area" }, { id: "following", label: "Following", desc: "Only people you follow" }, { id: "trending", label: "Trending", desc: "Popular in immigrant communities" }].map((f, i) => (
               <button key={f.id} onClick={() => setFeedType(f.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-secondary transition ${i > 0 ? "border-t border-border" : ""}`}>
+                className={`w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-secondary transition cursor-pointer ${i > 0 ? "border-t border-border" : ""}`}>
                 <div className="flex-1">
                   <div className="text-sm font-medium text-foreground">{f.label}</div>
                   <div className="text-xs text-muted-foreground">{f.desc}</div>
                 </div>
-                {feedType === f.id && <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div>}
+                {feedType === f.id && <div className="w-5 h-5 rounded-full bg-[#E05236] flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div>}
               </button>
             ))}
           </SectionCard>
@@ -346,10 +346,18 @@ function ContentSection({ onBack }: { onBack: () => void }) {
             {topics.map(t => {
               const on = prefs[t.key as keyof typeof prefs];
               return (
-                <button key={t.key} onClick={() => setPrefs(p => ({ ...p, [t.key]: !on }))}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all border ${on ? "bg-primary text-white border-primary" : "bg-white text-muted-foreground border-border hover:border-primary"}`}>
-                  <span>{t.emoji}</span> {t.label}
-                  {on && <X className="w-3 h-3 ml-0.5" />}
+                <button
+                  key={t.key}
+                  onClick={() => setPrefs(p => ({ ...p, [t.key]: !on }))}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all border cursor-pointer ${
+                    on
+                      ? "bg-[#FFF7F4] text-[#8C3015] border-[#E05236]/30 shadow-2xs"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-[#FFF7F4]/60 hover:text-[#8C3015] hover:border-[#E05236]/30"
+                  }`}
+                >
+                  <span>{t.emoji}</span>
+                  <span>{t.label}</span>
+                  {on && <X className="w-3.5 h-3.5 ml-0.5 text-[#E05236]" />}
                 </button>
               );
             })}
@@ -373,11 +381,11 @@ function LocationSection({ onBack }: { onBack: () => void }) {
     <AppLayout>
       <BackHeader title="Location Settings" onBack={onBack} />
       <div className="max-w-lg mx-auto p-4 space-y-4">
-        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex gap-3">
-          <MapPin className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+        <div className="bg-[#FFF7F4] border border-[#E05236]/30 rounded-2xl p-4 flex gap-3">
+          <MapPin className="w-5 h-5 text-slate-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-primary">Current Location</p>
-            <p className="text-xs text-blue-700 mt-0.5">Queens, New York 11373</p>
+            <p className="text-sm font-semibold text-[#E05236]">Current Location</p>
+            <p className="text-xs text-slate-700 mt-0.5">Queens, New York 11373</p>
           </div>
         </div>
 
@@ -394,7 +402,7 @@ function LocationSection({ onBack }: { onBack: () => void }) {
             <div className="flex gap-2">
               {["1", "2", "5", "10", "20"].map(r => (
                 <button key={r} onClick={() => setRadius(r)}
-                  className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${radius === r ? "bg-primary text-white" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
+                  className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${radius === r ? "bg-[#E05236] text-white shadow-xs" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
                   {r} km
                 </button>
               ))}
@@ -489,9 +497,9 @@ function EmailNotifsSection({ onBack }: { onBack: () => void }) {
           <SectionCard>
             {[{ id: "daily", l: "Daily" }, { id: "weekly", l: "Weekly" }, { id: "monthly", l: "Monthly" }].map((f, i) => (
               <button key={f.id} onClick={() => setFrequency(f.id)}
-                className={`w-full flex items-center justify-between px-4 py-3.5 text-sm font-medium text-left hover:bg-secondary transition ${i > 0 ? "border-t border-border" : ""}`}>
+                className={`w-full flex items-center justify-between px-4 py-3.5 text-sm font-medium text-left hover:bg-secondary transition cursor-pointer ${i > 0 ? "border-t border-border" : ""}`}>
                 {f.l}
-                {frequency === f.id && <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div>}
+                {frequency === f.id && <div className="w-5 h-5 rounded-full bg-[#E05236] flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div>}
               </button>
             ))}
           </SectionCard>
@@ -532,7 +540,7 @@ function ServicesSection({ onBack }: { onBack: () => void }) {
                   <div className="text-xs text-muted-foreground">{s.desc}</div>
                 </div>
                 <button onClick={() => toggle(s.id)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${isOn ? "bg-secondary text-foreground border border-border hover:bg-red-50 hover:text-red-500 hover:border-red-200" : "bg-primary text-white hover:opacity-90"}`}>
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${isOn ? "bg-secondary text-foreground border border-border hover:bg-red-50 hover:text-red-500 hover:border-red-200" : "bg-[#E05236] hover:bg-[#8C3015] text-white shadow-xs"}`}>
                   {isOn ? "Connected" : "Connect"}
                 </button>
               </div>
@@ -567,9 +575,9 @@ function TranslationSection({ onBack }: { onBack: () => void }) {
           <SectionCard>
             {langs.map((l, i) => (
               <button key={l} onClick={() => setTargetLang(l)}
-                className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-left hover:bg-secondary transition ${i > 0 ? "border-t border-border" : ""}`}>
+                className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-left hover:bg-secondary transition cursor-pointer ${i > 0 ? "border-t border-border" : ""}`}>
                 {l}
-                {targetLang === l && <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div>}
+                {targetLang === l && <div className="w-5 h-5 rounded-full bg-[#E05236] flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div>}
               </button>
             ))}
           </SectionCard>
@@ -588,10 +596,6 @@ function SafetySection({ onBack }: { onBack: () => void }) {
     <AppLayout>
       <BackHeader title="Safety" onBack={onBack} />
       <div className="max-w-lg mx-auto p-4 space-y-4">
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3">
-          <Shield className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-amber-700">These settings help protect you and your community from scams and harmful content.</p>
-        </div>
         <SectionCard>
           <Row label="Scam & Fraud Warnings" desc="Alert when posts look like scams" right={<Toggle on={safety.scamWarnings} onClick={() => setSafety(s => ({ ...s, scamWarnings: !s.scamWarnings }))} />} />
           <Row label="Sensitive Content Filter" desc="Hide potentially sensitive posts" right={<Toggle on={safety.sensitiveContent} onClick={() => setSafety(s => ({ ...s, sensitiveContent: !s.sensitiveContent }))} />} />
@@ -599,7 +603,7 @@ function SafetySection({ onBack }: { onBack: () => void }) {
           <Row label="Location Safety Alerts" desc="Warn about ICE activity reports" right={<Toggle on={safety.locationWarnings} onClick={() => setSafety(s => ({ ...s, locationWarnings: !s.locationWarnings }))} />} border={false} />
         </SectionCard>
         <SectionCard>
-          <button className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-secondary transition border-b border-border">
+          <button className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-secondary transition border-b border-border cursor-pointer">
             <AlertTriangle className="w-4 h-4 text-red-500" />
             <div className="flex-1">
               <div className="text-sm font-medium text-foreground">Report a Safety Issue</div>
@@ -607,8 +611,8 @@ function SafetySection({ onBack }: { onBack: () => void }) {
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-secondary transition">
-            <FileText className="w-4 h-4 text-primary" />
+          <button className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-secondary transition cursor-pointer">
+            <FileText className="w-4 h-4 text-slate-600" />
             <div className="flex-1">
               <div className="text-sm font-medium text-foreground">Community Guidelines</div>
               <div className="text-xs text-muted-foreground">Our rules and standards</div>
@@ -636,9 +640,9 @@ function BlockedSection({ onBack }: { onBack: () => void }) {
       <BackHeader title="Blocked Users" onBack={onBack} />
       <div className="max-w-lg mx-auto p-4 space-y-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search blocked users…"
-            className="w-full pl-9 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ring transition" />
+            className="w-full pl-9 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#E05236] transition" />
         </div>
         {blocked.length === 0 ? (
           <div className="flex flex-col items-center py-16 text-center">
@@ -656,7 +660,7 @@ function BlockedSection({ onBack }: { onBack: () => void }) {
                   <div className="text-xs text-muted-foreground">{u.handle}</div>
                 </div>
                 <button onClick={() => setBlocked(b => b.filter(x => x.id !== u.id))}
-                  className="px-3 py-1.5 rounded-full border border-border text-xs font-semibold hover:bg-secondary transition">
+                  className="px-3 py-1.5 rounded-full border border-border text-xs font-semibold hover:bg-secondary transition cursor-pointer">
                   Unblock
                 </button>
               </div>
@@ -723,28 +727,28 @@ function DataSection({ onBack }: { onBack: () => void }) {
         <SectionCard>
           <div className="px-4 py-4 border-b border-border">
             <div className="flex items-start gap-3">
-              <Download className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+              <Download className="w-5 h-5 text-slate-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <div className="text-sm font-semibold text-foreground">Download Your Data</div>
                 <div className="text-xs text-muted-foreground mt-0.5 mb-3">Get a copy of all your posts, settings, and account information.</div>
                 <button onClick={handleDownload} disabled={downloading}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${downloaded ? "bg-emerald-100 text-emerald-700" : "bg-primary text-white hover:opacity-90"}`}>
-                  {downloading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : downloaded ? <Check className="w-3.5 h-3.5" /> : <Download className="w-3.5 h-3.5" />}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${downloaded ? "bg-emerald-100 text-emerald-700" : "bg-[#E05236] hover:bg-[#8C3015] text-white shadow-xs"}`}>
+                  {downloading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : downloaded ? <Check className="w-3.5 h-3.5" /> : <Download className="w-3.5 h-3.5 text-white" />}
                   {downloading ? "Preparing…" : downloaded ? "Download Ready" : "Request Data"}
                 </button>
               </div>
             </div>
           </div>
-          <button className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-secondary transition border-b border-border">
-            <FileText className="w-4 h-4 text-primary" />
+          <button className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-secondary transition border-b border-border cursor-pointer">
+            <FileText className="w-4 h-4 text-slate-600" />
             <div className="flex-1">
               <div className="text-sm font-medium">Privacy Policy</div>
               <div className="text-xs text-muted-foreground">Read our full privacy policy</div>
             </div>
             <ExternalLink className="w-4 h-4 text-muted-foreground" />
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-secondary transition">
-            <FileText className="w-4 h-4 text-primary" />
+          <button className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-secondary transition cursor-pointer">
+            <FileText className="w-4 h-4 text-slate-600" />
             <div className="flex-1">
               <div className="text-sm font-medium">Terms of Service</div>
               <div className="text-xs text-muted-foreground">Our terms and conditions</div>
@@ -760,7 +764,7 @@ function DataSection({ onBack }: { onBack: () => void }) {
           </div>
           <p className="text-xs text-red-600 mb-3">This will permanently delete your account, posts, and all data. This cannot be undone.</p>
           {!showDelete ? (
-            <button onClick={() => setShowDelete(true)} className="px-4 py-2 rounded-xl border border-red-300 text-red-600 text-xs font-semibold hover:bg-red-100 transition">
+            <button onClick={() => setShowDelete(true)} className="px-4 py-2 rounded-xl border border-red-300 text-red-600 text-xs font-semibold hover:bg-red-100 transition cursor-pointer">
               I want to delete my account
             </button>
           ) : (
@@ -769,8 +773,8 @@ function DataSection({ onBack }: { onBack: () => void }) {
               <input value={deleteInput} onChange={e => setDeleteInput(e.target.value)} placeholder='Type "DELETE"'
                 className="w-full px-3 py-2 rounded-xl border border-red-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 bg-white" />
               <div className="flex gap-2">
-                <button onClick={() => { setShowDelete(false); setDeleteInput(""); }} className="flex-1 py-2 rounded-xl border border-border text-sm font-medium hover:bg-secondary transition">Cancel</button>
-                <button disabled={deleteInput !== "DELETE"} className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${deleteInput === "DELETE" ? "bg-red-500 text-white hover:bg-red-600" : "bg-red-200 text-red-400 cursor-not-allowed"}`}>Delete</button>
+                <button onClick={() => { setShowDelete(false); setDeleteInput(""); }} className="flex-1 py-2 rounded-xl border border-border text-sm font-medium hover:bg-secondary transition cursor-pointer">Cancel</button>
+                <button disabled={deleteInput !== "DELETE"} className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${deleteInput === "DELETE" ? "bg-red-500 text-white hover:bg-red-600" : "bg-red-200 text-red-400 cursor-not-allowed"}`}>Delete</button>
               </div>
             </div>
           )}
@@ -798,8 +802,8 @@ function HelpSection({ onBack }: { onBack: () => void }) {
       <BackHeader title="Help Center" onBack={onBack} />
       <div className="max-w-lg mx-auto p-4 space-y-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input placeholder="Search help articles…" className="w-full pl-9 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ring transition" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input placeholder="Search help articles…" className="w-full pl-9 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#E05236] transition" />
         </div>
 
         <div>
@@ -808,7 +812,7 @@ function HelpSection({ onBack }: { onBack: () => void }) {
             {faqs.map((faq, i) => (
               <div key={i} className={i > 0 ? "border-t border-border" : ""}>
                 <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-secondary transition">
+                  className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-secondary transition cursor-pointer">
                   <span className="text-sm font-medium text-foreground">{faq.q}</span>
                   <ChevronDown className={`w-4 h-4 text-muted-foreground flex-shrink-0 transition-transform ${openFaq === i ? "rotate-180" : ""}`} />
                 </button>
@@ -823,16 +827,16 @@ function HelpSection({ onBack }: { onBack: () => void }) {
         <div>
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Contact Us</p>
           <SectionCard>
-            <button className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-secondary transition border-b border-border">
-              <MessageSquare className="w-4 h-4 text-primary" />
+            <button className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-secondary transition border-b border-border cursor-pointer">
+              <MessageSquare className="w-4 h-4 text-slate-600" />
               <div className="flex-1">
                 <div className="text-sm font-medium">Live Chat</div>
                 <div className="text-xs text-muted-foreground">Avg response: 5 min</div>
               </div>
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
             </button>
-            <button className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-secondary transition">
-              <Mail className="w-4 h-4 text-primary" />
+            <button className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-secondary transition cursor-pointer">
+              <Mail className="w-4 h-4 text-slate-600" />
               <div className="flex-1">
                 <div className="text-sm font-medium">Email Support</div>
                 <div className="text-xs text-muted-foreground">support@immigrantconnect.us</div>
@@ -853,46 +857,46 @@ const settingsSections = [
   {
     title: "Account",
     items: [
-      { icon: User, label: "Account Information", desc: "Name, email, username", path: "account", color: "bg-blue-100 text-blue-600" },
-      { icon: Lock, label: "Password & Security", desc: "Change password, 2FA", path: "password", color: "bg-orange-100 text-orange-600" },
-      { icon: Smartphone, label: "Connected Devices", desc: "Manage logged-in devices", path: "devices", color: "bg-slate-100 text-slate-600" },
+      { icon: User, label: "Account Information", desc: "Name, email, username", path: "account" },
+      { icon: Lock, label: "Password & Security", desc: "Change password, 2FA", path: "password" },
+      { icon: Smartphone, label: "Connected Devices", desc: "Manage logged-in devices", path: "devices" },
     ],
   },
   {
     title: "Personalization",
     items: [
-      { icon: Languages, label: "Language", desc: "English, Español, বাংলা, हिंदी, العربية", path: "language", color: "bg-violet-100 text-violet-600" },
-      { icon: Globe, label: "Content Preferences", desc: "Feed, topics, communities", path: "content", color: "bg-sky-100 text-sky-600" },
-      { icon: MapPin, label: "Location Settings", desc: "Manage location permissions", path: "location", color: "bg-emerald-100 text-emerald-600" },
+      { icon: Languages, label: "Language", desc: "English, Español, বাংলা, हिंदी, العربية", path: "language" },
+      { icon: Globe, label: "Content Preferences", desc: "Feed, topics, communities", path: "content" },
+      { icon: MapPin, label: "Location Settings", desc: "Manage location permissions", path: "location" },
     ],
   },
   {
     title: "Notifications",
     items: [
-      { icon: Bell, label: "Push Notifications", desc: "Control what alerts you receive", path: "notifications", color: "bg-amber-100 text-amber-600" },
-      { icon: Mail, label: "Email Notifications", desc: "Weekly digest and updates", path: "email-notifs", color: "bg-rose-100 text-rose-600" },
+      { icon: Bell, label: "Push Notifications", desc: "Control what alerts you receive", path: "notifications" },
+      { icon: Mail, label: "Email Notifications", desc: "Weekly digest and updates", path: "email-notifs" },
     ],
   },
   {
     title: "Connected Services",
     items: [
-      { icon: Link, label: "Integrated Services", desc: "Manage third-party connections", path: "services", color: "bg-indigo-100 text-indigo-600" },
-      { icon: Globe, label: "Language Translation", desc: "Auto-translate settings", path: "translation", color: "bg-teal-100 text-teal-600" },
+      { icon: Link, label: "Integrated Services", desc: "Manage third-party connections", path: "services" },
+      { icon: Globe, label: "Language Translation", desc: "Auto-translate settings", path: "translation" },
     ],
   },
   {
     title: "Privacy & Safety",
     items: [
-      { icon: Shield, label: "Safety", desc: "Scam warnings, sensitive content", path: "safety", color: "bg-green-100 text-green-600" },
-      { icon: Ban, label: "Blocked Users", desc: "Manage blocked accounts", path: "blocked", color: "bg-red-100 text-red-600" },
-      { icon: Eye, label: "Privacy", desc: "Who can see your profile", path: "privacy", color: "bg-purple-100 text-purple-600" },
-      { icon: Database, label: "Data & Privacy", desc: "Download your data, delete account", path: "data", color: "bg-gray-100 text-gray-600" },
+      { icon: Shield, label: "Safety", desc: "Scam warnings, sensitive content", path: "safety" },
+      { icon: Ban, label: "Blocked Users", desc: "Manage blocked accounts", path: "blocked" },
+      { icon: Eye, label: "Privacy", desc: "Who can see your profile", path: "privacy" },
+      { icon: Database, label: "Data & Privacy", desc: "Download your data, delete account", path: "data" },
     ],
   },
   {
     title: "Support",
     items: [
-      { icon: HelpCircle, label: "Help Center", desc: "FAQs, contact support", path: "help", color: "bg-cyan-100 text-cyan-600" },
+      { icon: HelpCircle, label: "Help Center", desc: "FAQs, contact support", path: "help" },
     ],
   },
 ];
@@ -930,13 +934,14 @@ export function Settings() {
 
         {/* Profile summary */}
         <div className="bg-white border-b border-border p-4 flex items-center gap-3">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-lg font-bold shadow-sm">RA</div>
-          <div className="flex-1">
-            <div className="font-semibold text-foreground">Rafiq Ahmed</div>
-            <div className="text-sm text-muted-foreground">@rafiq_ahmed · Student Visa (F-1)</div>
-            <div className="text-xs text-primary mt-0.5">rafiq.ahmed@email.com</div>
+          <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 flex-shrink-0">
+            <User className="w-6 h-6 text-slate-400" />
           </div>
-          <button onClick={() => setActiveSection("account")} className="text-sm text-primary hover:underline font-medium">Edit</button>
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-foreground text-base leading-tight">Rafiq Ahmed</div>
+            <div className="text-xs text-muted-foreground mt-0.5">@rafiq_ahmed</div>
+          </div>
+          <button onClick={() => setActiveSection("account")} className="text-sm text-[#E05236] hover:text-[#8C3015] hover:underline font-bold cursor-pointer">Edit</button>
         </div>
 
         {settingsSections.map(section => (
@@ -947,10 +952,8 @@ export function Settings() {
                 const Icon = item.icon;
                 return (
                   <button key={item.path} onClick={() => setActiveSection(item.path)}
-                    className={`w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-secondary transition-colors active:bg-secondary ${i > 0 ? "border-t border-border" : ""}`}>
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${item.color}`}>
-                      <Icon className="w-4 h-4" />
-                    </div>
+                    className={`w-full flex items-center gap-3.5 px-4 py-3.5 text-left hover:bg-secondary transition-colors active:bg-secondary cursor-pointer ${i > 0 ? "border-t border-border" : ""}`}>
+                    <Icon className="w-5 h-5 text-slate-600 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-foreground">{item.label}</div>
                       <div className="text-xs text-muted-foreground truncate">{item.desc}</div>
@@ -966,7 +969,7 @@ export function Settings() {
         {/* Logout */}
         <div className="p-4 pb-8">
           <button onClick={() => navigate("/")}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors">
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors cursor-pointer active:scale-95">
             <LogOut className="w-4 h-4" /> Log Out
           </button>
           <p className="text-center text-xs text-muted-foreground mt-3">PathaSathi v2.1.0 · Terms · Privacy</p>

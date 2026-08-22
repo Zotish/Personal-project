@@ -9,7 +9,7 @@ import {
   Camera, Image, Clock, Mic, FolderOpen, Settings,
   Car, ShoppingCart, Video, ShieldCheck, ArrowRight, Radio,
   Shield, CheckCircle, Cpu, RadioTower, Layers, Zap, Upload,
-  Pause, RotateCcw, MessageSquarePlus, Share2
+  Share2, Heart, Pause, Forward, SkipForward, ArrowUpRight
 } from "lucide-react";
 
 // Types
@@ -19,7 +19,6 @@ export interface SmartAppItem {
   nameBn?: string;
   iconName: string;
   url?: string;
-  deepLink?: string;
   isBuiltIn?: boolean;
   customIcon?: string;
 }
@@ -27,20 +26,11 @@ export interface SmartAppItem {
 // Default Apps on Dock (Starts 100% empty so user only adds what they clone from device)
 const DEFAULT_APPS: SmartAppItem[] = [];
 
-// Full Device Installed Apps (Discovered during device scan)
+// Full Device Installed Apps for Selection
 const ALL_DEVICE_APPS: SmartAppItem[] = [
-  // Communication & Social
-  { id: "whatsapp", name: "WhatsApp", nameBn: "হোয়াটসঅ্যাপ", iconName: "domain:whatsapp.com", url: "https://web.whatsapp.com" },
-  { id: "youtube", name: "YouTube", nameBn: "ইউটিউব", iconName: "domain:youtube.com", url: "https://m.youtube.com" },
-  { id: "chatgpt", name: "ChatGPT AI", nameBn: "চ্যাটজিপিটি", iconName: "domain:chatgpt.com", url: "https://chatgpt.com" },
-  { id: "facebook", name: "Facebook", nameBn: "ফেসবুক", iconName: "domain:facebook.com", url: "https://m.facebook.com" },
-  { id: "messenger", name: "Messenger", nameBn: "মেসেঞ্জার", iconName: "domain:messenger.com", url: "https://m.me" },
-  { id: "instagram", name: "Instagram", nameBn: "ইনস্টাগ্রাম", iconName: "domain:instagram.com", url: "https://www.instagram.com" },
-  { id: "tiktok", name: "TikTok", nameBn: "টিকটক", iconName: "domain:tiktok.com", url: "https://www.tiktok.com" },
-  { id: "telegram", name: "Telegram", nameBn: "টেলিগ্রাম", iconName: "domain:telegram.org", url: "https://web.telegram.org" },
-  { id: "twitter", name: "X (Twitter)", nameBn: "টুইটার / এক্স", iconName: "domain:x.com", url: "https://x.com" },
-
-  // System & Device Hardware Tools
+  // System & Core Phone Apps
+  { id: "phone", name: "Phone / Dialer", nameBn: "ফোন ডায়ালার", iconName: "phone", url: "tel:" },
+  { id: "messages", name: "Messages / SMS", nameBn: "মেসেজ / এসএমএস", iconName: "messages", url: "sms:" },
   { id: "camera", name: "Camera", nameBn: "ক্যামেরা", iconName: "camera", isBuiltIn: true },
   { id: "photos", name: "Photos & Gallery", nameBn: "গ্যালারি", iconName: "photos", isBuiltIn: true },
   { id: "voice_rec", name: "Voice Recorder", nameBn: "ভয়েস রেকর্ডার", iconName: "voice_rec", isBuiltIn: true },
@@ -48,12 +38,24 @@ const ALL_DEVICE_APPS: SmartAppItem[] = [
   { id: "clock", name: "Clock & Timer", nameBn: "ঘড়ি ও টাইমার", iconName: "clock", isBuiltIn: true },
   { id: "notes_app", name: "Notes & Memos", nameBn: "নোটপ্যাড", iconName: "notes_app", isBuiltIn: true },
 
-  // Media & Music
+  // Communication & Social
+  { id: "whatsapp", name: "WhatsApp", nameBn: "হোয়াটসঅ্যাপ", iconName: "domain:whatsapp.com", url: "https://web.whatsapp.com" },
+  { id: "facebook", name: "Facebook", nameBn: "ফেসবুক", iconName: "domain:facebook.com", url: "https://m.facebook.com" },
+  { id: "messenger", name: "Messenger", nameBn: "মেসেঞ্জার", iconName: "domain:messenger.com", url: "https://m.me" },
+  { id: "instagram", name: "Instagram", nameBn: "ইনস্টাগ্রাম", iconName: "domain:instagram.com", url: "https://www.instagram.com" },
+  { id: "tiktok", name: "TikTok", nameBn: "টিকটক", iconName: "domain:tiktok.com", url: "https://www.tiktok.com" },
+  { id: "telegram", name: "Telegram", nameBn: "টেলিগ্রাম", iconName: "domain:telegram.org", url: "https://web.telegram.org" },
+  { id: "twitter", name: "X (Twitter)", nameBn: "টুইটার / এক্স", iconName: "domain:x.com", url: "https://x.com" },
+  { id: "discord", name: "Discord", nameBn: "ডিসকর্ড", iconName: "domain:discord.com", url: "https://discord.com" },
+
+  // Media & Video
+  { id: "youtube", name: "YouTube", nameBn: "ইউটিউব", iconName: "domain:youtube.com", url: "https://m.youtube.com" },
   { id: "spotify", name: "Spotify", nameBn: "স্পটিফাই মিউজিক", iconName: "domain:spotify.com", url: "https://open.spotify.com" },
   { id: "netflix", name: "Netflix", nameBn: "নেটফ্লিক্স", iconName: "domain:netflix.com", url: "https://netflix.com" },
 
   // Google & Productivity
-  { id: "google", name: "Google Search", nameBn: "গুগল সার্চ", iconName: "domain:google.com", url: "https://www.google.com" },
+  { id: "chatgpt", name: "ChatGPT AI", nameBn: "চ্যাটজিপিটি", iconName: "domain:chatgpt.com", url: "https://chatgpt.com" },
+  { id: "google", name: "Google Chrome", nameBn: "গুগল ক্রোম", iconName: "domain:google.com", url: "https://www.google.com" },
   { id: "gmail", name: "Gmail", nameBn: "জিমেইল", iconName: "domain:gmail.com", url: "https://mail.google.com" },
   { id: "maps", name: "Google Maps", nameBn: "গুগল ম্যাপস", iconName: "domain:maps.google.com", url: "https://maps.google.com" },
   { id: "drive", name: "Google Drive", nameBn: "গুগল ড্রাইভ", iconName: "domain:drive.google.com", url: "https://drive.google.com" },
@@ -149,9 +151,22 @@ export function SmartEdgeSidebar() {
     return () => window.removeEventListener("open-smart-sidebar", handleToggle);
   }, []);
 
-  // Open App: ALWAYS opens in Vivo Freeform Floating Mini Window inside Pathasathi!
+  // Open App: Directly opens the Vivo-style Floating Mini Screen inside Pathasathi (Zero external redirects!)
   const openApp = (app: SmartAppItem) => {
     setDrawerOpen(false);
+
+    // Only system dialer/sms if user explicitly opens phone/messages
+    if (app.id === "phone") {
+      window.location.href = "tel:";
+      return;
+    }
+    if (app.id === "messages") {
+      window.location.href = "sms:";
+      return;
+    }
+
+    // ALL OTHER APPS (YouTube, ChatGPT, Facebook, Instagram, WhatsApp, TikTok, bKash, etc.)
+    // Open in Vivo-style Floating Mini Screen inside our PWA app!
     setActiveApp(app);
     setIsMinimized(false);
     setIsMaximized(false);
@@ -253,7 +268,7 @@ export function SmartEdgeSidebar() {
         />
       )}
 
-      {/* ── 3. Minimized Floating Bubble (Vivo Floating Ball) ── */}
+      {/* ── 3. Minimized Floating Bubble ── */}
       {activeApp && isMinimized && (
         <div
           onClick={() => setIsMinimized(false)}
@@ -267,17 +282,17 @@ export function SmartEdgeSidebar() {
         </div>
       )}
 
-      {/* ── 4. Vivo / OriginOS Style Floating Freeform Mini Window ── */}
+      {/* ── 4. Vivo / Android Style Floating Freeform Mini Window (Running INSIDE Pathasathi) ── */}
       {activeApp && !isMinimized && (
         <div
           className={`fixed z-50 flex flex-col bg-white shadow-2xl border border-slate-200/90 overflow-hidden transition-all duration-300 ${
             isMaximized
               ? "inset-2 sm:inset-6 rounded-3xl"
-              : "right-3 sm:right-6 bottom-20 sm:bottom-12 w-[340px] sm:w-[420px] h-[560px] max-h-[86vh] rounded-3xl"
+              : "right-3 sm:right-6 bottom-20 sm:bottom-12 w-[340px] sm:w-[410px] h-[540px] max-h-[84vh] rounded-3xl"
           }`}
         >
           {/* Mini Window Top Drag & Control Bar */}
-          <div className="px-4 py-2.5 bg-slate-900 text-white flex items-center justify-between select-none flex-shrink-0">
+          <div className="px-4 py-2.5 bg-slate-900 text-white flex items-center justify-between select-none cursor-move flex-shrink-0">
             <div className="flex items-center gap-2 min-w-0">
               <div className="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-white overflow-hidden p-0.5">
                 {renderAppIcon(activeApp, "w-4 h-4 text-white")}
@@ -285,8 +300,8 @@ export function SmartEdgeSidebar() {
               <span className="font-bold text-xs sm:text-sm truncate">
                 {activeApp.name}
               </span>
-              <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-sm bg-emerald-500/20 text-emerald-300 font-bold hidden sm:inline">
-                Vivo Mini Window
+              <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-sm bg-[#E05236] text-white font-bold hidden sm:inline">
+                Vivo Mini Screen
               </span>
             </div>
 
@@ -302,7 +317,7 @@ export function SmartEdgeSidebar() {
               <button
                 onClick={() => setIsMinimized(true)}
                 className="w-7 h-7 rounded-lg hover:bg-white/20 flex items-center justify-center text-white/80 transition cursor-pointer"
-                title="Minimize to Bubble"
+                title="Minimize"
               >
                 <Minus className="w-3.5 h-3.5" />
               </button>
@@ -323,12 +338,15 @@ export function SmartEdgeSidebar() {
             </div>
           </div>
 
-          {/* Mini Window Direct Interactive App Execution Area */}
+          {/* Mini Window Direct Interactive App Execution Area (RUNS DIRECTLY IN OUR APP) */}
           <div className="flex-1 overflow-hidden flex flex-col bg-slate-50/50">
             {activeApp.id === "youtube" && <YouTubeMiniApp />}
-            {activeApp.id === "whatsapp" && <WhatsAppMiniApp />}
             {activeApp.id === "chatgpt" && <ChatGPTMiniApp />}
             {activeApp.id === "google" && <GoogleSearchMiniApp />}
+            {activeApp.id === "whatsapp" && <WhatsAppMiniApp />}
+            {activeApp.id === "facebook" && <FacebookMiniApp />}
+            {activeApp.id === "instagram" && <InstagramMiniApp />}
+            {activeApp.id === "bkash" && <BKashMiniApp />}
             {activeApp.id === "spotify" && <SpotifyMiniApp />}
             {activeApp.id === "camera" && <CameraDeviceMiniApp />}
             {activeApp.id === "photos" && <PhotosDeviceMiniApp />}
@@ -343,8 +361,8 @@ export function SmartEdgeSidebar() {
             {activeApp.id === "transit" && <div className="flex-1 overflow-y-auto p-4"><TransitMiniApp /></div>}
             {activeApp.id === "halal_finder" && <div className="flex-1 overflow-y-auto p-4"><HalalFinderMiniApp /></div>}
 
-            {/* Other Apps Live Web Viewer in Mini Window */}
-            {!["youtube", "whatsapp", "chatgpt", "google", "spotify", "camera", "photos", "voice_rec", "calculator", "clock", "notes_app", "translate", "uscis", "remittance", "wage_calc", "transit", "halal_finder"].includes(activeApp.id) && (
+            {/* Any other app or custom user app runs in InAppWebViewer */}
+            {!["youtube", "chatgpt", "google", "whatsapp", "facebook", "instagram", "bkash", "spotify", "camera", "photos", "voice_rec", "calculator", "clock", "notes_app", "translate", "uscis", "remittance", "wage_calc", "transit", "halal_finder"].includes(activeApp.id) && (
               <InAppWebViewer app={activeApp} />
             )}
           </div>
@@ -368,7 +386,6 @@ function AppClonerDeviceModal({
   onClearAll: () => void;
   onClose: () => void;
 }) {
-  // Permission state
   const [hasPermission, setHasPermission] = useState<boolean>(() => {
     try {
       return localStorage.getItem("pathasathi_app_cloner_perm_granted_v2") === "true";
@@ -376,7 +393,6 @@ function AppClonerDeviceModal({
     return false;
   });
 
-  // Scanning animation state
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [scanProgress, setScanProgress] = useState<number>(0);
   const [search, setSearch] = useState("");
@@ -460,18 +476,18 @@ function AppClonerDeviceModal({
                 Device Permission Required
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
-                Allow <strong>Pathasathi Smart Cloner</strong> to access and launch apps in Floating Mini Windows?
+                Allow <strong>Pathasathi Smart Cloner</strong> to run apps inside Vivo-style floating mini windows?
               </p>
             </div>
 
             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-[11px] text-slate-600 text-left space-y-1.5">
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                <span>Launch YouTube, WhatsApp, and tools in floating mini window</span>
+                <span>Runs directly in our PWA app inside floating mini screen</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                <span>Add &amp; customize any app from your smartphone</span>
+                <span>Add &amp; customize any app with your own icon</span>
               </div>
             </div>
 
@@ -506,7 +522,7 @@ function AppClonerDeviceModal({
                 Scanning Device Applications…
               </h4>
               <p className="text-xs text-slate-500 font-mono">
-                Discovering phone packages ({scanProgress}%)
+                Preparing in-app mini windows ({scanProgress}%)
               </p>
             </div>
 
@@ -534,7 +550,7 @@ function AppClonerDeviceModal({
                     Device Apps Cloner
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Add installed apps to launch on phone • {userApps.length} in dock
+                    Runs inside Vivo Mini Window • {userApps.length} in dock
                   </p>
                 </div>
               </div>
@@ -555,7 +571,7 @@ function AppClonerDeviceModal({
                   type="text"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder="Search apps on this device..."
+                  placeholder="Search apps..."
                   className="w-full bg-transparent text-xs text-slate-900 outline-none placeholder:text-slate-400 font-medium"
                 />
                 {search && (
@@ -637,7 +653,7 @@ function AppClonerDeviceModal({
                         <h4 className="font-bold text-xs sm:text-sm text-slate-900">
                           {app.name}
                         </h4>
-                        <p className="text-[11px] text-slate-500">{app.nameBn || "Installed Device App"}</p>
+                        <p className="text-[11px] text-slate-500">{app.nameBn || "In-App Mini Screen"}</p>
                       </div>
                     </div>
 
@@ -652,12 +668,12 @@ function AppClonerDeviceModal({
                         {inDock ? (
                           <>
                             <Check className="w-3.5 h-3.5" />
-                            <span>Cloned</span>
+                            <span>Added</span>
                           </>
                         ) : (
                           <>
                             <Plus className="w-3.5 h-3.5" />
-                            <span>Clone</span>
+                            <span>Add</span>
                           </>
                         )}
                       </button>
@@ -700,17 +716,31 @@ function AppClonerDeviceModal({
   );
 }
 
-// ── 1. YouTube Live Mini App (Vivo Floating Window Style) ──────────────────────
+// ── 1. YouTube Live Mini Window (Playable Video Engine inside Pathasathi) ─────
 function YouTubeMiniApp() {
   const [currentVideoId, setCurrentVideoId] = useState("dQw4w9WgXcQ");
   const [searchQuery, setSearchQuery] = useState("");
 
   const YOUTUBE_FEEDS = [
-    { id: "dQw4w9WgXcQ", title: "How to apply for Driver's License in NY (Bengali Guide)", channel: "Immigrant Compass USA", views: "142K views", duration: "10:24", img: "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=300&q=80" },
-    { id: "9bZkp7q19f0", title: "NYC Subway Map & Commuting Guide for Newcomers", channel: "NYC Transit Tips", views: "89K views", duration: "08:15", img: "https://images.unsplash.com/photo-1517649763962-0c623266ddc0?w=300&q=80" },
-    { id: "kJQP7kiw5Fk", title: "Top 10 Bangladeshi Restaurants in Jackson Heights", channel: "Deshi Food Explorer", views: "230K views", duration: "14:40", img: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=80" },
-    { id: "L_LUpnjgPso", title: "Bangla News Live & Community Updates 24/7", channel: "Probashi Bangla TV", views: "410K views", duration: "Live", img: "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=300&q=80" },
+    { id: "dQw4w9WgXcQ", title: "How to apply for Driver's License in NY (Bengali Guide)", channel: "Immigrant Compass USA", views: "142K views" },
+    { id: "9bZkp7q19f0", title: "NYC Subway Map & Commuting Guide for Newcomers", channel: "NYC Transit Tips", views: "89K views" },
+    { id: "kJQP7kiw5Fk", title: "Top 10 Bangladeshi Restaurants in Jackson Heights", channel: "Deshi Food Explorer", views: "230K views" },
+    { id: "fJ9rUzIMcZQ", title: "US Citizenship Civics Test 100 Questions & Answers", channel: "USCIS Prep", views: "510K views" },
   ];
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    // Check if user pasted a YouTube URL
+    if (searchQuery.includes("youtube.com") || searchQuery.includes("youtu.be")) {
+      const match = searchQuery.match(/(?:v=|\/embed\/|youtu\.be\/)([\w-]{11})/);
+      if (match && match[1]) {
+        setCurrentVideoId(match[1]);
+        return;
+      }
+    }
+  };
 
   const filteredVideos = YOUTUBE_FEEDS.filter(v =>
     !searchQuery || v.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -718,8 +748,8 @@ function YouTubeMiniApp() {
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#0F0F0F] text-white">
-      {/* Live YouTube Video Player */}
-      <div className="relative w-full aspect-video bg-black flex-shrink-0 shadow-lg">
+      {/* Playable Video Frame */}
+      <div className="relative w-full aspect-video bg-black flex-shrink-0">
         <iframe
           src={`https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1&rel=0&modestbranding=1`}
           title="YouTube Player"
@@ -730,37 +760,35 @@ function YouTubeMiniApp() {
       </div>
 
       {/* Search Bar */}
-      <div className="p-2.5 bg-[#181818] border-b border-white/10 flex items-center gap-2">
+      <form onSubmit={handleSearchSubmit} className="p-2.5 bg-[#181818] border-b border-white/10 flex items-center gap-2">
         <div className="flex-1 flex items-center bg-[#272727] rounded-full px-3 py-1.5 text-xs text-white">
           <Search className="w-3.5 h-3.5 text-slate-400 mr-2 flex-shrink-0" />
           <input
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search YouTube videos in mini window…"
+            placeholder="Search YouTube or paste URL…"
             className="w-full bg-transparent outline-none text-xs text-white placeholder:text-slate-400"
           />
         </div>
-      </div>
+        <button type="submit" className="px-3 py-1.5 rounded-full bg-red-600 text-white text-xs font-bold cursor-pointer">
+          Play
+        </button>
+      </form>
 
-      {/* Suggested & Search Results Videos Feed */}
+      {/* Suggested Videos Feed */}
       <div className="flex-1 overflow-y-auto p-2.5 space-y-2">
+        <span className="text-[10px] font-bold uppercase text-slate-400 px-1">Suggested for you:</span>
         {filteredVideos.map(video => (
           <div
             key={video.id}
             onClick={() => setCurrentVideoId(video.id)}
             className={`p-2 rounded-2xl border transition flex gap-2.5 cursor-pointer active:scale-98 ${
-              currentVideoId === video.id ? "bg-[#272727] border-[#E05236]" : "bg-[#181818] border-white/5 hover:bg-[#222]"
+              currentVideoId === video.id ? "bg-[#272727] border-red-500" : "bg-[#181818] border-white/5 hover:bg-[#222]"
             }`}
           >
-            <div className="relative w-24 h-16 rounded-xl bg-slate-800 overflow-hidden flex-shrink-0">
-              <img src={video.img} alt={video.title} className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                <Play className="w-4 h-4 text-white fill-white" />
-              </div>
-              <span className="absolute bottom-1 right-1 bg-black/80 px-1 py-0.2 rounded-xs text-[9px] font-bold text-white">
-                {video.duration}
-              </span>
+            <div className="relative w-24 h-16 rounded-xl bg-slate-800 overflow-hidden flex-shrink-0 flex items-center justify-center">
+              <Play className="w-5 h-5 text-red-500 fill-red-500" />
             </div>
             <div className="flex-1 min-w-0">
               <h5 className="font-bold text-xs text-white line-clamp-2 leading-tight">{video.title}</h5>
@@ -773,80 +801,97 @@ function YouTubeMiniApp() {
   );
 }
 
-// ── 2. WhatsApp Mini App (Direct In-Window Messenger) ──────────────────────────
+// ── 2. WhatsApp In-App Messenger Mini Window ──────────────────────────────────
 function WhatsAppMiniApp() {
-  const [phoneNo, setPhoneNo] = useState("");
-  const [chatMessage, setChatMessage] = useState("");
-  const [sentList, setSentList] = useState<Array<{ phone: string; text: string; time: string }>>([
-    { phone: "+1 (929) 400-8812", text: "Assalamu Alaikum! Are you coming to Jackson Heights?", time: "10:30 AM" }
+  const [messages, setMessages] = useState([
+    { id: 1, sender: "Community Helper", text: "Assalamu Alaikum! How can we assist you today in NY?", time: "10:30 AM", isMe: false },
+    { id: 2, sender: "You", text: "I need help with Bangladeshi store locations.", time: "10:32 AM", isMe: true },
   ]);
+  const [text, setText] = useState("");
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phoneNo.trim() || !chatMessage.trim()) return;
-    const cleanPhone = phoneNo.replace(/\D/g, "");
-    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(chatMessage)}`;
-    window.open(waUrl, "_blank");
-
-    setSentList(prev => [{ phone: phoneNo, text: chatMessage, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }, ...prev]);
-    setChatMessage("");
+    if (!text.trim()) return;
+    const newMsg = { id: Date.now(), sender: "You", text: text.trim(), time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), isMe: true };
+    setMessages(prev => [...prev, newMsg]);
+    setText("");
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#111B21] text-white">
-      {/* Top Banner */}
-      <div className="p-3 bg-[#202C33] border-b border-[#222E35] flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-[#00A884] flex items-center justify-center text-white">
-            <MessageCircle className="w-4 h-4" />
+    <div className="flex-1 flex flex-col h-full bg-[#0b141a] text-white">
+      <div className="p-3 bg-[#202c33] flex items-center justify-between border-b border-white/10">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-xs">
+            WA
           </div>
           <div>
-            <h4 className="font-bold text-xs text-slate-100">WhatsApp Fast Chat</h4>
-            <p className="text-[10px] text-slate-400">Direct message any number without saving</p>
+            <h4 className="font-bold text-xs">WhatsApp Mini Chat</h4>
+            <p className="text-[10px] text-emerald-400">Online</p>
           </div>
         </div>
       </div>
 
-      {/* Input Form */}
-      <form onSubmit={handleSend} className="p-3 bg-[#202C33]/60 border-b border-[#222E35] space-y-2">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+        {messages.map(m => (
+          <div key={m.id} className={`flex ${m.isMe ? "justify-end" : "justify-start"}`}>
+            <div className={`max-w-[80%] p-2.5 rounded-2xl text-xs ${
+              m.isMe ? "bg-[#005c4b] text-white rounded-br-none" : "bg-[#202c33] text-slate-100 rounded-bl-none"
+            }`}>
+              <p className="leading-relaxed">{m.text}</p>
+              <span className="text-[9px] text-white/50 block text-right mt-1">{m.time}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <form onSubmit={handleSend} className="p-2.5 bg-[#202c33] flex items-center gap-2">
         <input
           type="text"
-          value={phoneNo}
-          onChange={e => setPhoneNo(e.target.value)}
-          placeholder="Phone Number (e.g. +1 929 400 8812)"
-          className="w-full bg-[#111B21] border border-[#2A3942] rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-[#00A884]"
+          value={text}
+          onChange={e => setText(e.target.value)}
+          placeholder="Type a message…"
+          className="flex-1 bg-[#2a3942] rounded-xl px-3 py-2 text-xs text-white outline-none placeholder:text-slate-400"
         />
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={chatMessage}
-            onChange={e => setChatMessage(e.target.value)}
-            placeholder="Type WhatsApp message…"
-            className="flex-1 bg-[#111B21] border border-[#2A3942] rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-[#00A884]"
-          />
-          <button
-            type="submit"
-            disabled={!phoneNo.trim() || !chatMessage.trim()}
-            className="px-4 py-2 bg-[#00A884] disabled:opacity-40 rounded-xl text-white text-xs font-bold flex items-center gap-1 cursor-pointer transition active:scale-95"
-          >
-            <Send className="w-3.5 h-3.5" />
-            <span>Send</span>
-          </button>
-        </div>
+        <button type="submit" disabled={!text.trim()} className="w-8 h-8 rounded-xl bg-emerald-600 disabled:opacity-40 flex items-center justify-center text-white cursor-pointer">
+          <Send className="w-3.5 h-3.5" />
+        </button>
       </form>
+    </div>
+  );
+}
 
-      {/* Recents Chat History in Mini Window */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-          Recent WhatsApp Messages:
-        </span>
-        {sentList.map((c, i) => (
-          <div key={i} className="p-3 bg-[#202C33] rounded-2xl border border-[#2A3942] space-y-1">
-            <div className="flex justify-between items-center text-xs">
-              <span className="font-bold text-[#00A884]">{c.phone}</span>
-              <span className="text-[10px] text-slate-400">{c.time}</span>
+// ── 3. Facebook In-App Social Mini Window ─────────────────────────────────────
+function FacebookMiniApp() {
+  const posts = [
+    { author: "Bangladeshi Community NY", time: "2h ago", content: "🎉 Annual Community gathering in Queens this Saturday! All Bangladeshi families welcome." },
+    { author: "Immigrant Connect News", time: "5h ago", content: "📋 USCIS announced new online filing options for immigrant workers." },
+  ];
+
+  return (
+    <div className="flex-1 flex flex-col h-full bg-slate-100 text-slate-900">
+      <div className="p-3 bg-[#1877F2] text-white flex items-center justify-between shadow-xs">
+        <div className="flex items-center gap-2 font-bold text-sm">
+          <Facebook className="w-5 h-5 fill-white" />
+          <span>Facebook Mini</span>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+        {posts.map((p, i) => (
+          <div key={i} className="bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-[#1877F2] text-white flex items-center justify-center text-xs font-bold">
+                f
+              </div>
+              <div>
+                <h5 className="font-bold text-xs leading-tight">{p.author}</h5>
+                <span className="text-[10px] text-slate-400">{p.time}</span>
+              </div>
             </div>
-            <p className="text-xs text-slate-200">{c.text}</p>
+            <p className="text-xs text-slate-700 leading-relaxed">{p.content}</p>
+            <div className="flex gap-4 pt-2 border-t border-slate-100 text-slate-500 text-[11px] font-bold">
+              <button className="flex items-center gap-1 hover:text-blue-600"><Heart className="w-3.5 h-3.5" /> Like</button>
+              <button className="flex items-center gap-1 hover:text-blue-600"><MessageSquare className="w-3.5 h-3.5" /> Comment</button>
+            </div>
           </div>
         ))}
       </div>
@@ -854,10 +899,116 @@ function WhatsAppMiniApp() {
   );
 }
 
-// ── 3. ChatGPT Live Mini App ──────────────────────────────────────────────────
+// ── 4. Instagram In-App Reels & Photos Mini Window ────────────────────────────
+function InstagramMiniApp() {
+  const images = [
+    { title: "Queens Sunset with Bengali friends", likes: "1.2K" },
+    { title: "Halal Food Tour in Jackson Heights", likes: "3.4K" },
+  ];
+
+  return (
+    <div className="flex-1 flex flex-col h-full bg-black text-white">
+      <div className="p-3 bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 flex items-center justify-between text-white font-bold text-sm">
+        <div className="flex items-center gap-2">
+          <Instagram className="w-4 h-4" />
+          <span>Instagram Mini</span>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+        {images.map((item, i) => (
+          <div key={i} className="bg-neutral-900 rounded-2xl overflow-hidden border border-neutral-800 space-y-2">
+            <div className="h-44 bg-neutral-800 flex items-center justify-center text-neutral-500 text-xs">
+              📸 Photo / Reel Stream
+            </div>
+            <div className="p-3 space-y-1">
+              <div className="flex gap-3 text-white">
+                <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                <MessageCircle className="w-4 h-4" />
+                <Share2 className="w-4 h-4" />
+              </div>
+              <p className="text-xs font-bold pt-1">{item.likes} likes</p>
+              <p className="text-xs text-neutral-300">{item.title}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── 5. bKash / Payment In-App Mini Window ─────────────────────────────────────
+function BKashMiniApp() {
+  const [amount, setAmount] = useState(100);
+  const rate = 121.5;
+
+  return (
+    <div className="flex-1 flex flex-col h-full bg-slate-50 text-slate-900">
+      <div className="p-3 bg-[#E2136E] text-white flex items-center justify-between">
+        <span className="font-extrabold text-sm">bKash Remittance</span>
+        <span className="text-xs font-mono font-bold">$1 = ৳121.50</span>
+      </div>
+      <div className="p-4 space-y-3 flex-1 overflow-y-auto">
+        <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+          <label className="text-[11px] font-bold text-slate-500 block uppercase">Send USD from USA</label>
+          <input
+            type="number"
+            value={amount}
+            onChange={e => setAmount(Number(e.target.value))}
+            className="w-full text-lg font-bold p-2 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+          />
+        </div>
+
+        <div className="bg-[#FFF0F6] p-3.5 rounded-2xl border border-[#E2136E]/20 text-center space-y-1">
+          <span className="text-xs text-[#E2136E] font-bold">Recipient receives in Bangladesh bKash:</span>
+          <div className="text-2xl font-extrabold text-[#E2136E] font-mono">
+            ৳{(amount * rate).toLocaleString()} BDT
+          </div>
+        </div>
+
+        <button onClick={() => alert("Connecting to bKash Direct Gateway...")} className="w-full py-3 bg-[#E2136E] text-white rounded-2xl font-extrabold text-xs shadow-md cursor-pointer active:scale-95">
+          Send Money to bKash
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── 6. Spotify Music Player Mini Window ───────────────────────────────────────
+function SpotifyMiniApp() {
+  const [playing, setPlaying] = useState(false);
+
+  return (
+    <div className="flex-1 flex flex-col h-full bg-[#121212] text-white p-4 justify-between">
+      <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
+        <Music className="w-4 h-4" />
+        <span>Spotify Mini Player</span>
+      </div>
+
+      <div className="text-center space-y-3">
+        <div className="w-32 h-32 mx-auto rounded-2xl bg-neutral-800 border border-neutral-700 flex items-center justify-center">
+          <Music className="w-12 h-12 text-emerald-400" />
+        </div>
+        <div>
+          <h4 className="font-bold text-sm">Bengali Community Favorites</h4>
+          <p className="text-xs text-neutral-400">Pathasathi Radio Station</p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex justify-center items-center gap-4">
+          <button onClick={() => setPlaying(p => !p)} className="w-12 h-12 rounded-full bg-emerald-500 text-black flex items-center justify-center font-bold cursor-pointer">
+            {playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 fill-black" />}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── 7. ChatGPT Live Mini App ──────────────────────────────────────────────────
 function ChatGPTMiniApp() {
   const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; text: string }>>([
-    { role: "assistant", text: "Hello! I am your AI Assistant right inside your floating mini window. Ask me any question in English or বাংলা! 🤖" },
+    { role: "assistant", text: "Hello! I am your AI Assistant right inside your mini window. Ask me anything! 🤖" },
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -876,7 +1027,7 @@ function ChatGPTMiniApp() {
     setIsTyping(true);
 
     setTimeout(() => {
-      let reply = `Here is helpful information for "${q}": You can check official community guidelines, apply for resources, and connect with people directly in Pathasathi!`;
+      let reply = `Information for "${q}": You can check official guidelines or perform tasks directly in Pathasathi!`;
       setMessages(prev => [...prev, { role: "assistant", text: reply }]);
       setIsTyping(false);
     }, 700);
@@ -919,7 +1070,7 @@ function ChatGPTMiniApp() {
   );
 }
 
-// ── 4. Google Search Live Mini App ───────────────────────────────────────────
+// ── 8. Google Search Live Mini App ───────────────────────────────────────────
 function GoogleSearchMiniApp() {
   const [query, setQuery] = useState("Bangladeshi community in New York");
   const [results, setResults] = useState([
@@ -941,7 +1092,7 @@ function GoogleSearchMiniApp() {
       <form onSubmit={handleSearch} className="p-3 border-b border-slate-200 bg-slate-50 flex items-center gap-2">
         <div className="flex-1 flex items-center bg-white border border-slate-300 rounded-full px-3 py-1.5 shadow-2xs">
           <Search className="w-3.5 h-3.5 text-slate-400 mr-2" />
-          <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search Google in mini window..." className="w-full bg-transparent text-xs text-slate-800 outline-none" />
+          <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search Google..." className="w-full bg-transparent text-xs text-slate-800 outline-none" />
         </div>
         <button type="submit" className="px-3 py-1.5 rounded-full bg-[#E05236] text-white text-xs font-bold shadow-xs cursor-pointer">
           Search
@@ -962,51 +1113,7 @@ function GoogleSearchMiniApp() {
   );
 }
 
-// ── 5. Spotify Mini App ───────────────────────────────────────────────────────
-function SpotifyMiniApp() {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTrack, setCurrentTrack] = useState({ title: "Purano Sei Diner Kotha", artist: "Rabindra Sangeet", duration: "3:42" });
-
-  const tracks = [
-    { title: "Purano Sei Diner Kotha", artist: "Rabindra Sangeet", duration: "3:42" },
-    { title: "Dhaka Nights & Rain", artist: "Lofi Bangla Beats", duration: "2:58" },
-    { title: "New York State of Mind", artist: "Deshi Acoustic Mix", duration: "4:15" },
-  ];
-
-  return (
-    <div className="flex-1 flex flex-col h-full bg-[#121212] text-white p-4 justify-between">
-      <div className="text-center space-y-3 my-auto">
-        <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-900 mx-auto shadow-2xl flex items-center justify-center p-4">
-          <Music className="w-14 h-14 text-white" />
-        </div>
-        <div>
-          <h4 className="font-bold text-sm text-white">{currentTrack.title}</h4>
-          <p className="text-xs text-slate-400 mt-0.5">{currentTrack.artist}</p>
-        </div>
-
-        {/* Player Controls */}
-        <div className="flex justify-center items-center gap-4 pt-2">
-          <button onClick={() => setIsPlaying(p => !p)} className="w-12 h-12 rounded-full bg-[#1ED760] text-black flex items-center justify-center shadow-lg active:scale-95 cursor-pointer">
-            {isPlaying ? <Pause className="w-5 h-5 fill-black" /> : <Play className="w-5 h-5 fill-black ml-0.5" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Playlist */}
-      <div className="space-y-1.5 border-t border-white/10 pt-3">
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Playlist:</span>
-        {tracks.map((t, i) => (
-          <div key={i} onClick={() => { setCurrentTrack(t); setIsPlaying(true); }} className="flex justify-between p-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs cursor-pointer">
-            <span className="font-medium text-slate-200">{t.title}</span>
-            <span className="text-slate-400">{t.duration}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── 6. In-App Web Viewer for Other Apps ───────────────────────────────────────
+// ── 9. In-App Web Viewer for Other Apps ───────────────────────────────────────
 function InAppWebViewer({ app }: { app: SmartAppItem }) {
   const targetUrl = app.url || `https://www.google.com/search?q=${encodeURIComponent(app.name)}`;
   const cleanDomain = targetUrl.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
@@ -1018,7 +1125,7 @@ function InAppWebViewer({ app }: { app: SmartAppItem }) {
           <Globe className="w-3 h-3 text-slate-400 mr-1.5 flex-shrink-0" />
           <span className="font-mono text-[11px] truncate">{cleanDomain}</span>
         </div>
-        <a href={targetUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 transition">
+        <a href={targetUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 transition" title="Open Full View">
           <ExternalLink className="w-3.5 h-3.5" />
         </a>
       </div>
