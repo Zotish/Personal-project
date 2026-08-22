@@ -8,7 +8,7 @@ import {
   Smartphone, Trash2, Play, Send, Phone, MessageCircle,
   Camera, Image, Clock, Mic, FolderOpen, Settings,
   Car, ShoppingCart, Video, ShieldCheck, ArrowRight, Radio,
-  Shield, CheckCircle, Cpu, RadioTower, Layers, Zap
+  Shield, CheckCircle, Cpu, RadioTower, Layers, Zap, Upload
 } from "lucide-react";
 
 // Types
@@ -18,54 +18,56 @@ export interface SmartAppItem {
   nameBn?: string;
   iconName: string;
   url?: string;
+  deepLink?: string;
   isBuiltIn?: boolean;
+  customIcon?: string;
 }
 
 // Default Apps on Dock (Starts 100% empty so user only adds what they clone from device)
 const DEFAULT_APPS: SmartAppItem[] = [];
 
-// Full Device Installed Apps (Discovered during device scan)
+// Full Device Installed Apps with Native App Deep Links
 const ALL_DEVICE_APPS: SmartAppItem[] = [
-  // System & Core Phone Apps
-  { id: "phone", name: "Phone / Dialer", nameBn: "ফোন ডায়ালার", iconName: "phone", url: "tel:" },
-  { id: "messages", name: "Messages / SMS", nameBn: "মেসেজ / এসএমএস", iconName: "messages", url: "sms:" },
-  { id: "camera", name: "Camera", nameBn: "ক্যামেরা", iconName: "camera" },
-  { id: "photos", name: "Photos & Gallery", nameBn: "গ্যালারি", iconName: "photos" },
-  { id: "voice_rec", name: "Voice Recorder", nameBn: "ভয়েস রেকর্ডার", iconName: "voice_rec" },
+  // System & Core Phone Apps (Direct Hardware / OS Links)
+  { id: "phone", name: "Phone / Dialer", nameBn: "ফোন ডায়ালার", iconName: "phone", deepLink: "tel:", url: "tel:" },
+  { id: "messages", name: "Messages / SMS", nameBn: "মেসেজ / এসএমএস", iconName: "messages", deepLink: "sms:", url: "sms:" },
+  { id: "camera", name: "Camera", nameBn: "ক্যামেরা", iconName: "camera", isBuiltIn: true },
+  { id: "photos", name: "Photos & Gallery", nameBn: "গ্যালারি", iconName: "photos", isBuiltIn: true },
+  { id: "voice_rec", name: "Voice Recorder", nameBn: "ভয়েস রেকর্ডার", iconName: "voice_rec", isBuiltIn: true },
   { id: "calculator", name: "Calculator", nameBn: "ক্যালকুলেটর", iconName: "calculator", isBuiltIn: true },
-  { id: "clock", name: "Clock & Timer", nameBn: "ঘড়ি ও টাইমার", iconName: "clock" },
+  { id: "clock", name: "Clock & Timer", nameBn: "ঘড়ি ও টাইমার", iconName: "clock", isBuiltIn: true },
   { id: "notes_app", name: "Notes & Memos", nameBn: "নোটপ্যাড", iconName: "notes_app", isBuiltIn: true },
 
-  // Communication & Social
-  { id: "whatsapp", name: "WhatsApp", nameBn: "হোয়াটসঅ্যাপ", iconName: "domain:whatsapp.com", url: "https://web.whatsapp.com" },
-  { id: "facebook", name: "Facebook", nameBn: "ফেসবুক", iconName: "domain:facebook.com", url: "https://m.facebook.com" },
-  { id: "messenger", name: "Messenger", nameBn: "মেসেঞ্জার", iconName: "domain:messenger.com", url: "https://m.me" },
-  { id: "instagram", name: "Instagram", nameBn: "ইনস্টাগ্রাম", iconName: "domain:instagram.com", url: "https://www.instagram.com" },
-  { id: "tiktok", name: "TikTok", nameBn: "টিকটক", iconName: "domain:tiktok.com", url: "https://www.tiktok.com" },
-  { id: "telegram", name: "Telegram", nameBn: "টেলিগ্রাম", iconName: "domain:telegram.org", url: "https://web.telegram.org" },
-  { id: "twitter", name: "X (Twitter)", nameBn: "টুইটার / এক্স", iconName: "domain:x.com", url: "https://x.com" },
-  { id: "discord", name: "Discord", nameBn: "ডিসকর্ড", iconName: "domain:discord.com", url: "https://discord.com" },
+  // Communication & Social (Native App Deep Link Schemes)
+  { id: "whatsapp", name: "WhatsApp", nameBn: "হোয়াটসঅ্যাপ", iconName: "domain:whatsapp.com", deepLink: "whatsapp://send", url: "https://web.whatsapp.com" },
+  { id: "facebook", name: "Facebook", nameBn: "ফেসবুক", iconName: "domain:facebook.com", deepLink: "fb://", url: "https://m.facebook.com" },
+  { id: "messenger", name: "Messenger", nameBn: "মেসেঞ্জার", iconName: "domain:messenger.com", deepLink: "fb-messenger://", url: "https://m.me" },
+  { id: "instagram", name: "Instagram", nameBn: "ইনস্টাগ্রাম", iconName: "domain:instagram.com", deepLink: "instagram://", url: "https://www.instagram.com" },
+  { id: "tiktok", name: "TikTok", nameBn: "টিকটক", iconName: "domain:tiktok.com", deepLink: "snssdk1233://", url: "https://www.tiktok.com" },
+  { id: "telegram", name: "Telegram", nameBn: "টেলিগ্রাম", iconName: "domain:telegram.org", deepLink: "tg://", url: "https://web.telegram.org" },
+  { id: "twitter", name: "X (Twitter)", nameBn: "টুইটার / এক্স", iconName: "domain:x.com", deepLink: "twitter://", url: "https://x.com" },
+  { id: "discord", name: "Discord", nameBn: "ডিসকর্ড", iconName: "domain:discord.com", deepLink: "discord://", url: "https://discord.com" },
 
   // Media & Video
-  { id: "youtube", name: "YouTube", nameBn: "ইউটিউব", iconName: "domain:youtube.com", url: "https://m.youtube.com" },
-  { id: "spotify", name: "Spotify", nameBn: "স্পটিফাই মিউজিক", iconName: "domain:spotify.com", url: "https://open.spotify.com" },
-  { id: "netflix", name: "Netflix", nameBn: "নেটফ্লিক্স", iconName: "domain:netflix.com", url: "https://netflix.com" },
+  { id: "youtube", name: "YouTube", nameBn: "ইউটিউব", iconName: "domain:youtube.com", deepLink: "vnd.youtube://", url: "https://m.youtube.com" },
+  { id: "spotify", name: "Spotify", nameBn: "স্পটিফাই মিউজিক", iconName: "domain:spotify.com", deepLink: "spotify://", url: "https://open.spotify.com" },
+  { id: "netflix", name: "Netflix", nameBn: "নেটফ্লিক্স", iconName: "domain:netflix.com", deepLink: "nflx://", url: "https://netflix.com" },
 
   // Google & Productivity
-  { id: "chatgpt", name: "ChatGPT AI", nameBn: "চ্যাটজিপিটি", iconName: "domain:chatgpt.com", url: "https://chatgpt.com" },
-  { id: "google", name: "Google Chrome", nameBn: "গুগল ক্রোম", iconName: "domain:google.com", url: "https://www.google.com" },
-  { id: "gmail", name: "Gmail", nameBn: "জিমেইল", iconName: "domain:gmail.com", url: "https://mail.google.com" },
-  { id: "maps", name: "Google Maps", nameBn: "গুগল ম্যাপস", iconName: "domain:maps.google.com", url: "https://maps.google.com" },
-  { id: "drive", name: "Google Drive", nameBn: "গুগল ড্রাইভ", iconName: "domain:drive.google.com", url: "https://drive.google.com" },
+  { id: "chatgpt", name: "ChatGPT AI", nameBn: "চ্যাটজিপিটি", iconName: "domain:chatgpt.com", deepLink: "chatgpt://", url: "https://chatgpt.com" },
+  { id: "google", name: "Google Chrome", nameBn: "গুগল ক্রোম", iconName: "domain:google.com", deepLink: "googlechrome://", url: "https://www.google.com" },
+  { id: "gmail", name: "Gmail", nameBn: "জিমেইল", iconName: "domain:gmail.com", deepLink: "googlegmail://", url: "https://mail.google.com" },
+  { id: "maps", name: "Google Maps", nameBn: "গুগল ম্যাপস", iconName: "domain:maps.google.com", deepLink: "geo:0,0?q=", url: "https://maps.google.com" },
+  { id: "drive", name: "Google Drive", nameBn: "গুগল ড্রাইভ", iconName: "domain:drive.google.com", deepLink: "googledrive://", url: "https://drive.google.com" },
 
   // Finance & Travel
-  { id: "bkash", name: "bKash", nameBn: "বিকাশ", iconName: "domain:bkash.com", url: "https://www.bkash.com" },
-  { id: "nagad", name: "Nagad", nameBn: "নগদ", iconName: "domain:nagad.com.bd", url: "https://nagad.com.bd" },
-  { id: "remitly", name: "Remitly", nameBn: "রেমিটলি", iconName: "domain:remitly.com", url: "https://remitly.com" },
-  { id: "uber", name: "Uber", nameBn: "উবার", iconName: "domain:uber.com", url: "https://m.uber.com" },
-  { id: "amazon", name: "Amazon", nameBn: "অ্যামাজন", iconName: "domain:amazon.com", url: "https://www.amazon.com" },
+  { id: "bkash", name: "bKash", nameBn: "বিকাশ", iconName: "domain:bkash.com", deepLink: "bkash://", url: "https://www.bkash.com" },
+  { id: "nagad", name: "Nagad", nameBn: "নগদ", iconName: "domain:nagad.com.bd", deepLink: "nagad://", url: "https://nagad.com.bd" },
+  { id: "remitly", name: "Remitly", nameBn: "রেমিটলি", iconName: "domain:remitly.com", deepLink: "remitly://", url: "https://remitly.com" },
+  { id: "uber", name: "Uber", nameBn: "উবার", iconName: "domain:uber.com", deepLink: "uber://", url: "https://m.uber.com" },
+  { id: "amazon", name: "Amazon", nameBn: "অ্যামাজন", iconName: "domain:amazon.com", deepLink: "com.amazon.mobile.shopping://", url: "https://www.amazon.com" },
 
-  // Immigrant Utilities
+  // Immigrant Utilities (In-App Tools)
   { id: "translate", name: "Live Translator", nameBn: "অনুবাদক", iconName: "translate", isBuiltIn: true },
   { id: "uscis", name: "USCIS Case Tracker", nameBn: "ইউএসসিআইএস ট্র্যাকার", iconName: "uscis", isBuiltIn: true },
   { id: "remittance", name: "Taka / Remittance Rates", nameBn: "টাকা রেট", iconName: "remittance", isBuiltIn: true },
@@ -74,8 +76,19 @@ const ALL_DEVICE_APPS: SmartAppItem[] = [
   { id: "halal_finder", name: "Halal Grocers", nameBn: "হালাল বাজার", iconName: "halal_finder", isBuiltIn: true },
 ];
 
-// Helper to render real app icon or favicon
-function renderAppIcon(iconName: string, className = "w-6 h-6") {
+// Helper to render real app icon or favicon or custom image
+function renderAppIcon(app: SmartAppItem | { iconName: string; customIcon?: string }, className = "w-6 h-6") {
+  if (app.customIcon) {
+    return (
+      <img
+        src={app.customIcon}
+        alt="custom"
+        className={`${className} object-cover rounded-xl shadow-xs`}
+      />
+    );
+  }
+
+  const iconName = app.iconName;
   if (iconName.startsWith("domain:")) {
     const domain = iconName.replace("domain:", "");
     return (
@@ -119,7 +132,7 @@ export function SmartEdgeSidebar() {
   // User custom dock apps state with localStorage persistence
   const [userApps, setUserApps] = useState<SmartAppItem[]>(() => {
     try {
-      const saved = localStorage.getItem("pathasathi_smart_dock_apps_v8");
+      const saved = localStorage.getItem("pathasathi_smart_dock_apps_v9");
       if (saved) return JSON.parse(saved);
     } catch {}
     return DEFAULT_APPS;
@@ -127,11 +140,10 @@ export function SmartEdgeSidebar() {
 
   useEffect(() => {
     try {
-      localStorage.setItem("pathasathi_smart_dock_apps_v8", JSON.stringify(userApps));
+      localStorage.setItem("pathasathi_smart_dock_apps_v9", JSON.stringify(userApps));
     } catch {}
   }, [userApps]);
 
-  // Touch swipe handling on edge handle
   // Listen to open-smart-sidebar event from header Location button
   useEffect(() => {
     const handleToggle = () => setDrawerOpen(v => !v);
@@ -139,17 +151,38 @@ export function SmartEdgeSidebar() {
     return () => window.removeEventListener("open-smart-sidebar", handleToggle);
   }, []);
 
+  // Open App: Native App Deep Link trigger on phone, fallback to floating mini-window
   const openApp = (app: SmartAppItem) => {
-    if (app.url === "tel:" || app.url === "sms:") {
-      window.location.href = app.url;
-      setDrawerOpen(false);
+    setDrawerOpen(false);
+
+    // 1. Direct hardware system URI (tel:, sms:)
+    if (app.deepLink && (app.deepLink.startsWith("tel:") || app.deepLink.startsWith("sms:") || app.deepLink.startsWith("mailto:"))) {
+      window.location.href = app.deepLink;
       return;
     }
 
+    // 2. If it is a native mobile device and has a deepLink, launch the phone's native app directly!
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobile && app.deepLink && !app.isBuiltIn) {
+      // Trigger native app scheme
+      window.location.href = app.deepLink;
+
+      // Fallback: If native app is not installed, open mini window or web link
+      const fallbackTimer = setTimeout(() => {
+        if (app.url) {
+          setActiveApp(app);
+          setIsMinimized(false);
+        }
+      }, 1400);
+
+      window.addEventListener("blur", () => clearTimeout(fallbackTimer), { once: true });
+      return;
+    }
+
+    // 3. For built-in tools or desktop preview, open in Vivo Floating Mini Window
     setActiveApp(app);
     setIsMinimized(false);
     setIsMaximized(false);
-    setDrawerOpen(false);
   };
 
   const toggleAppInDock = (app: SmartAppItem) => {
@@ -161,14 +194,16 @@ export function SmartEdgeSidebar() {
     }
   };
 
-  const addNamedApp = (appName: string) => {
-    if (!appName.trim()) return;
-    const cleanName = appName.trim();
+  const addCustomApp = (name: string, customIcon?: string) => {
+    if (!name.trim()) return;
+    const cleanName = name.trim();
     const cleanDomain = cleanName.toLowerCase().replace(/\s+/g, "") + ".com";
     const customItem: SmartAppItem = {
       id: `custom_${Date.now()}`,
       name: cleanName,
       iconName: `domain:${cleanDomain}`,
+      customIcon: customIcon,
+      deepLink: `${cleanName.toLowerCase().replace(/\s+/g, "")}://`,
       url: `https://${cleanDomain}`,
     };
     setUserApps(prev => [...prev, customItem]);
@@ -180,7 +215,7 @@ export function SmartEdgeSidebar() {
 
   return (
     <>
-      {/* ── 2. Smart Sidebar Icon-Only White Dock (Vivo style) ── */}
+      {/* ── 1. Smart Sidebar Icon-Only White Dock (Vivo style) ── */}
       {drawerOpen && (
         <div className="fixed inset-0 z-50 flex justify-end items-start">
           {/* Fully Transparent Backdrop */}
@@ -210,7 +245,7 @@ export function SmartEdgeSidebar() {
                   title={app.name}
                 >
                   <div className="text-slate-600 group-hover:text-slate-950 group-hover:scale-115 transition-all flex items-center justify-center">
-                    {renderAppIcon(app.iconName, "w-6 h-6 sm:w-6.5 sm:h-6.5")}
+                    {renderAppIcon(app, "w-6 h-6 sm:w-6.5 sm:h-6.5")}
                   </div>
 
                   {/* Tooltip on hover */}
@@ -236,18 +271,18 @@ export function SmartEdgeSidebar() {
         </div>
       )}
 
-      {/* ── 3. App Cloner Device Permission & Scanner Modal ── */}
+      {/* ── 2. App Cloner Device Permission & Scanner Modal ── */}
       {showClonerModal && (
         <AppClonerDeviceModal
           userApps={userApps}
           onToggleApp={toggleAppInDock}
-          onAddNamedApp={addNamedApp}
+          onAddCustomApp={addCustomApp}
           onClearAll={clearAllApps}
           onClose={() => setShowClonerModal(false)}
         />
       )}
 
-      {/* ── 4. Minimized Floating Bubble ── */}
+      {/* ── 3. Minimized Floating Bubble ── */}
       {activeApp && isMinimized && (
         <div
           onClick={() => setIsMinimized(false)}
@@ -255,13 +290,13 @@ export function SmartEdgeSidebar() {
           title="Click to restore Mini Window"
         >
           <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-xs overflow-hidden p-1">
-            {renderAppIcon(activeApp.iconName, "w-5 h-5")}
+            {renderAppIcon(activeApp, "w-5 h-5")}
           </div>
           <span className="text-xs font-bold pr-2">Restore {activeApp.name}</span>
         </div>
       )}
 
-      {/* ── 5. Vivo / Android Style Floating Freeform Mini Window ── */}
+      {/* ── 4. Vivo / Android Style Floating Freeform Mini Window ── */}
       {activeApp && !isMinimized && (
         <div
           className={`fixed z-50 flex flex-col bg-white shadow-2xl border border-slate-200/90 overflow-hidden transition-all duration-300 ${
@@ -274,7 +309,7 @@ export function SmartEdgeSidebar() {
           <div className="px-4 py-2.5 bg-slate-900 text-white flex items-center justify-between select-none cursor-move flex-shrink-0">
             <div className="flex items-center gap-2 min-w-0">
               <div className="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-white overflow-hidden p-0.5">
-                {renderAppIcon(activeApp.iconName, "w-4 h-4 text-white")}
+                {renderAppIcon(activeApp, "w-4 h-4 text-white")}
               </div>
               <span className="font-bold text-xs sm:text-sm truncate">
                 {activeApp.name}
@@ -346,24 +381,24 @@ export function SmartEdgeSidebar() {
   );
 }
 
-// ── App Cloner Modal with One-Time Device Permission & App Scanner ────────────
+// ── App Cloner Modal with Device Permission & User's Own Apps ─────────────────
 function AppClonerDeviceModal({
   userApps,
   onToggleApp,
-  onAddNamedApp,
+  onAddCustomApp,
   onClearAll,
   onClose,
 }: {
   userApps: SmartAppItem[];
   onToggleApp: (app: SmartAppItem) => void;
-  onAddNamedApp: (name: string) => void;
+  onAddCustomApp: (name: string, icon?: string) => void;
   onClearAll: () => void;
   onClose: () => void;
 }) {
   // Permission state
   const [hasPermission, setHasPermission] = useState<boolean>(() => {
     try {
-      return localStorage.getItem("pathasathi_app_cloner_perm_granted") === "true";
+      return localStorage.getItem("pathasathi_app_cloner_perm_granted_v2") === "true";
     } catch {}
     return false;
   });
@@ -372,7 +407,9 @@ function AppClonerDeviceModal({
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [scanProgress, setScanProgress] = useState<number>(0);
   const [search, setSearch] = useState("");
-  const [customInput, setCustomInput] = useState("");
+  const [customName, setCustomName] = useState("");
+  const [customIconPreview, setCustomIconPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleGrantPermission = () => {
     setIsScanning(true);
@@ -385,7 +422,7 @@ function AppClonerDeviceModal({
           setIsScanning(false);
           setHasPermission(true);
           try {
-            localStorage.setItem("pathasathi_app_cloner_perm_granted", "true");
+            localStorage.setItem("pathasathi_app_cloner_perm_granted_v2", "true");
           } catch {}
           return 100;
         }
@@ -410,6 +447,22 @@ function AppClonerDeviceModal({
     }, 150);
   };
 
+  const handleIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setCustomIconPreview(url);
+    }
+  };
+
+  const handleAddCustom = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customName.trim()) return;
+    onAddCustomApp(customName.trim(), customIconPreview || undefined);
+    setCustomName("");
+    setCustomIconPreview(null);
+  };
+
   const filteredApps = ALL_DEVICE_APPS.filter(app => {
     return (
       !search ||
@@ -418,16 +471,9 @@ function AppClonerDeviceModal({
     );
   });
 
-  const handleAddCustom = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customInput.trim()) return;
-    onAddNamedApp(customInput.trim());
-    setCustomInput("");
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[86vh] animate-in zoom-in-95 duration-200 text-slate-900">
+      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-200 text-slate-900">
 
         {/* ── CASE 1: One-Time Device Permission Request ── */}
         {!hasPermission && !isScanning && (
@@ -441,18 +487,18 @@ function AppClonerDeviceModal({
                 Device Permission Required
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
-                Allow <strong>Pathasathi Smart Cloner</strong> to scan and access installed applications on this device?
+                Allow <strong>Pathasathi Smart Cloner</strong> to access and launch installed apps from this device?
               </p>
             </div>
 
             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-[11px] text-slate-600 text-left space-y-1.5">
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                <span>One-time scan for installed phone applications</span>
+                <span>Directly launch native mobile apps (WhatsApp, YouTube, etc.)</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                <span>Clone &amp; launch apps in Freeform Floating Mini Windows</span>
+                <span>Add &amp; customize any app from your smartphone</span>
               </div>
             </div>
 
@@ -484,7 +530,7 @@ function AppClonerDeviceModal({
 
             <div className="space-y-1">
               <h4 className="font-extrabold text-base text-slate-900">
-                Scanning Installed Device Apps…
+                Scanning Device Applications…
               </h4>
               <p className="text-xs text-slate-500 font-mono">
                 Discovering phone packages ({scanProgress}%)
@@ -515,7 +561,7 @@ function AppClonerDeviceModal({
                     Device Apps Cloner
                   </h3>
                   <p className="text-xs text-slate-500">
-                    {ALL_DEVICE_APPS.length} apps discovered on phone • {userApps.length} in dock
+                    Add installed apps to launch on phone • {userApps.length} in dock
                   </p>
                 </div>
               </div>
@@ -527,15 +573,16 @@ function AppClonerDeviceModal({
               </button>
             </div>
 
-            {/* Search Bar */}
-            <div className="p-3 border-b border-slate-100 bg-slate-50/70 space-y-2">
+            {/* Search Bar & Custom App Creator */}
+            <div className="p-3 border-b border-slate-100 bg-slate-50/70 space-y-2.5">
+              {/* Search */}
               <div className="flex items-center bg-white border border-slate-200 rounded-2xl px-3 py-2 text-xs shadow-2xs focus-within:border-[#E05236]">
                 <Search className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
                 <input
                   type="text"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder="Search discovered apps on this phone..."
+                  placeholder="Search apps on this device..."
                   className="w-full bg-transparent text-xs text-slate-900 outline-none placeholder:text-slate-400 font-medium"
                 />
                 {search && (
@@ -545,22 +592,49 @@ function AppClonerDeviceModal({
                 )}
               </div>
 
-              {/* Add other app on device input */}
-              <form onSubmit={handleAddCustom} className="flex gap-2">
-                <input
-                  type="text"
-                  value={customInput}
-                  onChange={e => setCustomInput(e.target.value)}
-                  placeholder="+ Add any other app installed on your phone"
-                  className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 outline-none focus:border-[#E05236] placeholder:text-slate-400"
-                />
-                <button
-                  type="submit"
-                  disabled={!customInput.trim()}
-                  className="px-3 py-1.5 rounded-xl bg-[#E05236] disabled:opacity-40 text-white text-xs font-bold transition cursor-pointer"
-                >
-                  Add
-                </button>
+              {/* Add Custom User App with Icon Upload */}
+              <form onSubmit={handleAddCustom} className="p-2.5 bg-white rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                    <Plus className="w-3.5 h-3.5 text-[#E05236]" />
+                    <span>Add Your Own App from Phone</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-[10px] font-bold text-slate-500 hover:text-[#E05236] flex items-center gap-1 cursor-pointer"
+                  >
+                    <Upload className="w-3 h-3" />
+                    <span>{customIconPreview ? "Change Icon" : "Upload Icon"}</span>
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleIconUpload}
+                    className="hidden"
+                  />
+                </div>
+
+                <div className="flex gap-2 items-center">
+                  {customIconPreview && (
+                    <img src={customIconPreview} alt="preview" className="w-8 h-8 rounded-xl object-cover border border-slate-200 flex-shrink-0" />
+                  )}
+                  <input
+                    type="text"
+                    value={customName}
+                    onChange={e => setCustomName(e.target.value)}
+                    placeholder="Type app name (e.g. Duolingo, Binance, Bkash)"
+                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 outline-none focus:border-[#E05236] placeholder:text-slate-400"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!customName.trim()}
+                    className="px-3.5 py-1.5 rounded-xl bg-[#E05236] disabled:opacity-40 text-white text-xs font-bold transition cursor-pointer"
+                  >
+                    Add
+                  </button>
+                </div>
               </form>
             </div>
 
@@ -584,7 +658,7 @@ function AppClonerDeviceModal({
                           ? "bg-white border-[#E05236]/30 shadow-xs"
                           : "bg-slate-50 border-slate-200"
                       }`}>
-                        {renderAppIcon(app.iconName, "w-6 h-6 sm:w-7 sm:h-7")}
+                        {renderAppIcon(app, "w-6 h-6 sm:w-7 sm:h-7")}
                       </div>
                       <div>
                         <h4 className="font-bold text-xs sm:text-sm text-slate-900">
