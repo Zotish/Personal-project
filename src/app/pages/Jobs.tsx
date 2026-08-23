@@ -178,7 +178,8 @@ function BariKoiLiveJobsMap({
   onNavigationClick,
   onRequestLocation,
   onDenyLocation,
-  showPermissionPrompt
+  showPermissionPrompt,
+  isLocating
 }: {
   userCoords: [number, number];
   isLocationGranted: boolean;
@@ -189,6 +190,7 @@ function BariKoiLiveJobsMap({
   onRequestLocation: () => void;
   onDenyLocation: () => void;
   showPermissionPrompt: boolean;
+  isLocating: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -426,13 +428,27 @@ function BariKoiLiveJobsMap({
       {showPermissionPrompt && !isLocationGranted && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-white/95 backdrop-blur-md rounded-2xl p-1.5 shadow-xl border border-slate-200/90 flex items-center gap-2 animate-in fade-in zoom-in-95 duration-200">
           <button
-            onClick={onRequestLocation}
-            className="px-4 py-1.5 rounded-xl bg-[#C04A22] hover:bg-[#8C3015] text-white text-xs font-bold transition cursor-pointer shadow-xs"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRequestLocation();
+            }}
+            disabled={isLocating}
+            className="px-4 py-1.5 rounded-xl bg-[#C04A22] hover:bg-[#8C3015] text-white text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5 disabled:opacity-75"
           >
-            Allow
+            {isLocating ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Locating...</span>
+              </>
+            ) : (
+              "Allow"
+            )}
           </button>
           <button
-            onClick={onDenyLocation}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDenyLocation();
+            }}
             className="w-7 h-7 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition cursor-pointer"
             title="Deny"
           >
@@ -504,69 +520,90 @@ export function Jobs() {
   const [applicantStatus, setApplicantStatus] = useState("Immediate Available");
   const [applicantNote, setApplicantNote] = useState("I am interested in this position and available for immediate interview.");
 
-  // Request Live GPS Location with explicit Device Permission Dialog
-  const requestLiveLocation = useCallback(() => {
+  // Request Live GPS Location with explicit Device Permission Dialog and mobile fallback
+  const executeGeolocation = useCallback((highAccuracy: boolean = true) => {
     setIsLocating(true);
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          setLocationPermissionStatus("granted");
-          setIsLocationGranted(true);
-          setShowPermissionPrompt(false);
+    if (!("geolocation" in navigator)) {
+      alert("Geolocation is not supported by your browser or device.");
+      setIsLocating(false);
+      return;
+    }
 
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          setUserCoords([lat, lng]);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        setLocationPermissionStatus("granted");
+        setIsLocationGranted(true);
+        setShowPermissionPrompt(false);
 
-          // Fetch real address from BariKoi API
-          const geoResult = await fetchBariKoiReverseGeocode(lat, lng);
-          if (geoResult) {
-            const area = geoResult.area || geoResult.sub_district || "Your Location";
-            const city = geoResult.city || "Live City";
-            setUserLocationName(geoResult.address || `${area}, ${city}`);
-            setUserArea(area);
-            setUserCity(city);
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        setUserCoords([lat, lng]);
 
-            // Generate jobs around exact live coordinates
-            const generated = generateLiveLocationJobs(lat, lng, area, city);
-            setLiveJobs(generated);
-          } else {
-            const generated = generateLiveLocationJobs(lat, lng, "Near You", "Live City");
-            setLiveJobs(generated);
-          }
-          setIsLocating(false);
-        },
-        (error) => {
-          console.warn("Geolocation permission denied or prompt rejected:", error);
+        try {
+          localStorage.setItem("bkoi_last_user_coords", JSON.stringify([lat, lng]));
+        } catch (_) {}
+
+        // Fetch real address from BariKoi API
+        const geoResult = await fetchBariKoiReverseGeocode(lat, lng);
+        if (geoResult) {
+          const area = geoResult.area || geoResult.sub_district || "Your Location";
+          const city = geoResult.city || "Live City";
+          setUserLocationName(geoResult.address || `${area}, ${city}`);
+          setUserArea(area);
+          setUserCity(city);
+
+          // Generate jobs around exact live coordinates
+          const generated = generateLiveLocationJobs(lat, lng, area, city);
+          setLiveJobs(generated);
+        } else {
+          const generated = generateLiveLocationJobs(lat, lng, "Near You", "Live City");
+          setLiveJobs(generated);
+        }
+        setIsLocating(false);
+      },
+      (error) => {
+        console.warn("Geolocation error:", error.code, error.message);
+        if (highAccuracy && error.code !== 1) {
+          // If high accuracy times out on mobile, quickly fallback to low accuracy
+          executeGeolocation(false);
+          return;
+        }
+
+        setIsLocating(false);
+        if (error.code === 1) {
           setLocationPermissionStatus("denied");
           setIsLocationGranted(false);
-          setIsLocating(false);
-        },
-        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
-      );
-    } else {
-      setLocationPermissionStatus("denied");
-      setIsLocationGranted(false);
-      setIsLocating(false);
-    }
+          setShowPermissionPrompt(false);
+          alert("Location access was not granted. Please allow location permissions in your browser or device settings to view nearby jobs.");
+        } else {
+          setLocationPermissionStatus("denied");
+          setIsLocationGranted(false);
+        }
+      },
+      {
+        enableHighAccuracy: highAccuracy,
+        timeout: highAccuracy ? 10000 : 8000,
+        maximumAge: 0
+      }
+    );
   }, []);
 
   // Navigation Button Click Handler
   const handleNavigationClick = useCallback(() => {
     if (isLocationGranted) {
-      requestLiveLocation();
+      executeGeolocation(true);
     } else {
       setShowPermissionPrompt(true);
-      requestLiveLocation();
+      executeGeolocation(true);
     }
-  }, [isLocationGranted, requestLiveLocation]);
+  }, [isLocationGranted, executeGeolocation]);
 
   // On page mount: check if permission already granted in browser
   useEffect(() => {
     if (navigator.permissions && navigator.permissions.query) {
       navigator.permissions.query({ name: "geolocation" as any }).then(perm => {
         if (perm.state === "granted") {
-          requestLiveLocation();
+          executeGeolocation(true);
         } else {
           setLocationPermissionStatus(perm.state as any);
           setIsLocationGranted(false);
@@ -574,7 +611,7 @@ export function Jobs() {
 
         perm.onchange = () => {
           if (perm.state === "granted") {
-            requestLiveLocation();
+            executeGeolocation(true);
             setShowPermissionPrompt(false);
           } else {
             setLocationPermissionStatus(perm.state);
@@ -583,7 +620,7 @@ export function Jobs() {
         };
       }).catch(() => {});
     }
-  }, [requestLiveLocation]);
+  }, [executeGeolocation]);
 
   // Filter Jobs based on Search Query & Filter Pills
   const filteredJobs = liveJobs.filter(job => {
@@ -696,9 +733,10 @@ export function Jobs() {
               selectedJob={selectedJob}
               onSelectJob={job => setSelectedJob(job)}
               onNavigationClick={handleNavigationClick}
-              onRequestLocation={requestLiveLocation}
+              onRequestLocation={() => executeGeolocation(true)}
               onDenyLocation={() => setShowPermissionPrompt(false)}
               showPermissionPrompt={showPermissionPrompt}
+              isLocating={isLocating}
             />
           </div>
         </div>
