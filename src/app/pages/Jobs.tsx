@@ -408,32 +408,32 @@ function BariKoiLiveJobsMap({
   };
 
   return (
-    <div className="relative w-full h-[320px] sm:h-[380px] md:h-[420px] rounded-2xl overflow-hidden shadow-xs border border-slate-200">
+    <div className="relative w-full h-[360px] sm:h-[440px] md:h-[480px] lg:h-[520px] overflow-hidden">
       {/* Map Container */}
       <div ref={containerRef} className="w-full h-full" />
 
       {/* Map Controls: Zoom In / Out / Recenter (Top Right) */}
-      <div className="absolute top-3 right-3 z-30 flex flex-col gap-1 pointer-events-auto">
+      <div className="absolute top-4 right-4 z-30 flex flex-col gap-1.5 pointer-events-auto">
         <button
           onClick={handleZoomIn}
-          className="w-8 h-8 rounded-xl bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 shadow-md border border-slate-200 flex items-center justify-center transition cursor-pointer hover:text-[#C04A22]"
+          className="w-9 h-9 rounded-xl bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 shadow-md border border-slate-200/80 flex items-center justify-center transition cursor-pointer hover:text-[#C04A22]"
           title="Zoom In"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4.5 h-4.5" />
         </button>
         <button
           onClick={handleZoomOut}
-          className="w-8 h-8 rounded-xl bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 shadow-md border border-slate-200 flex items-center justify-center transition cursor-pointer hover:text-[#C04A22]"
+          className="w-9 h-9 rounded-xl bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 shadow-md border border-slate-200/80 flex items-center justify-center transition cursor-pointer hover:text-[#C04A22]"
           title="Zoom Out"
         >
-          <Minus className="w-4 h-4" />
+          <Minus className="w-4.5 h-4.5" />
         </button>
         <button
           onClick={handleReset}
-          className="w-8 h-8 rounded-xl bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 shadow-md border border-slate-200 flex items-center justify-center transition cursor-pointer hover:text-[#C04A22]"
+          className="w-9 h-9 rounded-xl bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 shadow-md border border-slate-200/80 flex items-center justify-center transition cursor-pointer hover:text-[#C04A22]"
           title="Recenter to Live Location"
         >
-          <Navigation className="w-4 h-4 text-[#C04A22]" />
+          <Navigation className="w-4.5 h-4.5 text-[#C04A22]" />
         </button>
       </div>
     </div>
@@ -510,6 +510,7 @@ export function Jobs() {
           setUserCoords(coords);
           const generated = generateLiveLocationJobs(coords[0], coords[1], "Near You", "Local City");
           setLiveJobs(generated);
+          setSelectedJob(generated[0]);
           setIsLocating(false);
         },
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
@@ -518,6 +519,7 @@ export function Jobs() {
       const coords = getCachedUserCoords();
       const generated = generateLiveLocationJobs(coords[0], coords[1], "Near You", "Local City");
       setLiveJobs(generated);
+      setSelectedJob(generated[0]);
       setIsLocating(false);
     }
   }, []);
@@ -568,11 +570,11 @@ export function Jobs() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout noPad={true}>
       <div className="w-full min-h-screen bg-[#FAFAFA] pb-16">
         {/* ── TOP STICKY BAR: Search Jobs ───────────────────────────────────── */}
         <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 sm:px-6 shadow-2xs">
-          <div className="max-w-6xl mx-auto flex items-center gap-3">
+          <div className="max-w-7xl mx-auto flex items-center gap-3">
             <button
               onClick={() => navigate(-1)}
               className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer flex-shrink-0"
@@ -617,7 +619,7 @@ export function Jobs() {
           </div>
 
           {/* Short & Understandable Filter Pills */}
-          <div className="max-w-6xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar pt-2.5 pb-0.5">
+          <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar pt-2.5 pb-0.5">
             {[
               { id: "all", label: "All Jobs" },
               { id: "nearby", label: "Nearby (< 2 km)" },
@@ -641,23 +643,23 @@ export function Jobs() {
           </div>
         </div>
 
-        {/* ── MAIN CONTENT CONTAINER (2-COLUMN ON DESKTOP) ─────────────────── */}
-        <div className="max-w-6xl mx-auto px-3 sm:px-6 pt-4">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            
-            {/* ════════ LEFT COLUMN: BARIKOI LIVE MAP & NEARBY FOR YOU (7 cols) ════════ */}
-            <div className="lg:col-span-7 space-y-4">
-              
-              {/* ── 1. BARIKOI LIVE LOCATION MAP (Edge-to-Edge, High-Accuracy Pinpoint) ── */}
-              <BariKoiLiveJobsMap
-                userCoords={userCoords}
-                jobs={filteredJobs}
-                selectedJob={selectedJob}
-                onSelectJob={job => setSelectedJob(job)}
-                onRecenter={requestLiveLocation}
-              />
+        {/* ── BARIKOI LIVE MAP (FULL WIDTH, ZERO BORDER/PADDING, FLUSH) ────── */}
+        <div className="w-full bg-slate-100">
+          <BariKoiLiveJobsMap
+            userCoords={userCoords}
+            jobs={filteredJobs}
+            selectedJob={selectedJob}
+            onSelectJob={job => setSelectedJob(job)}
+            onRecenter={requestLiveLocation}
+          />
+        </div>
 
-              {/* ── 2. "NEARBY FOR YOU" SECTION ── */}
+        {/* ── MAIN JOB DIRECTORY CONTENT (2-COLUMN ON DESKTOP) ─────────────── */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-5">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            {/* ════════ LEFT COLUMN: NEARBY FOR YOU (6 cols) ════════ */}
+            <div className="lg:col-span-6 space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2.5">
                   <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
