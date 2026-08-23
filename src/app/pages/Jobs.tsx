@@ -602,20 +602,6 @@ export function Jobs() {
                 </button>
               )}
             </div>
-
-            {/* Live Location Refresh Button */}
-            <button
-              onClick={requestLiveLocation}
-              className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl border border-emerald-200 text-xs font-semibold transition cursor-pointer flex-shrink-0"
-              title="Refresh Live Location"
-            >
-              {isLocating ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
-              ) : (
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              )}
-              <span className="hidden sm:inline">GPS Live</span>
-            </button>
           </div>
 
           {/* Short & Understandable Filter Pills */}
@@ -643,15 +629,17 @@ export function Jobs() {
           </div>
         </div>
 
-        {/* ── BARIKOI LIVE MAP (FULL WIDTH, ZERO BORDER/PADDING, FLUSH) ────── */}
-        <div className="w-full bg-slate-100">
-          <BariKoiLiveJobsMap
-            userCoords={userCoords}
-            jobs={filteredJobs}
-            selectedJob={selectedJob}
-            onSelectJob={job => setSelectedJob(job)}
-            onRecenter={requestLiveLocation}
-          />
+        {/* ── BARIKOI LIVE MAP (WITH SUBTLE MINIMAL BORDER) ────── */}
+        <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 pt-2 sm:pt-3">
+          <div className="rounded-2xl overflow-hidden border border-slate-200/90 shadow-2xs">
+            <BariKoiLiveJobsMap
+              userCoords={userCoords}
+              jobs={filteredJobs}
+              selectedJob={selectedJob}
+              onSelectJob={job => setSelectedJob(job)}
+              onRecenter={requestLiveLocation}
+            />
+          </div>
         </div>
 
         {/* ── MAIN JOB DIRECTORY CONTENT (2-COLUMN ON DESKTOP) ─────────────── */}
