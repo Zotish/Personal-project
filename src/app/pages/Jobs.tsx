@@ -7,7 +7,8 @@ import {
   ChevronRight, Filter, ChevronLeft, Bookmark, BookmarkCheck,
   Send, Sparkles, Home, Building2, User, Layers, Eye, X,
   Map as MapIcon, ArrowUpRight, Compass, Check, AlertCircle,
-  Plus, Minus, RotateCcw, Navigation, RefreshCw, Loader2
+  Plus, Minus, RotateCcw, Navigation, RefreshCw, Loader2,
+  Lock, AlertTriangle
 } from "lucide-react";
 import type { Map as LeafletMapType } from "leaflet";
 
@@ -34,24 +35,18 @@ function loadBkoiGL(): Promise<any> {
   });
 }
 
-// ─── Cached Initial Coordinates Helper ──────────────────────────────────────
-
-const getCachedUserCoords = (): [number, number] => {
-  try {
-    const cached = localStorage.getItem("bkoi_last_user_coords");
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed) && parsed.length === 2 && !isNaN(parsed[0]) && !isNaN(parsed[1])) {
-        return parsed as [number, number];
-      }
-    }
-  } catch (_) {}
-  return [23.8103, 90.4125];
-};
+export interface BariKoiGeoResult {
+  address: string;
+  area: string;
+  district: string;
+  sub_district: string;
+  postCode: string;
+  city: string;
+}
 
 // ─── BariKoi Reverse Geocode API ────────────────────────────────────────────
 
-async function fetchBariKoiReverseGeocode(lat: number, lng: number) {
+async function fetchBariKoiReverseGeocode(lat: number, lng: number): Promise<BariKoiGeoResult | null> {
   const url = `https://barikoi.xyz/v2/api/search/reverse/geocode?api_key=${BARIKOI_API_KEY}&longitude=${lng}&latitude=${lat}&district=true&post_code=true&country=true&sub_district=true&union=true&pauroshova=true&location_type=true&division=true&address=true&area=true&bangla=true`;
   try {
     const res = await fetch(url);
@@ -61,6 +56,7 @@ async function fetchBariKoiReverseGeocode(lat: number, lng: number) {
         address: data.place.address || data.place.area || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
         area: data.place.area || data.place.sub_district || data.place.district || "Your Area",
         district: data.place.district || "",
+        sub_district: data.place.sub_district || "",
         postCode: data.place.postCode || "",
         city: data.place.city || data.place.division || "Dhaka",
       };
@@ -175,16 +171,24 @@ function generateLiveLocationJobs(lat: number, lng: number, areaName: string, ci
 
 function BariKoiLiveJobsMap({
   userCoords,
+  isLocationGranted,
   jobs,
   selectedJob,
   onSelectJob,
-  onRecenter
+  onNavigationClick,
+  onRequestLocation,
+  onDenyLocation,
+  showPermissionPrompt
 }: {
   userCoords: [number, number];
+  isLocationGranted: boolean;
   jobs: LiveJobListing[];
   selectedJob: LiveJobListing | null;
   onSelectJob: (job: LiveJobListing) => void;
-  onRecenter: () => void;
+  onNavigationClick: () => void;
+  onRequestLocation: () => void;
+  onDenyLocation: () => void;
+  showPermissionPrompt: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -223,35 +227,40 @@ function BariKoiLiveJobsMap({
     const bkoigl = (window as any).bkoigl;
     const L = LRef.current;
 
-    // 1. Sync / Update User Live GPS Marker
-    if (userMarkerRef.current) {
-      if (userMarkerRef.current.setLngLat) {
-        userMarkerRef.current.setLngLat([userCoords[1], userCoords[0]]);
-      } else if (userMarkerRef.current.setLatLng) {
-        userMarkerRef.current.setLatLng(userCoords);
+    // 1. Sync / Update User Live GPS Marker ONLY if permission is granted
+    if (isLocationGranted) {
+      if (userMarkerRef.current) {
+        if (userMarkerRef.current.setLngLat) {
+          userMarkerRef.current.setLngLat([userCoords[1], userCoords[0]]);
+        } else if (userMarkerRef.current.setLatLng) {
+          userMarkerRef.current.setLatLng(userCoords);
+        }
+      } else {
+        if (L && map.addLayer) {
+          const userIcon = L.divIcon({
+            className: "bkoi-user-marker",
+            html: createUserMarkerHtml(),
+            iconSize: [28, 28],
+            iconAnchor: [14, 14]
+          });
+          const userM = L.marker(userCoords, { icon: userIcon }).addTo(map);
+          userMarkerRef.current = userM;
+        } else if (bkoigl || map.project) {
+          const el = document.createElement("div");
+          el.innerHTML = createUserMarkerHtml();
+          const MarkerClass = bkoigl?.Marker || (window as any).maplibregl?.Marker;
+          if (MarkerClass) {
+            const userM = new MarkerClass({ element: el })
+              .setLngLat([userCoords[1], userCoords[0]])
+              .addTo(map);
+            userMarkerRef.current = userM;
+          }
+        }
       }
     } else {
-      if (L && map.addLayer) {
-        // Leaflet User Marker
-        const userIcon = L.divIcon({
-          className: "bkoi-user-marker",
-          html: createUserMarkerHtml(),
-          iconSize: [28, 28],
-          iconAnchor: [14, 14]
-        });
-        const userM = L.marker(userCoords, { icon: userIcon }).addTo(map);
-        userMarkerRef.current = userM;
-      } else if (bkoigl || map.project) {
-        // BariKoi GL User Marker
-        const el = document.createElement("div");
-        el.innerHTML = createUserMarkerHtml();
-        const MarkerClass = bkoigl?.Marker || (window as any).maplibregl?.Marker;
-        if (MarkerClass) {
-          const userM = new MarkerClass({ element: el })
-            .setLngLat([userCoords[1], userCoords[0]])
-            .addTo(map);
-          userMarkerRef.current = userM;
-        }
+      if (userMarkerRef.current) {
+        if (userMarkerRef.current.remove) userMarkerRef.current.remove();
+        userMarkerRef.current = null;
       }
     }
 
@@ -289,7 +298,7 @@ function BariKoiLiveJobsMap({
         }
       }
     });
-  }, [jobs, userCoords, selectedJob, onSelectJob]);
+  }, [jobs, userCoords, isLocationGranted, selectedJob, onSelectJob]);
 
   // Init BariKoi GL SDK / Leaflet Fallback
   useEffect(() => {
@@ -307,7 +316,7 @@ function BariKoiLiveJobsMap({
         const map = new bkoigl.Map({
           container: containerRef.current!,
           center: [userCoords[1], userCoords[0]], // [lng, lat]
-          zoom: 14.8,
+          zoom: 14.6,
           accessToken: key,
           apiKey: key,
           attributionControl: false,
@@ -398,19 +407,39 @@ function BariKoiLiveJobsMap({
     if (mapRef.current.zoomOut) mapRef.current.zoomOut();
   };
   const handleReset = () => {
-    onRecenter();
-    if (!mapRef.current) return;
-    if (mapRef.current.flyTo) {
-      mapRef.current.flyTo({ center: [userCoords[1], userCoords[0]], zoom: 15 });
-    } else if (mapRef.current.setView) {
-      mapRef.current.setView(userCoords, 15);
+    onNavigationClick();
+    if (isLocationGranted && mapRef.current) {
+      if (mapRef.current.flyTo) {
+        mapRef.current.flyTo({ center: [userCoords[1], userCoords[0]], zoom: 15 });
+      } else if (mapRef.current.setView) {
+        mapRef.current.setView(userCoords, 15);
+      }
     }
   };
 
   return (
-    <div className="relative w-full h-[360px] sm:h-[440px] md:h-[480px] lg:h-[520px] overflow-hidden">
+    <div className="relative w-full h-[460px] sm:h-[540px] md:h-[600px] lg:h-[650px] overflow-hidden">
       {/* Map Container */}
       <div ref={containerRef} className="w-full h-full" />
+
+      {/* Top Center Permission Prompt: Left Allow, Right X (Deny) */}
+      {showPermissionPrompt && !isLocationGranted && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-white/95 backdrop-blur-md rounded-2xl p-1.5 shadow-xl border border-slate-200/90 flex items-center gap-2 animate-in fade-in zoom-in-95 duration-200">
+          <button
+            onClick={onRequestLocation}
+            className="px-4 py-1.5 rounded-xl bg-[#C04A22] hover:bg-[#8C3015] text-white text-xs font-bold transition cursor-pointer shadow-xs"
+          >
+            Allow
+          </button>
+          <button
+            onClick={onDenyLocation}
+            className="w-7 h-7 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition cursor-pointer"
+            title="Deny"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Map Controls: Zoom In / Out / Recenter (Top Right) */}
       <div className="absolute top-4 right-4 z-30 flex flex-col gap-1.5 pointer-events-auto">
@@ -449,18 +478,23 @@ export function Jobs() {
   const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
   const [showApplyModal, setShowApplyModal] = useState<LiveJobListing | null>(null);
   const [applySubmitted, setApplySubmitted] = useState(false);
-  const [isLocating, setIsLocating] = useState(true);
+  const [isLocating, setIsLocating] = useState(false);
 
-  // Cached Precise Location Initialization (Avoids jumping from wrong center)
-  const initialCoords = getCachedUserCoords();
-  const [userCoords, setUserCoords] = useState<[number, number]>(initialCoords);
-  const [userLocationName, setUserLocationName] = useState<string>("Locating...");
-  const [userArea, setUserArea] = useState<string>("Your Location");
+  // Permission State: "prompt", "granted", or "denied"
+  const [locationPermissionStatus, setLocationPermissionStatus] = useState<"prompt" | "granted" | "denied">("prompt");
+  const [isLocationGranted, setIsLocationGranted] = useState<boolean>(false);
+  const [showPermissionPrompt, setShowPermissionPrompt] = useState<boolean>(false);
+
+  // Default initial coordinates for map view before permission (Dhaka center)
+  const defaultCoords: [number, number] = [23.8103, 90.4125];
+  const [userCoords, setUserCoords] = useState<[number, number]>(defaultCoords);
+  const [userLocationName, setUserLocationName] = useState<string>("Dhaka");
+  const [userArea, setUserArea] = useState<string>("Dhaka Area");
   const [userCity, setUserCity] = useState<string>("Dhaka");
 
-  // Dynamic Live Jobs List initialized with immediate nearby jobs
+  // Dynamic Live Jobs List
   const [liveJobs, setLiveJobs] = useState<LiveJobListing[]>(() =>
-    generateLiveLocationJobs(initialCoords[0], initialCoords[1], "Your Area", "Dhaka")
+    generateLiveLocationJobs(defaultCoords[0], defaultCoords[1], "Dhaka Area", "Dhaka")
   );
   const [selectedJob, setSelectedJob] = useState<LiveJobListing | null>(null);
 
@@ -470,20 +504,18 @@ export function Jobs() {
   const [applicantStatus, setApplicantStatus] = useState("Immediate Available");
   const [applicantNote, setApplicantNote] = useState("I am interested in this position and available for immediate interview.");
 
-  // Request Live GPS Location with High Accuracy & Instant Pinpointing
+  // Request Live GPS Location with explicit Device Permission Dialog
   const requestLiveLocation = useCallback(() => {
     setIsLocating(true);
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
+          setLocationPermissionStatus("granted");
+          setIsLocationGranted(true);
+          setShowPermissionPrompt(false);
+
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
-
-          // Save accurate GPS coordinates to cache
-          try {
-            localStorage.setItem("bkoi_last_user_coords", JSON.stringify([lat, lng]));
-          } catch (_) {}
-
           setUserCoords([lat, lng]);
 
           // Fetch real address from BariKoi API
@@ -505,27 +537,52 @@ export function Jobs() {
           setIsLocating(false);
         },
         (error) => {
-          console.warn("Geolocation fallback:", error);
-          const coords = getCachedUserCoords();
-          setUserCoords(coords);
-          const generated = generateLiveLocationJobs(coords[0], coords[1], "Near You", "Local City");
-          setLiveJobs(generated);
-          setSelectedJob(generated[0]);
+          console.warn("Geolocation permission denied or prompt rejected:", error);
+          setLocationPermissionStatus("denied");
+          setIsLocationGranted(false);
           setIsLocating(false);
         },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
       );
     } else {
-      const coords = getCachedUserCoords();
-      const generated = generateLiveLocationJobs(coords[0], coords[1], "Near You", "Local City");
-      setLiveJobs(generated);
-      setSelectedJob(generated[0]);
+      setLocationPermissionStatus("denied");
+      setIsLocationGranted(false);
       setIsLocating(false);
     }
   }, []);
 
+  // Navigation Button Click Handler
+  const handleNavigationClick = useCallback(() => {
+    if (isLocationGranted) {
+      requestLiveLocation();
+    } else {
+      setShowPermissionPrompt(true);
+      requestLiveLocation();
+    }
+  }, [isLocationGranted, requestLiveLocation]);
+
+  // On page mount: check if permission already granted in browser
   useEffect(() => {
-    requestLiveLocation();
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: "geolocation" as any }).then(perm => {
+        if (perm.state === "granted") {
+          requestLiveLocation();
+        } else {
+          setLocationPermissionStatus(perm.state as any);
+          setIsLocationGranted(false);
+        }
+
+        perm.onchange = () => {
+          if (perm.state === "granted") {
+            requestLiveLocation();
+            setShowPermissionPrompt(false);
+          } else {
+            setLocationPermissionStatus(perm.state);
+            setIsLocationGranted(false);
+          }
+        };
+      }).catch(() => {});
+    }
   }, [requestLiveLocation]);
 
   // Filter Jobs based on Search Query & Filter Pills
@@ -629,15 +686,19 @@ export function Jobs() {
           </div>
         </div>
 
-        {/* ── BARIKOI LIVE MAP (WITH SUBTLE MINIMAL BORDER) ────── */}
+        {/* ── BARIKOI LIVE MAP (EXPANDED HEIGHT & MINIMAL SUBTLE BORDER) ────── */}
         <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 pt-2 sm:pt-3">
           <div className="rounded-2xl overflow-hidden border border-slate-200/90 shadow-2xs">
             <BariKoiLiveJobsMap
               userCoords={userCoords}
+              isLocationGranted={isLocationGranted}
               jobs={filteredJobs}
               selectedJob={selectedJob}
               onSelectJob={job => setSelectedJob(job)}
-              onRecenter={requestLiveLocation}
+              onNavigationClick={handleNavigationClick}
+              onRequestLocation={requestLiveLocation}
+              onDenyLocation={() => setShowPermissionPrompt(false)}
+              showPermissionPrompt={showPermissionPrompt}
             />
           </div>
         </div>
@@ -770,8 +831,8 @@ export function Jobs() {
               </div>
             </div>
 
-            {/* ════════ RIGHT COLUMN: ALL LOCAL JOBS DIRECTORY (5 cols) ════════ */}
-            <div className="lg:col-span-5 space-y-4">
+            {/* ════════ RIGHT COLUMN: ALL LOCAL JOBS DIRECTORY (6 cols) ════════ */}
+            <div className="lg:col-span-6 space-y-4">
               
               {/* Directory Header Card */}
               <div className="bg-white rounded-3xl border border-slate-200 p-4 shadow-sm">
