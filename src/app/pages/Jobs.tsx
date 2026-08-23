@@ -6,9 +6,9 @@ import {
   Shield, CheckCircle2, Phone, MessageCircle, ExternalLink,
   ChevronRight, Filter, ChevronLeft, Bookmark, BookmarkCheck,
   Send, Sparkles, Home, Building2, User, Layers, Eye, X,
-  Map as MapIcon, ArrowUpRight, Compass, Check, AlertCircle,
+  Map as MapIcon, ArrowUpRight, ArrowRight, Compass, Check, AlertCircle,
   Plus, Minus, RotateCcw, Navigation, RefreshCw, Loader2,
-  Lock, AlertTriangle
+  Lock, AlertTriangle, Car, Bike, Footprints, ChevronDown, ChevronUp, ArrowLeft, Route
 } from "lucide-react";
 import type { Map as LeafletMapType } from "leaflet";
 
@@ -88,6 +88,73 @@ function formatDistance(km: number): string {
   return `${km.toFixed(1)} km away`;
 }
 
+// ─── Real Turn-by-Turn Road Routing Helper (Google Maps / OSRM Standard) ───
+
+async function fetchRealRoadRoute(startLat: number, startLng: number, endLat: number, endLng: number): Promise<{
+  coordinates: [number, number][];
+  distanceText: string;
+  durationText: string;
+}> {
+  // 1. Primary: High-Precision Turn-by-Turn Driving Road Router
+  try {
+    const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson&continue_straight=true&steps=true`;
+    const res = await fetch(osrmUrl);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.routes && data.routes.length > 0) {
+        const route = data.routes[0];
+        const rawCoords: [number, number][] = route.geometry.coordinates; // Strict road network nodes
+        if (rawCoords && rawCoords.length > 1) {
+          const distKm = route.distance / 1000;
+          const mins = Math.max(1, Math.round(route.duration / 60));
+          return {
+            coordinates: rawCoords, // Follows ONLY real road paths
+            distanceText: `${distKm.toFixed(1)} km`,
+            durationText: `~${mins} mins`
+          };
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("OSRM routing attempt 1 failed:", err);
+  }
+
+  // 2. Secondary: OpenStreetMap DE Road Network Router
+  try {
+    const osmUrl = `https://routing.openstreetmap.de/routed-car/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
+    const res = await fetch(osmUrl);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.routes && data.routes.length > 0) {
+        const route = data.routes[0];
+        const rawCoords: [number, number][] = route.geometry.coordinates;
+        if (rawCoords && rawCoords.length > 1) {
+          const distKm = route.distance / 1000;
+          const mins = Math.max(1, Math.round(route.duration / 60));
+          return {
+            coordinates: rawCoords,
+            distanceText: `${distKm.toFixed(1)} km`,
+            durationText: `~${mins} mins`
+          };
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("OSM routing attempt 2 failed:", err);
+  }
+
+  // 3. Fallback: Direct Road Line
+  const directDist = getDistanceKm(startLat, startLng, endLat, endLng);
+  return {
+    coordinates: [
+      [startLng, startLat],
+      [endLng, endLat]
+    ],
+    distanceText: `${directDist.toFixed(1)} km`,
+    durationText: `~${Math.max(1, Math.round(directDist * 3.5))} mins`
+  };
+}
+
 // ─── Data Types ─────────────────────────────────────────────────────────────
 
 export type LiveJobListing = {
@@ -105,6 +172,7 @@ export type LiveJobListing = {
   lat: number;
   lng: number;
   logo: string;
+  image: string;
   posted: string;
   description: string;
   skills: string[];
@@ -121,18 +189,18 @@ function generateLiveLocationJobs(lat: number, lng: number, areaName: string, ci
   const city = cityName || "Local Area";
 
   const templateList = [
-    { title: "Senior Frontend Developer (React / Next.js)", company: "TechHive Digital Labs", category: "IT & Software", salary: "৳65,000 – ৳95,000/mo", type: "Full-time", tags: ["React", "TypeScript", "Tailwind"], dLat: 0.0028, dLng: 0.0032, logo: "💻", exp: "2+ yrs experience", desc: "Developing responsive web applications and interactive UI dashboards. Flexible working hours, health coverage & yearly festival bonuses." },
-    { title: "Executive Chef & Kitchen Supervisor", company: "Heritage Dine & Lounge", category: "Hospitality", salary: "৳35,000 – ৳48,000/mo", type: "Full-time", tags: ["Culinary", "Kitchen Prep", "Meals Included"], dLat: -0.0022, dLng: 0.0025, logo: "🍽️", exp: "1+ yrs experience", desc: "Overseeing menu preparation, culinary hygiene and kitchen staff management. Daily meals & attendance bonus provided." },
-    { title: "Accounts & Financial Officer", company: "Apex Business Solutions", category: "Finance", salary: "৳40,000 – ৳55,000/mo", type: "Full-time", tags: ["Tally", "QuickBooks", "Taxation"], dLat: 0.0038, dLng: -0.0029, logo: "📊", exp: "Graduate in BBA/Accounting", desc: "Handling ledger entries, invoice reconciliation and monthly payroll processing. Proactive team environment." },
-    { title: "Express Delivery Rider (Bike/Cycle)", company: "QuickDrop Courier Express", category: "Logistics", salary: "৳22,000 – ৳32,000/mo", type: "Full-time", tags: ["Flexible Shifts", "Daily Fuel Bonus"], dLat: -0.0034, dLng: -0.0019, logo: "🛵", exp: "Own bike / Smartphone", desc: "Parcel and document delivery within nearby zones. Guaranteed weekly payment + delivery commission incentives." },
-    { title: "Registered Pharmacist / Chemist", company: "CarePlus Pharmacy & Wellness", category: "Healthcare", salary: "৳32,000 – ৳45,000/mo", type: "Full-time", tags: ["B.Pharm / Diploma", "Medicine Dispensing"], dLat: 0.0014, dLng: -0.0038, logo: "💊", exp: "Diploma in Pharmacy", desc: "Dispensing OTC and prescription medicines, patient counseling and inventory control in a modern pharmacy setup." },
-    { title: "Sales & Customer Relations Executive", company: "Prime Retail Mart", category: "Sales", salary: "৳25,000 – ৳35,000/mo + Comm", type: "Full-time", tags: ["Retail Sales", "Customer Service"], dLat: -0.0024, dLng: 0.0042, logo: "🛍️", exp: "HSC / Graduate", desc: "Showroom customer assistance, billing and product merchandising. Performance commission on monthly targets." },
-    { title: "UI/UX & Visual Designer", company: "PixelCraft Design Studio", category: "Design", salary: "৳50,000 – ৳75,000/mo", type: "Full-time", tags: ["Figma", "Mobile UI", "Portfolio"], dLat: 0.0046, dLng: 0.0018, logo: "🎨", exp: "Portfolio required", desc: "Designing intuitive mobile app interfaces, design systems and interactive prototypes for high-growth tech startups." },
-    { title: "Branch Operations Supervisor", company: "National Logistics Hub", category: "Operations", salary: "৳38,000 – ৳52,000/mo", type: "Full-time", tags: ["Warehouse", "Team Leadership"], dLat: -0.0042, dLng: 0.0035, logo: "📦", exp: "2+ yrs experience", desc: "Supervising hub operations, vehicle loading schedules and package routing with dispatch teams." },
-    { title: "Digital Marketing & Content Specialist", company: "GrowthWave Media", category: "Marketing", salary: "৳30,000 – ৳45,000/mo", type: "Part-time", tags: ["Social Media", "SEO", "Copywriting"], dLat: 0.0055, dLng: -0.0045, logo: "📱", exp: "Content & Ad management", desc: "Managing social media campaigns, SEO content strategy and Google ads for e-commerce brands." },
-    { title: "Electrical & Maintenance Technician", company: "SmartFix Facility Services", category: "Technical", salary: "৳28,000 – ৳36,000/mo", type: "Full-time", tags: ["Wiring", "HVAC Maintenance"], dLat: -0.0048, dLng: -0.0036, logo: "⚡", exp: "Technical Trade certificate", desc: "Commercial facility electrical troubleshooting, generator maintenance and HVAC servicing." },
-    { title: "Quality Assurance (QA) Engineer", company: "SoftVibe Technologies", category: "IT & Software", salary: "৳55,000 – ৳80,000/mo", type: "Full-time", tags: ["Manual & Automation", "Postman"], dLat: 0.0061, dLng: 0.0052, logo: "🔍", exp: "1-3 yrs QA experience", desc: "Writing test cases, API testing and bug tracking for fintech web & mobile applications." },
-    { title: "Call Center & Customer Support Agent", company: "ConnectGlobal BPO", category: "Customer Care", salary: "৳24,000 – ৳32,000/mo", type: "Part-time", tags: ["Inbound Calls", "Night/Day Shift"], dLat: -0.0058, dLng: 0.0062, logo: "🎧", exp: "Fluent English & Bengali", desc: "Handling inbound customer queries via phone and live chat. Professional air-conditioned workstation with pick & drop." }
+    { title: "Senior Frontend Developer (React / Next.js)", company: "TechHive Digital Labs", category: "IT & Software", salary: "৳65,000 – ৳95,000/mo", type: "Full-time", tags: ["React", "TypeScript", "Tailwind"], dLat: 0.0028, dLng: 0.0032, logo: "💻", image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=600&q=80", exp: "2+ yrs experience", desc: "Developing responsive web applications and interactive UI dashboards. Flexible working hours, health coverage & yearly festival bonuses." },
+    { title: "Executive Chef & Kitchen Supervisor", company: "Heritage Dine & Lounge", category: "Hospitality", salary: "৳35,000 – ৳48,000/mo", type: "Full-time", tags: ["Culinary", "Kitchen Prep", "Meals Included"], dLat: -0.0022, dLng: 0.0025, logo: "🍽️", image: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=600&q=80", exp: "1+ yrs experience", desc: "Overseeing menu preparation, culinary hygiene and kitchen staff management. Daily meals & attendance bonus provided." },
+    { title: "Accounts & Financial Officer", company: "Apex Business Solutions", category: "Finance", salary: "৳40,000 – ৳55,000/mo", type: "Full-time", tags: ["Tally", "QuickBooks", "Taxation"], dLat: 0.0038, dLng: -0.0029, logo: "📊", image: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80", exp: "Graduate in BBA/Accounting", desc: "Handling ledger entries, invoice reconciliation and monthly payroll processing. Proactive team environment." },
+    { title: "Express Delivery Rider (Bike/Cycle)", company: "QuickDrop Courier Express", category: "Logistics", salary: "৳22,000 – ৳32,000/mo", type: "Full-time", tags: ["Flexible Shifts", "Daily Fuel Bonus"], dLat: -0.0034, dLng: -0.0019, logo: "🛵", image: "https://images.unsplash.com/photo-1616401784845-180882ba9ba8?auto=format&fit=crop&w=600&q=80", exp: "Own bike / Smartphone", desc: "Parcel and document delivery within nearby zones. Guaranteed weekly payment + delivery commission incentives." },
+    { title: "Registered Pharmacist / Chemist", company: "CarePlus Pharmacy & Wellness", category: "Healthcare", salary: "৳32,000 – ৳45,000/mo", type: "Full-time", tags: ["B.Pharm / Diploma", "Medicine Dispensing"], dLat: 0.0014, dLng: -0.0038, logo: "💊", image: "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=600&q=80", exp: "Diploma in Pharmacy", desc: "Dispensing OTC and prescription medicines, patient counseling and inventory control in a modern pharmacy setup." },
+    { title: "Sales & Customer Relations Executive", company: "Prime Retail Mart", category: "Sales", salary: "৳25,000 – ৳35,000/mo + Comm", type: "Full-time", tags: ["Retail Sales", "Customer Service"], dLat: -0.0024, dLng: 0.0042, logo: "🛍️", image: "https://images.unsplash.com/photo-1556742049-0a67e55722c0?auto=format&fit=crop&w=600&q=80", exp: "HSC / Graduate", desc: "Showroom customer assistance, billing and product merchandising. Performance commission on monthly targets." },
+    { title: "UI/UX & Visual Designer", company: "PixelCraft Design Studio", category: "Design", salary: "৳50,000 – ৳75,000/mo", type: "Full-time", tags: ["Figma", "Mobile UI", "Portfolio"], dLat: 0.0046, dLng: 0.0018, logo: "🎨", image: "https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?auto=format&fit=crop&w=600&q=80", exp: "Portfolio required", desc: "Designing intuitive mobile app interfaces, design systems and interactive prototypes for high-growth tech startups." },
+    { title: "Branch Operations Supervisor", company: "National Logistics Hub", category: "Operations", salary: "৳38,000 – ৳52,000/mo", type: "Full-time", tags: ["Warehouse", "Team Leadership"], dLat: -0.0042, dLng: 0.0035, logo: "📦", image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&q=80", exp: "2+ yrs experience", desc: "Supervising hub operations, vehicle loading schedules and package routing with dispatch teams." },
+    { title: "Digital Marketing & Content Specialist", company: "GrowthWave Media", category: "Marketing", salary: "৳30,000 – ৳45,000/mo", type: "Part-time", tags: ["Social Media", "SEO", "Copywriting"], dLat: 0.0055, dLng: -0.0045, logo: "📱", image: "https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?auto=format&fit=crop&w=600&q=80", exp: "Content & Ad management", desc: "Managing social media campaigns, SEO content strategy and Google ads for e-commerce brands." },
+    { title: "Electrical & Maintenance Technician", company: "SmartFix Facility Services", category: "Technical", salary: "৳28,000 – ৳36,000/mo", type: "Full-time", tags: ["Wiring", "HVAC Maintenance"], dLat: -0.0048, dLng: -0.0036, logo: "⚡", image: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=600&q=80", exp: "Technical Trade certificate", desc: "Commercial facility electrical troubleshooting, generator maintenance and HVAC servicing." },
+    { title: "Quality Assurance (QA) Engineer", company: "SoftVibe Technologies", category: "IT & Software", salary: "৳55,000 – ৳80,000/mo", type: "Full-time", tags: ["Manual & Automation", "Postman"], dLat: 0.0061, dLng: 0.0052, logo: "🔍", image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=600&q=80", exp: "1-3 yrs QA experience", desc: "Writing test cases, API testing and bug tracking for fintech web & mobile applications." },
+    { title: "Call Center & Customer Support Agent", company: "ConnectGlobal BPO", category: "Customer Care", salary: "৳24,000 – ৳32,000/mo", type: "Part-time", tags: ["Inbound Calls", "Night/Day Shift"], dLat: -0.0058, dLng: 0.0062, logo: "🎧", image: "https://images.unsplash.com/photo-1534536281715-e28d76689b4d?auto=format&fit=crop&w=600&q=80", exp: "Fluent English & Bengali", desc: "Handling inbound customer queries via phone and live chat. Professional air-conditioned workstation with pick & drop." }
   ];
 
   return templateList.map((tmpl, idx) => {
@@ -156,6 +224,7 @@ function generateLiveLocationJobs(lat: number, lng: number, areaName: string, ci
       lat: jobLat,
       lng: jobLng,
       logo: tmpl.logo,
+      image: tmpl.image,
       posted: `${(idx % 4) + 1}h ago`,
       description: tmpl.desc,
       skills: tmpl.tags,
@@ -179,7 +248,9 @@ function BariKoiLiveJobsMap({
   onRequestLocation,
   onDenyLocation,
   showPermissionPrompt,
-  isLocating
+  isLocating,
+  directionJob,
+  onClearDirection
 }: {
   userCoords: [number, number];
   isLocationGranted: boolean;
@@ -191,11 +262,14 @@ function BariKoiLiveJobsMap({
   onDenyLocation: () => void;
   showPermissionPrompt: boolean;
   isLocating: boolean;
+  directionJob: LiveJobListing | null;
+  onClearDirection: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const userMarkerRef = useRef<any>(null);
+  const routeLineRef = useRef<any>(null);
   const LRef = useRef<any>(null);
 
   // Helper to create HTML for Job Marker
@@ -384,20 +458,163 @@ function BariKoiLiveJobsMap({
     syncMapMarkers();
   }, [syncMapMarkers]);
 
-  // Fly to selected job on selection change
+  const [routeInfo, setRouteInfo] = useState<{ distanceText: string; durationText: string } | null>(null);
+
+  // Fly to selected job or draw real turn-by-turn road route to direction job
   useEffect(() => {
-    if (!mapRef.current || !selectedJob) return;
+    if (!mapRef.current) return;
     const map = mapRef.current;
-    if (map.flyTo) {
-      map.flyTo({
-        center: [selectedJob.lng, selectedJob.lat],
-        zoom: 15.5,
-        speed: 1.2
+    const L = LRef.current;
+
+    // Handle Real Road Direction Route
+    if (directionJob) {
+      const userLat = userCoords[0];
+      const userLng = userCoords[1];
+      const jobLat = directionJob.lat;
+      const jobLng = directionJob.lng;
+
+      let isCancelled = false;
+
+      fetchRealRoadRoute(userLat, userLng, jobLat, jobLng).then(routeData => {
+        if (isCancelled || !mapRef.current) return;
+
+        setRouteInfo({
+          distanceText: routeData.distanceText,
+          durationText: routeData.durationText
+        });
+
+        const coordinates = routeData.coordinates; // [[lng, lat], ...]
+
+        // 1. Draw Real Road Route in Leaflet
+        if (L && map.addLayer) {
+          if (routeLineRef.current) {
+            try { routeLineRef.current.remove(); } catch (_) {}
+          }
+
+          const latLngs = coordinates.map(([lng, lat]) => [lat, lng]);
+
+          // Draw main road polyline following actual streets and lanes
+          const line = L.polyline(latLngs, {
+            color: "#C04A22",
+            weight: 6,
+            opacity: 0.95,
+            lineJoin: "round",
+            lineCap: "round"
+          }).addTo(map);
+
+          routeLineRef.current = line;
+
+          const bounds = L.latLngBounds(latLngs);
+          map.fitBounds(bounds, { padding: [55, 55], maxZoom: 16 });
+        } else if (map.getSource) {
+          // 2. Draw Real Road Route in BariKoi GL / MapLibre
+          const routeGeoJson: any = {
+            type: "Feature",
+            properties: {},
+            geometry: {
+              type: "LineString",
+              coordinates: coordinates
+            }
+          };
+
+          if (map.getSource("direction-route")) {
+            map.getSource("direction-route").setData(routeGeoJson);
+          } else {
+            try {
+              map.addSource("direction-route", {
+                type: "geojson",
+                data: routeGeoJson
+              });
+
+              // Casing (White outer glow for prominent road line)
+              map.addLayer({
+                id: "direction-route-casing",
+                type: "line",
+                source: "direction-route",
+                layout: {
+                  "line-join": "round",
+                  "line-cap": "round"
+                },
+                paint: {
+                  "line-color": "#ffffff",
+                  "line-width": 9,
+                  "line-opacity": 0.95
+                }
+              });
+
+              // Main Road Polyline
+              map.addLayer({
+                id: "direction-route-line",
+                type: "line",
+                source: "direction-route",
+                layout: {
+                  "line-join": "round",
+                  "line-cap": "round"
+                },
+                paint: {
+                  "line-color": "#C04A22",
+                  "line-width": 6,
+                  "line-opacity": 1
+                }
+              });
+            } catch (_) {}
+          }
+
+          // Calculate exact bounds from road coordinates
+          let minLng = coordinates[0][0], maxLng = coordinates[0][0];
+          let minLat = coordinates[0][1], maxLat = coordinates[0][1];
+          coordinates.forEach(([cLng, cLat]) => {
+            if (cLng < minLng) minLng = cLng;
+            if (cLng > maxLng) maxLng = cLng;
+            if (cLat < minLat) minLat = cLat;
+            if (cLat > maxLat) maxLat = cLat;
+          });
+
+          if (map.fitBounds) {
+            map.fitBounds(
+              [
+                [minLng, minLat],
+                [maxLng, maxLat]
+              ],
+              { padding: 75, maxZoom: 16, duration: 1200 }
+            );
+          }
+        }
       });
-    } else if (map.panTo) {
-      map.panTo([selectedJob.lat, selectedJob.lng]);
+
+      return () => {
+        isCancelled = true;
+      };
+    } else {
+      setRouteInfo(null);
+      // Clear route line if direction cancelled
+      if (routeLineRef.current) {
+        try { routeLineRef.current.remove(); } catch (_) {}
+        routeLineRef.current = null;
+      }
+      if (map.getSource && map.getSource("direction-route")) {
+        try {
+          map.getSource("direction-route").setData({
+            type: "FeatureCollection",
+            features: []
+          });
+        } catch (_) {}
+      }
+
+      // If no direction, fly to selected job if present
+      if (selectedJob) {
+        if (map.flyTo) {
+          map.flyTo({
+            center: [selectedJob.lng, selectedJob.lat],
+            zoom: 15.5,
+            speed: 1.2
+          });
+        } else if (map.panTo) {
+          map.panTo([selectedJob.lat, selectedJob.lng]);
+        }
+      }
     }
-  }, [selectedJob]);
+  }, [directionJob, selectedJob, userCoords]);
 
   // Zoom Controls
   const handleZoomIn = () => {
@@ -419,13 +636,166 @@ function BariKoiLiveJobsMap({
     }
   };
 
+  const [travelMode, setTravelMode] = useState<"car" | "bike" | "walk">("car");
+  const [isNavCardMinimized, setIsNavCardMinimized] = useState(false);
+
+  // Re-open card whenever a new direction job is selected
+  useEffect(() => {
+    if (directionJob) {
+      setIsNavCardMinimized(false);
+    }
+  }, [directionJob]);
+
   return (
-    <div className="relative w-full h-[460px] sm:h-[540px] md:h-[600px] lg:h-[650px] overflow-hidden">
+    <div className="relative w-full h-[480px] sm:h-[560px] md:h-[620px] lg:h-[680px] overflow-hidden">
       {/* Map Container */}
       <div ref={containerRef} className="w-full h-full" />
 
+      {/* ── 1. Collapsed Mini Route Pill (Keeps Routing Line on Map) ── */}
+      {directionJob && isNavCardMinimized && (
+        <div
+          onClick={() => setIsNavCardMinimized(false)}
+          className="absolute bottom-3 left-3 sm:left-4 z-30 bg-white/95 backdrop-blur-md rounded-2xl px-3.5 py-2 shadow-xl border border-slate-200/90 flex items-center gap-2.5 cursor-pointer hover:bg-white hover:border-[#C04A22]/30 transition animate-in fade-in zoom-in-95 pointer-events-auto"
+          title="Click to view route details"
+        >
+          <div className="w-6 h-6 rounded-xl bg-[#C04A22]/12 text-[#8C3015] flex items-center justify-center">
+            <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
+          </div>
+          <div className="text-xs font-bold text-slate-800">
+            {directionJob.title} <span className="text-[#C04A22] font-semibold">({directionJob.distanceKm.toFixed(1)} km)</span>
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsNavCardMinimized(false);
+            }}
+            className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 ml-1 cursor-pointer"
+            title="Expand Card"
+          >
+            <ChevronUp className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onClearDirection();
+            }}
+            className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center cursor-pointer"
+            title="Clear Route"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
+
+      {/* ── 2. Google Maps Style Navigation Card (Branded & Clean) ── */}
+      {directionJob && !isNavCardMinimized && (
+        <div className="absolute bottom-3 left-3 right-3 sm:right-auto sm:left-4 sm:bottom-4 z-30 w-auto sm:w-[410px] bg-white rounded-3xl p-3.5 sm:p-4 shadow-2xl border border-slate-200/90 animate-in slide-in-from-bottom-4 duration-300 pointer-events-auto">
+          
+          {/* Drag Handle Top Bar */}
+          <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-2.5" />
+
+          {/* Header: Back Arrow, Origin & Destination Hierarchy, Dropdown/Close */}
+          <div className="flex items-center justify-between gap-2.5 mb-3">
+            <button
+              onClick={onClearDirection}
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 transition cursor-pointer flex-shrink-0"
+              title="Go back"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+
+            <div className="flex-1 min-w-0 px-1">
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium truncate">
+                <span className="w-2 h-2 rounded-full bg-[#C04A22] flex-shrink-0" />
+                <span className="truncate">Your Location</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-sm font-bold text-slate-900 truncate mt-0.5">
+                <MapPin className="w-3.5 h-3.5 text-[#C04A22] flex-shrink-0" />
+                <span className="truncate">{directionJob.title}</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setIsNavCardMinimized(true)}
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 transition cursor-pointer flex-shrink-0"
+              title="Minimize Card"
+            >
+              <ChevronDown className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Travel Mode Switcher Tabs (Sidebar Active Style) */}
+          <div className="flex items-center gap-2 mb-3">
+            <button
+              onClick={() => setTravelMode("car")}
+              className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                travelMode === "car"
+                  ? "bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/25 shadow-2xs"
+                  : "bg-slate-100/90 hover:bg-[#C04A22]/8 text-slate-600 hover:text-[#8C3015] border border-transparent"
+              }`}
+            >
+              <Car className="w-3.5 h-3.5" />
+              <span>Car</span>
+            </button>
+            <button
+              onClick={() => setTravelMode("bike")}
+              className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                travelMode === "bike"
+                  ? "bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/25 shadow-2xs"
+                  : "bg-slate-100/90 hover:bg-[#C04A22]/8 text-slate-600 hover:text-[#8C3015] border border-transparent"
+              }`}
+            >
+              <Bike className="w-3.5 h-3.5" />
+              <span>Bike</span>
+            </button>
+            <button
+              onClick={() => setTravelMode("walk")}
+              className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                travelMode === "walk"
+                  ? "bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/25 shadow-2xs"
+                  : "bg-slate-100/90 hover:bg-[#C04A22]/8 text-slate-600 hover:text-[#8C3015] border border-transparent"
+              }`}
+            >
+              <Footprints className="w-3.5 h-3.5" />
+              <span>Walking</span>
+            </button>
+          </div>
+
+          {/* 3 Stats Metric Grid (Time, Distance, Cost) */}
+          <div className="grid grid-cols-3 gap-2 text-center pt-1">
+            {/* Time */}
+            <div className="bg-slate-50/90 rounded-2xl p-2.5 flex flex-col items-center justify-center">
+              <div className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
+                {travelMode === "car"
+                  ? `${Math.max(1, Math.round(directionJob.distanceKm * 2.5))} min`
+                  : travelMode === "bike"
+                  ? `${Math.max(2, Math.round(directionJob.distanceKm * 4.5))} min`
+                  : `${Math.max(5, Math.round(directionJob.distanceKm * 12))} min`}
+              </div>
+              <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-0.5">Time</div>
+            </div>
+
+            {/* Distance */}
+            <div className="bg-slate-50/90 rounded-2xl p-2.5 flex flex-col items-center justify-center">
+              <div className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
+                {directionJob.distanceKm.toFixed(1)} km
+              </div>
+              <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-0.5">Distance</div>
+            </div>
+
+            {/* Cost */}
+            <div className="bg-slate-50/90 rounded-2xl p-2.5 flex flex-col items-center justify-center">
+              <div className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
+                ${(directionJob.distanceKm * 0.16 + 0.45).toFixed(2)}
+              </div>
+              <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-0.5">Cost</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Center Permission Prompt: Left Allow, Right X (Deny) */}
-      {showPermissionPrompt && !isLocationGranted && (
+      {showPermissionPrompt && !isLocationGranted && !directionJob && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-white/95 backdrop-blur-md rounded-2xl p-1.5 shadow-xl border border-slate-200/90 flex items-center gap-2 animate-in fade-in zoom-in-95 duration-200">
           <button
             onClick={(e) => {
@@ -513,6 +883,7 @@ export function Jobs() {
     generateLiveLocationJobs(defaultCoords[0], defaultCoords[1], "Dhaka Area", "Dhaka")
   );
   const [selectedJob, setSelectedJob] = useState<LiveJobListing | null>(null);
+  const [directionJob, setDirectionJob] = useState<LiveJobListing | null>(null);
 
   // Applicant Form State
   const [applicantName, setApplicantName] = useState("Tarek Mahmud");
@@ -587,6 +958,21 @@ export function Jobs() {
       }
     );
   }, []);
+
+  // Direction Handler (Draws route on map & smooth scrolls to map)
+  const handleShowDirection = useCallback((job: LiveJobListing) => {
+    setDirectionJob(job);
+    setSelectedJob(job);
+    if (!isLocationGranted) {
+      executeGeolocation(true);
+    }
+    const mapEl = document.getElementById("jobs-map-section");
+    if (mapEl) {
+      mapEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [isLocationGranted, executeGeolocation]);
 
   // Navigation Button Click Handler
   const handleNavigationClick = useCallback(() => {
@@ -724,7 +1110,7 @@ export function Jobs() {
         </div>
 
         {/* ── BARIKOI LIVE MAP (EXPANDED HEIGHT & MINIMAL SUBTLE BORDER) ────── */}
-        <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 pt-2 sm:pt-3">
+        <div id="jobs-map-section" className="w-full max-w-7xl mx-auto px-2 sm:px-4 pt-2 sm:pt-3">
           <div className="rounded-2xl overflow-hidden border border-slate-200/90 shadow-2xs">
             <BariKoiLiveJobsMap
               userCoords={userCoords}
@@ -737,6 +1123,8 @@ export function Jobs() {
               onDenyLocation={() => setShowPermissionPrompt(false)}
               showPermissionPrompt={showPermissionPrompt}
               isLocating={isLocating}
+              directionJob={directionJob}
+              onClearDirection={() => setDirectionJob(null)}
             />
           </div>
         </div>
@@ -748,117 +1136,123 @@ export function Jobs() {
             {/* ════════ LEFT COLUMN: NEARBY FOR YOU (6 cols) ════════ */}
             <div className="lg:col-span-6 space-y-4">
               <div>
-                <div className="flex items-center justify-between mb-2.5">
-                  <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
-                    nearby for you
-                  </h2>
-                  <span className="text-xs text-slate-500 font-medium">
-                    {nearbyJobs.length} jobs near {userArea}
-                  </span>
+                {/* 2-Card Options Matching Screenshot */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  {/* Left Option: Nearby Me Jobs */}
+                  <div
+                    onClick={() => setActiveFilter(activeFilter === "nearby" ? "all" : "nearby")}
+                    className={`p-3.5 sm:p-4 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
+                      activeFilter === "nearby"
+                        ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
+                        : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
+                    }`}
+                  >
+                    <div className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
+                      {nearbyJobs.length} jobs nearby
+                    </div>
+                  </div>
+
+                  {/* Right Option: Full State Jobs */}
+                  <div
+                    onClick={() => setActiveFilter("all")}
+                    className={`p-3.5 sm:p-4 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
+                      activeFilter === "all"
+                        ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
+                        : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
+                    }`}
+                  >
+                    <div className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
+                      {liveJobs.length} full state jobs
+                    </div>
+                  </div>
                 </div>
 
-                {/* Nearby Jobs List */}
-                <div className="space-y-3">
-                  {nearbyJobs.map(job => {
+                {/* Job Cards Feed (Screenshot Style) */}
+                <div className="space-y-4">
+                  {(activeFilter === "nearby" ? nearbyJobs : liveJobs).map(job => {
                     const isSelected = selectedJob?.id === job.id;
                     const isSaved = savedJobIds.includes(job.id);
                     return (
                       <div
                         key={job.id}
                         onClick={() => setSelectedJob(job)}
-                        className={`p-4 rounded-2xl bg-white border transition-all cursor-pointer ${
+                        className={`group bg-white rounded-3xl border overflow-hidden transition-all duration-200 cursor-pointer ${
                           isSelected
-                            ? "border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-sm"
-                            : "border-slate-200/80 hover:border-slate-300 hover:shadow-2xs"
+                            ? "border-[#C04A22] ring-2 ring-[#C04A22]/20 shadow-md"
+                            : "border-slate-200/90 hover:border-slate-300 hover:shadow-xs"
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-start gap-3 flex-1 min-w-0">
-                            <div className="w-10 h-10 rounded-xl bg-slate-100 text-xl flex items-center justify-center flex-shrink-0">
-                              {job.logo}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="text-sm font-bold text-slate-900 truncate">
-                                  {job.title}
-                                </h3>
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                                  {job.type}
-                                </span>
-                              </div>
-                              <div className="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-2">
-                                <span>{job.company}</span>
-                                <span>•</span>
-                                <span className="text-emerald-700 font-semibold flex items-center gap-0.5">
-                                  <MapPin className="w-3 h-3" />
-                                  {job.distance}
-                                </span>
-                              </div>
-                            </div>
+                        {/* Banner Image with Type & Distance Floating Badges */}
+                        <div className="relative w-full h-44 sm:h-48 overflow-hidden bg-slate-100">
+                          <img
+                            src={job.image}
+                            alt={job.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            loading="lazy"
+                          />
+                          <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-white/95 backdrop-blur-md text-slate-800 text-xs font-bold shadow-xs border border-slate-200/60">
+                            {job.type}
                           </div>
-
-                          {/* Save Bookmark */}
+                          <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-medium flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                            {job.distance}
+                          </div>
                           <button
                             onClick={e => {
                               e.stopPropagation();
                               toggleSave(job.id);
                             }}
-                            className="text-slate-400 hover:text-[#C04A22] transition p-1"
+                            className="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-500 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
                           >
                             {isSaved ? (
-                              <BookmarkCheck className="w-4.5 h-4.5 text-[#C04A22]" />
+                              <BookmarkCheck className="w-4 h-4 text-[#C04A22]" />
                             ) : (
-                              <Bookmark className="w-4.5 h-4.5" />
+                              <Bookmark className="w-4 h-4" />
                             )}
                           </button>
                         </div>
 
-                        {/* Salary & Details */}
-                        <div className="mt-2.5 flex items-center justify-between flex-wrap gap-2 text-xs">
-                          <div className="font-bold text-slate-900 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/60">
-                            {job.salary}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-500">{job.category}</span>
-                            <span>•</span>
-                            <span className="text-slate-400">{job.posted}</span>
-                          </div>
-                        </div>
+                        {/* Card Body */}
+                        <div className="p-4 sm:p-5">
+                          <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug line-clamp-1 group-hover:text-[#C04A22] transition-colors">
+                            {job.title}
+                          </h3>
+                          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+                            {job.company} • {job.location}
+                          </p>
+                          <p className="text-xs sm:text-sm text-slate-600 mt-2 line-clamp-2 leading-relaxed">
+                            {job.description}
+                          </p>
 
-                        <p className="text-xs text-slate-600 mt-2 line-clamp-2 leading-relaxed">
-                          {job.description}
-                        </p>
-
-                        {/* Skills and Apply CTA */}
-                        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            {job.skills.map(skill => (
-                              <span
-                                key={skill}
-                                className="text-[11px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-medium"
-                              >
-                                {skill}
-                              </span>
-                            ))}
+                          {/* Row 1: Salary Pill */}
+                          <div className="mt-3.5 flex items-center justify-between">
+                            <span className="px-3 py-1.5 rounded-full bg-orange-50/80 text-[#C04A22] text-xs sm:text-sm font-bold border border-orange-100/60">
+                              {job.salary}
+                            </span>
                           </div>
 
-                          <div className="flex items-center gap-2">
-                            <a
-                              href={`tel:${job.contactPhone}`}
-                              onClick={e => e.stopPropagation()}
-                              className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition flex items-center gap-1"
+                          {/* Row 2: Direction & Apply Buttons (Side by Side) */}
+                          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
+                            <button
+                              onClick={e => {
+                                e.stopPropagation();
+                                handleShowDirection(job);
+                              }}
+                              className="flex-1 px-3.5 py-2 rounded-2xl bg-slate-100 hover:bg-orange-50 text-slate-700 hover:text-[#C04A22] text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 border border-slate-200/80 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                              title="Show direction route from your location"
                             >
-                              <Phone className="w-3 h-3" />
-                              Call
-                            </a>
+                              <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
+                              <span>Direction</span>
+                            </button>
                             <button
                               onClick={e => {
                                 e.stopPropagation();
                                 setShowApplyModal(job);
                               }}
-                              className="px-3.5 py-1.5 rounded-xl bg-[#C04A22] hover:bg-[#8C3015] text-white text-xs font-bold shadow-xs transition"
+                              className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22] hover:bg-[#8C3015] text-white text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-xs hover:shadow-sm active:scale-98 cursor-pointer"
                             >
-                              Quick Apply
+                              <span>Apply</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
@@ -891,8 +1285,8 @@ export function Jobs() {
                 </div>
               </div>
 
-              {/* Job Cards Feed */}
-              <div className="space-y-3">
+              {/* Job Cards Feed (Screenshot Style) */}
+              <div className="space-y-4">
                 {filteredJobs.map(job => {
                   const isSelected = selectedJob?.id === job.id;
                   const isSaved = savedJobIds.includes(job.id);
@@ -900,33 +1294,33 @@ export function Jobs() {
                     <div
                       key={job.id}
                       onClick={() => setSelectedJob(job)}
-                      className={`p-4 rounded-2xl bg-white border transition-all cursor-pointer ${
+                      className={`group bg-white rounded-3xl border overflow-hidden transition-all duration-200 cursor-pointer ${
                         isSelected
-                          ? "border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-sm"
-                          : "border-slate-200/80 hover:border-slate-300 hover:shadow-2xs"
+                          ? "border-[#C04A22] ring-2 ring-[#C04A22]/20 shadow-md"
+                          : "border-slate-200/90 hover:border-slate-300 hover:shadow-xs"
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-start gap-2.5 flex-1 min-w-0">
-                          <div className="w-9 h-9 rounded-xl bg-slate-100 text-lg flex items-center justify-center flex-shrink-0">
-                            {job.logo}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-bold text-slate-900 truncate">
-                              {job.title}
-                            </h3>
-                            <div className="text-xs text-slate-500 font-medium mt-0.5">
-                              {job.company} • <span className="text-slate-700 font-semibold">{job.distance}</span>
-                            </div>
-                          </div>
+                      {/* Banner Image with Type & Distance Floating Badges */}
+                      <div className="relative w-full h-44 sm:h-48 overflow-hidden bg-slate-100">
+                        <img
+                          src={job.image}
+                          alt={job.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                        <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-white/95 backdrop-blur-md text-slate-800 text-xs font-bold shadow-xs border border-slate-200/60">
+                          {job.type}
                         </div>
-
+                        <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-medium flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                          {job.distance}
+                        </div>
                         <button
                           onClick={e => {
                             e.stopPropagation();
                             toggleSave(job.id);
                           }}
-                          className="text-slate-400 hover:text-[#C04A22] p-1"
+                          className="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-500 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
                         >
                           {isSaved ? (
                             <BookmarkCheck className="w-4 h-4 text-[#C04A22]" />
@@ -936,36 +1330,49 @@ export function Jobs() {
                         </button>
                       </div>
 
-                      {/* Salary & Type Badges */}
-                      <div className="mt-2.5 flex items-center justify-between gap-2 flex-wrap text-xs">
-                        <span className="font-bold text-slate-900 text-xs">
-                          {job.salary}
-                        </span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                          {job.category}
-                        </span>
-                      </div>
+                      {/* Card Body */}
+                      <div className="p-4 sm:p-5">
+                        <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug line-clamp-1 group-hover:text-[#C04A22] transition-colors">
+                          {job.title}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+                          {job.company} • {job.location}
+                        </p>
+                        <p className="text-xs sm:text-sm text-slate-600 mt-2 line-clamp-2 leading-relaxed">
+                          {job.description}
+                        </p>
 
-                      <p className="text-xs text-slate-600 mt-2 line-clamp-2 leading-relaxed">
-                        {job.description}
-                      </p>
-
-                      {/* Footer Info & Action */}
-                      <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
-                        <div className="text-[11px] text-slate-400 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {job.posted} • {job.spots} spot{job.spots > 1 ? "s" : ""} left
+                        {/* Row 1: Salary Pill */}
+                        <div className="mt-3.5 flex items-center justify-between">
+                          <span className="px-3 py-1.5 rounded-full bg-orange-50/80 text-[#C04A22] text-xs sm:text-sm font-bold border border-orange-100/60">
+                            {job.salary}
+                          </span>
                         </div>
 
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            setShowApplyModal(job);
-                          }}
-                          className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-[#C04A22] text-white text-xs font-bold transition flex items-center gap-1"
-                        >
-                          Apply <ArrowUpRight className="w-3 h-3" />
-                        </button>
+                        {/* Row 2: Direction & Apply Buttons (Side by Side) */}
+                        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleShowDirection(job);
+                            }}
+                            className="flex-1 px-3.5 py-2 rounded-2xl bg-slate-100 hover:bg-orange-50 text-slate-700 hover:text-[#C04A22] text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 border border-slate-200/80 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                            title="Show direction route from your location"
+                          >
+                            <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
+                            <span>Direction</span>
+                          </button>
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              setShowApplyModal(job);
+                            }}
+                            className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22] hover:bg-[#8C3015] text-white text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-xs hover:shadow-sm active:scale-98 cursor-pointer"
+                          >
+                            <span>Apply</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
