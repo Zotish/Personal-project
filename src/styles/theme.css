@@ -183,19 +183,26 @@
   }
 }
 
-/* Ultra-thin sleek 2px scrollbar for horizontal sliders & containers */
+/* Ultra-thin sleek scrollbar for horizontal sliders & containers */
+.ultra-thin-scrollbar {
+  scrollbar-width: thin !important;
+  scrollbar-color: #E05236 rgba(226, 232, 240, 0.6) !important;
+  -webkit-overflow-scrolling: touch;
+}
+
 .ultra-thin-scrollbar::-webkit-scrollbar {
-  height: 2px !important;
-  width: 2px !important;
+  height: 3px !important;
+  width: 3px !important;
+  display: block !important;
 }
 
 .ultra-thin-scrollbar::-webkit-scrollbar-track {
-  background: rgba(226, 232, 240, 0.5) !important;
+  background: rgba(226, 232, 240, 0.6) !important;
   border-radius: 9999px !important;
 }
 
 .ultra-thin-scrollbar::-webkit-scrollbar-thumb {
-  background: #C04A22 !important;
+  background: #E05236 !important;
   border-radius: 9999px !important;
 }
 
@@ -203,21 +210,30 @@
   background: #8C3015 !important;
 }
 
-/* Hide horizontal & vertical scrollbars completely on Mobile screens (<640px) */
-@media (max-width: 639px) {
-  .ultra-thin-scrollbar,
-  .ultra-thin-scrollbar * {
-    -ms-overflow-style: none !important;
-    scrollbar-width: none !important;
-  }
-  
-  .ultra-thin-scrollbar::-webkit-scrollbar,
-  .ultra-thin-scrollbar *::-webkit-scrollbar,
-  ::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-    background: transparent !important;
-    -webkit-appearance: none !important;
-  }
+/* Hide default native browser scrollbars completely */
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+/* Hide map attributions for clean UI */
+.maplibregl-ctrl-attrib,
+.mapboxgl-ctrl-attrib,
+.leaflet-control-attribution,
+.bkoi-ctrl-attrib,
+.maplibregl-ctrl-attrib-button,
+.mapboxgl-ctrl-attrib-button,
+.leaflet-bottom.leaflet-right,
+.bkoi-gl-ctrl-attrib {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }

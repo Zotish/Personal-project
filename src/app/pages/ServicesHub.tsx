@@ -6,7 +6,7 @@ import {
   Languages, AlertTriangle, Store, Bus, Building2, FileText, Sparkles, Search,
   LayoutGrid, Truck, BookOpen, Car, Armchair, Film, Cpu, Shirt, Building,
   ShoppingBag, Leaf, Laptop, KeyRound, Users, Wrench, Award, ShieldCheck, Gift, MapPin, Map, Calendar,
-  Tag, TrendingUp, ChevronUp
+  Tag, TrendingUp, ChevronUp, Landmark, Trophy, Ticket
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -23,54 +23,48 @@ type ServiceItem = {
 
 const allServices: ServiceItem[] = [
   // ─── PAGE 1 / USER SPECIFIED TOP PRIORITY (10 FOR WEB, FIRST 8 FOR MOBILE) ─────
+  // Row 1:
   { id: "newcomer-jobs", name: "Jobs", desc: "Entry-level jobs, cash & authorized hiring", icon: Briefcase, link: "/services/jobs", category: "jobs" },
   { id: "housing-rentals", name: "Housing", desc: "Sublets, rooms & no-credit-check apartments", icon: Home, link: "/services/housing", category: "housing" },
   { id: "local-shops", name: "Grocery", desc: "Deshi grocery stores & halal meat shops", icon: Store, link: "/services/shops", category: "utility" },
   { id: "food-bank", name: "Free Food", desc: "Free food bank & community food pantries", icon: Gift, link: "/services/social-services", category: "health" },
+  // Row 2:
+  { id: "metro-transit", name: "Transit", desc: "MTA bus/subway maps, OMNY & live schedules", icon: Bus, link: "/services/subway", category: "travel" },
+  { id: "esl-education", name: "Education", desc: "Free English classes, college admission & GED", icon: GraduationCap, link: "/services/english", category: "education" },
+  { id: "religious", name: "Religion", desc: "Mosques, temples, churches near your area", icon: Building, link: "/services/religious", category: "utility" },
+  { id: "high-commission", name: "High Commission", desc: "Embassy, Consulate, Passport & NID services", icon: Landmark, link: "/services/legal", category: "legal" },
+
+  // ─── PAGE 2 (ITEMS 9–16 FOR MOBILE): USER FURNITURE, LEGAL AID, HALAL FOOD, FREE MEDICINE, REMITTANCE, FLIGHT, PHARMACY, HOSPITAL ─────
+  // Page 2 Row 1:
+  { id: "used-furniture", name: "Used Furniture", desc: "Beds, sofas, desks & free pickup options", icon: Armchair, link: "/services/used-furniture", category: "utility" },
+  { id: "legal-aid", name: "Legal Aid", desc: "Free immigration lawyers, Work Permit & TPS aid", icon: Scale, link: "/services/legal", category: "legal" },
   { id: "halal-groceries", name: "Halal Food", desc: "Deshi fish, meat, spice stores & home delivery", icon: ShoppingCart, link: "/services/home-kitchen", category: "housing" },
   { id: "health-medicine", name: "Free Medicine", desc: "Medicaid, free prescription aid & clinics", icon: Heart, link: "/services/free-medicine", category: "health" },
-  { id: "esl-education", name: "Education", desc: "Free English classes, college admission & GED", icon: GraduationCap, link: "/services/english", category: "education" },
-  { id: "used-furniture", name: "Used Items", desc: "Beds, sofas, desks & free pickup options", icon: Armchair, link: "/services/used-furniture", category: "utility" },
-  { id: "metro-transit", name: "Transit", desc: "MTA bus/subway maps, OMNY & live schedules", icon: Bus, link: "/services/subway", category: "travel" },
-  { id: "legal-aid", name: "Legal Aid", desc: "Free immigration lawyers, Work Permit & TPS aid", icon: Scale, link: "/services/legal", category: "legal" },
-
-  // ─── TIER 2: REMITTANCE, FLIGHTS, TRANSLATION & IMMIGRATION ───────────────
+  // Page 2 Row 2:
   { id: "remittance-exchange", name: "Remittance", desc: "Send money to Bangladesh, bKash & best rates", icon: BarChart2, link: "/services/money-exchange", category: "finance" },
   { id: "flight-tickets", name: "Flights", desc: "Dhaka flights, Umrah packages & visa help", icon: Plane, link: "/services/travel-agency", category: "travel" },
-  { id: "doc-translation", name: "Translation", desc: "Certified NID, Passport & Certificate translation", icon: Languages, link: "/services/translate", category: "legal" },
-  { id: "emergency-assistance", name: "Emergency", desc: "Food pantries, winter clothing & cash relief", icon: AlertTriangle, link: "/emergency", category: "legal" },
-  { id: "case-status", name: "Case Status", desc: "Track USCIS immigration application status", icon: ShieldCheck, link: "/services/checklist", category: "legal" },
-  { id: "legal-clinic", name: "Legal Clinic", desc: "Free walk-in legal advice clinics", icon: Scale, link: "/services/legal", category: "legal" },
-  { id: "medical-courier", name: "Rx Delivery", desc: "Medicine, prescription & report delivery", icon: Truck, link: "/services/medical-courier", category: "health" },
   { id: "pharmacy", name: "Pharmacy", desc: "24h pharmacies, OTC, flu shots & refills", icon: Heart, link: "/services/pharmacy", category: "health" },
-  { id: "community-hospital", name: "Hospitals", desc: "Affordable healthcare, Medicaid & walk-in clinics", icon: Building2, link: "/services/community-hospital", category: "health" },
+  { id: "community-hospital", name: "Hospital", desc: "Affordable healthcare, Medicaid & walk-in clinics", icon: Building2, link: "/services/community-hospital", category: "health" },
+
+  // ─── PAGE 3 AND SUBSEQUENT ────────────────────────────────────────────────
+  { id: "doc-translation", name: "Translation", desc: "Certified NID, Passport & Certificate translation", icon: Languages, link: "/services/translate", category: "legal" },
   { id: "subway", name: "Subway", desc: "Real-time arrivals, transfers & exit info", icon: MapPin, link: "/services/subway", category: "travel" },
 
   // ─── TIER 3: SOCIAL AID, CARS, UTILITIES & EDUCATION ──────────────────────
   { id: "social-services", name: "Social Aid", desc: "Food pantries, rental aid, SNAP & legal help", icon: Building, link: "/services/social-services", category: "legal" },
-  { id: "checklist", name: "Checklist", desc: "Personalized checklist for your visa type", icon: FileText, link: "/services/checklist", category: "legal" },
-  { id: "moving", name: "Movers", desc: "Affordable movers and relocation help", icon: Truck, link: "/services/moving", category: "utility" },
   { id: "cars", name: "Cars & DMV", desc: "Buy, sell or rent cars and vehicles", icon: Car, link: "/services/cars", category: "utility" },
   { id: "petrol", name: "Gas & EV", desc: "Live gas prices, EV charging & 24h stations", icon: Car, link: "/services/petrol", category: "utility" },
   { id: "furniture", name: "Furniture", desc: "Affordable furniture for your new home", icon: Armchair, link: "/services/furniture", category: "utility" },
   { id: "electronics", name: "Electronics", desc: "Phones, laptops, and gadgets near you", icon: Cpu, link: "/services/electronics", category: "utility" },
   { id: "services", name: "Repairs", desc: "Local services: plumbing, cleaning, repairs", icon: Wrench, link: "/services/local", category: "utility" },
   { id: "scholarship", name: "Scholarships", desc: "Scholarships for STEM, ESL & immigrant students", icon: Award, link: "/services/scholarship", category: "education" },
-  { id: "admission", name: "Admissions", desc: "Universities, ESL & certification programs", icon: BookOpen, link: "/services/admission", category: "education" },
 
-  // ─── TIER 4: BUSINESS, COMMUNITY & LIFESTYLE ────────────────────────────────
-  { id: "business", name: "Business LLC", desc: "LLC setup, accounting, and business support", icon: BarChart2, link: "/services/business", category: "finance" },
-  { id: "freelancers", name: "Freelancers", desc: "Hire or offer freelance skills in your community", icon: Laptop, link: "/services/freelancers", category: "jobs" },
-  { id: "merchant-saas", name: "Marketplace", desc: "Open your digital shop & sell products", icon: Store, link: "/seller-dashboard", category: "finance" },
+  // ─── TIER 4: COMMUNITY & LIFESTYLE ─────────────────────────────────────────
   { id: "buy-sell", name: "Buy & Sell", desc: "Buy and sell goods in your community", icon: ShoppingBag, link: "/services/buy-sell", category: "utility" },
-  { id: "community", name: "Community QA", desc: "Get advice from experienced immigrants", icon: Users, link: "/qa", category: "utility" },
-  { id: "religious", name: "Mosques", desc: "Mosques, temples, churches near your area", icon: Building, link: "/services/religious", category: "utility" },
-  { id: "schools", name: "Schools", desc: "Public schools, colleges, and ESL programs", icon: GraduationCap, link: "/services/schools", category: "education" },
   { id: "rentals", name: "Rentals", desc: "Furniture, car, and equipment rentals", icon: KeyRound, link: "/services/rentals", category: "housing" },
-  { id: "events", name: "Events", desc: "Community events, meetups, and cultural festivals", icon: Calendar, link: "/explore", category: "utility" },
+  { id: "sports", name: "Sports", desc: "Cricket, soccer leagues, tournaments & local clubs", icon: Trophy, link: "/explore", category: "utility" },
   { id: "fashion", name: "Fashion", desc: "Clothes, shoes, and accessories for all cultures", icon: Shirt, link: "/services/fashion", category: "utility" },
-  { id: "movie-hall", name: "Movies", desc: "Cinemas, showtimes, Bengali & Desi movies", icon: Film, link: "/services/movie-hall", category: "utility" },
-  { id: "garden", name: "Gardening", desc: "Plants, gardening tools, and outdoor supplies", icon: Leaf, link: "/services/garden", category: "utility" },
+  { id: "event-tickets", name: "Tickets", desc: "Concerts, events, movie & show tickets", icon: Ticket, link: "/services/movie-hall", category: "utility" },
 ];
 
 // ─── FEATURED CATALOG DATA (DISCOUNTED, NEW ARRIVAL, POPULAR) ────────────────
@@ -372,6 +366,19 @@ export function ServicesHub() {
     typeof window !== "undefined" ? window.innerWidth < 640 : false
   );
 
+  const servicesScrollRef = React.useRef<HTMLDivElement>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  const handleServicesScroll = () => {
+    if (servicesScrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = servicesScrollRef.current;
+      const maxScroll = scrollWidth - clientWidth;
+      if (maxScroll > 0) {
+        setScrollProgress(Math.min(Math.max(scrollLeft / maxScroll, 0), 1));
+      }
+    }
+  };
+
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 640);
     window.addEventListener("resize", handleResize);
@@ -424,7 +431,12 @@ export function ServicesHub() {
         {/* 🌟 MASTER SERVICES SWIPE CAROUSEL (8 ITEMS ON MOBILE, 10 ON DESKTOP) */}
         <div className="bg-white rounded-3xl border border-border p-4 sm:p-6 shadow-2xs">
 
-          <div className="flex overflow-x-auto ultra-thin-scrollbar snap-x snap-mandatory pt-1 pb-5">
+          <div
+            ref={servicesScrollRef}
+            onScroll={handleServicesScroll}
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory pt-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
             {servicePages.map((pageItems, pageIdx) => (
               <div
                 key={pageIdx}
@@ -453,6 +465,19 @@ export function ServicesHub() {
               </div>
             ))}
           </div>
+
+          {/* Always Visible Ultra-Thin 2.5px Scroll Line */}
+          {servicePages.length > 1 && (
+            <div className="w-24 sm:w-32 mx-auto h-[2.5px] bg-slate-200/80 rounded-full overflow-hidden mt-3 relative">
+              <div
+                className="h-full bg-[#C04A22] rounded-full transition-all duration-75"
+                style={{
+                  width: `${100 / servicePages.length}%`,
+                  transform: `translateX(${scrollProgress * (servicePages.length - 1) * 100}%)`,
+                }}
+              />
+            </div>
+          )}
         </div>
 
         {/* 🌟 FEATURED SERVICES & PRODUCTS CATALOG WITH INTERACTIVE FILTER TABS */}

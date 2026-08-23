@@ -12,7 +12,7 @@ import {
   Globe, Users, Bell, Zap, ChevronLeft, ChevronRight, ChevronDown,
   Calendar, Clock, X, MapPin as MapPinIcon, UserCheck, Building2,
   Megaphone, Star, TrendingUp, Lock, Hash, Pin, Award, User, Video, Film, Smile,
-  Wind, Droplets, Thermometer, ArrowUp, Loader2, CloudSun, Plus, LayoutGrid,
+  Wind, Droplets, Thermometer, ArrowUp, Loader2, CloudSun, Plus, LayoutGrid, Box, Package,
   Cloud, CloudRain, CloudSnow, Sun, CloudLightning
 } from "lucide-react";
 
@@ -1270,8 +1270,9 @@ function QuickAccessBox({ navigate, variant = "mobile" }: { navigate: (p: string
       className={`w-full h-11 rounded-2xl flex items-center justify-center border transition-all shadow-sm ${
         open ? "bg-[#C04A22]/10 border-[#C04A22]/30 shadow-md" : "bg-white border-border hover:shadow-md hover:bg-slate-50"
       }`}
+      title="MyBox"
     >
-      <LayoutGrid className={`w-5 h-5 transition-colors ${open ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
+      <Box className={`w-5 h-5 transition-colors ${open ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
     </button>
   );
 
@@ -1284,16 +1285,16 @@ function QuickAccessBox({ navigate, variant = "mobile" }: { navigate: (p: string
           {/* Fully transparent backdrop so top bar and screen remain 100% bright */}
           <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setOpen(false)} />
           <div
-            className="fixed sm:absolute z-50 bg-white rounded-3xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 sm:slide-in-from-top-3 fade-in duration-200 left-1/2 -translate-x-1/2 top-24 sm:top-full sm:mt-2 w-[calc(100vw-2rem)] max-w-sm sm:w-[340px]"
+            className="absolute z-50 bg-white rounded-3xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 slide-in-from-top-3 fade-in duration-200 left-1/2 -translate-x-1/2 top-13 sm:top-full sm:mt-2 w-[calc(100vw-2rem)] max-w-sm sm:w-[340px]"
           >
             {/* Header */}
             <div className="px-4 pt-4 pb-0">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <LayoutGrid className="w-4 h-4 text-emerald-600" />
+                  <Box className="w-4 h-4 text-[#C04A22]" />
                   <span className="text-sm font-semibold text-foreground">{t("qa_box_title")}</span>
                 </div>
-                <button onClick={() => setOpen(false)} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-secondary transition-colors">
+                <button onClick={() => setOpen(false)} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-secondary transition-colors cursor-pointer">
                   <X className="w-3.5 h-3.5 text-muted-foreground" />
                 </button>
               </div>
@@ -1374,9 +1375,6 @@ function QuickAccessBox({ navigate, variant = "mobile" }: { navigate: (p: string
                     })}
                   </div>
                   {unpinned.length === 0 && <p className="text-[11px] text-muted-foreground text-center py-2">{t("qa_box_all_pinned")}</p>}
-                </div>
-                <div className="px-4 pb-3 border-t border-border pt-2 text-center">
-                  <p className="text-[10px] text-muted-foreground">Frequently used features are auto-pinned ✨</p>
                 </div>
               </div>
             )}
@@ -1506,7 +1504,7 @@ export function HomeFeed() {
         {/* Sticky tabs bar */}
         {!selectedDate && (
           <div className="sticky top-0 lg:top-0 z-20 bg-white/90 backdrop-blur-md border-b border-border">
-            <div className="grid grid-cols-5 w-full items-stretch">
+            <div className="grid grid-cols-4 sm:grid-cols-5 w-full items-stretch">
               {/* 1. For You */}
               <button
                 onClick={() => setActiveTab("for-you")}
@@ -1520,8 +1518,8 @@ export function HomeFeed() {
                 <span className="hidden sm:inline truncate">{t("tab_foryou")}</span>
               </button>
 
-              {/* 2. MyBox */}
-              <div className="w-full flex items-stretch">
+              {/* 2. MyBox (Desktop Only) */}
+              <div className="hidden sm:flex w-full items-stretch">
                 <QuickAccessBox navigate={navigate} variant="desktop" />
               </div>
 
@@ -1551,7 +1549,7 @@ export function HomeFeed() {
                 <span className="hidden sm:inline truncate">{t("tab_following")}</span>
               </button>
 
-              {/* 5. Local & Smart Apps */}
+              {/* 5. Apps / Local */}
               <button
                 onClick={() => {
                   setActiveTab("local");
@@ -1562,9 +1560,11 @@ export function HomeFeed() {
                     ? "text-[#8C3015] font-bold border-b-2 border-[#C04A22]"
                     : "text-slate-600 hover:text-[#8C3015] hover:bg-slate-50"
                 }`}
-                title="Location Tools & Apps"
+                title="Apps & Tools"
               >
-                <MapPin className={`w-5 h-5 sm:w-3.5 sm:h-3.5 flex-shrink-0 transition-colors ${activeTab === "local" ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
+                {/* On mobile: App icon (LayoutGrid), on desktop: MapPin */}
+                <LayoutGrid className={`sm:hidden w-5 h-5 flex-shrink-0 transition-colors ${activeTab === "local" ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
+                <MapPin className={`hidden sm:block w-3.5 h-3.5 flex-shrink-0 transition-colors ${activeTab === "local" ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
                 <span className="hidden sm:inline truncate">{t("tab_local")}</span>
               </button>
             </div>
