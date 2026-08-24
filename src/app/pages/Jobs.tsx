@@ -67,26 +67,6 @@ async function fetchBariKoiReverseGeocode(lat: number, lng: number): Promise<Bar
   return null;
 }
 
-// ─── IP / Network Location Fallback ────────────────────────────────────────
-
-async function fetchIPLocationFallback(): Promise<{ lat: number; lng: number; city: string; area: string } | null> {
-  try {
-    const res = await fetch("https://ipapi.co/json/");
-    if (res.ok) {
-      const data = await res.json();
-      if (data.latitude && data.longitude) {
-        return {
-          lat: Number(data.latitude),
-          lng: Number(data.longitude),
-          city: data.city || "Dhaka",
-          area: data.region || data.city || "Your Location"
-        };
-      }
-    }
-  } catch (_) {}
-  return null;
-}
-
 // ─── Distance Helpers ───────────────────────────────────────────────────────
 
 function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -920,7 +900,7 @@ export function Jobs() {
   const [applicantStatus, setApplicantStatus] = useState("Immediate Available");
   const [applicantNote, setApplicantNote] = useState("I am interested in this position and available for immediate interview.");
 
-  // Request Live GPS Location with smart multi-tier mobile fallback (GPS -> Low Accuracy -> Network/IP)
+  // Request Live GPS Location strictly from device GPS when navigation button is clicked
   const executeGeolocation = useCallback((highAccuracy: boolean = true) => {
     setIsLocating(true);
     if (!("geolocation" in navigator)) {
@@ -928,86 +908,50 @@ export function Jobs() {
       return;
     }
 
-    const onLocationSuccess = async (lat: number, lng: number) => {
-      setLocationPermissionStatus("granted");
-      setIsLocationGranted(true);
-      setShowPermissionPrompt(false);
-      setUserCoords([lat, lng]);
-
-      try {
-        localStorage.setItem("bkoi_last_user_coords", JSON.stringify([lat, lng]));
-      } catch (_) {}
-
-      // Fetch real address from BariKoi Reverse Geocode API
-      const geoResult = await fetchBariKoiReverseGeocode(lat, lng);
-      if (geoResult) {
-        const area = geoResult.area || geoResult.sub_district || "Your Location";
-        const city = geoResult.city || "Live City";
-        setUserLocationName(geoResult.address || `${area}, ${city}`);
-        setUserArea(area);
-        setUserCity(city);
-
-        // Generate jobs around exact live coordinates
-        const generated = generateLiveLocationJobs(lat, lng, area, city);
-        setLiveJobs(generated);
-      } else {
-        const generated = generateLiveLocationJobs(lat, lng, "Near You", "Live City");
-        setLiveJobs(generated);
-      }
-      setIsLocating(false);
-    };
-
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        onLocationSuccess(position.coords.latitude, position.coords.longitude);
-      },
-      async (error) => {
-        console.warn("Geolocation attempt 1 failed:", error.code, error.message);
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
 
-        // If high accuracy failed/timed out on mobile, try standard low accuracy immediately
-        if (highAccuracy && error.code !== 1) {
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              onLocationSuccess(pos.coords.latitude, pos.coords.longitude);
-            },
-            async (err2) => {
-              console.warn("Geolocation attempt 2 failed, trying IP fallback:", err2);
-              const ipLoc = await fetchIPLocationFallback();
-              if (ipLoc) {
-                onLocationSuccess(ipLoc.lat, ipLoc.lng);
-              } else {
-                setIsLocating(false);
-                setIsLocationGranted(false);
-              }
-            },
-            {
-              enableHighAccuracy: false,
-              timeout: 6000,
-              maximumAge: 60000
-            }
-          );
-          return;
+        setLocationPermissionStatus("granted");
+        setIsLocationGranted(true);
+        setShowPermissionPrompt(false);
+        setUserCoords([lat, lng]);
+
+        try {
+          localStorage.setItem("bkoi_last_user_coords", JSON.stringify([lat, lng]));
+        } catch (_) {}
+
+        // Fetch real address from BariKoi Reverse Geocode API
+        const geoResult = await fetchBariKoiReverseGeocode(lat, lng);
+        if (geoResult) {
+          const area = geoResult.area || geoResult.sub_district || "Your Location";
+          const city = geoResult.city || "Live City";
+          setUserLocationName(geoResult.address || `${area}, ${city}`);
+          setUserArea(area);
+          setUserCity(city);
+
+          // Generate jobs around exact live coordinates
+          const generated = generateLiveLocationJobs(lat, lng, area, city);
+          setLiveJobs(generated);
+        } else {
+          const generated = generateLiveLocationJobs(lat, lng, "Near You", "Live City");
+          setLiveJobs(generated);
         }
-
-        // If permission explicitly denied or unavailable
+        setIsLocating(false);
+      },
+      (error) => {
+        console.warn("Device geolocation error:", error.code, error.message);
+        setIsLocating(false);
+        setIsLocationGranted(false);
         if (error.code === 1) {
           setLocationPermissionStatus("denied");
-          setShowPermissionPrompt(false);
-        }
-
-        // Fallback: Try IP Location so map still centers around user's actual region
-        const ipLoc = await fetchIPLocationFallback();
-        if (ipLoc) {
-          onLocationSuccess(ipLoc.lat, ipLoc.lng);
-        } else {
-          setIsLocating(false);
-          setIsLocationGranted(false);
         }
       },
       {
         enableHighAccuracy: highAccuracy,
-        timeout: highAccuracy ? 8000 : 5000,
-        maximumAge: 10000
+        timeout: 10000,
+        maximumAge: 0
       }
     );
   }, []);
@@ -1016,16 +960,13 @@ export function Jobs() {
   const handleShowDirection = useCallback((job: LiveJobListing) => {
     setDirectionJob(job);
     setSelectedJob(job);
-    if (!isLocationGranted) {
-      executeGeolocation(true);
-    }
     const mapEl = document.getElementById("jobs-map-section");
     if (mapEl) {
       mapEl.scrollIntoView({ behavior: "smooth", block: "start" });
     } else {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  }, [isLocationGranted, executeGeolocation]);
+  }, []);
 
   // Navigation Button Click Handler (Turn ON / Turn OFF Toggle)
   const handleNavigationClick = useCallback(() => {
