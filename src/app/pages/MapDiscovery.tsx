@@ -407,7 +407,7 @@ function HoverTooltipCard({
 
 // ── Booking.com Style Leaflet map component ──────────────────────────────────
 function LeafletMap({
-  visiblePlaces, activePlaceId, routes, selectedRouteId, userLocation,
+  visiblePlaces, activePlaceId, routes, selectedRouteId, userLocation, isGPSActive,
   onMarkerClick, onMapClick, onRouteClick, onMarkerHover,
 }: {
   visiblePlaces: Place[];
@@ -415,6 +415,7 @@ function LeafletMap({
   routes: RouteOption[];
   selectedRouteId: number | null;
   userLocation: [number, number] | null;
+  isGPSActive?: boolean;
   onMarkerClick: (p: Place, px: { x: number; y: number }) => void;
   onMapClick: () => void;
   onRouteClick: (id: number) => void;
@@ -624,7 +625,7 @@ function loadBkoiGL(): Promise<any> {
     }
   }, [visiblePlaces, routes.length]);
 
-  // ── Sync User Location Marker (Works on both bkoi-gl & Leaflet) ─────────────
+  // ── Sync User Location Marker & Center Map (Works on both bkoi-gl & Leaflet) ──
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
@@ -637,7 +638,18 @@ function loadBkoiGL(): Promise<any> {
       userMarkerRef.current = null;
     }
 
-    if (!userLocation) return;
+    if (!isGPSActive || !userLocation) {
+      // If GPS turned off, fly back to default center
+      if (map.flyTo) {
+        if (L) {
+          map.flyTo([23.8103, 90.4125], 13, { duration: 1.2 });
+        } else {
+          map.flyTo({ center: [90.4125, 23.8103], zoom: 13, speed: 1.2 });
+        }
+      }
+      return;
+    }
+
     const [lat, lng] = userLocation;
 
     // Create pulsing user pin element
@@ -657,15 +669,17 @@ function loadBkoiGL(): Promise<any> {
         iconAnchor: [12, 12],
       });
       userMarkerRef.current = L.marker([lat, lng], { icon, zIndexOffset: 1000 }).addTo(map);
+      map.flyTo([lat, lng], 15.5, { duration: 1.5 });
     } else if (bkoigl || map.addSource) {
       const MarkerClass = bkoigl?.Marker || (window as any).maplibregl?.Marker;
       if (MarkerClass) {
         userMarkerRef.current = new MarkerClass({ element: el })
           .setLngLat([lng, lat])
           .addTo(map);
+        map.flyTo({ center: [lng, lat], zoom: 15.5, speed: 1.5 });
       }
     }
-  }, [userLocation]);
+  }, [userLocation, isGPSActive]);
 
   // ── Draw/Clear Route Polylines (Supports both bkoi-gl & Leaflet) ───────────
   useEffect(() => {
@@ -1309,6 +1323,7 @@ export function MapDiscoveryContent({ embedded = false }: { embedded?: boolean }
               routes={routes}
               selectedRouteId={selectedRouteId}
               userLocation={userLocation}
+              isGPSActive={isGPSActive}
               onMarkerClick={(p, px) => {
                 setMapActiveId(p.id);
                 setMarkerPx(px);
