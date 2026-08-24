@@ -71,20 +71,8 @@ function WeatherWidget() {
       finally { setLoading(false); }
     }
 
-    navigator.geolocation?.getCurrentPosition(
-      pos => {
-        const { latitude: lat, longitude: lon } = pos.coords;
-        // Reverse-geocode city name via Open-Meteo / nominatim
-        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
-          .then(r => r.json())
-          .then(d => {
-            const city = d.address?.city || d.address?.town || d.address?.suburb || "Your Location";
-            load(lat, lon, city);
-          })
-          .catch(() => load(lat, lon, "Your Location"));
-      },
-      () => load(40.7282, -73.8582, "Queens, NY") // fallback
-    );
+    // Load default Queens, NY weather on mount without prompting device location
+    load(40.7282, -73.8582, "Queens, NY");
   }, []);
 
   if (loading) return (

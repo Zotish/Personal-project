@@ -866,13 +866,17 @@ function BariKoiLiveJobsMap({
         <button
           onClick={handleReset}
           disabled={isLocating}
-          className="w-9 h-9 rounded-xl bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 shadow-md border border-slate-200/80 flex items-center justify-center transition cursor-pointer hover:text-[#C04A22] active:scale-95 disabled:opacity-75"
-          title="Recenter to Live Location"
+          className={`w-9 h-9 rounded-xl shadow-md border transition cursor-pointer active:scale-95 disabled:opacity-75 flex items-center justify-center ${
+            isLocationGranted
+              ? "bg-[#C04A22] text-white border-[#C04A22] shadow-[#C04A22]/30"
+              : "bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 border-slate-200/80 hover:text-[#C04A22]"
+          }`}
+          title={isLocationGranted ? "Live Location Active (Click to Turn OFF)" : "Turn ON Live Location (GPS)"}
         >
           {isLocating ? (
-            <Loader2 className="w-4.5 h-4.5 text-[#C04A22] animate-spin" />
+            <Loader2 className={`w-4.5 h-4.5 animate-spin ${isLocationGranted ? "text-white" : "text-[#C04A22]"}`} />
           ) : (
-            <Navigation className="w-4.5 h-4.5 text-[#C04A22]" />
+            <Navigation className={`w-4.5 h-4.5 ${isLocationGranted ? "text-white" : "text-[#C04A22]"}`} />
           )}
         </button>
       </div>
@@ -1023,39 +1027,27 @@ export function Jobs() {
     }
   }, [isLocationGranted, executeGeolocation]);
 
-  // Navigation Button Click Handler
+  // Navigation Button Click Handler (Turn ON / Turn OFF Toggle)
   const handleNavigationClick = useCallback(() => {
     if (isLocationGranted) {
-      executeGeolocation(true);
+      // Turn OFF Location (Revert to default state)
+      setIsLocationGranted(false);
+      setLocationPermissionStatus("prompt");
+      setShowPermissionPrompt(false);
+      setUserCoords(defaultCoords);
+      setUserLocationName("Dhaka");
+      setUserArea("Dhaka Area");
+      setUserCity("Dhaka");
+      setDirectionJob(null);
+      setLiveJobs(generateLiveLocationJobs(defaultCoords[0], defaultCoords[1], "Dhaka Area", "Dhaka"));
+      try {
+        localStorage.removeItem("bkoi_last_user_coords");
+      } catch (_) {}
     } else {
-      setShowPermissionPrompt(true);
+      // Turn ON Location (Direct device permission request)
       executeGeolocation(true);
     }
-  }, [isLocationGranted, executeGeolocation]);
-
-  // On page mount: check if permission already granted in browser
-  useEffect(() => {
-    if (navigator.permissions && navigator.permissions.query) {
-      navigator.permissions.query({ name: "geolocation" as any }).then(perm => {
-        if (perm.state === "granted") {
-          executeGeolocation(true);
-        } else {
-          setLocationPermissionStatus(perm.state as any);
-          setIsLocationGranted(false);
-        }
-
-        perm.onchange = () => {
-          if (perm.state === "granted") {
-            executeGeolocation(true);
-            setShowPermissionPrompt(false);
-          } else {
-            setLocationPermissionStatus(perm.state);
-            setIsLocationGranted(false);
-          }
-        };
-      }).catch(() => {});
-    }
-  }, [executeGeolocation]);
+  }, [isLocationGranted, executeGeolocation, defaultCoords]);
 
   // Filter Jobs based on Search Query & Filter Pills
   const filteredJobs = liveJobs.filter(job => {

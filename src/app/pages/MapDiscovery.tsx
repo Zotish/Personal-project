@@ -1164,18 +1164,10 @@ export function MapDiscoveryContent({ embedded = false }: { embedded?: boolean }
   const [routes, setRoutes] = useState<RouteOption[]>([]);
   const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number]>(DEFAULT_LOCATION);
+  const [isGPSActive, setIsGPSActive] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-
-  // Try to get real GPS on mount
-  useEffect(() => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        pos => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
-        () => { } // keep default Queens center if denied/unavailable
-      );
-    }
-  }, []);
 
   // BariKoi live autocomplete search state & API integration
   const [bkoiPlaces, setBkoiPlaces] = useState<Place[]>([]);
@@ -1368,25 +1360,45 @@ export function MapDiscoveryContent({ embedded = false }: { embedded?: boolean }
               );
             })()}
 
-            {/* Floating My Location Button */}
+            {/* Floating My Location Button (Turn ON / Turn OFF Toggle) */}
             <button
               onClick={() => {
-                if ("geolocation" in navigator) {
-                  navigator.geolocation.getCurrentPosition(
-                    pos => {
-                      const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
-                      setUserLocation(loc);
-                    },
-                    err => {
-                      console.warn("Geolocation error:", err);
-                    }
-                  );
+                if (isGPSActive) {
+                  // Turn OFF: Revert to default location
+                  setUserLocation(DEFAULT_LOCATION);
+                  setIsGPSActive(false);
+                } else {
+                  // Turn ON: Request device GPS
+                  if ("geolocation" in navigator) {
+                    setIsLocating(true);
+                    navigator.geolocation.getCurrentPosition(
+                      pos => {
+                        const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+                        setUserLocation(loc);
+                        setIsGPSActive(true);
+                        setIsLocating(false);
+                      },
+                      err => {
+                        console.warn("Geolocation error:", err);
+                        setIsLocating(false);
+                      },
+                      { enableHighAccuracy: true, timeout: 8000 }
+                    );
+                  }
                 }
               }}
-              className="absolute bottom-6 right-6 z-[999] bg-white text-foreground p-3.5 rounded-full shadow-lg border border-border hover:bg-slate-50 transition-all flex items-center justify-center group cursor-pointer active:scale-95"
-              title="Go to My Current Location"
+              className={`absolute bottom-6 right-6 z-[999] p-3.5 rounded-full shadow-lg border transition-all flex items-center justify-center cursor-pointer active:scale-95 ${
+                isGPSActive
+                  ? "bg-[#D85A30] text-white border-[#D85A30] shadow-[#D85A30]/30"
+                  : "bg-white text-foreground border-border hover:bg-slate-50"
+              }`}
+              title={isGPSActive ? "Turn OFF Live Location (Revert to default)" : "Turn ON Live Location (GPS)"}
             >
-              <Navigation className="w-5 h-5 text-[#D85A30] group-hover:scale-110 transition-transform" />
+              {isLocating ? (
+                <Loader2 className="w-5 h-5 animate-spin text-[#D85A30]" />
+              ) : (
+                <Navigation className={`w-5 h-5 transition-transform ${isGPSActive ? "text-white" : "text-[#D85A30]"}`} />
+              )}
             </button>
 
             {/* Directions Sheet Modal */}
