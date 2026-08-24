@@ -871,9 +871,19 @@ export function Jobs() {
   const [isLocationGranted, setIsLocationGranted] = useState<boolean>(false);
   const [showPermissionPrompt, setShowPermissionPrompt] = useState<boolean>(false);
 
-  // Default initial coordinates for map view before permission (Dhaka center)
   const defaultCoords: [number, number] = [23.8103, 90.4125];
-  const [userCoords, setUserCoords] = useState<[number, number]>(defaultCoords);
+  const [userCoords, setUserCoords] = useState<[number, number]>(() => {
+    try {
+      const saved = localStorage.getItem("bkoi_last_user_coords");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length === 2 && !isNaN(parsed[0]) && !isNaN(parsed[1])) {
+          return [parsed[0], parsed[1]];
+        }
+      }
+    } catch (_) {}
+    return defaultCoords;
+  });
   const [userLocationName, setUserLocationName] = useState<string>("Dhaka");
   const [userArea, setUserArea] = useState<string>("Dhaka Area");
   const [userCity, setUserCity] = useState<string>("Dhaka");
@@ -891,70 +901,90 @@ export function Jobs() {
   const [applicantStatus, setApplicantStatus] = useState("Immediate Available");
   const [applicantNote, setApplicantNote] = useState("I am interested in this position and available for immediate interview.");
 
-  // Request Live GPS Location with explicit Device Permission Dialog and mobile fallback
+  // Request Live GPS Location with direct OS Device Permission and mobile PWA compatibility
   const executeGeolocation = useCallback((highAccuracy: boolean = true) => {
     setIsLocating(true);
     if (!("geolocation" in navigator)) {
-      alert("Geolocation is not supported by your browser or device.");
+      console.warn("Geolocation is not supported by your browser or device.");
       setIsLocating(false);
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        setLocationPermissionStatus("granted");
-        setIsLocationGranted(true);
+    const handleSuccess = async (position: GeolocationPosition) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      setLocationPermissionStatus("granted");
+      setIsLocationGranted(true);
+      setShowPermissionPrompt(false);
+      setUserCoords([lat, lng]);
+
+      try {
+        localStorage.setItem("bkoi_last_user_coords", JSON.stringify([lat, lng]));
+      } catch (_) {}
+
+      // Fetch real address from BariKoi API
+      const geoResult = await fetchBariKoiReverseGeocode(lat, lng);
+      if (geoResult) {
+        const area = geoResult.area || geoResult.sub_district || "Your Location";
+        const city = geoResult.city || "Live City";
+        setUserLocationName(geoResult.address || `${area}, ${city}`);
+        setUserArea(area);
+        setUserCity(city);
+
+        // Generate jobs around exact live coordinates
+        const generated = generateLiveLocationJobs(lat, lng, area, city);
+        setLiveJobs(generated);
+      } else {
+        const generated = generateLiveLocationJobs(lat, lng, "Near You", "Live City");
+        setLiveJobs(generated);
+      }
+      setIsLocating(false);
+    };
+
+    const handleError = (error: GeolocationPositionError) => {
+      console.warn("Geolocation error:", error.code, error.message);
+
+      if (highAccuracy && error.code !== 1) {
+        // If high accuracy GPS times out on mobile, quickly fallback to cellular/Wi-Fi positioning
+        navigator.geolocation.getCurrentPosition(
+          handleSuccess,
+          (fallbackErr) => {
+            console.warn("Low accuracy fallback also failed:", fallbackErr);
+            setIsLocating(false);
+            if (fallbackErr.code === 1) {
+              setLocationPermissionStatus("denied");
+              setIsLocationGranted(false);
+              setShowPermissionPrompt(false);
+            }
+          },
+          {
+            enableHighAccuracy: false,
+            timeout: 10000,
+            maximumAge: 120000
+          }
+        );
+        return;
+      }
+
+      setIsLocating(false);
+      if (error.code === 1) {
+        setLocationPermissionStatus("denied");
+        setIsLocationGranted(false);
         setShowPermissionPrompt(false);
+      } else {
+        setLocationPermissionStatus("denied");
+        setIsLocationGranted(false);
+      }
+    };
 
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        setUserCoords([lat, lng]);
-
-        try {
-          localStorage.setItem("bkoi_last_user_coords", JSON.stringify([lat, lng]));
-        } catch (_) {}
-
-        // Fetch real address from BariKoi API
-        const geoResult = await fetchBariKoiReverseGeocode(lat, lng);
-        if (geoResult) {
-          const area = geoResult.area || geoResult.sub_district || "Your Location";
-          const city = geoResult.city || "Live City";
-          setUserLocationName(geoResult.address || `${area}, ${city}`);
-          setUserArea(area);
-          setUserCity(city);
-
-          // Generate jobs around exact live coordinates
-          const generated = generateLiveLocationJobs(lat, lng, area, city);
-          setLiveJobs(generated);
-        } else {
-          const generated = generateLiveLocationJobs(lat, lng, "Near You", "Live City");
-          setLiveJobs(generated);
-        }
-        setIsLocating(false);
-      },
-      (error) => {
-        console.warn("Geolocation error:", error.code, error.message);
-        if (highAccuracy && error.code !== 1) {
-          // If high accuracy times out on mobile, quickly fallback to low accuracy
-          executeGeolocation(false);
-          return;
-        }
-
-        setIsLocating(false);
-        if (error.code === 1) {
-          setLocationPermissionStatus("denied");
-          setIsLocationGranted(false);
-          setShowPermissionPrompt(false);
-          alert("Location access was not granted. Please allow location permissions in your browser or device settings to view nearby jobs.");
-        } else {
-          setLocationPermissionStatus("denied");
-          setIsLocationGranted(false);
-        }
-      },
+    navigator.geolocation.getCurrentPosition(
+      handleSuccess,
+      handleError,
       {
         enableHighAccuracy: highAccuracy,
-        timeout: highAccuracy ? 10000 : 8000,
-        maximumAge: 0
+        timeout: 15000,
+        maximumAge: 60000
       }
     );
   }, []);
@@ -974,15 +1004,10 @@ export function Jobs() {
     }
   }, [isLocationGranted, executeGeolocation]);
 
-  // Navigation Button Click Handler
+  // Navigation Button Click Handler (Directly triggers native OS/Browser Geolocation on user gesture)
   const handleNavigationClick = useCallback(() => {
-    if (isLocationGranted) {
-      executeGeolocation(true);
-    } else {
-      setShowPermissionPrompt(true);
-      executeGeolocation(true);
-    }
-  }, [isLocationGranted, executeGeolocation]);
+    executeGeolocation(true);
+  }, [executeGeolocation]);
 
   // On page mount: check if permission already granted in browser
   useEffect(() => {
