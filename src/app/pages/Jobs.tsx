@@ -67,6 +67,26 @@ async function fetchBariKoiReverseGeocode(lat: number, lng: number): Promise<Bar
   return null;
 }
 
+// ─── IP / Network Location Fallback ────────────────────────────────────────
+
+async function fetchIPLocationFallback(): Promise<{ lat: number; lng: number; city: string; area: string } | null> {
+  try {
+    const res = await fetch("https://ipapi.co/json/");
+    if (res.ok) {
+      const data = await res.json();
+      if (data.latitude && data.longitude) {
+        return {
+          lat: Number(data.latitude),
+          lng: Number(data.longitude),
+          city: data.city || "Dhaka",
+          area: data.region || data.city || "Your Location"
+        };
+      }
+    }
+  } catch (_) {}
+  return null;
+}
+
 // ─── Distance Helpers ───────────────────────────────────────────────────────
 
 function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -627,11 +647,11 @@ function BariKoiLiveJobsMap({
   };
   const handleReset = () => {
     onNavigationClick();
-    if (isLocationGranted && mapRef.current) {
+    if (mapRef.current) {
       if (mapRef.current.flyTo) {
-        mapRef.current.flyTo({ center: [userCoords[1], userCoords[0]], zoom: 15 });
+        mapRef.current.flyTo({ center: [userCoords[1], userCoords[0]], zoom: 15.5, speed: 1.5 });
       } else if (mapRef.current.setView) {
-        mapRef.current.setView(userCoords, 15);
+        mapRef.current.setView(userCoords, 15.5);
       }
     }
   };
@@ -845,10 +865,15 @@ function BariKoiLiveJobsMap({
         </button>
         <button
           onClick={handleReset}
-          className="w-9 h-9 rounded-xl bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 shadow-md border border-slate-200/80 flex items-center justify-center transition cursor-pointer hover:text-[#C04A22]"
+          disabled={isLocating}
+          className="w-9 h-9 rounded-xl bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 shadow-md border border-slate-200/80 flex items-center justify-center transition cursor-pointer hover:text-[#C04A22] active:scale-95 disabled:opacity-75"
           title="Recenter to Live Location"
         >
-          <Navigation className="w-4.5 h-4.5 text-[#C04A22]" />
+          {isLocating ? (
+            <Loader2 className="w-4.5 h-4.5 text-[#C04A22] animate-spin" />
+          ) : (
+            <Navigation className="w-4.5 h-4.5 text-[#C04A22]" />
+          )}
         </button>
       </div>
     </div>
@@ -891,70 +916,94 @@ export function Jobs() {
   const [applicantStatus, setApplicantStatus] = useState("Immediate Available");
   const [applicantNote, setApplicantNote] = useState("I am interested in this position and available for immediate interview.");
 
-  // Request Live GPS Location with explicit Device Permission Dialog and mobile fallback
+  // Request Live GPS Location with smart multi-tier mobile fallback (GPS -> Low Accuracy -> Network/IP)
   const executeGeolocation = useCallback((highAccuracy: boolean = true) => {
     setIsLocating(true);
     if (!("geolocation" in navigator)) {
-      alert("Geolocation is not supported by your browser or device.");
       setIsLocating(false);
       return;
     }
 
+    const onLocationSuccess = async (lat: number, lng: number) => {
+      setLocationPermissionStatus("granted");
+      setIsLocationGranted(true);
+      setShowPermissionPrompt(false);
+      setUserCoords([lat, lng]);
+
+      try {
+        localStorage.setItem("bkoi_last_user_coords", JSON.stringify([lat, lng]));
+      } catch (_) {}
+
+      // Fetch real address from BariKoi Reverse Geocode API
+      const geoResult = await fetchBariKoiReverseGeocode(lat, lng);
+      if (geoResult) {
+        const area = geoResult.area || geoResult.sub_district || "Your Location";
+        const city = geoResult.city || "Live City";
+        setUserLocationName(geoResult.address || `${area}, ${city}`);
+        setUserArea(area);
+        setUserCity(city);
+
+        // Generate jobs around exact live coordinates
+        const generated = generateLiveLocationJobs(lat, lng, area, city);
+        setLiveJobs(generated);
+      } else {
+        const generated = generateLiveLocationJobs(lat, lng, "Near You", "Live City");
+        setLiveJobs(generated);
+      }
+      setIsLocating(false);
+    };
+
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        setLocationPermissionStatus("granted");
-        setIsLocationGranted(true);
-        setShowPermissionPrompt(false);
-
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        setUserCoords([lat, lng]);
-
-        try {
-          localStorage.setItem("bkoi_last_user_coords", JSON.stringify([lat, lng]));
-        } catch (_) {}
-
-        // Fetch real address from BariKoi API
-        const geoResult = await fetchBariKoiReverseGeocode(lat, lng);
-        if (geoResult) {
-          const area = geoResult.area || geoResult.sub_district || "Your Location";
-          const city = geoResult.city || "Live City";
-          setUserLocationName(geoResult.address || `${area}, ${city}`);
-          setUserArea(area);
-          setUserCity(city);
-
-          // Generate jobs around exact live coordinates
-          const generated = generateLiveLocationJobs(lat, lng, area, city);
-          setLiveJobs(generated);
-        } else {
-          const generated = generateLiveLocationJobs(lat, lng, "Near You", "Live City");
-          setLiveJobs(generated);
-        }
-        setIsLocating(false);
+      (position) => {
+        onLocationSuccess(position.coords.latitude, position.coords.longitude);
       },
-      (error) => {
-        console.warn("Geolocation error:", error.code, error.message);
+      async (error) => {
+        console.warn("Geolocation attempt 1 failed:", error.code, error.message);
+
+        // If high accuracy failed/timed out on mobile, try standard low accuracy immediately
         if (highAccuracy && error.code !== 1) {
-          // If high accuracy times out on mobile, quickly fallback to low accuracy
-          executeGeolocation(false);
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              onLocationSuccess(pos.coords.latitude, pos.coords.longitude);
+            },
+            async (err2) => {
+              console.warn("Geolocation attempt 2 failed, trying IP fallback:", err2);
+              const ipLoc = await fetchIPLocationFallback();
+              if (ipLoc) {
+                onLocationSuccess(ipLoc.lat, ipLoc.lng);
+              } else {
+                setIsLocating(false);
+                setIsLocationGranted(false);
+              }
+            },
+            {
+              enableHighAccuracy: false,
+              timeout: 6000,
+              maximumAge: 60000
+            }
+          );
           return;
         }
 
-        setIsLocating(false);
+        // If permission explicitly denied or unavailable
         if (error.code === 1) {
           setLocationPermissionStatus("denied");
-          setIsLocationGranted(false);
           setShowPermissionPrompt(false);
-          alert("Location access was not granted. Please allow location permissions in your browser or device settings to view nearby jobs.");
+        }
+
+        // Fallback: Try IP Location so map still centers around user's actual region
+        const ipLoc = await fetchIPLocationFallback();
+        if (ipLoc) {
+          onLocationSuccess(ipLoc.lat, ipLoc.lng);
         } else {
-          setLocationPermissionStatus("denied");
+          setIsLocating(false);
           setIsLocationGranted(false);
         }
       },
       {
         enableHighAccuracy: highAccuracy,
-        timeout: highAccuracy ? 10000 : 8000,
-        maximumAge: 0
+        timeout: highAccuracy ? 8000 : 5000,
+        maximumAge: 10000
       }
     );
   }, []);
