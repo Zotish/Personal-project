@@ -270,7 +270,7 @@ function BariKoiLiveJobsMap({
   onClearDirection: () => void;
   onShowDirection: (job: LiveJobListing) => void;
   onApplyJob?: (job: LiveJobListing) => void;
-  savedJobIds?: Set<string>;
+  savedJobIds?: string[];
   onToggleSave?: (id: string) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -802,73 +802,91 @@ function BariKoiLiveJobsMap({
         </div>
       )}
 
-      {/* ── 3. Selected Job Card Overlay on Marker Click (Same as Main Map Place Card) ── */}
+      {/* ── 3. Selected Job Card Overlay on Marker Click (Compact & Clean) ── */}
       {selectedJob && !directionJob && (
         <div className="absolute bottom-3 left-3 right-3 sm:right-auto sm:left-4 sm:bottom-4 z-30 w-auto sm:w-[330px] bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden animate-in slide-in-from-bottom-3 duration-250 pointer-events-auto">
-          {/* Card Top Image */}
-          <div className="relative h-28 sm:h-32 w-full overflow-hidden bg-slate-100">
+          {/* Banner Image with Type, Bookmark & Distance Badges (Compact Height) */}
+          <div className="relative w-full h-28 sm:h-32 overflow-hidden bg-slate-100">
             <img
               src={selectedJob.image}
               alt={selectedJob.title}
               className="w-full h-full object-cover"
             />
-            <button
-              onClick={() => onSelectJob(null)}
-              className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-white/90 hover:bg-white text-slate-700 flex items-center justify-center shadow transition cursor-pointer"
-              title="Close"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-            <div className="absolute top-2.5 left-2.5 flex items-center gap-1 bg-[#C04A22] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-xs">
-              <span>{selectedJob.category}</span>
-            </div>
-            {selectedJob.isNearby && (
-              <div className="absolute bottom-2 left-2.5 flex items-center gap-1 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
-                <CheckCircle2 className="w-3 h-3" />
-                <span>Nearby</span>
+            {/* Top Right: Type Badge & Close button */}
+            <div className="absolute top-2 right-2 flex items-center gap-1.5">
+              <div className="px-2.5 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[11px] font-bold shadow-xs border border-slate-200/60">
+                {selectedJob.type}
               </div>
-            )}
+              <button
+                onClick={() => onSelectJob(null)}
+                className="w-6.5 h-6.5 rounded-full bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 flex items-center justify-center shadow transition cursor-pointer"
+                title="Close"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Top Left: Bookmark Save Button */}
+            <button
+              onClick={e => {
+                e.stopPropagation();
+                onToggleSave?.(selectedJob.id);
+              }}
+              className="absolute top-2 left-2 w-7.5 h-7.5 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-700 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
+              title={savedJobIds?.includes(selectedJob.id) ? "Saved" : "Save Job"}
+            >
+              {savedJobIds?.includes(selectedJob.id) ? (
+                <BookmarkCheck className="w-3.5 h-3.5 text-[#C04A22]" />
+              ) : (
+                <Bookmark className="w-3.5 h-3.5" />
+              )}
+            </button>
+
+            {/* Bottom Left: Distance Badge on Image */}
+            <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[11px] font-medium flex items-center gap-1 shadow-xs">
+              <MapPin className="w-3 h-3 text-emerald-400" />
+              <span>{selectedJob.distance}</span>
+            </div>
           </div>
 
-          {/* Card Body */}
+          {/* Card Body (No Description for Minimal Sleek Height) */}
           <div className="p-3 sm:p-3.5">
-            <div className="flex items-start justify-between gap-2 mb-1">
-              <div className="min-w-0 flex-1">
-                <h4 className="font-bold text-sm text-slate-900 truncate leading-snug">{selectedJob.title}</h4>
-                <p className="text-xs text-slate-500 font-medium truncate mt-0.5">{selectedJob.company} • {selectedJob.distance}</p>
-              </div>
-              <div className="flex-shrink-0 px-2 py-0.5 rounded-lg bg-orange-50 border border-orange-200/80 text-[#8C3015] font-bold text-xs">
+            <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-snug line-clamp-1">
+              {selectedJob.title}
+            </h3>
+            <p className="text-xs text-slate-500 font-medium mt-0.5 truncate">
+              {selectedJob.company} • {selectedJob.location}
+            </p>
+
+            {/* Salary Pill */}
+            <div className="mt-2">
+              <span className="px-3 py-1 rounded-full bg-orange-50/80 text-[#C04A22] text-xs font-bold border border-orange-100/60 inline-block">
                 {selectedJob.salary}
-              </div>
+              </span>
             </div>
 
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 my-2">
-              <MapPin className="w-3.5 h-3.5 text-[#C04A22] flex-shrink-0" />
-              <span className="truncate">{selectedJob.location}</span>
-            </div>
-
-            {/* 3 Action Buttons (Same as Main Map) */}
-            <div className="flex items-center gap-2 mt-2.5">
+            {/* Action Buttons: Direction & Apply */}
+            <div className="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
               <button
-                onClick={() => onShowDirection(selectedJob)}
-                className="flex-1 py-2 px-3 rounded-xl bg-[#C04A22] hover:bg-[#8C3015] text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+                onClick={e => {
+                  e.stopPropagation();
+                  onShowDirection(selectedJob);
+                }}
+                className="flex-1 px-3 py-2 rounded-xl bg-slate-100 hover:bg-orange-50 text-slate-800 hover:text-[#C04A22] text-xs font-bold transition flex items-center justify-center gap-1.5 border border-slate-200/80 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                title="Show direction route from your location"
               >
-                <Navigation className="w-3.5 h-3.5" />
-                <span>Directions</span>
+                <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
+                <span>Direction</span>
               </button>
               <button
-                onClick={() => onApplyJob?.(selectedJob)}
-                className="flex-1 py-2 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-800 text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+                onClick={e => {
+                  e.stopPropagation();
+                  onApplyJob?.(selectedJob);
+                }}
+                className="flex-1 px-3 py-2 rounded-xl bg-[#C04A22] hover:bg-[#8C3015] text-white text-xs font-bold transition flex items-center justify-center gap-1 shadow-xs hover:shadow-sm active:scale-98 cursor-pointer"
               >
-                <span>Details</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => onToggleSave?.(selectedJob.id)}
-                className="w-8.5 h-8.5 rounded-xl border border-slate-200 hover:bg-slate-50 flex items-center justify-center transition cursor-pointer flex-shrink-0"
-                title={savedJobIds?.has(selectedJob.id) ? "Saved" : "Save Job"}
-              >
-                <Bookmark className={`w-4 h-4 ${savedJobIds?.has(selectedJob.id) ? "fill-[#C04A22] text-[#C04A22]" : "text-slate-500"}`} />
+                <span>Apply</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
