@@ -813,7 +813,8 @@ function PostCard({ post }: { post: Post; key?: string | number }) {
 
 // ─── Post Composer ─────────────────────────────────────────────────────────────
 
-function PostComposer({ onAddPost }: { onAddPost?: (newPost: any) => void }) {
+function PostComposer({ onAddPost, onClose }: { onAddPost?: (newPost: any) => void; onClose?: () => void }) {
+
   const { t } = useLanguage();
   const [postType, setPostType] = useState("regular");
   const [text, setText] = useState("");
@@ -884,9 +885,10 @@ function PostComposer({ onAddPost }: { onAddPost?: (newPost: any) => void }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-border p-3 sm:p-4 mb-3 sm:mb-4">
-      {/* Top Header: Post Type Buttons */}
-      <div className="flex gap-1.5 sm:gap-2 flex-wrap items-center mb-3">
+    <div id="home-post-composer" className="bg-white rounded-2xl border border-border p-3 sm:p-4 mb-3 sm:mb-4 shadow-xs">
+      {/* Top Header: Post Type Buttons + Optional Close Button */}
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex gap-1.5 sm:gap-2 flex-wrap items-center flex-1">
           {postTypes.map(({ id, tKey, icon: Icon }) => (
             <button
               key={id}
@@ -902,6 +904,18 @@ function PostComposer({ onAddPost }: { onAddPost?: (newPost: any) => void }) {
             </button>
           ))}
         </div>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-7 h-7 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition flex-shrink-0 cursor-pointer"
+            title="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
 
       <textarea
         value={text}
@@ -1265,16 +1279,22 @@ function QuickAccessBox({ navigate, variant = "mobile" }: { navigate: (p: string
   );
 
   return (
-    <div ref={popupRef} className={variant === "mobile" ? "relative flex-1 mx-2" : "relative w-full h-full flex-1 flex flex-col justify-center"}>
+    <div ref={popupRef} className={variant === "mobile" ? "relative flex-1 w-full" : "relative w-full h-full flex-1 flex flex-col justify-center"}>
       {trigger}
+
 
       {open && (
         <>
-          {/* Fully transparent backdrop so top bar and screen remain 100% bright */}
-          <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setOpen(false)} />
+          {/* Backdrop */}
+          <div className="fixed inset-0 z-40 bg-black/25 sm:bg-transparent backdrop-blur-2xs sm:backdrop-blur-none" onClick={() => setOpen(false)} />
           <div
-            className="absolute z-50 bg-white rounded-3xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 slide-in-from-top-3 fade-in duration-200 left-1/2 -translate-x-1/2 top-13 sm:top-full sm:mt-2 w-[calc(100vw-2rem)] max-w-sm sm:w-[340px]"
+            className={`z-50 bg-white rounded-3xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 slide-in-from-top-3 fade-in duration-200 ${
+              variant === "mobile"
+                ? "fixed left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-[min(360px,calc(100vw-2rem))] max-w-sm"
+                : "absolute left-1/2 -translate-x-1/2 top-full sm:mt-2 w-[340px]"
+            }`}
           >
+
             {/* Header */}
             <div className="px-4 pt-4 pb-0">
               <div className="flex items-center justify-between mb-3">
@@ -1440,8 +1460,11 @@ export function HomeFeed() {
   const [mobileWeatherOpen, setMobileWeatherOpen] = useState(false);
   const [customPosts, setCustomPosts] = useState<any[]>([]);
   const [mobileFollowedUsers, setMobileFollowedUsers] = useState<string[]>([]);
+  const [isPostBoxOpen, setIsPostBoxOpen] = useState(false);
+
 
   const handleToggleMobileFollow = (e: React.MouseEvent, handle: string) => {
+
     e.stopPropagation();
     setMobileFollowedUsers(prev =>
       prev.includes(handle) ? prev.filter(h => h !== handle) : [...prev, handle]
@@ -1492,7 +1515,7 @@ export function HomeFeed() {
         {/* Sticky tabs bar */}
         {!selectedDate && (
           <div className="sticky top-0 lg:top-0 z-20 bg-white/90 backdrop-blur-md border-b border-border">
-            <div className="grid grid-cols-4 sm:grid-cols-5 w-full items-stretch">
+            <div className="grid grid-cols-3 sm:grid-cols-4 w-full items-stretch">
               {/* 1. For You */}
               <button
                 onClick={() => setActiveTab("for-you")}
@@ -1511,20 +1534,7 @@ export function HomeFeed() {
                 <QuickAccessBox navigate={navigate} variant="desktop" />
               </div>
 
-              {/* 3. Map */}
-              <button
-                onClick={() => setActiveTab("map")}
-                className={`w-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 text-xs font-medium transition-all group ${
-                  activeTab === "map"
-                    ? "text-[#8C3015] font-bold border-b-2 border-[#C04A22]"
-                    : "text-slate-600 hover:text-[#8C3015] hover:bg-slate-50"
-                }`}
-              >
-                <Map className={`w-5 h-5 sm:w-3.5 sm:h-3.5 flex-shrink-0 transition-colors ${activeTab === "map" ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
-                <span className="hidden sm:inline truncate">{t("tab_map")}</span>
-              </button>
-
-              {/* 4. Following */}
+              {/* 3. Following */}
               <button
                 onClick={() => setActiveTab("following")}
                 className={`w-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 text-xs font-medium transition-all group ${
@@ -1537,7 +1547,7 @@ export function HomeFeed() {
                 <span className="hidden sm:inline truncate">{t("tab_following")}</span>
               </button>
 
-              {/* 5. Apps / Local */}
+              {/* 4. Apps / Local */}
               <button
                 onClick={() => {
                   setActiveTab("local");
@@ -1598,10 +1608,25 @@ export function HomeFeed() {
             <MapDiscoveryContent embedded={true} />
           ) : (
             <>
-              <PostComposer onAddPost={handleAddPost} />
+              {/* ── Compact Live Map (Between Top Bar & Post Box) ── */}
+              <MapDiscoveryContent compact={true} height="h-[230px] sm:h-[250px]" />
+
+              {/* ── Post Creation Box (Hidden initially, dynamically appears here on +Post click) ── */}
+              {isPostBoxOpen && (
+                <div className="relative animate-in slide-in-from-top-2 fade-in duration-200">
+                  <PostComposer
+                    onAddPost={(newPost) => {
+                      handleAddPost(newPost);
+                      setIsPostBoxOpen(false);
+                    }}
+                    onClose={() => setIsPostBoxOpen(false)}
+                  />
+                </div>
+              )}
 
               {/* Mobile quick-access icon bar — icon-only buttons with centered floating popups */}
               <div className="xl:hidden relative flex items-center justify-between">
+
                 {/* Calendar icon button */}
                 <button
                   onClick={() => { setMobileCalOpen(v => !v); setMobileWeatherOpen(false); }}
@@ -1615,8 +1640,47 @@ export function HomeFeed() {
                   <Calendar className="w-5 h-5 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
                 </button>
 
-                {/* Quick Access Center Box */}
-                <QuickAccessBox navigate={navigate} />
+                {/* Center Split Box: Left = MyBox, Right = Post Box Action Button */}
+                <div className="flex-1 mx-2 grid grid-cols-2 gap-2">
+                  {/* Left: Quick Access MyBox */}
+                  <QuickAccessBox navigate={navigate} />
+
+                  {/* Right: Post Box Action Button (Toggles dynamic Post Box inline - styled like left box) */}
+                  <button
+                    onClick={() => {
+                      setIsPostBoxOpen(v => !v);
+                      if (!isPostBoxOpen) {
+                        setTimeout(() => {
+                          const composer = document.getElementById("home-post-composer");
+                          if (composer) {
+                            composer.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                            const textarea = composer.querySelector("textarea");
+                            if (textarea) textarea.focus();
+                          }
+                        }, 50);
+                      }
+                    }}
+                    className={`w-full h-11 rounded-2xl flex items-center justify-center gap-1.5 border transition-all shadow-sm group cursor-pointer ${
+                      isPostBoxOpen
+                        ? "bg-[#C04A22]/10 border-[#C04A22]/30 shadow-md text-[#8C3015]"
+                        : "bg-white border-border hover:shadow-md hover:bg-slate-50 text-slate-700"
+                    }`}
+                    title={isPostBoxOpen ? "Close Post Box" : "Write a Post"}
+                  >
+                    {isPostBoxOpen ? (
+                      <>
+                        <X className="w-4 h-4 text-[#C04A22]" />
+                        <span className="text-xs font-bold text-[#8C3015]">Close</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
+                        <span className="text-xs font-semibold text-slate-700 group-hover:text-[#8C3015] transition-colors">Post</span>
+                      </>
+                    )}
+                  </button>
+
+                </div>
 
                 {/* Weather icon button */}
                 <button
@@ -1631,16 +1695,17 @@ export function HomeFeed() {
                   <Thermometer className="w-5 h-5 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
                 </button>
 
+
                 {/* Centered Floating Calendar Popover on Mobile */}
                 {mobileCalOpen && (
                   <>
                     {/* Backdrop */}
                     <div
-                      className="fixed inset-0 z-40"
+                      className="fixed inset-0 z-40 bg-black/25 backdrop-blur-2xs"
                       onClick={() => setMobileCalOpen(false)}
                     />
                     {/* Centered floating popup */}
-                    <div className="absolute left-1/2 -translate-x-1/2 top-14 z-50 w-[min(360px,calc(100vw-2rem))] bg-white rounded-2xl shadow-2xl border border-border overflow-hidden animate-in slide-in-from-top-3 fade-in duration-200">
+                    <div className="fixed left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-50 w-[min(360px,calc(100vw-2rem))] bg-white rounded-3xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 fade-in duration-200">
                       <MiniCalendar selectedDate={selectedDate} onSelect={(d) => { setSelectedDate(d); setMobileCalOpen(false); }} />
                     </div>
                   </>
@@ -1651,15 +1716,16 @@ export function HomeFeed() {
                   <>
                     {/* Backdrop */}
                     <div
-                      className="fixed inset-0 z-40"
+                      className="fixed inset-0 z-40 bg-black/25 backdrop-blur-2xs"
                       onClick={() => setMobileWeatherOpen(false)}
                     />
                     {/* Centered floating popup */}
-                    <div className="absolute left-1/2 -translate-x-1/2 top-14 z-50 w-[min(360px,calc(100vw-2rem))] bg-white rounded-2xl shadow-2xl border border-border overflow-hidden animate-in slide-in-from-top-3 fade-in duration-200">
+                    <div className="fixed left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-50 w-[min(360px,calc(100vw-2rem))] bg-white rounded-3xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 fade-in duration-200">
                       <WeatherWidget />
                     </div>
                   </>
                 )}
+
               </div>
 
               {/* Tab-specific banner */}
@@ -1771,3 +1837,5 @@ export function HomeFeed() {
     </AppLayout>
   );
 }
+
+

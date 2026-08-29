@@ -12,25 +12,26 @@ interface ProductCardProps {
 }
 
 // Deep Coral Vector Writing Pen / Hand Icon Component
-function DeepCoralHandPen({ size = 15, className = "" }: { size?: number; className?: string }) {
+function DeepCoralHandPen({ size = 16, className = "" }: { size?: number; className?: string }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
+      width={size}
+      height={size}
       viewBox="0 0 24 24"
       fill="none"
       stroke="#8C3015"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="inline-block flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
-      title="Click to edit field"
+      className={`inline-block flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity ${className}`}
     >
+      <title>Click to edit field</title>
       <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" fill="#8C3015" fillOpacity="0.25" />
     </svg>
   );
 }
+
 
 export function calculateOfferPrice(mainPrice: number, offerTag?: string): {
   hasOffer: boolean;

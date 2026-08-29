@@ -752,12 +752,17 @@ function ChatScreen({
 
                     {/* Timestamp & Status */}
                     <div className={`flex items-center gap-1 mt-1 ${msgItem.from === "me" ? "justify-end" : ""}`}>
-                      {msgItem.isPinned && <Pin className="w-3 h-3 text-[#C04A22] mr-1" title="Pinned" />}
+                      {msgItem.isPinned && (
+                        <span title="Pinned" className="inline-flex items-center">
+                          <Pin className="w-3 h-3 text-[#C04A22] mr-1" />
+                        </span>
+                      )}
                       <span className={`text-[10px] ${msgItem.from === "me" ? "text-slate-600" : "text-muted-foreground"}`}>{msgItem.time}</span>
                       {msgItem.from === "me" && (
                         <CheckCheck className={`w-3.5 h-3.5 ${msgItem.read ? "text-[#C04A22]" : "text-slate-400"}`} />
                       )}
                     </div>
+
                   </div>
                 )}
               </div>

@@ -15,9 +15,10 @@ export function GoldenBadge({ size = 16, className = "", title = "Verified" }: G
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={`inline-block flex-shrink-0 drop-shadow-[0_2px_5px_rgba(217,119,6,0.45)] ${className}`}
-      title={title}
     >
+      <title>{title}</title>
       <defs>
+
         <linearGradient id="gold-verified-grad" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#FDE68A" />
           <stop offset="25%" stopColor="#F59E0B" />
