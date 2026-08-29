@@ -29,10 +29,10 @@ const allServices: ServiceItem[] = [
   { id: "local-shops", name: "Grocery", desc: "Deshi grocery stores & halal meat shops", icon: Store, link: "/services/shops", category: "utility" },
   { id: "food-bank", name: "Free Food", desc: "Free food bank & community food pantries", icon: Gift, link: "/services/social-services", category: "health" },
   // Row 2:
-  { id: "metro-transit", name: "Transit", desc: "MTA bus/subway maps, OMNY & live schedules", icon: Bus, link: "/services/subway", category: "travel" },
+  { id: "metro-transit", name: "Transport", desc: "MTA bus/subway maps, OMNY & live schedules", icon: Bus, link: "/services/subway", category: "travel" },
   { id: "esl-education", name: "Education", desc: "Free English classes, college admission & GED", icon: GraduationCap, link: "/services/english", category: "education" },
   { id: "religious", name: "Religion", desc: "Mosques, temples, churches near your area", icon: Building, link: "/services/religious", category: "utility" },
-  { id: "high-commission", name: "High Commission", desc: "Embassy, Consulate, Passport & NID services", icon: Landmark, link: "/services/legal", category: "legal" },
+  { id: "high-commission", name: "Embassy", desc: "Embassy, Consulate, Passport & NID services", icon: Landmark, link: "/services/legal", category: "legal" },
 
   // ─── PAGE 2 (ITEMS 9–16 FOR MOBILE): USER FURNITURE, LEGAL AID, HALAL FOOD, FREE MEDICINE, REMITTANCE, FLIGHT, PHARMACY, HOSPITAL ─────
   // Page 2 Row 1:
@@ -337,18 +337,28 @@ export function ServicesHub() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [featuredTab, setFeaturedTab] = useState<"discounted" | "new" | "popular">("discounted");
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [isStickyServices, setIsStickyServices] = useState(false);
+  const servicesContainerRef = React.useRef<HTMLDivElement>(null);
+  const stickyBarScrollRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
+      if (servicesContainerRef.current) {
+        const rect = servicesContainerRef.current.getBoundingClientRect();
+        setIsStickyServices(rect.bottom < 60);
+      } else {
+        setIsStickyServices(window.scrollY > 220);
+      }
       if (window.scrollY > 250) {
         setShowScrollTop(true);
       } else {
         setShowScrollTop(false);
       }
     };
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -429,7 +439,7 @@ export function ServicesHub() {
         </div>
 
         {/* 🌟 MASTER SERVICES SWIPE CAROUSEL (8 ITEMS ON MOBILE, 10 ON DESKTOP) */}
-        <div className="bg-white rounded-3xl border border-border p-4 sm:p-6 shadow-2xs">
+        <div ref={servicesContainerRef} className="bg-white rounded-3xl border border-border p-4 sm:p-6 shadow-2xs">
 
           <div
             ref={servicesScrollRef}
@@ -480,8 +490,44 @@ export function ServicesHub() {
           )}
         </div>
 
+        {/* 🌟 STICKY ONE-LINE HORIZONTAL SCROLLABLE SERVICES BAR (Flush to top, rounded bottom corners) */}
+        {isStickyServices && (
+          <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md rounded-t-none rounded-b-3xl border-b border-x border-t-0 border-border p-3 sm:p-4 shadow-md animate-in slide-in-from-top-2 duration-200">
+            {/* Horizontal Scrollable Service Icons in Single Row */}
+            <div
+              ref={stickyBarScrollRef}
+              className="w-full overflow-x-auto no-scrollbar flex items-center gap-1 sm:gap-2 py-0.5 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {allServices.map(service => {
+                const Icon = service.icon;
+                return (
+                  <button
+                    key={service.id}
+                    onClick={() => navigate(service.link)}
+                    className="group flex flex-col items-center text-center px-2 py-1 rounded-2xl hover:bg-[#C04A22]/10 transition-all duration-200 cursor-pointer active:scale-95 flex-shrink-0 min-w-[66px] sm:min-w-[76px]"
+                  >
+                    {/* Clean Coral Vector Icon */}
+                    <div className="p-1 flex items-center justify-center transition-all duration-200 mb-0.5">
+                      <Icon className="w-6 h-6 text-[#C04A22] group-hover:text-[#8C3015] group-hover:scale-110 transition-all duration-200" />
+                    </div>
+
+                    {/* Short & Clear Name */}
+                    <span className="text-[11px] sm:text-xs font-normal text-slate-900 group-hover:text-[#8C3015] leading-tight truncate w-full transition-colors">
+                      {service.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+
+
+
         {/* 🌟 FEATURED SERVICES & PRODUCTS CATALOG WITH INTERACTIVE FILTER TABS */}
         <div className="bg-white rounded-3xl border border-border p-4 sm:p-6 shadow-2xs space-y-4">
+
           
           {/* FILTER TABS HEADER (EQUAL DISTANCE 3 BUTTONS - NO ICONS) */}
           <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full pb-3 border-b border-slate-100">

@@ -79,6 +79,75 @@ export function isJobQuery(query: string): boolean {
   return JOB_KEYWORDS.some(k => q.includes(k));
 }
 
+// ─── Smart Multi-Word & Natural Language Sentence Job Matcher ───────────────
+
+const SEARCH_STOP_WORDS = new Set([
+  "i", "me", "my", "we", "our", "you", "your", "he", "she", "it", "they",
+  "am", "is", "are", "was", "were", "be", "been", "being",
+  "have", "has", "had", "do", "does", "did",
+  "a", "an", "the", "and", "or", "but", "if", "because", "as", "until", "while",
+  "of", "at", "by", "for", "with", "about", "against", "between", "into", "through",
+  "during", "before", "after", "above", "below", "to", "from", "up", "down", "in", "out", "on", "off", "over", "under",
+  "want", "need", "looking", "look", "seeking", "find", "search", "pls", "please", "can", "get", "hire", "hiring",
+  "urgent", "urgently", "now", "today", "any", "some", "good",
+  // Bengali stop words & conversational particles
+  "ami", "amra", "tumi", "apni", "amar", "amader", "ekta", "kono", "chai", "dorkar", "khujchi", "ache", "ki", "kothay", "hobe", "lagbe", "khujtechi"
+]);
+
+export function matchJobQuery(job: LiveJobListing, query: string): boolean {
+  if (!query || !query.trim()) return true;
+
+  const normalizedQuery = query.toLowerCase().trim();
+  
+  // 1. Direct exact or substring match
+  if (
+    job.title.toLowerCase().includes(normalizedQuery) ||
+    job.company.toLowerCase().includes(normalizedQuery) ||
+    job.location.toLowerCase().includes(normalizedQuery) ||
+    job.category.toLowerCase().includes(normalizedQuery) ||
+    job.skills.some(s => s.toLowerCase().includes(normalizedQuery)) ||
+    job.type.toLowerCase().includes(normalizedQuery)
+  ) {
+    return true;
+  }
+
+  // 2. Tokenize user sentence into individual words
+  const rawWords = normalizedQuery
+    .replace(/[^\w\s\u0980-\u09FF]/g, " ")
+    .split(/\s+/)
+    .filter(w => w.trim().length > 0);
+
+  if (rawWords.length === 0) return true;
+
+  // Filter out stop words if there are multiple words
+  const nonStopWords = rawWords.filter(w => w.length >= 2 && !SEARCH_STOP_WORDS.has(w));
+  const tokens = nonStopWords.length > 0 ? nonStopWords : rawWords.filter(w => w.length >= 2);
+
+  if (tokens.length === 0) {
+    return rawWords.some(w => job.title.toLowerCase().includes(w));
+  }
+
+  const titleLower = job.title.toLowerCase();
+  const companyLower = job.company.toLowerCase();
+  const catLower = job.category.toLowerCase();
+  const skillsLower = job.skills.map(s => s.toLowerCase());
+  const locationLower = job.location.toLowerCase();
+  const descLower = job.description.toLowerCase();
+
+  // Match if ANY word in user query matches the job's title, company, skills, category or description!
+  return tokens.some(token => {
+    return (
+      titleLower.includes(token) ||
+      companyLower.includes(token) ||
+      catLower.includes(token) ||
+      skillsLower.some(skill => skill.includes(token)) ||
+      locationLower.includes(token) ||
+      descLower.includes(token)
+    );
+  });
+}
+
+
 // ─── Dynamic Live Location Jobs Generator ───────────────────────────────────
 
 export function generateLiveLocationJobs(lat: number, lng: number, areaName: string, cityName: string): LiveJobListing[] {

@@ -167,29 +167,12 @@ export function JobDetailsModal({
         </div>
 
         {/* Sticky Modal Bottom Footer */}
-        <div className="px-5 py-3.5 sm:px-6 sm:py-4 bg-slate-50/95 flex items-center justify-between gap-3 flex-shrink-0">
-          {onShowDirection ? (
-            <button
-              type="button"
-              onClick={() => {
-                const j = job;
-                onClose();
-                onShowDirection(j);
-              }}
-              className="px-4 py-2.5 rounded-2xl bg-white hover:bg-orange-50 text-slate-700 hover:text-[#C04A22] text-xs sm:text-sm font-bold transition flex items-center gap-1.5 shadow-2xs hover:shadow-xs cursor-pointer active:scale-98"
-            >
-              <Navigation className="w-4 h-4 text-[#C04A22]" />
-              <span>View Route on Map</span>
-            </button>
-          ) : (
-            <div />
-          )}
-
+        <div className="px-5 py-3.5 sm:px-6 sm:py-4 bg-slate-50/95 flex items-center justify-end gap-3 flex-shrink-0">
           <a
             href={job.applyUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-6 py-2.5 rounded-2xl bg-[#C04A22] hover:bg-[#8C3015] text-white text-xs sm:text-sm font-bold shadow-xs hover:shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
+            className="w-full sm:w-auto px-8 py-2.5 rounded-2xl bg-[#C04A22] hover:bg-[#8C3015] text-white text-xs sm:text-sm font-bold shadow-xs hover:shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
           >
             <span>Apply</span>
             <ExternalLink className="w-4 h-4" />
