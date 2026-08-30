@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
   Search, MapPin, Navigation, Star, Clock, Phone,
@@ -31,6 +31,20 @@ type RouteOption = {
 const BARIKOI_API_KEY = import.meta.env.VITE_BARIKOI_API_KEY || "bkoi_e25928917c9e7b36a3286d75f446427fa3433bf87361b2fd8c8d6c942300a38f";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+export function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 const OSRM_PROFILES: Record<TravelMode, string> = {
   car: "driving", bike: "cycling", walk: "foot",
 };
@@ -634,7 +648,8 @@ function LeafletMap({
 
       if (!containerRef.current || mapRef.current) return;
 
-      const defaultCenter: [number, number] = userLocation ? [userLocation[1], userLocation[0]] : [90.4071, 23.7925];
+      const defaultCenter: [number, number] = userLocation ? [userLocation[1], userLocation[0]] : [90.4125, 23.8103];
+      const defaultZoom = isGPSActive ? 14.8 : 13.5;
       const key = BARIKOI_API_KEY;
       if (bkoigl) {
         bkoigl.accessToken = key;
@@ -644,7 +659,7 @@ function LeafletMap({
       const map = new bkoigl.Map({
         container: containerRef.current!,
         center: defaultCenter,
-        zoom: 12,
+        zoom: defaultZoom,
         accessToken: key,
         apiKey: key,
         style: `https://map.barikoi.com/styles/osm_barikoi_v1/style.json?key=${key}`,
@@ -741,14 +756,14 @@ function LeafletMap({
   }, [activePlaceId, visiblePlaces]);
 
   useEffect(() => {
-    if (!mapRef.current || !LRef.current || visiblePlaces.length === 0 || routes.length > 0) return;
+    if (!mapRef.current || !LRef.current || visiblePlaces.length === 0 || routes.length > 0 || isGPSActive) return;
     if (visiblePlaces.length === 1) {
       mapRef.current.flyTo([visiblePlaces[0].lat, visiblePlaces[0].lng], 16, { duration: 1.0 });
     } else if (visiblePlaces.length > 1) {
       const bounds = LRef.current.latLngBounds(visiblePlaces.map(p => [p.lat, p.lng]));
       mapRef.current.fitBounds(bounds, { padding: [60, 60] });
     }
-  }, [visiblePlaces, routes.length]);
+  }, [visiblePlaces, routes.length, isGPSActive]);
 
   // ── Sync User Location Marker & Center Map (Works on both bkoi-gl & Leaflet) ──
   useEffect(() => {
@@ -1429,10 +1444,18 @@ export function MapDiscoveryContent({
   height?: string;
 }) {
   const navigate = useNavigate();
+  const routerLocation = useLocation();
+  const routeState = routerLocation.state as {
+    userLocation?: [number, number];
+    isGPSActive?: boolean;
+    selectedPlaceId?: number | string;
+    activeCategory?: string;
+  } | null;
+
   const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState("all");
+  const [activeCategory, setActiveCategory] = useState(routeState?.activeCategory || "all");
   const [viewMode, setViewMode] = useState<"list" | "map">("map");
-  const [mapActiveId, setMapActiveId] = useState<number | string | null>(null);
+  const [mapActiveId, setMapActiveId] = useState<number | string | null>(routeState?.selectedPlaceId || null);
   const [markerPx, setMarkerPx] = useState({ x: 0, y: 0 });
   const [hoverPlace, setHoverPlace] = useState<Place | null>(null);
   const [hoverPx, setHoverPx] = useState({ x: 0, y: 0 });
@@ -1442,12 +1465,57 @@ export function MapDiscoveryContent({
   const [directionsFor, setDirectionsFor] = useState<Place | null>(null);
   const [routes, setRoutes] = useState<RouteOption[]>([]);
   const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
-  const [userLocation, setUserLocation] = useState<[number, number]>(DEFAULT_LOCATION);
-  const [isGPSActive, setIsGPSActive] = useState(false);
+
+  // Initialize userLocation from routeState, localStorage cache, or default
+  const [userLocation, setUserLocation] = useState<[number, number]>(() => {
+    if (routeState?.userLocation) return routeState.userLocation;
+    try {
+      const cached = localStorage.getItem("bkoi_last_user_coords");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length === 2 && !isNaN(parsed[0]) && !isNaN(parsed[1])) {
+          return [parsed[0], parsed[1]];
+        }
+      }
+    } catch (_) {}
+    return DEFAULT_LOCATION;
+  });
+
+  const [isGPSActive, setIsGPSActive] = useState<boolean>(() => {
+    if (routeState?.isGPSActive !== undefined) return routeState.isGPSActive;
+    try {
+      return !!localStorage.getItem("bkoi_last_user_coords");
+    } catch (_) {
+      return false;
+    }
+  });
+
   const [isLocating, setIsLocating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
+  // ── Auto-Detect User Location on Mount ──
+  useEffect(() => {
+    if (routeState?.userLocation) return;
+
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          setUserLocation([lat, lng]);
+          setIsGPSActive(true);
+          try {
+            localStorage.setItem("bkoi_last_user_coords", JSON.stringify([lat, lng]));
+          } catch (_) {}
+        },
+        (err) => {
+          console.warn("Auto-geolocation check:", err);
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+      );
+    }
+  }, [routeState]);
 
   // Live Location Jobs generated dynamically around the user's location
   const liveJobs = useMemo(() => {
@@ -1570,6 +1638,25 @@ export function MapDiscoveryContent({
     });
   }, [allPlaces, activeCategory, query]);
 
+  // ── Compact Home Map: Filter only 2-3 items in immediate nearby range ──
+  const displayPlaces = useMemo(() => {
+    if (!compact) return filteredPlaces;
+
+    const withDist = filteredPlaces.map(p => ({
+      place: p,
+      dist: getDistanceKm(userLocation[0], userLocation[1], p.lat, p.lng)
+    }));
+
+    withDist.sort((a, b) => a.dist - b.dist);
+
+    // Pick 2-3 closest places within 5km radius
+    const inRange = withDist.filter(x => x.dist <= 5.0);
+    if (inRange.length > 0) {
+      return inRange.slice(0, 3).map(x => x.place);
+    }
+    return withDist.slice(0, 2).map(x => x.place);
+  }, [compact, filteredPlaces, userLocation]);
+
   const handleQueryChange = (val: string) => {
     setQuery(val);
     if (val.trim()) {
@@ -1596,92 +1683,80 @@ export function MapDiscoveryContent({
     }
   };
 
+  // Seamless Shift from Home mini-map to Full Map Page
+  const handleCompactMapClick = (targetPlaceId?: number | string) => {
+    navigate("/map", {
+      state: {
+        userLocation,
+        isGPSActive,
+        selectedPlaceId: targetPlaceId || null,
+        activeCategory
+      }
+    });
+  };
+
   return (
     <div className={compact ? `flex flex-col ${height || "h-[240px] sm:h-[260px]"} rounded-2xl border border-border overflow-hidden bg-background shadow-xs relative mb-3 sm:mb-4` : embedded ? "flex flex-col h-[580px] sm:h-[650px] rounded-2xl border border-border overflow-hidden bg-background shadow-sm my-1" : "flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-background"}>
       {compact ? (
         /* ── Compact Embedded Mode (For HomeFeed between top bar & post composer) ── */
-        <div className="relative w-full h-full">
+        <div
+          onClick={() => handleCompactMapClick()}
+          className="relative w-full h-full cursor-pointer group"
+          title="Click to open Full Interactive Map"
+        >
           {/* Top-Right Floating Full Map Expand Button */}
           <button
-            onClick={() => navigate("/map")}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCompactMapClick();
+            }}
             className="absolute top-2.5 right-2.5 z-[990] w-8 h-8 rounded-full bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 hover:text-[#8C3015] border border-slate-200/90 shadow-md transition flex items-center justify-center cursor-pointer active:scale-95"
             title="Open Full Map"
           >
             <Maximize2 className="w-4 h-4 text-[#C04A22]" />
           </button>
 
-
           {/* Interactive Map */}
-          <div ref={mapContainerRef} className="relative w-full h-full">
+          <div ref={mapContainerRef} className="relative w-full h-full pointer-events-auto">
             <LeafletMap
-              visiblePlaces={filteredPlaces}
-              activePlaceId={mapActiveId}
-              routes={routes}
-              selectedRouteId={selectedRouteId}
+              visiblePlaces={displayPlaces}
+              activePlaceId={null}
+              routes={[]}
+              selectedRouteId={null}
               userLocation={userLocation}
               isGPSActive={isGPSActive}
-              onMarkerClick={(p, px) => {
-                setMapActiveId(p.id);
-                setMarkerPx(px);
-                setHoverPlace(null);
+              onMarkerClick={(p) => {
+                handleCompactMapClick(p.id);
               }}
               onMapClick={() => {
-                setMapActiveId(null);
-                setHoverPlace(null);
+                handleCompactMapClick();
               }}
-              onRouteClick={id => setSelectedRouteId(id)}
-              onMarkerHover={(p, px) => {
-                setHoverPlace(p);
-                if (px) setHoverPx(px);
-              }}
+              onRouteClick={() => {}}
+              onMarkerHover={() => {}}
             />
-
-            {/* Desktop Hover Card Tooltip */}
-            {hoverPlace && (
-              <HoverTooltipCard
-                place={hoverPlace}
-                px={hoverPx}
-                containerW={mapContainerRef.current?.offsetWidth ?? 400}
-                containerH={mapContainerRef.current?.offsetHeight ?? 250}
-                onDirections={p => setDirectionsFor(p)}
-                onViewDetails={p => handleOpenDetails(p)}
-              />
-            )}
-
-            {/* Selected Place Card Overlay */}
-            {mapActiveId !== null && (() => {
-              const activePlace = filteredPlaces.find(p => String(p.id) === String(mapActiveId));
-              if (!activePlace) return null;
-              return (
-                <MapPlaceCard
-                  key={String(mapActiveId)}
-                  place={activePlace}
-                  markerPx={markerPx}
-                  containerSize={{
-                    w: mapContainerRef.current?.offsetWidth ?? 400,
-                    h: mapContainerRef.current?.offsetHeight ?? 250,
-                  }}
-                  onClose={() => setMapActiveId(null)}
-                  onViewDetails={() => handleOpenDetails(activePlace)}
-                  onDirections={() => setDirectionsFor(activePlace)}
-                />
-              );
-            })()}
 
             {/* Floating GPS Button */}
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 if (isGPSActive) {
                   setUserLocation(DEFAULT_LOCATION);
                   setIsGPSActive(false);
+                  try {
+                    localStorage.removeItem("bkoi_last_user_coords");
+                  } catch (_) {}
                 } else {
                   if ("geolocation" in navigator) {
                     setIsLocating(true);
                     navigator.geolocation.getCurrentPosition(
                       pos => {
-                        setUserLocation([pos.coords.latitude, pos.coords.longitude]);
+                        const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+                        setUserLocation(coords);
                         setIsGPSActive(true);
                         setIsLocating(false);
+                        try {
+                          localStorage.setItem("bkoi_last_user_coords", JSON.stringify(coords));
+                        } catch (_) {}
                       },
                       () => setIsLocating(false),
                       { enableHighAccuracy: true, timeout: 6000 }

@@ -14,6 +14,12 @@ export { Jobs } from "./Jobs";
 // ─── Housing ────────────────────────────────────────────────────────────────
 export { Housing } from "./Housing";
 
+// ─── Free Food ──────────────────────────────────────────────────────────────
+export { FreeFood } from "./FreeFood";
+
+// ─── Embassy & Consular Services ────────────────────────────────────────────
+export { Embassy } from "./Embassy";
+
 // ─── Legal Help ─────────────────────────────────────────────────────────────
 
 const legalResources = [

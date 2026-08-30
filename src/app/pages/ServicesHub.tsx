@@ -27,12 +27,12 @@ const allServices: ServiceItem[] = [
   { id: "newcomer-jobs", name: "Jobs", desc: "Entry-level jobs, cash & authorized hiring", icon: Briefcase, link: "/services/jobs", category: "jobs" },
   { id: "housing-rentals", name: "Housing", desc: "Sublets, rooms & no-credit-check apartments", icon: Home, link: "/services/housing", category: "housing" },
   { id: "local-shops", name: "Grocery", desc: "Deshi grocery stores & halal meat shops", icon: Store, link: "/services/shops", category: "utility" },
-  { id: "food-bank", name: "Free Food", desc: "Free food bank & community food pantries", icon: Gift, link: "/services/social-services", category: "health" },
+  { id: "food-bank", name: "Free Food", desc: "Free food bank & community food pantries", icon: Gift, link: "/services/free-food", category: "health" },
   // Row 2:
   { id: "metro-transit", name: "Transport", desc: "MTA bus/subway maps, OMNY & live schedules", icon: Bus, link: "/services/subway", category: "travel" },
   { id: "esl-education", name: "Education", desc: "Free English classes, college admission & GED", icon: GraduationCap, link: "/services/english", category: "education" },
   { id: "religious", name: "Religion", desc: "Mosques, temples, churches near your area", icon: Building, link: "/services/religious", category: "utility" },
-  { id: "high-commission", name: "Embassy", desc: "Embassy, Consulate, Passport & NID services", icon: Landmark, link: "/services/legal", category: "legal" },
+  { id: "high-commission", name: "Embassy", desc: "Embassy, Consulate, Passport & NID services", icon: Landmark, link: "/services/embassy", category: "legal" },
 
   // ─── PAGE 2 (ITEMS 9–16 FOR MOBILE): USER FURNITURE, LEGAL AID, HALAL FOOD, FREE MEDICINE, REMITTANCE, FLIGHT, PHARMACY, HOSPITAL ─────
   // Page 2 Row 1:

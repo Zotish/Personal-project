@@ -1,25 +1,24 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
   Search, MapPin, Navigation, Bookmark, BookmarkCheck,
-  Building, ExternalLink, Sparkles, Filter, ChevronRight,
+  Utensils, ExternalLink, Sparkles, Filter, ChevronRight,
   ChevronLeft, ChevronUp, ChevronDown, Plus, Minus,
-  ArrowLeft, ArrowRight, Car, Bike, Footprints, Home,
-  ShieldCheck, Loader2, X, Bed, Bath, Maximize2, Phone
+  ArrowLeft, ArrowRight, Car, Bike, Footprints,
+  ShieldCheck, Loader2, X, Clock, Calendar, Heart, Phone
 } from "lucide-react";
 import {
-  LiveHousingListing,
-  generateLiveLocationHousing,
-  formatDistance,
-  matchHousingQuery
-} from "../data/housingData";
-import { HousingDetailsModal } from "../components/housing/HousingDetailsModal";
-import type { Map as LeafletMapType } from "leaflet";
+  LiveFoodListing,
+  generateLiveLocationFreeFood,
+  matchFreeFoodQuery
+} from "../data/freeFoodData";
+import { FoodDetailsModal } from "../components/food/FoodDetailsModal";
 
 // ─── BariKoi API Key & Loader ───────────────────────────────────────────────
-
-const BARIKOI_API_KEY = import.meta.env.VITE_BARIKOI_API_KEY || "bkoi_e25928917c9e7b36a3286d75f446427fa3433bf87361b2fd8c8d6c942300a38f";
+const BARIKOI_API_KEY =
+  import.meta.env.VITE_BARIKOI_API_KEY ||
+  "bkoi_e25928917c9e7b36a3286d75f446427fa3433bf87361b2fd8c8d6c942300a38f";
 
 function loadBkoiGL(): Promise<any> {
   return new Promise((resolve, reject) => {
@@ -44,7 +43,6 @@ function loadBkoiGL(): Promise<any> {
 }
 
 // ─── BariKoi Reverse Geocoding & Road Routing APIs ──────────────────────────
-
 async function fetchBariKoiReverseGeocode(lat: number, lng: number) {
   try {
     const url = `https://barikoi.xyz/v2/api/search/reverse/geocode?api_key=${BARIKOI_API_KEY}&longitude=${lng}&latitude=${lat}&district=true&post_code=true&country=true&sub_district=true&union=true&pauroshova=true&location_type=true&division=true&address=true&area=true&bangla=true`;
@@ -65,9 +63,11 @@ async function fetchBariKoiReverseGeocode(lat: number, lng: number) {
   return null;
 }
 
-async function fetchRealRoadRoute(startLat: number, startLng: number, endLat: number, endLng: number) {
+// Real road route calculation using OSRM / BariKoi profiles
+async function fetchRealRoadRoute(startLat: number, startLng: number, endLat: number, endLng: number, mode: "car" | "bike" | "walk" = "car") {
+  const profile = mode === "walk" ? "foot" : mode === "bike" ? "bike" : "driving";
   try {
-    const url = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson&steps=true`;
+    const url = `https://router.project-osrm.org/route/v1/${profile}/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson&steps=true`;
     const res = await fetch(url);
     if (res.ok) {
       const data = await res.json();
@@ -86,7 +86,7 @@ async function fetchRealRoadRoute(startLat: number, startLng: number, endLat: nu
       }
     }
   } catch (err) {
-    console.warn("Road routing fetch failed, fallback to straight line:", err);
+    console.warn("Road routing fetch fallback:", err);
   }
 
   // Fallback straight line
@@ -99,15 +99,13 @@ async function fetchRealRoadRoute(startLat: number, startLng: number, endLat: nu
   };
 }
 
-// ─── BariKoi Interactive Live Housing Map Component ─────────────────────────
-
-function BariKoiLiveHousingMap({
+// ─── BariKoi Interactive Live Food Map Component (Housing/Jobs Format) ──────
+function BariKoiLiveFoodMap({
   userCoords,
   isLocationGranted,
   listings,
   selectedListing,
   onSelectListing,
-  onNavigationClick,
   onRequestLocation,
   onDenyLocation,
   showPermissionPrompt,
@@ -116,29 +114,22 @@ function BariKoiLiveHousingMap({
   onClearDirection,
   onShowDirection,
   onViewDetails,
-  savedIds,
-  onToggleSave,
-  isScrolled,
-  searchQuery
+  isScrolled
 }: {
   userCoords: [number, number];
   isLocationGranted: boolean;
-  listings: LiveHousingListing[];
-  selectedListing: LiveHousingListing | null;
-  onSelectListing: (listing: LiveHousingListing | null) => void;
-  onNavigationClick: () => void;
+  listings: LiveFoodListing[];
+  selectedListing: LiveFoodListing | null;
+  onSelectListing: (listing: LiveFoodListing | null) => void;
   onRequestLocation: () => void;
   onDenyLocation: () => void;
   showPermissionPrompt: boolean;
   isLocating: boolean;
-  directionListing: LiveHousingListing | null;
+  directionListing: LiveFoodListing | null;
   onClearDirection: () => void;
-  onShowDirection: (listing: LiveHousingListing) => void;
-  onViewDetails?: (listing: LiveHousingListing) => void;
-  savedIds?: string[];
-  onToggleSave?: (id: string) => void;
+  onShowDirection: (listing: LiveFoodListing) => void;
+  onViewDetails?: (listing: LiveFoodListing) => void;
   isScrolled?: boolean;
-  searchQuery?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -147,9 +138,13 @@ function BariKoiLiveHousingMap({
   const routeLineRef = useRef<any>(null);
   const LRef = useRef<any>(null);
   const lastCoordinatesRef = useRef<[number, number][] | null>(null);
-  const [markerClickedListing, setMarkerClickedListing] = useState<LiveHousingListing | null>(null);
 
-  const handleMarkerClick = useCallback((listing: LiveHousingListing) => {
+  const [markerClickedListing, setMarkerClickedListing] = useState<LiveFoodListing | null>(null);
+  const [travelMode, setTravelMode] = useState<"car" | "bike" | "walk">("car");
+  const [routeInfo, setRouteInfo] = useState<{ distanceText: string; durationText: string } | null>(null);
+  const [isNavCardMinimized, setIsNavCardMinimized] = useState(false);
+
+  const handleMarkerClick = useCallback((listing: LiveFoodListing) => {
     setMarkerClickedListing(listing);
     onSelectListing(listing);
   }, [onSelectListing]);
@@ -175,19 +170,15 @@ function BariKoiLiveHousingMap({
     }
   }, [directionListing]);
 
-  // Helper to create HTML for Housing Marker
-  const createHousingMarkerHtml = (listing: LiveHousingListing, isSelected: boolean) => {
-    const isRent = listing.purpose === "Rent";
-    const bg = isSelected ? "#8C3015" : isRent ? "#C04A22" : "#4338CA";
+  // Helper to create HTML for Food Marker Pin
+  const createFoodMarkerHtml = (listing: LiveFoodListing, isSelected: boolean) => {
+    const bg = isSelected ? "#8C3015" : "#C04A22";
     const size = isSelected ? 38 : 32;
     return `
       <div style="position:relative;display:inline-flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.2s ease;">
         ${isSelected ? '<div style="position:absolute;top:-4px;left:-4px;width:' + (size + 8) + 'px;height:' + (size + 8) + 'px;border-radius:50%;background:rgba(192,74,34,0.3);animation:ping 1.5s cubic-bezier(0,0,0.2,1) infinite;"></div>' : ''}
         <div style="background:${bg};color:white;width:${size}px;height:${size}px;border-radius:50%;border:${isSelected ? '3px' : '2px'} solid white;box-shadow:${isSelected ? '0 8px 20px rgba(192,74,34,0.5)' : '0 3px 10px rgba(0,0,0,0.25)'};display:flex;align-items:center;justify-content:center;transform:${isSelected ? 'scale(1.1)' : 'scale(1)'};">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        </div>
-        <div style="background:rgba(15,23,42,0.85);backdrop-filter:blur(4px);color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;margin-top:2px;white-space:nowrap;box-shadow:0 2px 5px rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.2);">
-          ${listing.price.split("/")[0]}
+          <span style="font-size:${isSelected ? '18px' : '15px'};line-height:1;">🍲</span>
         </div>
       </div>
     `;
@@ -242,30 +233,39 @@ function BariKoiLiveHousingMap({
       }
     }
 
-    // 2. Clear old Housing Markers
+    // 2. Clear old Food Markers
     markersRef.current.forEach(m => {
       if (m.remove) m.remove();
     });
     markersRef.current = [];
 
-    // 3. Add Housing Markers around live location
+    // 3. Add Food Listing Pins
     listings.forEach(listing => {
       const isSelected = selectedListing?.id === listing.id;
+      const html = createFoodMarkerHtml(listing, isSelected);
+
       if (L && map.addLayer) {
         const icon = L.divIcon({
-          className: "bkoi-housing-marker",
-          html: createHousingMarkerHtml(listing, isSelected),
-          iconSize: isSelected ? [38, 50] : [32, 44],
-          iconAnchor: isSelected ? [19, 50] : [16, 44]
+          className: "bkoi-food-pin",
+          html,
+          iconSize: isSelected ? [38, 44] : [32, 38],
+          iconAnchor: isSelected ? [19, 44] : [16, 38]
         });
+
         const marker = L.marker([listing.lat, listing.lng], { icon }).addTo(map);
-        marker.on("click", () => handleMarkerClick(listing));
+        marker.on("click", (e: any) => {
+          if (e?.originalEvent) e.originalEvent.stopPropagation();
+          handleMarkerClick(listing);
+        });
         markersRef.current.push(marker);
       } else if (bkoigl || map.project) {
         const el = document.createElement("div");
-        el.innerHTML = createHousingMarkerHtml(listing, isSelected);
-        el.style.cursor = "pointer";
-        el.addEventListener("click", () => handleMarkerClick(listing));
+        el.className = "bkoi-food-pin";
+        el.innerHTML = html;
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          handleMarkerClick(listing);
+        });
 
         const MarkerClass = bkoigl?.Marker || (window as any).maplibregl?.Marker;
         if (MarkerClass) {
@@ -276,15 +276,17 @@ function BariKoiLiveHousingMap({
         }
       }
     });
-  }, [listings, userCoords, isLocationGranted, selectedListing, handleMarkerClick]);
+  }, [isLocationGranted, userCoords, listings, selectedListing, handleMarkerClick]);
 
-  // Init BariKoi GL SDK / Leaflet Fallback
+  // Initialize BariKoi SDK / Leaflet
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
+    let isSubscribed = true;
+
     loadBkoiGL()
       .then(bkoigl => {
-        if (!containerRef.current || mapRef.current) return;
+        if (!isSubscribed || !containerRef.current || mapRef.current) return;
         const key = BARIKOI_API_KEY;
         if (bkoigl) {
           bkoigl.accessToken = key;
@@ -292,174 +294,75 @@ function BariKoiLiveHousingMap({
         }
 
         const map = new bkoigl.Map({
-          container: containerRef.current!,
-          center: [userCoords[1], userCoords[0]], // [lng, lat]
-          zoom: 14.6,
+          container: containerRef.current,
+          center: [userCoords[1], userCoords[0]],
+          zoom: 14.5,
           accessToken: key,
           apiKey: key,
-          attributionControl: false,
-          style: `https://map.barikoi.com/styles/osm_barikoi_v1/style.json?key=${key}`,
-        });
-
-        // Gracefully handle missing sprite icons/layers from Barikoi style
-        map.on("styleimagemissing", (e: any) => {
-          const id = e.id;
-          if (!map.hasImage(id)) {
-            const canvas = document.createElement("canvas");
-            canvas.width = 1;
-            canvas.height = 1;
-            const ctx = canvas.getContext("2d");
-            if (ctx) {
-              const imgData = ctx.createImageData(1, 1);
-              map.addImage(id, imgData);
-            }
-          }
-        });
-
-        map.on("error", (e: any) => {
-          if (
-            e?.error?.message?.includes("Source layer") ||
-            e?.error?.message?.includes("does not exist") ||
-            e?.error?.message?.includes("office_11")
-          ) {
-            return;
-          }
+          style: `https://map.barikoi.com/styles/osm_barikoi_v1/style.json?key=${key}`
         });
 
         map.on("load", () => {
           mapRef.current = map;
           syncMapMarkers();
         });
-        mapRef.current = map;
+
+        map.on("click", () => {
+          setMarkerClickedListing(null);
+          onSelectListing(null);
+        });
       })
       .catch(() => {
         // Fallback to Leaflet
         import("leaflet").then(L => {
-          if (!containerRef.current || mapRef.current) return;
-          try {
-            delete (L.Icon.Default.prototype as any)._getIconUrl;
-          } catch (_) {}
+          if (!isSubscribed || !containerRef.current || mapRef.current) return;
+          delete (L.Icon.Default.prototype as any)._getIconUrl;
 
-          const map = L.map(containerRef.current!, {
+          const map = L.map(containerRef.current, {
             center: userCoords,
-            zoom: 15,
-            zoomControl: false,
-            attributionControl: false
+            zoom: 14,
+            zoomControl: false
           });
 
-          L.tileLayer(
-            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
-            {
-              maxZoom: 19,
-            }
-          ).addTo(map);
+          L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
+            attribution: '&copy; <a href="https://barikoi.com">BariKoi</a>',
+            maxZoom: 19
+          }).addTo(map);
 
-          mapRef.current = map;
+          map.on("click", () => {
+            setMarkerClickedListing(null);
+            onSelectListing(null);
+          });
+
           LRef.current = L;
+          mapRef.current = map;
           syncMapMarkers();
         });
       });
 
     return () => {
-      if (mapRef.current) {
-        try {
-          mapRef.current.remove();
-        } catch (_) {}
-        mapRef.current = null;
-      }
+      isSubscribed = false;
     };
   }, []);
 
-  // Update map center & pinpoint when user location updates
-  useEffect(() => {
-    if (!mapRef.current) return;
-    const map = mapRef.current;
-    if (LRef.current) {
-      if (map.flyTo) {
-        map.flyTo(userCoords, 14.8, { duration: 1.2 });
-      } else if (map.setView) {
-        map.setView(userCoords, 15);
-      }
-    } else {
-      if (map.flyTo) {
-        map.flyTo({ center: [userCoords[1], userCoords[0]], zoom: 14.8, speed: 1.5 });
-      } else if (map.setView) {
-        map.setView([userCoords[1], userCoords[0]], 15);
-      }
-    }
-    syncMapMarkers();
-  }, [userCoords, syncMapMarkers]);
-
-  // Update markers when selection or housing list changes
+  // Update markers when listings or selection changes
   useEffect(() => {
     syncMapMarkers();
-  }, [syncMapMarkers]);
+  }, [listings, selectedListing, isLocationGranted, userCoords, syncMapMarkers]);
 
-  // When search query is entered or matching listings filter changes, fit map to visible filtered listings
-  useEffect(() => {
-    if (!mapRef.current || !listings || listings.length === 0 || directionListing) return;
-    const map = mapRef.current;
-    const L = LRef.current;
-
-    if (searchQuery && searchQuery.trim().length > 0) {
-      if (listings.length === 1) {
-        const single = listings[0];
-        if (LRef.current) {
-          if (map.flyTo) {
-            map.flyTo([single.lat, single.lng], 15.5, { duration: 1.2 });
-          } else if (map.panTo) {
-            map.panTo([single.lat, single.lng]);
-          }
-        } else {
-          if (map.flyTo) {
-            map.flyTo({ center: [single.lng, single.lat], zoom: 15.5, speed: 1.2 });
-          } else if (map.panTo) {
-            map.panTo([single.lng, single.lat]);
-          }
-        }
-      } else if (listings.length > 1) {
-        let minLng = listings[0].lng, maxLng = listings[0].lng;
-        let minLat = listings[0].lat, maxLat = listings[0].lat;
-        listings.forEach(j => {
-          if (j.lng < minLng) minLng = j.lng;
-          if (j.lng > maxLng) maxLng = j.lng;
-          if (j.lat < minLat) minLat = j.lat;
-          if (j.lat > maxLat) maxLat = j.lat;
-        });
-
-        if (map.fitBounds) {
-          map.fitBounds(
-            [[minLng, minLat], [maxLng, maxLat]],
-            { padding: 45, maxZoom: 16, duration: 600 }
-          );
-        } else if (L && map.fitBounds) {
-          map.fitBounds(
-            L.latLngBounds(listings.map(j => [j.lat, j.lng])),
-            { padding: [45, 45], maxZoom: 16 }
-          );
-        }
-      }
-    }
-  }, [listings, searchQuery, directionListing]);
-
-  const [routeInfo, setRouteInfo] = useState<{ distanceText: string; durationText: string } | null>(null);
-
-  // Fly to selected listing or draw real turn-by-turn road route to direction listing
+  // Road Routing Line rendering when Direction is active
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
     const L = LRef.current;
 
-    // Handle Real Road Direction Route
-    if (directionListing) {
-      const userLat = userCoords[0];
-      const userLng = userCoords[1];
+    if (directionListing && userCoords) {
+      const [userLat, userLng] = userCoords;
       const listingLat = directionListing.lat;
       const listingLng = directionListing.lng;
-
       let isCancelled = false;
 
-      fetchRealRoadRoute(userLat, userLng, listingLat, listingLng).then(routeData => {
+      fetchRealRoadRoute(userLat, userLng, listingLat, listingLng, travelMode).then(routeData => {
         if (isCancelled || !mapRef.current) return;
 
         setRouteInfo({
@@ -481,8 +384,7 @@ function BariKoiLiveHousingMap({
             weight: 5,
             opacity: 0.9,
             lineJoin: "round",
-            lineCap: "round",
-            dashArray: undefined
+            lineCap: "round"
           }).addTo(map);
 
           const bounds = L.latLngBounds(latLngs);
@@ -526,7 +428,7 @@ function BariKoiLiveHousingMap({
             });
           }
 
-          // Fit bounds to road route
+          // Fit bounds
           let minLng = coords[0][0], maxLng = coords[0][0];
           let minLat = coords[0][1], maxLat = coords[0][1];
           coords.forEach(([cLng, cLat]) => {
@@ -550,7 +452,6 @@ function BariKoiLiveHousingMap({
       };
     } else {
       setRouteInfo(null);
-      // Clear route line if direction cancelled
       if (routeLineRef.current) {
         try { routeLineRef.current.remove(); } catch (_) {}
         routeLineRef.current = null;
@@ -563,101 +464,16 @@ function BariKoiLiveHousingMap({
           });
         } catch (_) {}
       }
-
-      // If no direction, fly to selected listing if present
-      if (selectedListing) {
-        if (LRef.current) {
-          if (map.flyTo) {
-            map.flyTo([selectedListing.lat, selectedListing.lng], 15.5, { duration: 1.2 });
-          } else if (map.panTo) {
-            map.panTo([selectedListing.lat, selectedListing.lng]);
-          }
-        } else {
-          if (map.flyTo) {
-            map.flyTo({
-              center: [selectedListing.lng, selectedListing.lat],
-              zoom: 15.5,
-              speed: 1.2,
-              curve: 1.1,
-              essential: true
-            });
-          } else if (map.panTo) {
-            map.panTo([selectedListing.lng, selectedListing.lat]);
-          }
-        }
-      }
     }
-  }, [directionListing, selectedListing, userCoords]);
+  }, [directionListing, userCoords, travelMode]);
 
-  // Zoom Controls
-  const handleZoomIn = () => {
-    if (!mapRef.current) return;
-    if (mapRef.current.zoomIn) mapRef.current.zoomIn();
-  };
-  const handleZoomOut = () => {
-    if (!mapRef.current) return;
-    if (mapRef.current.zoomOut) mapRef.current.zoomOut();
-  };
-  const handleReset = () => {
-    onNavigationClick();
-    if (mapRef.current) {
-      const map = mapRef.current;
-      if (LRef.current) {
-        if (map.flyTo) {
-          map.flyTo(userCoords, 15.5, { duration: 1.2 });
-        } else if (map.setView) {
-          map.setView(userCoords, 15.5);
-        }
-      } else {
-        if (map.flyTo) {
-          map.flyTo({ center: [userCoords[1], userCoords[0]], zoom: 15.5, speed: 1.5 });
-        } else if (map.setView) {
-          map.setView([userCoords[1], userCoords[0]], 15.5);
-        }
-      }
-    }
-  };
-
-  const [travelMode, setTravelMode] = useState<"car" | "bike" | "walk">("car");
-  const [isNavCardMinimized, setIsNavCardMinimized] = useState(false);
-
-  // Re-open card whenever a new direction listing is selected
+  // Handle Resize during transitions so map stays crisp
   useEffect(() => {
-    if (directionListing) {
-      setIsNavCardMinimized(false);
-    }
-  }, [directionListing]);
-
-  // Resize map cleanly when height changes
-  useEffect(() => {
+    if (!mapRef.current) return;
     const handleResize = () => {
-      if (!mapRef.current) return;
-      if (mapRef.current.resize) {
-        mapRef.current.resize();
-      } else if (mapRef.current.invalidateSize) {
-        mapRef.current.invalidateSize();
-      }
-
-      if (directionListing && lastCoordinatesRef.current && lastCoordinatesRef.current.length > 0) {
-        const coords = lastCoordinatesRef.current;
-        if (mapRef.current.fitBounds) {
-          let minLng = coords[0][0], maxLng = coords[0][0];
-          let minLat = coords[0][1], maxLat = coords[0][1];
-          coords.forEach(([cLng, cLat]) => {
-            if (cLng < minLng) minLng = cLng;
-            if (cLng > maxLng) maxLng = cLng;
-            if (cLat < minLat) minLat = cLat;
-            if (cLat > maxLat) maxLat = cLat;
-          });
-          mapRef.current.fitBounds(
-            [[minLng, minLat], [maxLng, maxLat]],
-            { padding: 35, maxZoom: 16.5, duration: 600 }
-          );
-        } else if (LRef.current && mapRef.current.fitBounds) {
-          const latLngs = coords.map(([lng, lat]) => [lat, lng]);
-          const bounds = LRef.current.latLngBounds(latLngs);
-          mapRef.current.fitBounds(bounds, { padding: [35, 35], maxZoom: 16.5 });
-        }
+      if (mapRef.current) {
+        if (mapRef.current.resize) mapRef.current.resize();
+        if (mapRef.current.invalidateSize) mapRef.current.invalidateSize();
       }
     };
 
@@ -671,6 +487,28 @@ function BariKoiLiveHousingMap({
     };
   }, [directionListing, isNavCardMinimized, isScrolled]);
 
+  const handleZoomIn = () => {
+    if (!mapRef.current) return;
+    if (LRef.current) mapRef.current.zoomIn();
+    else if (mapRef.current.zoomIn) mapRef.current.zoomIn();
+  };
+
+  const handleZoomOut = () => {
+    if (!mapRef.current) return;
+    if (LRef.current) mapRef.current.zoomOut();
+    else if (mapRef.current.zoomOut) mapRef.current.zoomOut();
+  };
+
+  const handleReset = () => {
+    onRequestLocation();
+    if (!mapRef.current) return;
+    if (LRef.current) {
+      mapRef.current.flyTo(userCoords, 15, { duration: 1.0 });
+    } else if (mapRef.current.flyTo) {
+      mapRef.current.flyTo({ center: [userCoords[1], userCoords[0]], zoom: 15, speed: 1.2 });
+    }
+  };
+
   return (
     <div className="w-full flex flex-col bg-white overflow-hidden transition-all duration-300">
       {/* ── MAP CONTAINER (Dynamic Height depending on scroll & route state) ── */}
@@ -681,31 +519,24 @@ function BariKoiLiveHousingMap({
               ? "h-[380px] sm:h-[470px] md:h-[530px] lg:h-[590px]"
               : "h-[240px] sm:h-[300px] md:h-[360px] lg:h-[400px]"
             : isScrolled
-              ? "h-[210px] sm:h-[240px] md:h-[260px] lg:h-[280px]" // Screenshot compact height when scrolling list!
-              : "h-[440px] sm:h-[520px] md:h-[580px] lg:h-[620px]" // Default full height
+              ? "h-[210px] sm:h-[240px] md:h-[260px] lg:h-[280px]"
+              : "h-[440px] sm:h-[520px] md:h-[580px] lg:h-[620px]"
         }`}
       >
         <div ref={containerRef} className="w-full h-full" />
 
-        {/* ── Selected Housing Card Overlay on Marker Click (Only on direct marker click, NOT during scroll) ── */}
+        {/* ── Selected Food Card Overlay on Marker Click (Housing Format) ── */}
         {markerClickedListing && !directionListing && !isScrolled && (
           <div className="absolute bottom-3 left-3 right-3 sm:right-auto sm:left-4 sm:bottom-4 z-30 w-auto sm:w-[330px] bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden animate-in slide-in-from-bottom-3 duration-250 pointer-events-auto">
-            {/* Banner Image with Purpose, Bookmark & Distance Badges */}
+            {/* Banner Image with Agency & Distance Badges */}
             <div className="relative w-full h-28 sm:h-32 overflow-hidden bg-slate-100">
               <img
                 src={markerClickedListing.image}
                 alt={markerClickedListing.title}
                 className="w-full h-full object-cover"
               />
-              {/* Top Right: Purpose Badge & Close button */}
+              {/* Top Right: Close button */}
               <div className="absolute top-2 right-2 flex items-center gap-1.5">
-                <div className={`px-2.5 py-0.5 rounded-full text-white text-[11px] font-bold shadow-xs border ${
-                  markerClickedListing.purpose === "Rent"
-                    ? "bg-emerald-600 border-emerald-700/60"
-                    : "bg-indigo-600 border-indigo-700/60"
-                }`}>
-                  For {markerClickedListing.purpose}
-                </div>
                 <button
                   onClick={() => setMarkerClickedListing(null)}
                   className="w-6.5 h-6.5 rounded-full bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 flex items-center justify-center shadow transition cursor-pointer"
@@ -717,7 +548,7 @@ function BariKoiLiveHousingMap({
 
               {/* Top Left: Agency Badge */}
               <div className="absolute top-2 left-2 px-2.5 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[10px] font-bold border border-slate-200/60 shadow-xs">
-                <span className="truncate max-w-[120px]">{markerClickedListing.agency}</span>
+                <span className="truncate max-w-[140px]">{markerClickedListing.agency}</span>
               </div>
 
               {/* Bottom Left: Distance Badge on Image */}
@@ -733,17 +564,10 @@ function BariKoiLiveHousingMap({
                 {markerClickedListing.title}
               </h3>
               <p className="text-xs text-slate-500 font-medium mt-0.5 truncate">
-                {markerClickedListing.location} • {markerClickedListing.beds} • {markerClickedListing.sqft}
+                {markerClickedListing.location}
               </p>
 
-              {/* Price Pill */}
-              <div className="mt-2">
-                <span className="px-3 py-1 rounded-full bg-orange-50/80 text-[#C04A22] text-xs font-bold border border-orange-100/60 inline-block">
-                  {markerClickedListing.price}
-                </span>
-              </div>
-
-              {/* Action Buttons: Direction & Details */}
+              {/* Action Buttons: Direction & Details (Side by Side) */}
               <div className="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
                 <button
                   onClick={e => {
@@ -752,7 +576,7 @@ function BariKoiLiveHousingMap({
                     onShowDirection(markerClickedListing);
                   }}
                   className="flex-1 px-3 py-2 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
-                  title="Show direction route from your location"
+                  title="Show road route from your location"
                 >
                   <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
                   <span>Direction</span>
@@ -829,7 +653,7 @@ function BariKoiLiveHousingMap({
                 ? "bg-[#C04A22] text-white border-[#C04A22] shadow-[#C04A22]/30"
                 : "bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 border-slate-200/80 hover:text-[#C04A22]"
             }`}
-            title={isLocationGranted ? "Live Location Active (Click to Turn OFF)" : "Turn ON Live Location (GPS)"}
+            title={isLocationGranted ? "Live Location Active (Click to Recenter)" : "Turn ON Live Location (GPS)"}
           >
             {isLocating ? (
               <Loader2 className={`w-4.5 h-4.5 animate-spin ${isLocationGranted ? "text-white" : "text-[#C04A22]"}`} />
@@ -840,10 +664,10 @@ function BariKoiLiveHousingMap({
         </div>
       </div>
 
-      {/* ── ROUTE NAVIGATION CARD (Outside Map Canvas - Sits directly below the map!) ── */}
+      {/* ── ROUTE NAVIGATION CARD (Housing & Jobs Identical Structure & Style!) ── */}
       {directionListing && (
         <div className="w-full bg-[#FAFAFA] border-t border-slate-200/90 px-3 py-3 sm:px-4 sm:py-3.5 transition-all duration-300">
-          {/* 1. Minimized Route Bar */}
+          {/* 1. Minimized Route Bar (Matching Jobs/Housing) */}
           {isNavCardMinimized ? (
             <div
               onClick={() => setIsNavCardMinimized(false)}
@@ -859,7 +683,7 @@ function BariKoiLiveHousingMap({
                     {directionListing.title}
                   </div>
                   <div className="text-xs text-[#C04A22] font-bold">
-                    ({directionListing.distanceKm.toFixed(1)} km) • {directionListing.agency}
+                    ({directionListing.distanceKm.toFixed(1)} km)
                   </div>
                 </div>
               </div>
@@ -888,12 +712,12 @@ function BariKoiLiveHousingMap({
               </div>
             </div>
           ) : (
-            /* 2. Expanded Route Navigation Card */
+            /* 2. Expanded Route Navigation Card (Matching Jobs/Housing) */
             <div className="w-full bg-white rounded-3xl p-3.5 sm:p-4 shadow-xs border border-slate-200/90 animate-in slide-in-from-bottom-2 duration-250">
               {/* Drag Handle Top Bar */}
               <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-2.5" />
 
-              {/* Header */}
+              {/* Header: Back Arrow, Origin & Destination Hierarchy, Collapse Chevron */}
               <div className="flex items-center justify-between gap-2.5 mb-3">
                 <button
                   onClick={onClearDirection}
@@ -909,7 +733,7 @@ function BariKoiLiveHousingMap({
                     <span className="truncate">Your Location</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-sm font-bold text-slate-900 truncate mt-0.5">
-                    <Home className="w-3.5 h-3.5 text-[#C04A22] flex-shrink-0" />
+                    <Utensils className="w-3.5 h-3.5 text-[#C04A22] flex-shrink-0" />
                     <span className="truncate">{directionListing.title}</span>
                   </div>
                 </div>
@@ -995,76 +819,24 @@ function BariKoiLiveHousingMap({
   );
 }
 
-// ─── Main Housing Page Component ────────────────────────────────────────────
-
-export function Housing() {
+// ─── Master Free Food Page (100% Housing/Jobs Identical Design System) ──────
+export function FreeFood() {
   const navigate = useNavigate();
-
-  // Search & Filter State
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<string>("all"); // "all" | "nearby" | "rent" | "purchase"
-
-  // Geolocation & Device Location State
-  const [isLocating, setIsLocating] = useState(false);
-  const [locationPermissionStatus, setLocationPermissionStatus] = useState<"prompt" | "granted" | "denied">("prompt");
-  const [isLocationGranted, setIsLocationGranted] = useState(false);
-  const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
-
-  // Saved Properties State
-  const [savedIds, setSavedIds] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem("saved_housing_ids");
-      return stored ? JSON.parse(stored) : [];
-    } catch (_) {
-      return [];
-    }
-  });
-
-  const toggleSave = (id: string) => {
-    setSavedIds(prev => {
-      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
-      try {
-        localStorage.setItem("saved_housing_ids", JSON.stringify(next));
-      } catch (_) {}
-      return next;
-    });
-  };
-
-  // Property Details Modal State
-  const [showDetailsModal, setShowDetailsModal] = useState<LiveHousingListing | null>(null);
-
-  // Default initial coordinates for map view before permission (Dhaka center)
-  const defaultCoords: [number, number] = [23.8103, 90.4125];
-  const [userCoords, setUserCoords] = useState<[number, number]>(defaultCoords);
-  const [userLocationName, setUserLocationName] = useState<string>("Dhaka");
+  const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [userCoords, setUserCoords] = useState<[number, number]>([23.8103, 90.4125]);
   const [userArea, setUserArea] = useState<string>("Dhaka Area");
   const [userCity, setUserCity] = useState<string>("Dhaka");
-
-  // Dynamic Live Housing List
-  const [liveHousing, setLiveHousing] = useState<LiveHousingListing[]>(() =>
-    generateLiveLocationHousing(defaultCoords[0], defaultCoords[1], "Dhaka Area", "Dhaka")
-  );
-  const [selectedListing, setSelectedListing] = useState<LiveHousingListing | null>(null);
-  const [directionListing, setDirectionListing] = useState<LiveHousingListing | null>(null);
+  const [isLocationGranted, setIsLocationGranted] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
+  const [selectedListing, setSelectedListing] = useState<LiveFoodListing | null>(null);
+  const [directionListing, setDirectionListing] = useState<LiveFoodListing | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState<LiveFoodListing | null>(null);
+  const [savedIds, setSavedIds] = useState<string[]>([]);
   const [isScrolled, setIsScrolled] = useState(false);
+
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-
-  // Filter Housing based on Search Query & Filter Pills
-  const filteredHousing = liveHousing.filter(listing => {
-    // Smart Sentence / Multi-Word Keyword Search Query
-    if (searchQuery.trim() && !matchHousingQuery(listing, searchQuery)) {
-      return false;
-    }
-
-    // Filter Pills: all | nearby | rent | purchase
-    if (activeFilter === "nearby" && !listing.isNearby) return false;
-    if (activeFilter === "rent" && listing.purpose !== "Rent") return false;
-    if (activeFilter === "purchase" && listing.purpose !== "Purchase") return false;
-
-    return true;
-  });
-
-  const nearbyHousing = filteredHousing.filter(j => j.isNearby);
 
   // Scroll detection for collapsing map height
   useEffect(() => {
@@ -1075,40 +847,7 @@ export function Housing() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // IntersectionObserver to auto-move map to currently visible housing card
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.filter(e => e.isIntersecting);
-        if (visible.length > 0) {
-          const topEntry = visible.reduce((prev, curr) =>
-            curr.boundingClientRect.top < prev.boundingClientRect.top ? curr : prev
-          );
-          const listingId = topEntry.target.getAttribute("data-listing-id");
-          if (listingId && listingId !== selectedListing?.id) {
-            const target = (activeFilter === "nearby" ? nearbyHousing : liveHousing).find(j => j.id === listingId) ||
-                           filteredHousing.find(j => j.id === listingId);
-            if (target) {
-              setSelectedListing(target);
-            }
-          }
-        }
-      },
-      {
-        root: null,
-        rootMargin: "-15% 0px -45% 0px",
-        threshold: [0.2, 0.5]
-      }
-    );
-
-    cardRefs.current.forEach(el => {
-      if (el) observer.observe(el);
-    });
-
-    return () => observer.disconnect();
-  }, [liveHousing, nearbyHousing, filteredHousing, activeFilter, selectedListing]);
-
-  // Request Live GPS Location strictly from device GPS when navigation button is clicked
+  // Request Live GPS Location strictly from device GPS
   const executeGeolocation = useCallback((highAccuracy: boolean = true) => {
     setIsLocating(true);
     if (!("geolocation" in navigator)) {
@@ -1120,84 +859,95 @@ export function Housing() {
       async (position) => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
-
-        setLocationPermissionStatus("granted");
+        setUserCoords([lat, lng]);
         setIsLocationGranted(true);
         setShowPermissionPrompt(false);
-        setUserCoords([lat, lng]);
+        setIsLocating(false);
 
         try {
           localStorage.setItem("bkoi_last_user_coords", JSON.stringify([lat, lng]));
         } catch (_) {}
 
-        // Fetch real address from BariKoi Reverse Geocode API
-        const geoResult = await fetchBariKoiReverseGeocode(lat, lng);
-        if (geoResult) {
-          const area = geoResult.area || geoResult.sub_district || "Your Location";
-          const city = geoResult.city || "Live City";
-          setUserLocationName(geoResult.address || `${area}, ${city}`);
-          setUserArea(area);
-          setUserCity(city);
-
-          // Generate properties around exact live coordinates
-          const generated = generateLiveLocationHousing(lat, lng, area, city);
-          setLiveHousing(generated);
-        } else {
-          const generated = generateLiveLocationHousing(lat, lng, "Near You", "Live City");
-          setLiveHousing(generated);
+        const geo = await fetchBariKoiReverseGeocode(lat, lng);
+        if (geo) {
+          setUserArea(geo.area || geo.sub_district || "Dhaka Area");
+          setUserCity(geo.city || "Dhaka");
         }
-        setIsLocating(false);
       },
-      (error) => {
-        if (highAccuracy) {
-          executeGeolocation(false);
-          return;
-        }
-        console.warn("Device geolocation error:", error.code, error.message);
+      (err) => {
+        console.warn("Geolocation fallback:", err);
         setIsLocating(false);
-        setIsLocationGranted(false);
-        if (error.code === 1) {
-          setLocationPermissionStatus("denied");
+        if (!isLocationGranted) {
+          setShowPermissionPrompt(true);
         }
       },
       {
         enableHighAccuracy: highAccuracy,
-        timeout: highAccuracy ? 6000 : 15000,
+        timeout: 10000,
         maximumAge: 60000
       }
     );
-  }, []);
+  }, [isLocationGranted]);
 
-  // Direction Handler
-  const handleShowDirection = useCallback((listing: LiveHousingListing) => {
+  // Initial mount geolocation
+  useEffect(() => {
+    executeGeolocation(true);
+  }, [executeGeolocation]);
+
+  // Generate dynamic live free food drives
+  const liveFood = useMemo(() => {
+    return generateLiveLocationFreeFood(userCoords[0], userCoords[1], userArea, userCity);
+  }, [userCoords, userArea, userCity]);
+
+  // Filter Food drives based on Search Query & Filter Pills
+  const filteredFood = useMemo(() => {
+    return liveFood.filter(listing => {
+      if (searchQuery.trim() && !matchFreeFoodQuery(listing, searchQuery)) {
+        return false;
+      }
+
+      if (activeFilter === "nearby" && !listing.isNearby) return false;
+      if (activeFilter === "breakfast" && listing.timeSlot !== "breakfast") return false;
+      if (activeFilter === "lunch" && listing.timeSlot !== "lunch") return false;
+      if (activeFilter === "dinner" && listing.timeSlot !== "dinner") return false;
+      if (activeFilter === "grocery" && listing.timeSlot !== "grocery") return false;
+
+      return true;
+    });
+  }, [liveFood, searchQuery, activeFilter]);
+
+  const nearbyFood = useMemo(() => {
+    return filteredFood.filter(f => f.isNearby);
+  }, [filteredFood]);
+
+  const handleShowDirection = (listing: LiveFoodListing) => {
     setDirectionListing(listing);
     setSelectedListing(listing);
-  }, []);
-
-  // Navigation Button Click Handler (Turn ON / Turn OFF Toggle)
-  const handleNavigationClick = useCallback(() => {
-    if (isLocationGranted) {
-      setIsLocationGranted(false);
-      setLocationPermissionStatus("prompt");
-      setShowPermissionPrompt(false);
-      setUserCoords(defaultCoords);
-      setUserLocationName("Dhaka");
-      setUserArea("Dhaka Area");
-      setUserCity("Dhaka");
-      setDirectionListing(null);
-      setLiveHousing(generateLiveLocationHousing(defaultCoords[0], defaultCoords[1], "Dhaka Area", "Dhaka"));
-      try {
-        localStorage.removeItem("bkoi_last_user_coords");
-      } catch (_) {}
-    } else {
-      executeGeolocation(true);
+    const mapEl = document.getElementById("food-map-section");
+    if (mapEl) {
+      mapEl.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-  }, [isLocationGranted, executeGeolocation, defaultCoords]);
+  };
+
+  const toggleSave = (id: string) => {
+    setSavedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const filterTabs = [
+    { id: "all", label: "All Food Drives" },
+    { id: "nearby", label: "Nearby" },
+    { id: "breakfast", label: "Breakfast" },
+    { id: "lunch", label: "Lunch" },
+    { id: "dinner", label: "Dinner" },
+    { id: "grocery", label: "Grocery / Ration Packs" }
+  ];
 
   return (
-    <AppLayout noPad={true}>
-      <div className="w-full min-h-screen bg-[#FAFAFA] pb-16">
-        {/* ── TOP STICKY BAR: Search Housing & Purpose Filter ────────────────── */}
+    <AppLayout>
+      <div className="min-h-screen bg-[#FDFBF9] pb-16">
+        {/* ── TOP STICKY BAR: Search Free Food & Time Filter ────────────────── */}
         <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 sm:px-6 shadow-2xs">
           <div className="max-w-7xl mx-auto flex items-center gap-3">
             <button
@@ -1215,7 +965,7 @@ export function Housing() {
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="search 2-bhk flat, studio, rent, purchase, agency..."
+                placeholder="search food drives, meal type, free grocery, agency..."
                 className="w-full pl-10 pr-9 py-2.5 bg-slate-50 hover:bg-white focus:bg-white rounded-xl border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C04A22]/20 focus:border-[#C04A22] shadow-2xs transition"
               />
               {searchQuery && (
@@ -1229,14 +979,9 @@ export function Housing() {
             </div>
           </div>
 
-          {/* Purpose Filter Pills: Rent / Purchase / All / Nearby */}
+          {/* Time Filter Pills */}
           <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar pt-2.5 pb-0.5">
-            {[
-              { id: "all", label: "All Properties" },
-              { id: "nearby", label: "Nearby" },
-              { id: "rent", label: "Rent" },
-              { id: "purchase", label: "Purchase" }
-            ].map(f => (
+            {filterTabs.map(f => (
               <button
                 key={f.id}
                 onClick={() => setActiveFilter(f.id)}
@@ -1253,17 +998,16 @@ export function Housing() {
         </div>
 
         {/* ── BARIKOI LIVE MAP (EXPANDED / COMPACT STICKY HEIGHT) ────── */}
-        <div id="housing-map-section" className={`w-full max-w-7xl mx-auto px-2 sm:px-4 pt-2 sm:pt-3 transition-all duration-300 ${
+        <div id="food-map-section" className={`w-full max-w-7xl mx-auto px-1 sm:px-2 pt-1 sm:pt-2 transition-all duration-300 ${
           isScrolled ? "sticky top-[95px] sm:top-[100px] z-10" : ""
         }`}>
           <div className="rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm bg-white">
-            <BariKoiLiveHousingMap
+            <BariKoiLiveFoodMap
               userCoords={userCoords}
               isLocationGranted={isLocationGranted}
-              listings={filteredHousing}
+              listings={filteredFood}
               selectedListing={selectedListing}
               onSelectListing={listing => setSelectedListing(listing)}
-              onNavigationClick={handleNavigationClick}
               onRequestLocation={() => executeGeolocation(true)}
               onDenyLocation={() => setShowPermissionPrompt(false)}
               showPermissionPrompt={showPermissionPrompt}
@@ -1275,19 +1019,16 @@ export function Housing() {
               }}
               onShowDirection={handleShowDirection}
               onViewDetails={listing => setShowDetailsModal(listing)}
-              savedIds={savedIds}
-              onToggleSave={toggleSave}
               isScrolled={isScrolled}
-              searchQuery={searchQuery}
             />
           </div>
         </div>
 
-        {/* ── MAIN HOUSING DIRECTORY CONTENT (2-COLUMN ON DESKTOP) ─────────── */}
+        {/* ── MAIN FOOD DIRECTORY CONTENT (2-COLUMN ON DESKTOP) ─────────── */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-2.5 sm:pt-3">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             
-            {/* ── LEFT COLUMN: Filter Toggle & Properties Feed ───────────── */}
+            {/* ── LEFT COLUMN: Filter Toggle & Food Cards Feed (7 cols) ───── */}
             <div className="lg:col-span-7 space-y-3.5">
               {/* Compact Toggle Button Header */}
               <div className="pt-0.5 pb-1">
@@ -1301,7 +1042,7 @@ export function Housing() {
                     }`}
                   >
                     <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
-                      {nearbyHousing.length} Nearby
+                      {nearbyFood.length} Nearby
                     </div>
                   </div>
 
@@ -1314,23 +1055,22 @@ export function Housing() {
                     }`}
                   >
                     <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
-                      {liveHousing.length} Full State
+                      {liveFood.length} Full State
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Housing Cards Feed */}
+              {/* Food Cards Feed */}
               <div className="space-y-4">
-                {(activeFilter === "nearby" ? nearbyHousing : liveHousing).map(listing => {
+                {(activeFilter === "nearby" ? nearbyFood : filteredFood).map(listing => {
                   const isSelected = selectedListing?.id === listing.id;
                   const isSaved = savedIds.includes(listing.id);
-                  const isRent = listing.purpose === "Rent";
 
                   return (
                     <div
                       key={listing.id}
-                      data-listing-id={listing.id}
+                      data-food-id={listing.id}
                       ref={el => {
                         if (el) cardRefs.current.set(listing.id, el);
                         else cardRefs.current.delete(listing.id);
@@ -1342,7 +1082,7 @@ export function Housing() {
                           : "border-slate-200/90 hover:border-slate-300 hover:shadow-xs"
                       }`}
                     >
-                      {/* Banner Image with Purpose & Agency Corner Badges */}
+                      {/* Banner Image with Agency Corner Badge */}
                       <div className="relative w-full h-32 sm:h-36 overflow-hidden bg-slate-100">
                         <img
                           src={listing.image}
@@ -1350,16 +1090,8 @@ export function Housing() {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           loading="lazy"
                         />
-                        {/* Top-Right: Purpose Badge (Rent / Purchase) */}
-                        <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold shadow-xs border ${
-                          isRent
-                            ? "bg-emerald-600 text-white border-emerald-700/60"
-                            : "bg-indigo-600 text-white border-indigo-700/60"
-                        }`}>
-                          For {listing.purpose}
-                        </div>
 
-                        {/* Top-Left: Agency Badge In The Corner (User Specified!) */}
+                        {/* Top-Left: Agency Badge In The Corner */}
                         <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-xs font-bold border border-slate-200/80 shadow-xs">
                           <span className="truncate max-w-[140px] sm:max-w-[180px]">{listing.agency}</span>
                         </div>
@@ -1391,7 +1123,7 @@ export function Housing() {
                               toggleSave(listing.id);
                             }}
                             className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-[#C04A22] flex items-center justify-center transition cursor-pointer flex-shrink-0"
-                            title={isSaved ? "Saved" : "Save Property"}
+                            title={isSaved ? "Saved" : "Save Program"}
                           >
                             {isSaved ? (
                               <BookmarkCheck className="w-4 h-4 text-[#C04A22]" />
@@ -1401,30 +1133,7 @@ export function Housing() {
                           </button>
                         </div>
 
-                        {/* Specification Chips (Beds, Baths, Sqft, Furnishing) */}
-                        <div className="flex items-center gap-2 flex-wrap mt-2.5">
-                          <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
-                            <Bed className="w-3 h-3 text-[#C04A22]" />
-                            {listing.beds}
-                          </span>
-                          <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
-                            <Bath className="w-3 h-3 text-[#C04A22]" />
-                            {listing.baths}
-                          </span>
-                          <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
-                            <Maximize2 className="w-3 h-3 text-[#C04A22]" />
-                            {listing.sqft}
-                          </span>
-                        </div>
-
-                        {/* Row 1: Price Pill */}
-                        <div className="mt-3.5 flex items-center justify-between">
-                          <span className="px-3.5 py-1.5 rounded-full bg-orange-50/80 text-[#C04A22] text-xs sm:text-sm font-bold border border-orange-100/60 shadow-2xs">
-                            {listing.price}
-                          </span>
-                        </div>
-
-                        {/* Row 2: Direction & Details Buttons (Side by Side Full Width) */}
+                        {/* Action Buttons: Direction & Details (Side by Side Full Width) */}
                         <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
                           <button
                             onClick={e => {
@@ -1432,7 +1141,7 @@ export function Housing() {
                               handleShowDirection(listing);
                             }}
                             className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
-                            title="Show Road Route to Property"
+                            title="Show Road Route to Food Point"
                           >
                             <Navigation className="w-4 h-4 text-[#C04A22]" />
                             <span>Direction</span>
@@ -1456,38 +1165,39 @@ export function Housing() {
               </div>
             </div>
 
-            {/* ── RIGHT COLUMN: All Verified Properties Directory ───────── */}
+            {/* ── RIGHT COLUMN: All Verified Food Distribution Programs ───────── */}
             <div className="lg:col-span-5 space-y-3.5">
-              {/* Directory Header Banner */}
-              <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-2xl bg-orange-50 border border-orange-200/80 flex items-center justify-center text-[#C04A22]">
-                      <Home className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h2 className="text-sm sm:text-base font-bold text-slate-900">
-                        Verified Properties
-                      </h2>
-                      <p className="text-xs text-slate-500 font-medium">
-                        {filteredHousing.length} listings available in your area
-                      </p>
-                    </div>
-                  </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 leading-tight">
+                    All Food Drives & Relief Shelves
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    {filteredFood.length} verified programs in {userCity}
+                  </p>
                 </div>
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setActiveFilter("all");
+                  }}
+                  className="text-xs text-[#C04A22] font-bold hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Reset</span>
+                </button>
               </div>
 
-              {/* Housing Cards Feed */}
+              {/* Feed of all food drives */}
               <div className="space-y-4">
-                {filteredHousing.map(listing => {
+                {filteredFood.map(listing => {
                   const isSelected = selectedListing?.id === listing.id;
                   const isSaved = savedIds.includes(listing.id);
-                  const isRent = listing.purpose === "Rent";
 
                   return (
                     <div
                       key={listing.id}
-                      data-listing-id={listing.id}
+                      data-food-id={listing.id}
                       ref={el => {
                         if (el) cardRefs.current.set(listing.id, el);
                         else cardRefs.current.delete(listing.id);
@@ -1499,7 +1209,7 @@ export function Housing() {
                           : "border-slate-200/90 hover:border-slate-300 hover:shadow-xs"
                       }`}
                     >
-                      {/* Banner Image with Purpose & Agency Corner Badges */}
+                      {/* Banner Image with Agency Corner Badge */}
                       <div className="relative w-full h-32 sm:h-36 overflow-hidden bg-slate-100">
                         <img
                           src={listing.image}
@@ -1507,28 +1217,20 @@ export function Housing() {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           loading="lazy"
                         />
-                        {/* Top-Right: Purpose Badge */}
-                        <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold shadow-xs border ${
-                          isRent
-                            ? "bg-emerald-600 text-white border-emerald-700/60"
-                            : "bg-indigo-600 text-white border-indigo-700/60"
-                        }`}>
-                          For {listing.purpose}
-                        </div>
 
-                        {/* Top-Left: Agency Badge (User Specified!) */}
+                        {/* Top-Left: Agency Badge In The Corner */}
                         <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-xs font-bold border border-slate-200/80 shadow-xs">
                           <span className="truncate max-w-[140px] sm:max-w-[180px]">{listing.agency}</span>
                         </div>
 
-                        {/* Bottom-Left: Distance Badge */}
+                        {/* Bottom-Left: Distance */}
                         <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-medium flex items-center gap-1">
                           <MapPin className="w-3.5 h-3.5 text-emerald-400" />
                           {listing.distance}
                         </div>
                       </div>
 
-                      {/* Card Body */}
+                      {/* Card Content */}
                       <div className="p-4 sm:p-5">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
@@ -1541,13 +1243,14 @@ export function Housing() {
                             </p>
                           </div>
 
+                          {/* Bookmark Save Button */}
                           <button
                             onClick={e => {
                               e.stopPropagation();
                               toggleSave(listing.id);
                             }}
                             className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-[#C04A22] flex items-center justify-center transition cursor-pointer flex-shrink-0"
-                            title={isSaved ? "Saved" : "Save Property"}
+                            title={isSaved ? "Saved" : "Save Program"}
                           >
                             {isSaved ? (
                               <BookmarkCheck className="w-4 h-4 text-[#C04A22]" />
@@ -1557,30 +1260,7 @@ export function Housing() {
                           </button>
                         </div>
 
-                        {/* Specs */}
-                        <div className="flex items-center gap-2 flex-wrap mt-2.5">
-                          <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
-                            <Bed className="w-3 h-3 text-[#C04A22]" />
-                            {listing.beds}
-                          </span>
-                          <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
-                            <Bath className="w-3 h-3 text-[#C04A22]" />
-                            {listing.baths}
-                          </span>
-                          <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
-                            <Maximize2 className="w-3 h-3 text-[#C04A22]" />
-                            {listing.sqft}
-                          </span>
-                        </div>
-
-                        {/* Row 1: Price Pill */}
-                        <div className="mt-3.5 flex items-center justify-between">
-                          <span className="px-3.5 py-1.5 rounded-full bg-orange-50/80 text-[#C04A22] text-xs sm:text-sm font-bold border border-orange-100/60 shadow-2xs">
-                            {listing.price}
-                          </span>
-                        </div>
-
-                        {/* Row 2: Direction & Details Buttons (Side by Side Full Width) */}
+                        {/* Action Buttons: Direction & Details (Side by Side) */}
                         <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
                           <button
                             onClick={e => {
@@ -1588,7 +1268,7 @@ export function Housing() {
                               handleShowDirection(listing);
                             }}
                             className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
-                            title="Show Road Route to Property"
+                            title="Show Road Route"
                           >
                             <Navigation className="w-4 h-4 text-[#C04A22]" />
                             <span>Direction</span>
@@ -1611,17 +1291,18 @@ export function Housing() {
                 })}
               </div>
             </div>
-
           </div>
         </div>
 
-        {/* ── HOUSING DETAILS MODAL ─────────────────────────────────────── */}
+        {/* ── Food Program Details Modal ── */}
         {showDetailsModal && (
-          <HousingDetailsModal
-            listing={showDetailsModal}
+          <FoodDetailsModal
+            food={showDetailsModal}
             onClose={() => setShowDetailsModal(null)}
-            savedIds={savedIds}
-            onToggleSave={toggleSave}
+            onShowDirection={food => {
+              setShowDetailsModal(null);
+              handleShowDirection(food);
+            }}
           />
         )}
       </div>

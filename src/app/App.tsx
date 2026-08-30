@@ -21,7 +21,7 @@ import { Notifications } from "./pages/Notifications";
 import { Profile } from "./pages/Profile";
 import { Communities } from "./pages/Communities";
 import { QandA } from "./pages/QandA";
-import { Jobs, Housing, LegalHelp, ImmigrationChecklist } from "./pages/ServicePages";
+import { Jobs, Housing, FreeFood, LegalHelp, ImmigrationChecklist, Embassy } from "./pages/ServicePages";
 import { SchoolFinder, HospitalFinder, ReligiousFinder, RestaurantGroceryFinder } from "./pages/MoreServicePages";
 import { ServiceDetail } from "./pages/ServiceDetail";
 import { PostDetails } from "./pages/PostDetails";
@@ -81,6 +81,10 @@ export default function App() {
         {/* Service Pages */}
         <Route path="/services/jobs" element={<Jobs />} />
         <Route path="/services/housing" element={<Housing />} />
+        <Route path="/services/free-food" element={<FreeFood />} />
+        <Route path="/services/food-bank" element={<FreeFood />} />
+        <Route path="/services/embassy" element={<Embassy />} />
+        <Route path="/services/consulate" element={<Embassy />} />
         <Route path="/services/legal" element={<LegalHelp />} />
         <Route path="/services/checklist" element={<ImmigrationChecklist />} />
         <Route path="/services/schools" element={<SchoolFinder />} />

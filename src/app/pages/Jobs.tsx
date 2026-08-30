@@ -403,7 +403,7 @@ function BariKoiLiveJobsMap({
       if (mapRef.current) {
         try {
           mapRef.current.remove();
-        } catch (_) {}
+        } catch (_) { }
         mapRef.current = null;
       }
     };
@@ -413,18 +413,10 @@ function BariKoiLiveJobsMap({
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
-    if (LRef.current) {
-      if (map.flyTo) {
-        map.flyTo(userCoords, 14.8, { duration: 1.2 });
-      } else if (map.setView) {
-        map.setView(userCoords, 15);
-      }
-    } else {
-      if (map.flyTo) {
-        map.flyTo({ center: [userCoords[1], userCoords[0]], zoom: 14.8, speed: 1.5 });
-      } else if (map.setView) {
-        map.setView([userCoords[1], userCoords[0]], 15);
-      }
+    if (map.flyTo) {
+      map.flyTo({ center: [userCoords[1], userCoords[0]], zoom: 14.8, speed: 1.5 });
+    } else if (map.setView) {
+      map.setView(userCoords, 15);
     }
     syncMapMarkers();
   }, [userCoords, syncMapMarkers]);
@@ -443,18 +435,10 @@ function BariKoiLiveJobsMap({
     if (searchQuery && searchQuery.trim().length > 0) {
       if (jobs.length === 1) {
         const single = jobs[0];
-        if (LRef.current) {
-          if (map.flyTo) {
-            map.flyTo([single.lat, single.lng], 15.5, { duration: 1.2 });
-          } else if (map.panTo) {
-            map.panTo([single.lat, single.lng]);
-          }
-        } else {
-          if (map.flyTo) {
-            map.flyTo({ center: [single.lng, single.lat], zoom: 15.5, speed: 1.2 });
-          } else if (map.panTo) {
-            map.panTo([single.lng, single.lat]);
-          }
+        if (map.flyTo) {
+          map.flyTo({ center: [single.lng, single.lat], zoom: 15.5, speed: 1.2 });
+        } else if (map.panTo) {
+          map.panTo([single.lat, single.lng]);
         }
       } else if (jobs.length > 1) {
         let minLng = jobs[0].lng, maxLng = jobs[0].lng;
@@ -512,7 +496,7 @@ function BariKoiLiveJobsMap({
         // 1. Draw Real Road Route in Leaflet
         if (L && map.addLayer) {
           if (routeLineRef.current) {
-            try { routeLineRef.current.remove(); } catch (_) {}
+            try { routeLineRef.current.remove(); } catch (_) { }
           }
 
           const latLngs = coordinates.map(([lng, lat]) => [lat, lng]);
@@ -581,7 +565,7 @@ function BariKoiLiveJobsMap({
                   "line-opacity": 1
                 }
               });
-            } catch (_) {}
+            } catch (_) { }
           }
 
           // Calculate exact bounds from road coordinates
@@ -613,7 +597,7 @@ function BariKoiLiveJobsMap({
       setRouteInfo(null);
       // Clear route line if direction cancelled
       if (routeLineRef.current) {
-        try { routeLineRef.current.remove(); } catch (_) {}
+        try { routeLineRef.current.remove(); } catch (_) { }
         routeLineRef.current = null;
       }
       if (map.getSource && map.getSource("direction-route")) {
@@ -622,27 +606,19 @@ function BariKoiLiveJobsMap({
             type: "FeatureCollection",
             features: []
           });
-        } catch (_) {}
+        } catch (_) { }
       }
 
       // If no direction, fly to selected job if present
       if (selectedJob) {
-        if (LRef.current) {
-          if (map.flyTo) {
-            map.flyTo([selectedJob.lat, selectedJob.lng], 15.5, { duration: 1.2 });
-          } else if (map.panTo) {
-            map.panTo([selectedJob.lat, selectedJob.lng]);
-          }
-        } else {
-          if (map.flyTo) {
-            map.flyTo({
-              center: [selectedJob.lng, selectedJob.lat],
-              zoom: 15.5,
-              speed: 1.2
-            });
-          } else if (map.panTo) {
-            map.panTo([selectedJob.lng, selectedJob.lat]);
-          }
+        if (map.flyTo) {
+          map.flyTo({
+            center: [selectedJob.lng, selectedJob.lat],
+            zoom: 15.5,
+            speed: 1.2
+          });
+        } else if (map.panTo) {
+          map.panTo([selectedJob.lat, selectedJob.lng]);
         }
       }
     }
@@ -660,19 +636,10 @@ function BariKoiLiveJobsMap({
   const handleReset = () => {
     onNavigationClick();
     if (mapRef.current) {
-      const map = mapRef.current;
-      if (LRef.current) {
-        if (map.flyTo) {
-          map.flyTo(userCoords, 15.5, { duration: 1.2 });
-        } else if (map.setView) {
-          map.setView(userCoords, 15.5);
-        }
-      } else {
-        if (map.flyTo) {
-          map.flyTo({ center: [userCoords[1], userCoords[0]], zoom: 15.5, speed: 1.5 });
-        } else if (map.setView) {
-          map.setView([userCoords[1], userCoords[0]], 15.5);
-        }
+      if (mapRef.current.flyTo) {
+        mapRef.current.flyTo({ center: [userCoords[1], userCoords[0]], zoom: 15.5, speed: 1.5 });
+      } else if (mapRef.current.setView) {
+        mapRef.current.setView(userCoords, 15.5);
       }
     }
   };
@@ -735,15 +702,14 @@ function BariKoiLiveJobsMap({
     <div className="w-full flex flex-col bg-white overflow-hidden transition-all duration-300">
       {/* ── MAP CONTAINER (Dynamic Height depending on scroll & route state) ── */}
       <div
-        className={`relative w-full transition-[height] duration-300 ease-in-out ${
-          directionJob
+        className={`relative w-full transition-[height] duration-300 ease-in-out ${directionJob
             ? isNavCardMinimized
               ? "h-[380px] sm:h-[470px] md:h-[530px] lg:h-[590px]"
               : "h-[240px] sm:h-[300px] md:h-[360px] lg:h-[400px]"
             : isScrolled
               ? "h-[210px] sm:h-[240px] md:h-[260px] lg:h-[280px]" // Screenshot compact height when scrolling list!
               : "h-[440px] sm:h-[520px] md:h-[580px] lg:h-[620px]" // Default full height
-        }`}
+          }`}
       >
         <div ref={containerRef} className="w-full h-full" />
 
@@ -891,11 +857,10 @@ function BariKoiLiveJobsMap({
           <button
             onClick={handleReset}
             disabled={isLocating}
-            className={`w-9 h-9 rounded-xl shadow-md border transition cursor-pointer active:scale-95 disabled:opacity-75 flex items-center justify-center ${
-              isLocationGranted
+            className={`w-9 h-9 rounded-xl shadow-md border transition cursor-pointer active:scale-95 disabled:opacity-75 flex items-center justify-center ${isLocationGranted
                 ? "bg-[#C04A22] text-white border-[#C04A22] shadow-[#C04A22]/30"
                 : "bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 border-slate-200/80 hover:text-[#C04A22]"
-            }`}
+              }`}
             title={isLocationGranted ? "Live Location Active (Click to Turn OFF)" : "Turn ON Live Location (GPS)"}
           >
             {isLocating ? (
@@ -994,33 +959,30 @@ function BariKoiLiveJobsMap({
               <div className="flex items-center gap-2 mb-3">
                 <button
                   onClick={() => setTravelMode("car")}
-                  className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                    travelMode === "car"
+                  className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${travelMode === "car"
                       ? "bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/25 shadow-2xs"
                       : "bg-slate-100/90 hover:bg-[#C04A22]/8 text-slate-600 hover:text-[#8C3015] border border-transparent"
-                  }`}
+                    }`}
                 >
                   <Car className="w-3.5 h-3.5" />
                   <span>Car</span>
                 </button>
                 <button
                   onClick={() => setTravelMode("bike")}
-                  className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                    travelMode === "bike"
+                  className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${travelMode === "bike"
                       ? "bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/25 shadow-2xs"
                       : "bg-slate-100/90 hover:bg-[#C04A22]/8 text-slate-600 hover:text-[#8C3015] border border-transparent"
-                  }`}
+                    }`}
                 >
                   <Bike className="w-3.5 h-3.5" />
                   <span>Bike</span>
                 </button>
                 <button
                   onClick={() => setTravelMode("walk")}
-                  className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                    travelMode === "walk"
+                  className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${travelMode === "walk"
                       ? "bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/25 shadow-2xs"
                       : "bg-slate-100/90 hover:bg-[#C04A22]/8 text-slate-600 hover:text-[#8C3015] border border-transparent"
-                  }`}
+                    }`}
                 >
                   <Footprints className="w-3.5 h-3.5" />
                   <span>Walking</span>
@@ -1035,8 +997,8 @@ function BariKoiLiveJobsMap({
                     {travelMode === "car"
                       ? `${Math.max(1, Math.round(directionJob.distanceKm * 2.5))} min`
                       : travelMode === "bike"
-                      ? `${Math.max(2, Math.round(directionJob.distanceKm * 4.5))} min`
-                      : `${Math.max(5, Math.round(directionJob.distanceKm * 12))} min`}
+                        ? `${Math.max(2, Math.round(directionJob.distanceKm * 4.5))} min`
+                        : `${Math.max(5, Math.round(directionJob.distanceKm * 12))} min`}
                   </div>
                   <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-0.5">Time</div>
                 </div>
@@ -1135,7 +1097,7 @@ export function Jobs() {
           const jobId = topEntry.target.getAttribute("data-job-id");
           if (jobId && jobId !== selectedJob?.id) {
             const targetJob = (activeFilter === "nearby" ? nearbyJobs : liveJobs).find(j => j.id === jobId) ||
-                              filteredJobs.find(j => j.id === jobId);
+              filteredJobs.find(j => j.id === jobId);
             if (targetJob) {
               setSelectedJob(targetJob);
             }
@@ -1177,7 +1139,7 @@ export function Jobs() {
 
         try {
           localStorage.setItem("bkoi_last_user_coords", JSON.stringify([lat, lng]));
-        } catch (_) {}
+        } catch (_) { }
 
         // Fetch real address from BariKoi Reverse Geocode API
         const geoResult = await fetchBariKoiReverseGeocode(lat, lng);
@@ -1239,7 +1201,7 @@ export function Jobs() {
       setLiveJobs(generateLiveLocationJobs(defaultCoords[0], defaultCoords[1], "Dhaka Area", "Dhaka"));
       try {
         localStorage.removeItem("bkoi_last_user_coords");
-      } catch (_) {}
+      } catch (_) { }
     } else {
       // Turn ON Location (Direct device permission request)
       executeGeolocation(true);
@@ -1300,11 +1262,10 @@ export function Jobs() {
               <button
                 key={f.id}
                 onClick={() => setActiveFilter(f.id)}
-                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
-                  activeFilter === f.id
+                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${activeFilter === f.id
                     ? "bg-[#C04A22] text-white shadow-xs font-semibold"
                     : "bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200/60"
-                }`}
+                  }`}
               >
                 {f.label}
               </button>
@@ -1313,9 +1274,8 @@ export function Jobs() {
         </div>
 
         {/* ── BARIKOI LIVE MAP (EXPANDED / COMPACT STICKY HEIGHT) ────── */}
-        <div id="jobs-map-section" className={`w-full max-w-7xl mx-auto px-2 sm:px-4 pt-2 sm:pt-3 transition-all duration-300 ${
-          isScrolled ? "sticky top-[95px] sm:top-[100px] z-10" : ""
-        }`}>
+        <div id="jobs-map-section" className={`w-full max-w-7xl mx-auto px-2 sm:px-4 pt-2 sm:pt-3 transition-all duration-300 ${isScrolled ? "sticky top-[95px] sm:top-[100px] z-10" : ""
+          }`}>
           <div className="rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm bg-white">
             <BariKoiLiveJobsMap
               userCoords={userCoords}
@@ -1346,7 +1306,7 @@ export function Jobs() {
         {/* ── MAIN JOB DIRECTORY CONTENT (2-COLUMN ON DESKTOP) ─────────────── */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-2.5 sm:pt-3">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            
+
             {/* ════════ LEFT COLUMN: NEARBY FOR YOU (6 cols) ════════ */}
             <div className="lg:col-span-6 space-y-3.5">
               <div>
@@ -1355,11 +1315,10 @@ export function Jobs() {
                   {/* Left Option: Nearby Me Jobs */}
                   <div
                     onClick={() => setActiveFilter(activeFilter === "nearby" ? "all" : "nearby")}
-                    className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
-                      activeFilter === "nearby"
+                    className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${activeFilter === "nearby"
                         ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
                         : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
-                    }`}
+                      }`}
                   >
                     <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
                       {nearbyJobs.length} jobs nearby
@@ -1369,11 +1328,10 @@ export function Jobs() {
                   {/* Right Option: Full State Jobs */}
                   <div
                     onClick={() => setActiveFilter("all")}
-                    className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
-                      activeFilter === "all"
+                    className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${activeFilter === "all"
                         ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
                         : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
-                    }`}
+                      }`}
                   >
                     <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
                       {liveJobs.length} full state jobs
@@ -1396,11 +1354,10 @@ export function Jobs() {
                           else cardRefs.current.delete(job.id);
                         }}
                         onClick={() => setSelectedJob(job)}
-                        className={`group bg-white rounded-3xl border overflow-hidden transition-all duration-200 cursor-pointer ${
-                          isSelected
+                        className={`group bg-white rounded-3xl border overflow-hidden transition-all duration-200 cursor-pointer ${isSelected
                             ? "border-[#C04A22] ring-2 ring-[#C04A22]/20 shadow-md"
                             : "border-slate-200/90 hover:border-slate-300 hover:shadow-xs"
-                        }`}
+                          }`}
                       >
                         {/* Banner Image with Type & Distance Floating Badges */}
                         <div className="relative w-full h-32 sm:h-36 overflow-hidden bg-slate-100">
@@ -1482,7 +1439,7 @@ export function Jobs() {
 
             {/* ════════ RIGHT COLUMN: ALL LOCAL JOBS DIRECTORY (6 cols) ════════ */}
             <div className="lg:col-span-6 space-y-4">
-              
+
               {/* Directory Header Card */}
               <div className="bg-white rounded-3xl border border-slate-200 p-4 shadow-sm">
                 <div className="flex items-center justify-between mb-1">
@@ -1516,11 +1473,10 @@ export function Jobs() {
                         else cardRefs.current.delete(job.id);
                       }}
                       onClick={() => setSelectedJob(job)}
-                      className={`group bg-white rounded-3xl border overflow-hidden transition-all duration-200 cursor-pointer ${
-                        isSelected
+                      className={`group bg-white rounded-3xl border overflow-hidden transition-all duration-200 cursor-pointer ${isSelected
                           ? "border-[#C04A22] ring-2 ring-[#C04A22]/20 shadow-md"
                           : "border-slate-200/90 hover:border-slate-300 hover:shadow-xs"
-                      }`}
+                        }`}
                     >
                       {/* Banner Image with Type & Distance Floating Badges */}
                       <div className="relative w-full h-32 sm:h-36 overflow-hidden bg-slate-100">
