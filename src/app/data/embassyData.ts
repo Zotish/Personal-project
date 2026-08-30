@@ -21,9 +21,10 @@ export interface ConsularMission {
 
 export interface ConsularService {
   id: string;
+  shortName: string;
   title: string;
   banglaTitle: string;
-  category: "passport" | "nvr" | "poa" | "nid" | "travel_pass" | "emergency" | "camps";
+  category: "passport" | "visa" | "attestation" | "nvr" | "dnc" | "nid" | "birth" | "poa" | "travel_pass" | "repatriation" | "camps" | "fees";
   iconName: string;
   badge: string;
   processingTimeRegular: string;
@@ -31,7 +32,7 @@ export interface ConsularService {
   feeRegular: string;
   feeUrgent: string;
   paymentMethod: string;
-  submissionMode: "In-Person or Mail-in" | "Strictly In-Person (Biometrics)" | "Mail-in Preferred";
+  submissionMode: "In-Person or Mail-in" | "Strictly In-Person (Biometrics)" | "Mail-in Preferred" | "24/7 Digital/Expedited";
   summary: string;
   whoCanApply: string;
   requiredDocuments: string[];
@@ -141,10 +142,11 @@ export const BD_DIPLOMATIC_MISSIONS: ConsularMission[] = [
   }
 ];
 
-// ─── COMPREHENSIVE CONSULAR SERVICES DATA ───────────────────────────────────
+// ─── MASTER ALL CONSULAR SERVICES DATA (ICONIZED CATALOG) ───────────────────
 export const CONSULAR_SERVICES_DATA: ConsularService[] = [
   {
-    id: "srv-epassport",
+    id: "srv-passport",
+    shortName: "Passport",
     title: "E-Passport (Electronic Passport) Application & Renewal",
     banglaTitle: "ই-পাসপোর্ট আবেদন ও নবায়ন (বায়োমেট্রিক)",
     category: "passport",
@@ -156,30 +158,96 @@ export const CONSULAR_SERVICES_DATA: ConsularService[] = [
     feeUrgent: "$165 (48 Pages / 5 Yrs) | $220 (48 Pages / 10 Yrs)",
     paymentMethod: "Money Order / Cashier's Check payable to Embassy/Consulate",
     submissionMode: "Strictly In-Person (Biometrics)",
-    summary: "State-of-the-art biometric e-Passport for Bangladeshi citizens living in the USA with 48/64 pages and 5 or 10-year validity.",
-    whoCanApply: "Any Bangladeshi citizen possessing a valid Bangladeshi Smart NID card or 17-digit Digital Birth Registration Certificate (BRIS).",
+    summary: "Biometric e-Passport with 48/64 pages and 5 or 10-year validity for Bangladeshi citizens residing in the USA.",
+    whoCanApply: "Bangladeshi citizens with a valid Smart NID or 17-digit online Birth Registration Certificate.",
     requiredDocuments: [
       "Printed Application Summary with barcode from epassport.gov.bd",
-      "Original Bangladeshi Passport (MRP/Handwritten) along with photocopy of info pages",
-      "Original Bangladeshi Smart NID Card or 17-digit verifiable Digital Birth Certificate (BRIS)",
-      "Valid US Legal Status proof (Green Card, Valid US Visa, Work Permit / EAD, or US Passport)",
+      "Original Bangladeshi Passport (MRP/Handwritten) + photocopy of info pages",
+      "Original Smart NID Card or 17-digit online Digital Birth Certificate (BRIS)",
+      "Valid US Legal Status proof (Green Card, Valid US Visa, EAD, or US Passport)",
       "Money Order / Bank Cashier's Check for the exact consular fee",
-      "Prior appointment confirmation slip from the mission portal"
+      "Prior appointment confirmation slip"
     ],
     stepByStepProcess: [
-      "Fill out online application form at www.epassport.gov.bd selecting your respective USA mission.",
-      "Submit online and download the Application Summary (PDF with Barcode).",
+      "Complete online application at www.epassport.gov.bd selecting your USA mission.",
+      "Download Application Summary (PDF with Barcode).",
       "Book an in-person biometric appointment at Embassy D.C., NY, LA, or Miami Consulate.",
-      "Visit the mission with original documents, physical photos are not required (captured on-site).",
-      "Provide 10-finger biometric scan, digital signature, and facial photograph.",
-      "Track your status online using your Application ID until passport is ready for pickup or mail return."
+      "Visit mission for 10-finger biometric scan, signature, and digital photo.",
+      "Track status online using Application ID until passport is ready for pickup/mail."
     ],
-    importantNotice: "Name, Date of Birth, and Father/Mother's name in the e-Passport application MUST match identically with your Smart NID or 17-digit online Birth Registration Certificate.",
+    importantNotice: "Name, DOB, and Parents' names in e-Passport MUST match identically with your Smart NID or 17-digit Birth Certificate.",
     onlinePortalUrl: "https://www.epassport.gov.bd"
   },
   {
+    id: "srv-visa",
+    shortName: "Visa",
+    title: "Bangladesh Visa (Tourist, Business, Student & Official)",
+    banglaTitle: "বাংলাদেশ ভিসা আবেদন (ভ্রমণ, ব্যবসা ও শিক্ষার্থী)",
+    category: "visa",
+    iconName: "FileCheck",
+    badge: "Single / Multiple Entry",
+    processingTimeRegular: "7 – 10 Business Days",
+    processingTimeUrgent: "3 – 5 Business Days",
+    feeRegular: "$160 (US Passport Holders)",
+    feeUrgent: "$260 (Expedited Service)",
+    paymentMethod: "Money Order / Cashier's Check",
+    submissionMode: "In-Person or Mail-in",
+    summary: "Official entry visa for foreign nationals (US citizens, foreign spouses, business travelers, researchers, and tourists) visiting Bangladesh.",
+    whoCanApply: "US passport holders and foreign nationals traveling to Bangladesh for tourism, business, study, work, or family visit.",
+    requiredDocuments: [
+      "Printed online visa application from visa.gov.bd",
+      "Original US Passport valid for minimum 6 months with blank visa pages",
+      "One 2x2 inch color photograph on white background",
+      "Invitation letter from host/organization in Bangladesh or hotel booking & flight itinerary",
+      "Money Order of $160 payable to Embassy/Consulate General",
+      "Prepaid USPS Priority/Express return envelope with tracking (if by mail)"
+    ],
+    stepByStepProcess: [
+      "Apply online at www.visa.gov.bd and print the completed form.",
+      "Attach 2x2 inch photograph and sign the printed form.",
+      "Enclose original passport, supporting invitation/itinerary, fee Money Order, and prepaid return envelope.",
+      "Mail or submit over the counter to your jurisdictional mission.",
+      "Receive passport with official machine-readable Bangladesh visa sticker."
+    ],
+    importantNotice: "Applicants of Bangladeshi origin or with Bangladeshi parents should apply for No Visa Required (NVR) instead of standard visa.",
+    onlinePortalUrl: "https://www.visa.gov.bd"
+  },
+  {
+    id: "srv-attestation",
+    shortName: "Attestation",
+    title: "Document Attestation, Police Clearance & Certificates",
+    banglaTitle: "সনদ ও দলিলের সত্যায়ন (শিক্ষা, বিবাহ ও পুলিশ ক্লিয়ারেন্স)",
+    category: "attestation",
+    iconName: "Award",
+    badge: "Official Consular Authentication",
+    processingTimeRegular: "Same Day (In-Person) | 3 – 5 Days (Mail-in)",
+    processingTimeUrgent: "Same Day Counter Service",
+    feeRegular: "$45 per document (First copy) + $25 per additional copy",
+    feeUrgent: "$80",
+    paymentMethod: "Money Order / Cashier's Check",
+    submissionMode: "In-Person or Mail-in",
+    summary: "Consular authentication and legalization of educational certificates, birth/marriage/divorce records, commercial contracts, affidavits, and police clearances.",
+    whoCanApply: "Any individual or corporate entity requiring Bangladeshi consular authentication for US or Bangladeshi documents.",
+    requiredDocuments: [
+      "Original document along with one set of photocopies",
+      "For US Documents: Pre-notarized by US Public Notary and authenticated by State Secretary",
+      "For Bangladeshi Documents: Pre-authenticated by Ministry of Foreign Affairs (MOFA), Dhaka",
+      "Original Passport/NID of the applicant + valid US legal status",
+      "Money Order for the exact consular fee",
+      "Prepaid USPS Express return envelope with tracking (if applying by mail)"
+    ],
+    stepByStepProcess: [
+      "Ensure the document is pre-notarized or authenticated by respective government authorities.",
+      "Submit document to Embassy/Consulate in-person or by certified mail.",
+      "Consular officer verifies seal integrity and affixes diplomatic authentication stamp.",
+      "Document is legally valid for all administrative, judicial, and commercial uses in Bangladesh."
+    ],
+    importantNotice: "All US issued certificates must have State Department or Secretary of State apostille/authentication before consular endorsement."
+  },
+  {
     id: "srv-nvr",
-    title: "No Visa Required (NVR) Endorsement",
+    shortName: "NVR",
+    title: "No Visa Required (NVR) Endorsement Seal",
     banglaTitle: "নো-ভিসা রিকোয়ার্ড (NVR) সিল ও নবায়ন",
     category: "nvr",
     iconName: "ShieldCheck",
@@ -188,40 +256,141 @@ export const CONSULAR_SERVICES_DATA: ConsularService[] = [
     processingTimeUrgent: "3 – 5 Business Days",
     feeRegular: "$50 per applicant",
     feeUrgent: "$100 (Where expedited option available)",
-    paymentMethod: "Money Order / Cashier's Check only (No Cash/Card)",
+    paymentMethod: "Money Order / Cashier's Check only",
     submissionMode: "In-Person or Mail-in",
     summary: "Permanent visa exemption sticker placed on foreign (US) passports for persons of Bangladeshi origin and their foreign-born spouses and children.",
-    whoCanApply: "Bangladeshi Americans, their non-Bangladeshi spouses, and US-born children of Bangladeshi parents.",
+    whoCanApply: "Bangladeshi Americans, foreign spouses, and US-born children of Bangladeshi parents.",
     requiredDocuments: [
-      "Printed online visa/NVR application confirmation from visa.gov.bd",
-      "Original valid US Passport (minimum 6 months validity with blank visa pages)",
+      "Printed online visa/NVR application from visa.gov.bd",
+      "Original valid US Passport (minimum 6 months validity)",
       "Proof of Bangladeshi origin (Original BD Passport, Dual Nationality Certificate, or Smart NID)",
       "For US-born Children: Child's US Birth Certificate showing parents' names + parents' BD Passports",
       "For Foreign Spouses: Certified Marriage Certificate + Spouse's proof of BD citizenship",
-      "One recent 2x2 inch passport-size color photograph with white background",
-      "Prepaid self-addressed USPS Priority / Express return envelope with tracking number (if applying by mail)"
+      "One 2x2 inch passport-size color photograph with white background",
+      "Prepaid self-addressed USPS Priority / Express return envelope with tracking"
     ],
     stepByStepProcess: [
-      "Complete online NVR application at www.visa.gov.bd and print the completed form with barcode.",
+      "Complete online NVR application at www.visa.gov.bd and print the completed form.",
       "Attach 2x2 inch photograph and sign the printed form.",
       "Prepare Money Order of $50 payable to 'Consulate General of Bangladesh' or 'Embassy of Bangladesh'.",
       "If mailing: enclose US passport, proof of BD origin, fee, and prepaid return envelope.",
-      "Send via USPS Certified / Express mail to your jurisdiction's consular mission.",
       "Your US passport will be returned with the official NVR endorsement sticker."
     ],
     importantNotice: "NVR is valid as long as the US passport is valid. When renewing US passport, NVR must be transferred to the new passport.",
     onlinePortalUrl: "https://www.visa.gov.bd"
   },
   {
-    id: "srv-poa",
-    title: "Power of Attorney (আমমোক্তারনামা) Endorsement & Legalization",
-    banglaTitle: "পাওয়ার অব অ্যাটর্নি ও দলিলের সত্যায়ন",
-    category: "poa",
+    id: "srv-dnc",
+    shortName: "DNC",
+    title: "Dual Nationality Certificate (দ্বৈত নাগরিকত্ব সনদ)",
+    banglaTitle: "দ্বৈত নাগরিকত্ব সনদপত্র আবেদন ও ভেরিফিকেশন",
+    category: "dnc",
+    iconName: "Globe",
+    badge: "Constitutional Citizen Rights",
+    processingTimeRegular: "60 – 90 Days (Issued by Ministry of Home Affairs, Dhaka)",
+    processingTimeUrgent: "Standard Schedule",
+    feeRegular: "$77 Govt Fee (Payable via Money Order)",
+    feeUrgent: "N/A",
+    paymentMethod: "Money Order / Cashier's Check",
+    submissionMode: "In-Person or Mail-in",
+    summary: "Official government recognition under the Bangladesh Citizenship Order conferring full dual citizenship rights to naturalized US citizens.",
+    whoCanApply: "Bangladeshi citizens who have acquired US citizenship and wish to officially retain their Bangladeshi citizenship.",
+    requiredDocuments: [
+      "DNC Application Form (Form-F) in triplicate (3 copies)",
+      "Original US Naturalization Certificate + 3 photocopies",
+      "Valid US Passport + 3 photocopies",
+      "Previous Bangladeshi Passport (MRP/Handwritten) or Smart NID or Birth Certificate",
+      "4 recent passport size photographs (2x2 inch)",
+      "Affidavit affirming allegiance to Bangladesh and details of properties held in Bangladesh",
+      "Money Order of $77 payable to Embassy/Consulate General"
+    ],
+    stepByStepProcess: [
+      "Fill out Form F in triplicate and attach photographs.",
+      "Sign before Consular Officer or US Public Notary.",
+      "Embassy forwards file to Ministry of Home Affairs (MOHA), Dhaka.",
+      "Special Branch (SB) verification is conducted in Bangladesh.",
+      "Official green parchment Dual Nationality Certificate is issued and delivered."
+    ],
+    importantNotice: "Dual Nationality Certificate entitles you to own real estate, inherit ancestral assets, and vote in Bangladesh without any legal restrictions."
+  },
+  {
+    id: "srv-nid",
+    shortName: "NID",
+    title: "Smart National ID (NID) Card Registration",
+    banglaTitle: "প্রবাসী ভোটার নিবন্ধন ও স্মার্ট জাতীয় পরিচয়পত্র",
+    category: "nid",
+    iconName: "CreditCard",
+    badge: "Official Govt Smart Card",
+    processingTimeRegular: "30 – 60 Days (Via Election Commission, Dhaka)",
+    processingTimeUrgent: "Standard Schedule",
+    feeRegular: "FREE of Charge ($0 Govt Registration)",
+    feeUrgent: "N/A",
+    paymentMethod: "No Fee Required",
+    submissionMode: "Strictly In-Person (Biometrics)",
+    summary: "Special expatriate registration for Bangladesh Smart National ID Card (NID) with 10-finger biometric scan and digital iris capture directly at USA missions.",
+    whoCanApply: "Expatriate Bangladeshis residing in the USA without existing NID or requiring biometric update.",
+    requiredDocuments: [
+      "Online NID application form from services.nidw.gov.bd",
+      "17-digit digital Birth Registration Certificate (verifiable on bdris.gov.bd)",
+      "Original Bangladeshi Passport copy and US proof of residence",
+      "Educational certificates (SSC / HSC / Degree) as proof of age/spelling",
+      "Parents' NID copies or death certificates",
+      "Citizenship certificate from Union Parishad / City Corporation in Bangladesh"
+    ],
+    stepByStepProcess: [
+      "Register online at services.nidw.gov.bd selecting USA mission.",
+      "Book an appointment for NID biometric capture at the mission.",
+      "Consular team captures 10 fingerprints, iris scan, and digital photo.",
+      "Data is forwarded via encrypted channel to Election Commission Headquarters in Dhaka.",
+      "Upon approval, digital NID slip is generated and physical Smart Card is dispatched."
+    ],
+    importantNotice: "Smart NID is essential for land purchase, property transfer, opening bank accounts, and utility connections in Bangladesh.",
+    onlinePortalUrl: "https://services.nidw.gov.bd"
+  },
+  {
+    id: "srv-birth",
+    shortName: "Birth Registration",
+    title: "Digital Birth Registration (17-Digit BRC / BDRIS)",
+    banglaTitle: "ডিজিটাল জন্ম নিবন্ধন সনদ (১৭ ডিজিটের অনলাইন সনদ)",
+    category: "birth",
     iconName: "FileText",
+    badge: "17-Digit Verifiable BRC",
+    processingTimeRegular: "3 – 5 Business Days",
+    processingTimeUrgent: "1 – 2 Business Days",
+    feeRegular: "$10 – $20 (Depending on age category)",
+    feeUrgent: "$30",
+    paymentMethod: "Money Order / Cashier's Check",
+    submissionMode: "In-Person or Mail-in",
+    summary: "Official government issuance of 17-digit digital Birth Registration Certificate (BRC) in English & Bengali for children born abroad and expatriates.",
+    whoCanApply: "Children of Bangladeshi parents born in the USA, and Bangladeshi expatriates requiring digital 17-digit BRC.",
+    requiredDocuments: [
+      "Online application summary from bdris.gov.bd",
+      "For US-Born Children: Official US State Birth Certificate with parents' names",
+      "Parents' original Bangladeshi Passports and Smart NID cards",
+      "Parents' Marriage Certificate",
+      "One recent 2x2 inch photograph",
+      "Money Order payable to Embassy/Consulate General"
+    ],
+    stepByStepProcess: [
+      "Submit online application at www.bdris.gov.bd selecting Embassy/Consulate as issuing office.",
+      "Print application summary and attach supporting documents.",
+      "Submit to consular counter or mail with prepaid return envelope.",
+      "Consular officer registers the birth on the national BDRIS database and prints the certified 17-digit certificate."
+    ],
+    importantNotice: "Digital 17-digit Birth Certificate is mandatory for e-Passport applications for applicants who do not yet have a Smart NID.",
+    onlinePortalUrl: "https://bdris.gov.bd"
+  },
+  {
+    id: "srv-poa",
+    shortName: "Power of Attorney",
+    title: "Power of Attorney (আমমোক্তারনামা) Endorsement",
+    banglaTitle: "পাওয়ার অব অ্যাটর্নি ও আমমোক্তারনামা সত্যায়ন",
+    category: "poa",
+    iconName: "Landmark",
     badge: "Legal Land & Asset Management",
     processingTimeRegular: "Same Day (In-Person) | 5 – 7 Days (Mail-in with Notary)",
     processingTimeUrgent: "Same Day Counter Service",
-    feeRegular: "$45 per Power of Attorney document (First copy) + $25 per additional copy",
+    feeRegular: "$45 per Power of Attorney document + $25 per additional copy",
     feeUrgent: "$80",
     paymentMethod: "Money Order / Cashier's Check",
     submissionMode: "In-Person or Mail-in",
@@ -233,110 +402,16 @@ export const CONSULAR_SERVICES_DATA: ConsularService[] = [
       "Original Bangladeshi Passport or US Passport with NVR of all Executants",
       "Proof of property ownership (Khatian, Parcha, Deed / Dalil copy, Mutation / Namjari)",
       "If by Mail: Document must be pre-notarized by US Public Notary and authenticated by State Dept",
-      "Fee Money Order payable to the respective Embassy/Consulate General"
+      "Fee Money Order payable to respective Embassy/Consulate General"
     ],
     stepByStepProcess: [
       "Draft POA according to the Power of Attorney Act 2012 format with land/property schedule.",
       "Affix photographs of executants and appointed attorney with cross-signatures.",
-      "Executants must appear in person before the Consular Officer to sign in his/her presence.",
+      "Executants must appear in person before Consular Officer to sign in his/her presence.",
       "Consular Officer validates identity and seals the official Embassy legalization stamps.",
       "After receiving the attested document, send it to Bangladesh to be stamped by the Ministry of Foreign Affairs (MOFA), Dhaka, and registered at the local Sub-Registry Office."
     ],
     importantNotice: "Executants must sign BEFORE the Consular Officer. Do NOT sign beforehand unless following the multi-step State Secretary & Notary legalization route."
-  },
-  {
-    id: "srv-nid-birth",
-    title: "Smart NID Enrollment & Digital Birth Certificate",
-    banglaTitle: "স্মার্ট জাতীয় পরিচয়পত্র ও ডিজিটাল জন্ম নিবন্ধন",
-    category: "nid",
-    iconName: "CreditCard",
-    badge: "Official Govt Identity",
-    processingTimeRegular: "30 – 60 Days (Processed via Election Commission, Dhaka)",
-    processingTimeUrgent: "Standard Schedule",
-    feeRegular: "NID Registration: Free | Birth Certificate: $10 – $20",
-    feeUrgent: "N/A",
-    paymentMethod: "Money Order / Online BRC Gateway",
-    submissionMode: "Strictly In-Person (Biometrics)",
-    summary: "Special expatriate registration for Bangladesh Smart National ID Card (NID) and 17-digit digital Birth Registration Certificate directly from USA missions.",
-    whoCanApply: "Expatriate Bangladeshis without existing NID or whose NID requires biometric update / correction.",
-    requiredDocuments: [
-      "Online NID application form from services.nidw.gov.bd",
-      "Digital 17-digit Birth Registration Certificate (verifiable on bdris.gov.bd)",
-      "Original Bangladeshi Passport copy and US proof of residence",
-      "Educational certificates (SSC / HSC / Degree) as proof of age/spelling",
-      "Parents' NID copies or death certificates",
-      "Citizenship certificate from Union Parishad / City Corporation Councilor in Bangladesh"
-    ],
-    stepByStepProcess: [
-      "Register online at services.nidw.gov.bd selecting Embassy/Consulate as your submission center.",
-      "Book an appointment for NID biometric capture at the mission.",
-      "Consular team captures 10 fingerprints, iris scan, and digital photo.",
-      "Data is forwarded via encrypted channel to Election Commission Headquarters in Dhaka.",
-      "Upon approval, digital NID card slip is generated and physical Smart Card is dispatched."
-    ],
-    importantNotice: "Smart NID is essential for land purchase, property transfer, opening bank accounts, and utility connections in Bangladesh."
-  },
-  {
-    id: "srv-travel-pass",
-    title: "Emergency Travel Permit (One-Way Travel Pass)",
-    banglaTitle: "জরুরি ট্রাভেল পারমিট (জরুরি দেশে প্রত্যাবর্তনের জন্য)",
-    category: "travel_pass",
-    iconName: "Plane",
-    badge: "Emergency 24-48 Hours",
-    processingTimeRegular: "24 – 48 Hours",
-    processingTimeUrgent: "Same Day Emergency",
-    feeRegular: "$25 (Valid for 3 months, single journey)",
-    feeUrgent: "$50",
-    paymentMethod: "Money Order / Cashier's Check",
-    submissionMode: "In-Person or Mail-in",
-    summary: "Issued to Bangladeshi nationals who have lost their passport, have expired passports, or need emergency one-way travel back to Bangladesh.",
-    whoCanApply: "Bangladeshi citizens stranded in the USA without a valid passport requiring immediate repatriation.",
-    requiredDocuments: [
-      "Completed Travel Permit application form",
-      "Copy of lost/expired Bangladeshi passport or digital birth certificate or NID",
-      "Police Report (if passport was lost or stolen in the USA)",
-      "3 passport-size color photographs (2x2 inch)",
-      "Proof of confirmed airline ticket reservation to Bangladesh",
-      "Money Order of $25 payable to Embassy/Consulate"
-    ],
-    stepByStepProcess: [
-      "Fill out the Emergency Travel Permit application.",
-      "Present proof of Bangladeshi nationality to the consular officer.",
-      "Consular officer verifies nationality and issues the white Travel Permit book.",
-      "Permit is valid for 3 months and allows a single one-way trip to Bangladesh."
-    ],
-    importantNotice: "Travel Permit is strictly for ONE-WAY travel to Bangladesh. You cannot travel to third countries on this document."
-  },
-  {
-    id: "srv-repatriation",
-    title: "Repatriation of Mortal Remains & Death NOC",
-    banglaTitle: "মরদেহ দেশে প্রেরণ ও অনাপত্তি সনদ (NOC)",
-    category: "emergency",
-    iconName: "Heart",
-    badge: "24/7 Priority Emergency Service",
-    processingTimeRegular: "Within 2 – 4 Hours (Free of Charge)",
-    processingTimeUrgent: "Immediate 24/7 Hotline",
-    feeRegular: "FREE of Charge ($0 Govt Fee)",
-    feeUrgent: "FREE ($0)",
-    paymentMethod: "No Fee Required",
-    submissionMode: "In-Person or Digital Expedited Submission",
-    summary: "Immediate issuance of No Objection Certificate (NOC) and consular clearance for transporting deceased Bangladeshi nationals back to Bangladesh for burial.",
-    whoCanApply: "Immediate family members, designated funeral homes, or community representatives.",
-    requiredDocuments: [
-      "Original Bangladeshi Passport of the deceased",
-      "Official US Certified Death Certificate (showing cause of death)",
-      "Embalming & Non-Contagious Disease Certificate from licensed funeral home",
-      "Transit Permit issued by local Department of Health / Vital Statistics",
-      "Flight itinerary and airway bill (cargo booking details)",
-      "Contact information of receiver/family in Bangladesh"
-    ],
-    stepByStepProcess: [
-      "Contact the Embassy/Consulate 24/7 Citizen Emergency Hotline immediately.",
-      "Funeral home emails digital copies of death certificate, embalming cert, and transit permit.",
-      "Consular officer issues official Death Registration & Transport NOC within hours.",
-      "Consulate coordinates with airline cargo handlers and Hazrat Shahjalal International Airport (DAC) expatriate welfare desk for expedited clearance and financial grant."
-    ],
-    importantNotice: "Wage Earners' Welfare Board (WEWB) provides BDT 35,000 instant burial grant and BDT 3,00,000 financial compensation for eligible deceased migrant workers."
   }
 ];
 
@@ -401,6 +476,7 @@ export function matchConsularQuery(service: ConsularService, query: string): boo
   if (!query.trim()) return true;
   const q = query.toLowerCase();
   return (
+    service.shortName.toLowerCase().includes(q) ||
     service.title.toLowerCase().includes(q) ||
     service.banglaTitle.toLowerCase().includes(q) ||
     service.summary.toLowerCase().includes(q) ||

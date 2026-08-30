@@ -36,7 +36,7 @@ const allServices: ServiceItem[] = [
 
   // ─── PAGE 2 (ITEMS 9–16 FOR MOBILE): USER FURNITURE, LEGAL AID, HALAL FOOD, FREE MEDICINE, REMITTANCE, FLIGHT, PHARMACY, HOSPITAL ─────
   // Page 2 Row 1:
-  { id: "used-furniture", name: "Used Furniture", desc: "Beds, sofas, desks & free pickup options", icon: Armchair, link: "/services/used-furniture", category: "utility" },
+  { id: "used-furniture", name: "Furniture", desc: "Beds, sofas, desks & free pickup options", icon: Armchair, link: "/services/used-furniture", category: "utility" },
   { id: "legal-aid", name: "Legal Aid", desc: "Free immigration lawyers, Work Permit & TPS aid", icon: Scale, link: "/services/legal", category: "legal" },
   { id: "halal-groceries", name: "Halal Food", desc: "Deshi fish, meat, spice stores & home delivery", icon: ShoppingCart, link: "/services/home-kitchen", category: "housing" },
   { id: "health-medicine", name: "Free Medicine", desc: "Medicaid, free prescription aid & clinics", icon: Heart, link: "/services/free-medicine", category: "health" },
@@ -54,7 +54,6 @@ const allServices: ServiceItem[] = [
   { id: "social-services", name: "Social Aid", desc: "Food pantries, rental aid, SNAP & legal help", icon: Building, link: "/services/social-services", category: "legal" },
   { id: "cars", name: "Cars & DMV", desc: "Buy, sell or rent cars and vehicles", icon: Car, link: "/services/cars", category: "utility" },
   { id: "petrol", name: "Gas & EV", desc: "Live gas prices, EV charging & 24h stations", icon: Car, link: "/services/petrol", category: "utility" },
-  { id: "furniture", name: "Furniture", desc: "Affordable furniture for your new home", icon: Armchair, link: "/services/furniture", category: "utility" },
   { id: "electronics", name: "Electronics", desc: "Phones, laptops, and gadgets near you", icon: Cpu, link: "/services/electronics", category: "utility" },
   { id: "services", name: "Repairs", desc: "Local services: plumbing, cleaning, repairs", icon: Wrench, link: "/services/local", category: "utility" },
   { id: "scholarship", name: "Scholarships", desc: "Scholarships for STEM, ESL & immigrant students", icon: Award, link: "/services/scholarship", category: "education" },

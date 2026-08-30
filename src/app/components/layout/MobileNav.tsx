@@ -109,7 +109,7 @@ export function MobileNav() {
       )}
 
       {/* Bottom nav bar */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-border safe-area-pb">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-border safe-area-pb shadow-sm">
         <div className="flex items-center justify-around px-1 py-1">
           {mainKeys.map(({ icon: Icon, tKey, path }) => {
             const active = location.pathname === path;

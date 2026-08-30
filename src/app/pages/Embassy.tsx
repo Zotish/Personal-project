@@ -8,7 +8,8 @@ import {
   ArrowLeft, ArrowRight, Car, Bike, Footprints,
   ShieldCheck, Loader2, X, Clock, Calendar, Heart, Phone,
   FileText, CheckCircle2, AlertTriangle, Download, Mail,
-  Globe, CreditCard, Building2, HelpCircle, Share2, Printer
+  Globe, CreditCard, Building2, HelpCircle, Share2, Printer,
+  BookOpen, FileCheck, Award, Plane, Users, Check
 } from "lucide-react";
 import {
   ConsularMission,
@@ -19,6 +20,21 @@ import {
   CONSULAR_OUTREACH_CAMPS,
   matchConsularQuery
 } from "../data/embassyData";
+
+// Icon mapping helper
+const SERVICE_ICONS: Record<string, any> = {
+  BookOpen: BookOpen,
+  FileCheck: FileCheck,
+  Award: Award,
+  ShieldCheck: ShieldCheck,
+  Globe: Globe,
+  CreditCard: CreditCard,
+  FileText: FileText,
+  Landmark: Landmark,
+  Plane: Plane,
+  Heart: Heart,
+  Calendar: Calendar
+};
 
 // ─── BariKoi API Key & Loader ───────────────────────────────────────────────
 const BARIKOI_API_KEY =
@@ -82,7 +98,7 @@ async function fetchRealRoadRoute(startLat: number, startLng: number, endLat: nu
   };
 }
 
-// ─── Interactive Consular Mission Map Component (Housing/Jobs Format) ───────
+// ─── Interactive Consular Mission Map Component (Home/Housing Format) ───────
 function BariKoiMissionMap({
   userCoords,
   missions,
@@ -105,8 +121,6 @@ function BariKoiMissionMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
-  const userMarkerRef = useRef<any>(null);
-  const routeLineRef = useRef<any>(null);
   const LRef = useRef<any>(null);
 
   const [markerClickedMission, setMarkerClickedMission] = useState<ConsularMission | null>(null);
@@ -156,13 +170,11 @@ function BariKoiMissionMap({
     const L = LRef.current;
     const bkoigl = (window as any).bkoigl;
 
-    // Clear old markers
     markersRef.current.forEach(m => {
       if (m.remove) m.remove();
     });
     markersRef.current = [];
 
-    // Add Mission Pins
     missions.forEach(mission => {
       const isSelected = selectedMission?.id === mission.id;
       const html = createMissionMarkerHtml(mission, isSelected);
@@ -293,11 +305,8 @@ function BariKoiMissionMap({
         const coords = routeData.coordinates;
 
         if (L && map.addLayer) {
-          if (routeLineRef.current) {
-            try { routeLineRef.current.remove(); } catch (_) {}
-          }
           const latLngs = coords.map(([lng, lat]) => [lat, lng]);
-          routeLineRef.current = L.polyline(latLngs, {
+          const poly = L.polyline(latLngs, {
             color: "#047857",
             weight: 5,
             opacity: 0.9,
@@ -357,23 +366,12 @@ function BariKoiMissionMap({
       };
     } else {
       setRouteInfo(null);
-      if (routeLineRef.current) {
-        try { routeLineRef.current.remove(); } catch (_) {}
-        routeLineRef.current = null;
-      }
-      if (map.getSource && map.getSource("mission-route")) {
-        try {
-          map.getSource("mission-route").setData({
-            type: "FeatureCollection",
-            features: []
-          });
-        } catch (_) {}
-      }
     }
   }, [directionMission, userCoords, travelMode]);
 
   return (
     <div className="w-full flex flex-col bg-white overflow-hidden transition-all duration-300">
+      {/* ── MAP CONTAINER (Home Map Compact Height: h-[230px] sm:h-[250px]) ── */}
       <div
         className={`relative w-full transition-[height] duration-300 ease-in-out ${
           directionMission
@@ -474,7 +472,7 @@ function BariKoiMissionMap({
         </div>
       </div>
 
-      {/* ── ROUTE NAVIGATION CARD (Housing/Jobs Standard) ── */}
+      {/* ── ROUTE NAVIGATION CARD ── */}
       {directionMission && (
         <div className="w-full bg-[#FAFAFA] border-t border-slate-200/90 px-3 py-3 sm:px-4 sm:py-3.5 transition-all duration-300">
           {isNavCardMinimized ? (
@@ -616,7 +614,7 @@ function BariKoiMissionMap({
   );
 }
 
-// ─── Modal Details Component for Consular Services ──────────────────────────
+// ─── Modal Details Component for Consular Services (Clean, Less-Noise & Simple) ──
 function ConsularServiceModal({
   service,
   onClose
@@ -624,152 +622,81 @@ function ConsularServiceModal({
   service: ConsularService;
   onClose: () => void;
 }) {
-  const [checkedItems, setCheckedItems] = useState<number[]>([]);
-
-  const toggleCheck = (idx: number) => {
-    setCheckedItems(prev =>
-      prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
-    );
-  };
-
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div
-        className="relative w-full max-w-2xl max-h-[90vh] bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-lg bg-white rounded-3xl shadow-xl border border-slate-200/90 overflow-hidden flex flex-col animate-in zoom-in-95 duration-150"
         onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-200 bg-gradient-to-r from-emerald-800 to-emerald-950 text-white flex items-start justify-between gap-3">
-          <div>
-            <div className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-700/80 text-emerald-200 text-xs font-bold mb-1.5 border border-emerald-600/50">
-              {service.badge}
-            </div>
-            <h2 className="text-lg sm:text-xl font-bold leading-snug">{service.title}</h2>
-            <p className="text-xs sm:text-sm text-emerald-200/90 font-medium mt-0.5">{service.banglaTitle}</p>
+        {/* Clean Header */}
+        <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 leading-tight truncate">
+              {service.shortName}
+            </h2>
+            <p className="text-xs text-slate-500 font-medium mt-0.5 truncate">
+              {service.title}
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition cursor-pointer flex-shrink-0"
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer flex-shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-5 custom-scrollbar">
-          {/* Quick Info Box */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-              <div className="text-[11px] font-semibold text-slate-500">Regular Processing</div>
-              <div className="text-xs sm:text-sm font-bold text-slate-900 mt-0.5">{service.processingTimeRegular}</div>
-            </div>
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-              <div className="text-[11px] font-semibold text-slate-500">Govt Fee</div>
-              <div className="text-xs sm:text-sm font-bold text-emerald-700 mt-0.5">{service.feeRegular}</div>
-            </div>
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 col-span-2 sm:col-span-1">
-              <div className="text-[11px] font-semibold text-slate-500">Submission Mode</div>
-              <div className="text-xs sm:text-sm font-bold text-slate-900 mt-0.5">{service.submissionMode}</div>
-            </div>
-          </div>
-
-          {/* Summary */}
-          <div>
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Overview</h3>
-            <p className="text-sm text-slate-700 leading-relaxed bg-emerald-50/50 p-3.5 rounded-2xl border border-emerald-100/60">
-              {service.summary}
-            </p>
-          </div>
-
-          {/* Important Alert */}
-          {service.importantNotice && (
-            <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-2.5">
-              <AlertTriangle className="w-4.5 h-4.5 text-amber-700 flex-shrink-0 mt-0.5" />
-              <div className="text-xs text-amber-900 leading-relaxed">
-                <span className="font-bold">Important Notice: </span>
-                {service.importantNotice}
+        {/* Clean Body */}
+        <div className="p-4 sm:p-5 space-y-4">
+          {/* 3 Key Stats */}
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="bg-slate-50 rounded-2xl p-2.5 sm:p-3 border border-slate-100">
+              <div className="text-[11px] font-medium text-slate-500">Fee</div>
+              <div className="text-xs sm:text-sm font-bold text-slate-900 mt-0.5 truncate">
+                {service.feeRegular.split("|")[0].trim()}
               </div>
             </div>
-          )}
 
-          {/* Interactive Document Checklist */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                Required Documents Checklist ({checkedItems.length}/{service.requiredDocuments.length})
-              </h3>
-              <span className="text-xs text-emerald-700 font-semibold">Check items as you prepare</span>
+            <div className="bg-slate-50 rounded-2xl p-2.5 sm:p-3 border border-slate-100">
+              <div className="text-[11px] font-medium text-slate-500">Processing</div>
+              <div className="text-xs sm:text-sm font-bold text-slate-900 mt-0.5 truncate">
+                {service.processingTimeRegular}
+              </div>
             </div>
-            <div className="space-y-2">
-              {service.requiredDocuments.map((doc, idx) => {
-                const isChecked = checkedItems.includes(idx);
-                return (
-                  <div
-                    key={idx}
-                    onClick={() => toggleCheck(idx)}
-                    className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 ${
-                      isChecked
-                        ? "bg-emerald-50/70 border-emerald-300 text-emerald-900"
-                        : "bg-slate-50/60 hover:bg-slate-100/60 border-slate-200 text-slate-800"
-                    }`}
-                  >
-                    <div className={`w-5 h-5 rounded-lg border flex items-center justify-center flex-shrink-0 mt-0.5 transition ${
-                      isChecked ? "bg-emerald-600 border-emerald-600 text-white" : "border-slate-300 bg-white"
-                    }`}>
-                      {isChecked && <CheckCircle2 className="w-3.5 h-3.5" />}
-                    </div>
-                    <span className="text-xs sm:text-sm font-medium leading-snug">{doc}</span>
-                  </div>
-                );
-              })}
+
+            <div className="bg-slate-50 rounded-2xl p-2.5 sm:p-3 border border-slate-100">
+              <div className="text-[11px] font-medium text-slate-500">Submission</div>
+              <div className="text-xs sm:text-sm font-bold text-slate-900 mt-0.5 truncate">
+                {service.submissionMode.includes("In-Person (Biometrics)") ? "In-Person" : "Mail / In-Person"}
+              </div>
             </div>
           </div>
 
-          {/* Step by step procedure */}
-          <div>
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Step-by-Step Procedure</h3>
-            <div className="space-y-2.5">
-              {service.stepByStepProcess.map((step, idx) => (
-                <div key={idx} className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                  <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
-                    {idx + 1}
-                  </div>
-                  <div className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
-                    {step}
-                  </div>
+          {/* Essential Required Documents */}
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-slate-700">Required Documents</div>
+            <div className="space-y-1.5">
+              {service.requiredDocuments.slice(0, 4).map((doc, idx) => (
+                <div key={idx} className="flex items-start gap-2 text-xs text-slate-600 leading-snug">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 flex-shrink-0 mt-1.5" />
+                  <span>{doc}</span>
                 </div>
               ))}
             </div>
           </div>
-
-          {/* Payment Method */}
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center gap-2.5 text-xs text-slate-700">
-            <CreditCard className="w-4 h-4 text-slate-500 flex-shrink-0" />
-            <span><strong className="text-slate-900">Payment: </strong>{service.paymentMethod}</span>
-          </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="p-4 sm:p-5 border-t border-slate-200 bg-slate-50 flex items-center justify-between gap-3">
-          <button
-            onClick={() => window.print()}
-            className="px-4 py-2 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+        {/* Footer: Single Prominent Govt Portal Button */}
+        <div className="p-4 sm:p-5 border-t border-slate-100 bg-slate-50/60">
+          <a
+            href={service.onlinePortalUrl || "https://bdembassyusa.org"}
+            target="_blank"
+            rel="noreferrer"
+            className="w-full py-2.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-1.5 shadow-2xs active:scale-[0.99]"
           >
-            <Printer className="w-3.5 h-3.5" />
-            <span>Print Checklist</span>
-          </button>
-
-          {service.onlinePortalUrl && (
-            <a
-              href={service.onlinePortalUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="px-4 py-2 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
-            >
-              <span>Go to Official Govt Portal</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-          )}
+            <span>Go to Official Govt Portal</span>
+            <ExternalLink className="w-4 h-4" />
+          </a>
         </div>
       </div>
     </div>
@@ -780,7 +707,6 @@ function ConsularServiceModal({
 export function Embassy() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<string>("all");
   const [selectedMission, setSelectedMission] = useState<ConsularMission | null>(null);
   const [directionMission, setDirectionMission] = useState<ConsularMission | null>(null);
   const [activeServiceModal, setActiveServiceModal] = useState<ConsularService | null>(null);
@@ -810,15 +736,9 @@ export function Embassy() {
       if (searchQuery.trim() && !matchConsularQuery(service, searchQuery)) {
         return false;
       }
-      if (activeFilter === "passport" && service.category !== "passport") return false;
-      if (activeFilter === "nvr" && service.category !== "nvr") return false;
-      if (activeFilter === "poa" && service.category !== "poa") return false;
-      if (activeFilter === "nid" && service.category !== "nid") return false;
-      if (activeFilter === "travel_pass" && service.category !== "travel_pass") return false;
-      if (activeFilter === "emergency" && service.category !== "emergency") return false;
       return true;
     });
-  }, [searchQuery, activeFilter]);
+  }, [searchQuery]);
 
   const handleShowDirection = (mission: ConsularMission) => {
     setDirectionMission(mission);
@@ -829,20 +749,10 @@ export function Embassy() {
     }
   };
 
-  const filterTabs = [
-    { id: "all", label: "All Consular Services" },
-    { id: "passport", label: "E-Passport & Renewal" },
-    { id: "nvr", label: "No Visa Required (NVR)" },
-    { id: "poa", label: "Power of Attorney" },
-    { id: "nid", label: "Smart NID & Birth Cert" },
-    { id: "travel_pass", label: "Travel Permit" },
-    { id: "emergency", label: "Emergency & Repatriation" }
-  ];
-
   return (
     <AppLayout>
       <div className="min-h-screen bg-[#FDFBF9] pb-16">
-        {/* ── TOP STICKY BAR: Search Consular Services & Filter Pills ───────── */}
+        {/* ── TOP STICKY BAR: Clean Search Only (Filters Removed) ───────────── */}
         <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 sm:px-6 shadow-2xs">
           <div className="max-w-7xl mx-auto flex items-center gap-3">
             <button
@@ -860,7 +770,7 @@ export function Embassy() {
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="search passport, NVR, power of attorney, consular camps, fees..."
+                placeholder="search passport, visa, NVR, power of attorney, NID, camps, fees..."
                 className="w-full pl-10 pr-9 py-2.5 bg-slate-50 hover:bg-white focus:bg-white rounded-xl border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 shadow-2xs transition"
               />
               {searchQuery && (
@@ -873,28 +783,11 @@ export function Embassy() {
               )}
             </div>
           </div>
-
-          {/* Filter Pills */}
-          <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar pt-2.5 pb-0.5">
-            {filterTabs.map(f => (
-              <button
-                key={f.id}
-                onClick={() => setActiveFilter(f.id)}
-                className={`px-3.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
-                  activeFilter === f.id
-                    ? "bg-emerald-800 text-white shadow-xs font-semibold"
-                    : "bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200/60"
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
         </div>
 
-        {/* ── BARIKOI LIVE MAP (EXPANDED / COMPACT STICKY HEIGHT) ────── */}
+        {/* ── BARIKOI LIVE MAP (EXPANDED / COMPACT HOME MAP SIZE: h-[230px] sm:h-[250px]) ── */}
         <div id="embassy-map-section" className={`w-full max-w-7xl mx-auto px-1 sm:px-2 pt-1 sm:pt-2 transition-all duration-300 ${
-          isScrolled ? "sticky top-[95px] sm:top-[100px] z-10" : ""
+          isScrolled ? "sticky top-[60px] z-10" : ""
         }`}>
           <div className="rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm bg-white">
             <BariKoiMissionMap
@@ -913,218 +806,23 @@ export function Embassy() {
           </div>
         </div>
 
-        {/* ── MAIN DIRECTORY CONTENT (2-COLUMN ON DESKTOP) ──────────────────── */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-2.5 sm:pt-3">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            
-            {/* ── LEFT COLUMN: Fast-Track Services & Full Feed (7 cols) ───── */}
-            <div className="lg:col-span-7 space-y-4">
-              {/* Mission Counters */}
-              <div className="flex items-center gap-2">
-                <div
-                  onClick={() => {
-                    const mission = BD_DIPLOMATIC_MISSIONS[0];
-                    setSelectedMission(mission);
-                    handleShowDirection(mission);
-                  }}
-                  className="flex-1 py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border text-center transition-all cursor-pointer bg-emerald-50/60 border-emerald-700/40 ring-1 ring-emerald-700/20 shadow-xs"
-                >
-                  <div className="text-xs sm:text-sm font-normal text-emerald-950 leading-tight">
-                    {BD_DIPLOMATIC_MISSIONS.length} Official Missions in USA
-                  </div>
-                </div>
+        {/* ── MAIN DIRECTORY CONTENT: Clean Minimalist List of Consular Services ── */}
+        <div className="w-full max-w-7xl mx-auto px-1 sm:px-2 pt-1.5 sm:pt-2">
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden divide-y divide-slate-100">
+            {filteredServices.map(service => (
+              <button
+                key={service.id}
+                onClick={() => setActiveServiceModal(service)}
+                className="group w-full flex items-center justify-between px-4 py-3.5 sm:px-5 sm:py-4 hover:bg-slate-50 transition-all text-left cursor-pointer active:scale-[0.99]"
+                title={service.title}
+              >
+                <span className="text-sm sm:text-base font-medium text-slate-900 group-hover:text-emerald-900 transition-colors">
+                  {service.shortName}
+                </span>
 
-                <div
-                  onClick={() => setActiveFilter("all")}
-                  className="flex-1 py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border text-center transition-all cursor-pointer bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs"
-                >
-                  <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
-                    {CONSULAR_SERVICES_DATA.length} Consular Services
-                  </div>
-                </div>
-              </div>
-
-              {/* Fast-Track Emergency Banner */}
-              <div className="p-4 rounded-3xl bg-gradient-to-r from-emerald-900 via-emerald-800 to-slate-900 text-white shadow-md border border-emerald-700/40">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                      <Landmark className="w-5 h-5 text-amber-300" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm sm:text-base font-bold">Consular Services for Expatriates</h3>
-                      <p className="text-xs text-emerald-200/90 font-medium mt-0.5">
-                        E-Passport, NVR, Smart NID, Power of Attorney & Travel Permits
-                      </p>
-                    </div>
-                  </div>
-                  <a
-                    href="https://www.epassport.gov.bd"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-emerald-950 font-bold text-xs transition flex items-center gap-1 shadow-xs flex-shrink-0"
-                  >
-                    <span>Apply Online</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-              </div>
-
-              {/* Consular Services Cards Feed */}
-              <div className="space-y-4">
-                {filteredServices.map(service => {
-                  const isSaved = savedServiceIds.includes(service.id);
-
-                  return (
-                    <div
-                      key={service.id}
-                      onClick={() => setActiveServiceModal(service)}
-                      className="group bg-white rounded-3xl border border-slate-200/90 hover:border-emerald-600/40 hover:shadow-sm overflow-hidden transition-all duration-200 cursor-pointer p-4 sm:p-5"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
-                              {service.badge}
-                            </span>
-                            <span className="text-xs text-slate-400 font-medium">
-                              {service.submissionMode}
-                            </span>
-                          </div>
-
-                          <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug group-hover:text-emerald-800 transition-colors">
-                            {service.title}
-                          </h3>
-                          <p className="text-xs sm:text-sm text-emerald-800/80 font-medium mt-0.5">
-                            {service.banglaTitle}
-                          </p>
-
-                          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mt-2 line-clamp-2">
-                            {service.summary}
-                          </p>
-                        </div>
-
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            toggleSave(service.id);
-                          }}
-                          className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-emerald-700 flex items-center justify-center transition cursor-pointer flex-shrink-0"
-                          title={isSaved ? "Saved" : "Save Guide"}
-                        >
-                          {isSaved ? (
-                            <BookmarkCheck className="w-4 h-4 text-emerald-700" />
-                          ) : (
-                            <Bookmark className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
-
-                      {/* Specs Row */}
-                      <div className="mt-3.5 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
-                        <div className="flex items-center gap-3 text-slate-600 font-medium">
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5 text-emerald-700" />
-                            <span>{service.processingTimeRegular}</span>
-                          </span>
-                          <span className="flex items-center gap-1 font-bold text-emerald-800">
-                            <CreditCard className="w-3.5 h-3.5" />
-                            <span>{service.feeRegular}</span>
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              setActiveServiceModal(service);
-                            }}
-                            className="px-3.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold transition flex items-center gap-1"
-                          >
-                            <span>Checklist & Guide</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* ── RIGHT COLUMN: Emergency Hotline, Camps & Key Rules (5 cols) ── */}
-            <div className="lg:col-span-5 space-y-4">
-              {/* 24/7 Citizen Emergency Hotline Card */}
-              <div className="bg-rose-50 border border-rose-200 rounded-3xl p-4 sm:p-5 shadow-2xs">
-                <div className="flex items-center gap-2.5 mb-2">
-                  <div className="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center">
-                    <Phone className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm sm:text-base font-bold text-rose-950">24/7 Consular Emergency Hotlines</h3>
-                    <p className="text-xs text-rose-700 font-medium">For accident, distress, detention & repatriation</p>
-                  </div>
-                </div>
-
-                <div className="space-y-2 mt-3 text-xs">
-                  <div className="p-2.5 rounded-2xl bg-white border border-rose-100 flex items-center justify-between">
-                    <span className="font-semibold text-slate-800">Embassy Washington DC</span>
-                    <a href="tel:+12027406305" className="font-bold text-rose-700 hover:underline">+1 (202) 740-6305</a>
-                  </div>
-                  <div className="p-2.5 rounded-2xl bg-white border border-rose-100 flex items-center justify-between">
-                    <span className="font-semibold text-slate-800">Consulate General NY</span>
-                    <a href="tel:+16466457242" className="font-bold text-rose-700 hover:underline">+1 (646) 645-7242</a>
-                  </div>
-                  <div className="p-2.5 rounded-2xl bg-white border border-rose-100 flex items-center justify-between">
-                    <span className="font-semibold text-slate-800">Consulate General LA</span>
-                    <a href="tel:+12134484333" className="font-bold text-rose-700 hover:underline">+1 (213) 448-4333</a>
-                  </div>
-                  <div className="p-2.5 rounded-2xl bg-white border border-rose-100 flex items-center justify-between">
-                    <span className="font-semibold text-slate-800">Consulate General Miami</span>
-                    <a href="tel:+17866608433" className="font-bold text-rose-700 hover:underline">+1 (786) 660-8433</a>
-                  </div>
-                </div>
-              </div>
-
-              {/* Outreach Consular Camps Schedule */}
-              <div className="bg-white border border-slate-200/90 rounded-3xl p-4 sm:p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900">Mobile Consular Camps</h3>
-                    <p className="text-xs text-slate-500 font-medium">Upcoming outreach missions near you</p>
-                  </div>
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
-                    Schedule 2026
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  {CONSULAR_OUTREACH_CAMPS.map(camp => (
-                    <div key={camp.id} className="p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-1 text-xs">
-                      <div className="flex items-center justify-between font-bold text-slate-900">
-                        <span>{camp.city}, {camp.state}</span>
-                        <span className="text-emerald-700">{camp.date}</span>
-                      </div>
-                      <div className="text-slate-600 font-medium">{camp.venue}</div>
-                      <div className="text-[11px] text-slate-500">{camp.servicesProvided.join(" • ")}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Money Order & Mailing Rules */}
-              <div className="bg-amber-50/70 border border-amber-200 rounded-3xl p-4 sm:p-5 space-y-2 text-xs text-amber-950">
-                <div className="flex items-center gap-2 font-bold text-sm text-amber-900">
-                  <AlertTriangle className="w-4 h-4 text-amber-700" />
-                  <span>Official Fee & Mail-In Rules</span>
-                </div>
-                <ul className="space-y-1.5 list-disc list-inside leading-relaxed text-amber-900/90">
-                  <li><strong>Payment:</strong> Strictly by <em>Money Order</em> or <em>Bank Cashier's Check</em>. Cash or personal checks are NOT accepted.</li>
-                  <li><strong>Payee Name:</strong> Payable to <em>"Embassy of Bangladesh"</em> or <em>"Consulate General of Bangladesh"</em>.</li>
-                  <li><strong>Return Envelope:</strong> Must enclose a self-addressed, prepaid <em>USPS Priority Mail</em> or <em>Express Flat Rate Envelope</em> with tracking.</li>
-                </ul>
-              </div>
-            </div>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-700 transition-colors flex-shrink-0" />
+              </button>
+            ))}
           </div>
         </div>
 

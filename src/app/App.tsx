@@ -90,6 +90,7 @@ export default function App() {
         <Route path="/services/schools" element={<SchoolFinder />} />
         <Route path="/services/hospitals" element={<HospitalFinder />} />
         <Route path="/services/religious" element={<ReligiousFinder />} />
+        <Route path="/services/religion" element={<ReligiousFinder />} />
         <Route path="/services/food" element={<RestaurantGroceryFinder />} />
         <Route path="/services/:serviceId" element={<ServiceDetail />} />
 

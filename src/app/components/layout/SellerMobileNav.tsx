@@ -28,7 +28,7 @@ export function SellerMobileNav({ activeTab = "overview", onTabChange }: SellerM
   };
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 text-slate-900 safe-area-pb shadow-lg">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-slate-200 text-slate-900 safe-area-pb shadow-lg">
       <div className="flex items-center justify-around px-1 py-1.5">
         {sellerItems.map(item => {
           const Icon = item.icon;

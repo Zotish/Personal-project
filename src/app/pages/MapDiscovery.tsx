@@ -1704,18 +1704,6 @@ export function MapDiscoveryContent({
           className="relative w-full h-full cursor-pointer group"
           title="Click to open Full Interactive Map"
         >
-          {/* Top-Right Floating Full Map Expand Button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleCompactMapClick();
-            }}
-            className="absolute top-2.5 right-2.5 z-[990] w-8 h-8 rounded-full bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 hover:text-[#8C3015] border border-slate-200/90 shadow-md transition flex items-center justify-center cursor-pointer active:scale-95"
-            title="Open Full Map"
-          >
-            <Maximize2 className="w-4 h-4 text-[#C04A22]" />
-          </button>
-
           {/* Interactive Map */}
           <div ref={mapContainerRef} className="relative w-full h-full pointer-events-auto">
             <LeafletMap
@@ -1764,7 +1752,7 @@ export function MapDiscoveryContent({
                   }
                 }
               }}
-              className={`absolute bottom-2.5 right-2.5 z-[990] w-7.5 h-7.5 rounded-full flex items-center justify-center shadow-md transition cursor-pointer border ${
+              className={`absolute bottom-2.5 right-2.5 z-10 w-7.5 h-7.5 rounded-full flex items-center justify-center shadow-md transition cursor-pointer border ${
                 isGPSActive ? "bg-[#C04A22] text-white border-[#C04A22]" : "bg-white/95 backdrop-blur-md text-slate-700 hover:text-[#C04A22] border-slate-200/90"
               }`}
               title={isGPSActive ? "GPS Active" : "Find My Location"}

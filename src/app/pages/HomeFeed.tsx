@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Fragment, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import { Logo } from "../components/ui/Logo";
@@ -1063,18 +1064,7 @@ function CommunityBanner() {
   );
 }
 
-function LocalBanner() {
-  return (
-    <div className="bg-slate-50 rounded-2xl border border-slate-200 p-3 sm:p-4 flex items-center gap-3 mb-1 group cursor-pointer">
-      <MapPin className="w-7 h-7 sm:w-8 sm:h-8 text-slate-600 group-hover:text-[#8C3015] transition-colors flex-shrink-0" />
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-semibold text-slate-900">Posts near you</div>
-        <div className="text-xs text-slate-600">📍 Showing posts from Queens, Brooklyn & NYC area</div>
-      </div>
-      <button className="text-xs text-slate-600 font-medium hover:underline flex-shrink-0">Change</button>
-    </div>
-  );
-}
+
 
 // ─── Right Panel ──────────────────────────────────────────────────────────────
 
@@ -1259,11 +1249,12 @@ function QuickAccessBox({ navigate, variant = "mobile" }: { navigate: (p: string
   const trigger = variant === "desktop" ? (
     <button
       onClick={() => setOpen(v => !v)}
-      className={`w-full h-full flex-1 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 px-3 text-xs font-medium transition-all group ${
+      className={`w-full h-full flex-1 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 px-3 text-xs font-medium transition-all group cursor-pointer ${
         open ? "text-[#8C3015] border-b-2 border-[#C04A22] font-bold" : "text-slate-600 hover:text-[#8C3015] hover:bg-slate-50"
       }`}
+      title="MyBox"
     >
-      <LayoutGrid className={`w-4 h-4 sm:w-3.5 sm:h-3.5 transition-colors ${open ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
+      <Box className={`w-5 h-5 sm:w-3.5 sm:h-3.5 flex-shrink-0 transition-colors ${open ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
       <span className="hidden sm:block">MyBox</span>
     </button>
   ) : (
@@ -1283,16 +1274,16 @@ function QuickAccessBox({ navigate, variant = "mobile" }: { navigate: (p: string
       {trigger}
 
 
-      {open && (
+      {open && typeof document !== "undefined" && createPortal(
         <>
-          {/* Backdrop */}
-          <div className="fixed inset-0 z-40 bg-black/25 sm:bg-transparent backdrop-blur-2xs sm:backdrop-blur-none" onClick={() => setOpen(false)} />
+          {/* Fully Transparent Backdrop - No dark background shadows */}
           <div
-            className={`z-50 bg-white rounded-3xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 slide-in-from-top-3 fade-in duration-200 ${
-              variant === "mobile"
-                ? "fixed left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-[min(360px,calc(100vw-2rem))] max-w-sm"
-                : "absolute left-1/2 -translate-x-1/2 top-full sm:mt-2 w-[340px]"
-            }`}
+            className="fixed inset-0 z-[99998] bg-transparent"
+            onClick={() => setOpen(false)}
+          />
+          {/* Dropdown right beneath MyBox top bar button */}
+          <div
+            className="z-[99999] bg-white rounded-3xl shadow-2xl border border-border overflow-hidden animate-in slide-in-from-top-2 fade-in duration-150 fixed left-1/2 -translate-x-1/2 top-[102px] sm:top-[110px] lg:top-[56px] w-[min(350px,calc(100vw-1.5rem))] max-w-sm"
           >
 
             {/* Header */}
@@ -1445,7 +1436,8 @@ function QuickAccessBox({ navigate, variant = "mobile" }: { navigate: (p: string
               </div>
             )}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
@@ -1515,11 +1507,11 @@ export function HomeFeed() {
         {/* Sticky tabs bar */}
         {!selectedDate && (
           <div className="sticky top-0 lg:top-0 z-20 bg-white/90 backdrop-blur-md border-b border-border">
-            <div className="grid grid-cols-3 sm:grid-cols-4 w-full items-stretch">
+            <div className="grid grid-cols-4 w-full items-stretch">
               {/* 1. For You */}
               <button
                 onClick={() => setActiveTab("for-you")}
-                className={`w-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 text-xs font-medium transition-all group ${
+                className={`w-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 text-xs font-medium transition-all group cursor-pointer ${
                   activeTab === "for-you"
                     ? "text-[#8C3015] font-bold border-b-2 border-[#C04A22]"
                     : "text-slate-600 hover:text-[#8C3015] hover:bg-slate-50"
@@ -1529,8 +1521,8 @@ export function HomeFeed() {
                 <span className="hidden sm:inline truncate">{t("tab_foryou")}</span>
               </button>
 
-              {/* 2. MyBox (Desktop Only) */}
-              <div className="hidden sm:flex w-full items-stretch">
+              {/* 2. MyBox (Evenly spaced on the right side of For You) */}
+              <div className="flex w-full items-stretch">
                 <QuickAccessBox navigate={navigate} variant="desktop" />
               </div>
 
@@ -1640,12 +1632,8 @@ export function HomeFeed() {
                   <Calendar className="w-5 h-5 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
                 </button>
 
-                {/* Center Split Box: Left = MyBox, Right = Post Box Action Button */}
-                <div className="flex-1 mx-2 grid grid-cols-2 gap-2">
-                  {/* Left: Quick Access MyBox */}
-                  <QuickAccessBox navigate={navigate} />
-
-                  {/* Right: Post Box Action Button (Toggles dynamic Post Box inline - styled like left box) */}
+                {/* Center: Post Box Action Button */}
+                <div className="flex-1 mx-2">
                   <button
                     onClick={() => {
                       setIsPostBoxOpen(v => !v);
@@ -1679,7 +1667,6 @@ export function HomeFeed() {
                       </>
                     )}
                   </button>
-
                 </div>
 
                 {/* Weather icon button */}
@@ -1730,15 +1717,8 @@ export function HomeFeed() {
 
               {/* Tab-specific banner */}
               {activeTab === "community" && <CommunityBanner />}
-              {activeTab === "local" && <LocalBanner />}
 
-              {/* Following: show "suggested people" strip before posts */}
-              {activeTab === "following" && (
-                <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3 flex items-center gap-3">
-                  <TrendingUp className="w-5 h-5 text-slate-600 flex-shrink-0" />
-                  <p className="text-xs text-muted-foreground font-medium">{t("following_banner")}</p>
-                </div>
-              )}
+
 
               {/* Local: location note */}
               {activeTab === "local" && feedContent.length === 0 && (
