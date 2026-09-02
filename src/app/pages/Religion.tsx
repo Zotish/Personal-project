@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
+import { buildMapShareUrl, shareOrCopy } from "../utils/shareUtils";
 import {
   Search, MapPin, Navigation, Bookmark, BookmarkCheck, Share2,
   Building, ExternalLink, Sparkles, Filter, ChevronRight,
@@ -1070,17 +1071,27 @@ export function ReligiousFinder() {
                       </div>
                       <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
                         <button
-                          onClick={e => {
+                          onClick={async (e) => {
                             e.stopPropagation();
-                            const url = `${window.location.origin}/services/religion?id=${place.id}`;
-                            if (typeof navigator !== "undefined" && navigator.share) {
-                              navigator.share({ title: place.name, text: `Check out ${place.name} on Pathasathi!`, url }).catch(() => {});
-                            } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-                              navigator.clipboard.writeText(url);
-                            }
+                            const url = buildMapShareUrl({
+                              id: place.id,
+                              name: place.name,
+                              lat: place.lat,
+                              lng: place.lng,
+                              category: `${place.emoji} ${place.type}`,
+                              address: place.address,
+                              image: (place as any).image,
+                              phone: place.phone,
+                              description: `${place.name} (${place.type}) in ${place.city}`,
+                            });
+                            await shareOrCopy({
+                              title: place.name,
+                              text: `Check out ${place.name} on Pathasathi Map!`,
+                              url,
+                            });
                           }}
                           className="w-8 h-8 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-500 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
-                          title="Share Link"
+                          title="Share on Map"
                         >
                           <Share2 className="w-3.5 h-3.5" />
                         </button>

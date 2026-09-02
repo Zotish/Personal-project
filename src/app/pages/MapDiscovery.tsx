@@ -12,6 +12,8 @@ import {
 
 import { LiveJobListing, generateLiveLocationJobs, isJobQuery } from "../data/jobsData";
 import { JobDetailsModal } from "../components/jobs/JobDetailsModal";
+import { useMobileTabs } from "../context/MobileTabContext";
+import { buildMapShareUrl, shareOrCopy } from "../utils/shareUtils";
 import type { Map as LeafletMapType } from "leaflet";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -574,18 +576,23 @@ function LeafletMap({
   const navPuckRef = useRef<any>(null);
   const LRef = useRef<any>(null);
 
-  // Booking.com style round icon bubble marker (No name text)
+  // Booking.com style round icon bubble marker with Google Maps pulse ring for active place
   function makeMarkerHtml(place: Place, active: boolean) {
     const isJob = place.isJob && place.jobData;
     const color = isJob ? "#C04A22" : (categoryColors[place.category] ?? "#2563eb");
     const iconSymbol = isJob ? (place.jobData?.logo || "💼") : (categoryIcons[place.category] || place.category.split(" ")[0] || "📍");
-    const size = active ? 42 : 34;
+    const size = active ? 44 : 34;
 
-    return `<div style="position:relative;display:inline-flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.2s ease;">
-      <div style="background:${active ? '#1e293b' : color};color:white;width:${size}px;height:${size}px;border-radius:50%;border:${active ? '3px' : '2px'} solid white;box-shadow:${active ? '0 10px 25px rgba(0,0,0,0.5), 0 0 0 3px rgba(192,74,34,0.4)' : '0 4px 14px rgba(0,0,0,0.25)'};display:flex;align-items:center;justify-content:center;transform:${active ? 'scale(1.15)' : 'scale(1)'};">
-        <span style="font-size:${active ? '18px' : '15px'};line-height:1;">${iconSymbol}</span>
+    const pulseRing = active
+      ? `<div style="position:absolute;bottom:-6px;width:34px;height:14px;border-radius:50%;background:rgba(216,90,48,0.45);animation:ping 1.5s cubic-bezier(0,0,0.2,1) infinite;z-index:-1;"></div>`
+      : "";
+
+    return `<div style="position:relative;display:inline-flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.25s ease;">
+      ${pulseRing}
+      <div style="background:${active ? '#C04A22' : color};color:white;width:${size}px;height:${size}px;border-radius:50%;border:${active ? '3px' : '2px'} solid white;box-shadow:${active ? '0 12px 28px rgba(192,74,34,0.6), 0 0 0 4px rgba(255,255,255,0.85)' : '0 4px 14px rgba(0,0,0,0.25)'};display:flex;align-items:center;justify-content:center;transform:${active ? 'scale(1.2)' : 'scale(1)'};">
+        <span style="font-size:${active ? '20px' : '15px'};line-height:1;">${iconSymbol}</span>
       </div>
-      <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid ${active ? '#1e293b' : color};margin-top:-1px;"></div>
+      <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid ${active ? '#C04A22' : color};margin-top:-1px;"></div>
     </div>`;
   }
 
@@ -1505,13 +1512,15 @@ function MapPlaceCard({
   const color = categoryColors[place.category] ?? "#6366f1";
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
-  const handleShare = (e: React.MouseEvent) => {
+  const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/map?placeId=${place.id}&lat=${place.lat}&lng=${place.lng}`;
-    if (typeof navigator !== "undefined" && navigator.share) {
-      navigator.share({ title: place.name, text: `Check out ${place.name} on Pathasathi!`, url }).catch(() => {});
-    } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(url);
+    const url = buildMapShareUrl(place);
+    const result = await shareOrCopy({
+      title: place.name,
+      text: `Check out ${place.name} on Pathasathi Map!`,
+      url,
+    });
+    if (result === "copied") {
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     }
@@ -1769,13 +1778,9 @@ function PlaceDetail({ place, onClose, onDirections }: { place: Place; onClose: 
           <div className="grid grid-cols-3 gap-2">
             <button className="flex items-center justify-center gap-1 py-2 rounded-xl border border-border text-xs font-medium hover:bg-secondary transition"><Bookmark className="w-3.5 h-3.5" /> Save</button>
             <button
-              onClick={() => {
-                const url = `${window.location.origin}/map?placeId=${place.id}&lat=${place.lat}&lng=${place.lng}`;
-                if (typeof navigator !== "undefined" && navigator.share) {
-                  navigator.share({ title: place.name, url }).catch(() => {});
-                } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-                  navigator.clipboard.writeText(url);
-                }
+              onClick={async () => {
+                const url = buildMapShareUrl(place);
+                await shareOrCopy({ title: place.name, url });
               }}
               className="flex items-center justify-center gap-1 py-2 rounded-xl border border-border text-xs font-medium hover:bg-secondary transition cursor-pointer"
             >
@@ -1802,13 +1807,15 @@ function PlaceCard({
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const handleShare = (e: React.MouseEvent) => {
+  const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/map?placeId=${place.id}&lat=${place.lat}&lng=${place.lng}`;
-    if (typeof navigator !== "undefined" && navigator.share) {
-      navigator.share({ title: place.name, text: `Check out ${place.name} on Pathasathi!`, url }).catch(() => {});
-    } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(url);
+    const url = buildMapShareUrl(place);
+    const result = await shareOrCopy({
+      title: place.name,
+      text: `Check out ${place.name} on Pathasathi Map!`,
+      url,
+    });
+    if (result === "copied") {
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     }
@@ -1977,11 +1984,18 @@ export function MapDiscoveryContent({
   height?: string;
 }) {
   const navigate = useNavigate();
+  const { isRecentsOpen } = useMobileTabs();
   const routerLocation = useLocation();
   const searchParams = useMemo(() => new URLSearchParams(routerLocation.search), [routerLocation.search]);
   const urlPlaceId = searchParams.get("placeId") || searchParams.get("id") || searchParams.get("place");
   const urlLat = searchParams.get("lat");
   const urlLng = searchParams.get("lng");
+  const urlName = searchParams.get("name") || searchParams.get("title");
+  const urlCategory = searchParams.get("category");
+  const urlAddress = searchParams.get("address") || searchParams.get("location");
+  const urlImage = searchParams.get("image");
+  const urlPhone = searchParams.get("phone");
+  const urlDesc = searchParams.get("desc");
 
   const routeState = routerLocation.state as {
     userLocation?: [number, number];
@@ -2143,26 +2157,71 @@ export function MapDiscoveryContent({
     return () => controller.abort();
   }, [query]);
 
-  // All combined places (Standard places + Location-based Jobs + BariKoi autocomplete)
+  // Dynamic shared place created from URL query parameters (Google Maps style)
+  const sharedPlaceFromUrl = useMemo<Place | null>(() => {
+    if (!urlLat || !urlLng) return null;
+    const lat = Number(urlLat);
+    const lng = Number(urlLng);
+    if (isNaN(lat) || isNaN(lng)) return null;
+
+    return {
+      id: urlPlaceId || `shared-${lat.toFixed(4)}-${lng.toFixed(4)}`,
+      name: urlName || "Pinned Location",
+      category: urlCategory || "📍 Pinned Location",
+      lat,
+      lng,
+      address: urlAddress || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+      distance: "0.1 km",
+      rating: 4.9,
+      reviews: 48,
+      open: true,
+      openUntil: "Open",
+      phone: urlPhone || "",
+      languages: ["Bengali", "English"],
+      immigrantFriendly: true,
+      description: urlDesc || (urlAddress ? `Location at ${urlAddress}` : "Shared pinned location on Pathasathi Map."),
+      image: urlImage || "https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=600&q=80",
+    };
+  }, [urlPlaceId, urlLat, urlLng, urlName, urlCategory, urlAddress, urlImage, urlPhone, urlDesc]);
+
+  // All combined places (Standard places + Location-based Jobs + BariKoi autocomplete + Dynamic Shared Place)
   const allPlaces = useMemo(() => {
-    return [...places, ...jobPlaces, ...bkoiPlaces];
-  }, [jobPlaces, bkoiPlaces]);
+    const base = [...places, ...jobPlaces, ...bkoiPlaces];
+    if (sharedPlaceFromUrl) {
+      const filtered = base.filter(p => String(p.id) !== String(sharedPlaceFromUrl.id));
+      return [sharedPlaceFromUrl, ...filtered];
+    }
+    return base;
+  }, [jobPlaces, bkoiPlaces, sharedPlaceFromUrl]);
 
   // Deep-linking from shared link: automatically center, zoom in, and open the active place card
   useEffect(() => {
-    const targetId = urlPlaceId || routeState?.selectedPlaceId;
-    if (!targetId) return;
+    const targetId = urlPlaceId || routeState?.selectedPlaceId || (sharedPlaceFromUrl ? sharedPlaceFromUrl.id : null);
+    if (!targetId && !urlLat && !urlLng) return;
 
-    const target = allPlaces.find(
-      p => String(p.id) === String(targetId) ||
-           String(p.id) === `job-${targetId}` ||
-           (p.isJob && String(p.jobData?.id) === String(targetId))
-    );
+    let target = (sharedPlaceFromUrl && String(sharedPlaceFromUrl.id) === String(targetId))
+      ? sharedPlaceFromUrl
+      : allPlaces.find(
+          p => String(p.id) === String(targetId) ||
+               String(p.id) === `job-${targetId}` ||
+               (p.isJob && String(p.jobData?.id) === String(targetId))
+        );
+
+    if (!target && urlLat && urlLng) {
+      const lat = Number(urlLat);
+      const lng = Number(urlLng);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        target = allPlaces.find(
+          p => Math.abs(p.lat - lat) < 0.0005 && Math.abs(p.lng - lng) < 0.0005
+        ) || sharedPlaceFromUrl || undefined;
+      }
+    }
 
     if (target) {
       setMapActiveId(target.id);
       setActiveCategory("all");
       setUserLocation([target.lat, target.lng]);
+      setViewMode("map");
       if (mapContainerRef.current) {
         const w = mapContainerRef.current.offsetWidth || 800;
         const h = mapContainerRef.current.offsetHeight || 600;
@@ -2170,8 +2229,9 @@ export function MapDiscoveryContent({
       }
     } else if (urlLat && urlLng && !isNaN(Number(urlLat)) && !isNaN(Number(urlLng))) {
       setUserLocation([Number(urlLat), Number(urlLng)]);
+      setViewMode("map");
     }
-  }, [urlPlaceId, urlLat, urlLng, routeState?.selectedPlaceId, allPlaces]);
+  }, [urlPlaceId, urlLat, urlLng, routeState?.selectedPlaceId, allPlaces, sharedPlaceFromUrl]);
 
   // Search filter matching name, category, description, address, languages, job attributes
   const filteredPlaces = useMemo(() => {
@@ -2482,51 +2542,53 @@ export function MapDiscoveryContent({
                   );
                 })()}
 
-                {/* Floating My Location Button */}
-                <button
-                  onClick={() => {
-                    if (isGPSActive) {
-                      setUserLocation(DEFAULT_LOCATION);
-                      setIsGPSActive(false);
-                    } else {
-                      if ("geolocation" in navigator) {
-                        setIsLocating(true);
-                        const getPos = (highAcc: boolean) => {
-                          navigator.geolocation.getCurrentPosition(
-                            pos => {
-                              const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
-                              setUserLocation(loc);
-                              setIsGPSActive(true);
-                              setIsLocating(false);
-                            },
-                            err => {
-                              if (highAcc) {
-                                getPos(false);
-                                return;
-                              }
-                              console.warn("Geolocation error:", err);
-                              setIsLocating(false);
-                            },
-                            { enableHighAccuracy: highAcc, timeout: highAcc ? 6000 : 15000, maximumAge: 60000 }
-                          );
-                        };
-                        getPos(true);
+                {/* Floating My Location Button (hidden when Recent Apps Switcher is open) */}
+                {!isRecentsOpen && (
+                  <button
+                    onClick={() => {
+                      if (isGPSActive) {
+                        setUserLocation(DEFAULT_LOCATION);
+                        setIsGPSActive(false);
+                      } else {
+                        if ("geolocation" in navigator) {
+                          setIsLocating(true);
+                          const getPos = (highAcc: boolean) => {
+                            navigator.geolocation.getCurrentPosition(
+                              pos => {
+                                const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+                                setUserLocation(loc);
+                                setIsGPSActive(true);
+                                setIsLocating(false);
+                              },
+                              err => {
+                                if (highAcc) {
+                                  getPos(false);
+                                  return;
+                                }
+                                console.warn("Geolocation error:", err);
+                                setIsLocating(false);
+                              },
+                              { enableHighAccuracy: highAcc, timeout: highAcc ? 6000 : 15000, maximumAge: 60000 }
+                            );
+                          };
+                          getPos(true);
+                        }
                       }
-                    }
-                  }}
-                  className={`absolute bottom-20 right-4 sm:bottom-6 sm:right-6 z-[999] p-3 sm:p-3.5 rounded-full shadow-lg border transition-all flex items-center justify-center cursor-pointer active:scale-95 ${
-                    isGPSActive
-                      ? "bg-[#D85A30] text-white border-[#D85A30] shadow-[#D85A30]/30"
-                      : "bg-white text-foreground border-border hover:bg-slate-50"
-                  }`}
-                  title={isGPSActive ? "Turn OFF Live Location (Revert to default)" : "Turn ON Live Location (GPS)"}
-                >
-                  {isLocating ? (
-                    <Loader2 className="w-5 h-5 animate-spin text-[#D85A30]" />
-                  ) : (
-                    <Navigation className={`w-5 h-5 transition-transform ${isGPSActive ? "text-white" : "text-[#D85A30]"}`} />
-                  )}
-                </button>
+                    }}
+                    className={`absolute bottom-20 right-4 sm:bottom-6 sm:right-6 z-30 p-3 sm:p-3.5 rounded-full shadow-lg border transition-all flex items-center justify-center cursor-pointer active:scale-95 ${
+                      isGPSActive
+                        ? "bg-[#D85A30] text-white border-[#D85A30] shadow-[#D85A30]/30"
+                        : "bg-white text-foreground border-border hover:bg-slate-50"
+                    }`}
+                    title={isGPSActive ? "Turn OFF Live Location (Revert to default)" : "Turn ON Live Location (GPS)"}
+                  >
+                    {isLocating ? (
+                      <Loader2 className="w-5 h-5 animate-spin text-[#D85A30]" />
+                    ) : (
+                      <Navigation className={`w-5 h-5 transition-transform ${isGPSActive ? "text-white" : "text-[#D85A30]"}`} />
+                    )}
+                  </button>
+                )}
 
                 {/* Mobile Floating Overlay only (hidden on desktop) */}
                 {isLiveNavigating && directionsFor && activeNavRoute && (

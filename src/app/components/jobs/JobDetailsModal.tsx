@@ -4,6 +4,7 @@ import {
   GraduationCap, Gift, CheckCircle2, Navigation, ExternalLink
 } from "lucide-react";
 import type { LiveJobListing } from "../../data/jobsData";
+import { buildMapShareUrl, shareOrCopy } from "../../utils/shareUtils";
 
 interface JobDetailsModalProps {
   job: LiveJobListing | null;
@@ -59,17 +60,26 @@ export function JobDetailsModal({
                 )}
               </button>
               <button
-                onClick={() => {
-                  if (navigator.share) {
-                    navigator.share({
-                      title: job.title,
-                      text: `Job Opportunity: ${job.title} at ${job.company}`,
-                      url: window.location.href
-                    }).catch(() => {});
-                  }
+                onClick={async () => {
+                  const url = buildMapShareUrl({
+                    id: job.id,
+                    title: job.title,
+                    lat: job.lat,
+                    lng: job.lng,
+                    category: `💼 Job (${job.type})`,
+                    address: job.location,
+                    image: job.image,
+                    phone: job.contactPhone,
+                    description: `${job.title} at ${job.company} • ${job.salary}`,
+                  });
+                  await shareOrCopy({
+                    title: job.title,
+                    text: `Job Opportunity: ${job.title} at ${job.company}`,
+                    url,
+                  });
                 }}
                 className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer"
-                title="Share Job"
+                title="Share on Map"
               >
                 <Share2 className="w-4 h-4" />
               </button>

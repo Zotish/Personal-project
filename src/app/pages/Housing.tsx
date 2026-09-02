@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
+import { buildMapShareUrl, shareOrCopy } from "../utils/shareUtils";
 import {
   Search, MapPin, Navigation, Bookmark, BookmarkCheck, Share2,
   Building, ExternalLink, Sparkles, Filter, ChevronRight,
@@ -1410,17 +1411,27 @@ export function Housing() {
                         {/* Share & Bookmark Buttons */}
                         <div className="flex items-center gap-1.5 flex-shrink-0">
                           <button
-                            onClick={e => {
+                            onClick={async (e) => {
                               e.stopPropagation();
-                              const url = `${window.location.origin}/services/housing?id=${listing.id}`;
-                              if (typeof navigator !== "undefined" && navigator.share) {
-                                navigator.share({ title: listing.title, text: `Check out ${listing.title} on Pathasathi!`, url }).catch(() => {});
-                              } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-                                navigator.clipboard.writeText(url);
-                              }
+                              const url = buildMapShareUrl({
+                                id: listing.id,
+                                title: listing.title,
+                                lat: listing.lat,
+                                lng: listing.lng,
+                                category: `🏠 Housing (${listing.purpose})`,
+                                address: listing.location,
+                                image: listing.image,
+                                phone: listing.contactPhone,
+                                description: `${listing.propertyType} • ${listing.beds} • ${listing.price}`,
+                              });
+                              await shareOrCopy({
+                                title: listing.title,
+                                text: `Check out ${listing.title} on Pathasathi Map!`,
+                                url,
+                              });
                             }}
                             className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-[#C04A22] flex items-center justify-center transition cursor-pointer"
-                            title="Share Link"
+                            title="Share on Map"
                           >
                             <Share2 className="w-4 h-4" />
                           </button>

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
+import { buildMapShareUrl, shareOrCopy } from "../utils/shareUtils";
 import {
   Search, MapPin, Navigation, Bookmark, BookmarkCheck, Share2,
   Building2, ExternalLink, Sparkles, Filter, ChevronRight,
@@ -740,17 +741,27 @@ function BariKoiLiveJobsMap({
               {/* Top Left: Share & Bookmark Save Buttons */}
               <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
                 <button
-                  onClick={e => {
+                  onClick={async (e) => {
                     e.stopPropagation();
-                    const url = `${window.location.origin}/services/jobs?id=${markerClickedJob.id}`;
-                    if (typeof navigator !== "undefined" && navigator.share) {
-                      navigator.share({ title: markerClickedJob.title, text: `Check out this job on Pathasathi!`, url }).catch(() => {});
-                    } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-                      navigator.clipboard.writeText(url);
-                    }
+                    const url = buildMapShareUrl({
+                      id: markerClickedJob.id,
+                      title: markerClickedJob.title,
+                      lat: markerClickedJob.lat,
+                      lng: markerClickedJob.lng,
+                      category: `💼 Job (${markerClickedJob.type})`,
+                      address: markerClickedJob.location,
+                      image: markerClickedJob.image,
+                      phone: markerClickedJob.contactPhone,
+                      description: `${markerClickedJob.title} at ${markerClickedJob.company} • ${markerClickedJob.salary}`,
+                    });
+                    await shareOrCopy({
+                      title: markerClickedJob.title,
+                      text: `Check out ${markerClickedJob.title} on Pathasathi Map!`,
+                      url,
+                    });
                   }}
                   className="w-7.5 h-7.5 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-700 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
-                  title="Share Link"
+                  title="Share on Map"
                 >
                   <Share2 className="w-3.5 h-3.5" />
                 </button>
@@ -1420,17 +1431,27 @@ export function Jobs() {
                       {/* Top Left: Share & Bookmark Save Buttons */}
                       <div className="absolute top-3 left-3 flex items-center gap-1.5 z-10">
                         <button
-                          onClick={e => {
+                          onClick={async (e) => {
                             e.stopPropagation();
-                            const url = `${window.location.origin}/services/jobs?id=${job.id}`;
-                            if (typeof navigator !== "undefined" && navigator.share) {
-                              navigator.share({ title: job.title, text: `Check out this job on Pathasathi!`, url }).catch(() => {});
-                            } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-                              navigator.clipboard.writeText(url);
-                            }
+                            const url = buildMapShareUrl({
+                              id: job.id,
+                              title: job.title,
+                              lat: job.lat,
+                              lng: job.lng,
+                              category: `💼 Job (${job.type})`,
+                              address: job.location,
+                              image: job.image,
+                              phone: job.contactPhone,
+                              description: `${job.title} at ${job.company} • ${job.salary}`,
+                            });
+                            await shareOrCopy({
+                              title: job.title,
+                              text: `Check out ${job.title} on Pathasathi Map!`,
+                              url,
+                            });
                           }}
                           className="w-8 h-8 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-500 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
-                          title="Share Link"
+                          title="Share on Map"
                         >
                           <Share2 className="w-3.5 h-3.5" />
                         </button>

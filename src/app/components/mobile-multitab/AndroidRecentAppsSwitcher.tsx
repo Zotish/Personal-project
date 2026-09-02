@@ -600,12 +600,12 @@ export function AndroidRecentAppsSwitcher() {
   };
 
   return (
-    <div className="lg:hidden fixed inset-0 z-[100] flex flex-col justify-between overflow-hidden select-none animate-in fade-in duration-200">
+    <div className="lg:hidden fixed inset-0 z-[999999] isolate flex flex-col justify-between overflow-hidden select-none animate-in fade-in duration-200">
       {/* ── Ambient Wallpaper Background with Soft Blur (Matching Vivo OS screenshot) ── */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#8C6B3E]/70 via-[#4A3B22]/85 to-[#1A140A]/98 backdrop-blur-2xl -z-10" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#8C6B3E]/95 via-[#4A3B22]/98 to-[#1A140A] backdrop-blur-3xl" />
 
       {/* ── Top Header Bar ── */}
-      <div className="w-full px-5 pt-4 pb-2 flex items-center justify-between text-white/90 safe-area-pt">
+      <div className="relative z-10 w-full px-5 pt-4 pb-2 flex items-center justify-between text-white/90 safe-area-pt">
         <div className="flex items-center gap-2">
           <span className="text-xs text-white font-bold bg-white/20 px-3 py-1 rounded-full shadow-xs tracking-tight">
             {tasks.length} active
@@ -621,7 +621,7 @@ export function AndroidRecentAppsSwitcher() {
       </div>
 
       {/* ── Android 3D Horizontal Card Stack Carousel (Vivo Style) ── */}
-      <div className="flex-1 flex items-center overflow-x-auto no-scrollbar snap-x snap-mandatory px-6 sm:px-10 gap-5 py-4 min-h-0">
+      <div className="relative z-10 flex-1 flex items-center overflow-x-auto no-scrollbar snap-x snap-mandatory px-6 sm:px-10 gap-5 py-4 min-h-0">
         {tasks.map((task) => {
           const isActive = task.id === activeTaskId;
           const isSwipedUp = swipedUpTaskId === task.id;
@@ -699,7 +699,7 @@ export function AndroidRecentAppsSwitcher() {
       </div>
 
       {/* ── 3. Bottom Close All Circular Button (Exact Vivo / Android OS `( ✕ )` button) ── */}
-      <div className="flex flex-col items-center justify-center pt-1 pb-6 flex-shrink-0 safe-area-pb">
+      <div className="relative z-10 flex flex-col items-center justify-center pt-1 pb-6 flex-shrink-0 safe-area-pb">
         <button
           onClick={clearAllTasks}
           className="w-14 h-14 rounded-full bg-white/20 hover:bg-white/30 active:bg-white/40 border border-white/25 backdrop-blur-xl flex items-center justify-center text-white shadow-2xl transition active:scale-90 cursor-pointer mb-2"

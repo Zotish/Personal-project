@@ -5,6 +5,7 @@ import {
   Navigation, MapPin, Clock, Star, Heart
 } from "lucide-react";
 import type { LiveReligionListing } from "../../data/religionData";
+import { buildMapShareUrl, shareOrCopy } from "../../utils/shareUtils";
 
 interface ReligionDetailsModalProps {
   listing: LiveReligionListing | null;
@@ -77,17 +78,26 @@ export function ReligionDetailsModal({
                 )}
               </button>
               <button
-                onClick={() => {
-                  if (navigator.share) {
-                    navigator.share({
-                      title: listing.name,
-                      text: `${listing.name} (${listing.type}) in ${listing.city}`,
-                      url: window.location.href
-                    }).catch(() => {});
-                  }
+                onClick={async () => {
+                  const url = buildMapShareUrl({
+                    id: listing.id,
+                    name: listing.name,
+                    lat: listing.lat,
+                    lng: listing.lng,
+                    category: `${listing.emoji} ${listing.type}`,
+                    address: listing.address,
+                    image: (listing as any).image,
+                    phone: listing.phone,
+                    description: `${listing.name} (${listing.type}) in ${listing.city}`,
+                  });
+                  await shareOrCopy({
+                    title: listing.name,
+                    text: `${listing.name} (${listing.type}) in ${listing.city}`,
+                    url,
+                  });
                 }}
                 className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-[#C04A22] flex items-center justify-center transition cursor-pointer"
-                title="Share"
+                title="Share on Map"
               >
                 <Share2 className="w-4 h-4" />
               </button>
