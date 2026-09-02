@@ -558,27 +558,41 @@ function MiniCalendar({
             <button
               key={key}
               onClick={() => onSelect(isSelected ? null : key)}
-              className={`relative flex flex-col items-center justify-center h-8 w-full rounded-lg text-xs font-medium transition-all duration-150 ${
-                isSelected
-                  ? "bg-[#C04A22] text-white shadow-sm scale-105 font-bold"
-                  : hasEvents
-                  ? "hover:bg-orange-50/80 text-foreground font-semibold"
-                  : "text-muted-foreground hover:bg-secondary/50"
-              }`}
+              className="relative flex flex-col items-center justify-center h-8.5 w-full text-xs font-medium transition-all duration-150 cursor-pointer group"
             >
-              {day}
+              <span
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-150 ${
+                  isSelected
+                    ? "bg-[#C04A22] text-white shadow-sm font-bold scale-105"
+                    : isToday
+                    ? "border-1.5 border-[#C04A22] bg-orange-50/80 text-[#8C3015] font-bold"
+                    : hasEvents
+                    ? "text-foreground font-semibold group-hover:bg-orange-50/80"
+                    : "text-muted-foreground group-hover:bg-secondary/60"
+                }`}
+              >
+                {day}
+              </span>
               {hasEvents && (
-                <span className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white" : "bg-[#C04A22]"}`} />
+                <span
+                  className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${
+                    isSelected ? "bg-white" : "bg-[#C04A22]"
+                  }`}
+                />
               )}
             </button>
           );
         })}
       </div>
 
-      <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border">
+      <div className="flex items-center gap-3.5 mt-3 pt-3 border-t border-border">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="w-2 h-2 rounded-full bg-[#C04A22] inline-block" />
           {t("cal_has_events")}
+        </div>
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span className="w-4 h-4 rounded-full border-1.5 border-[#C04A22] bg-orange-50/80 inline-block" />
+          {t("cal_today")}
         </div>
       </div>
     </div>
@@ -1664,22 +1678,34 @@ export function HomeFeed() {
             <>
               {/* Date filter header */}
               <div className="flex items-center justify-between bg-white rounded-2xl border border-border px-3 sm:px-4 py-3 shadow-2xs">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedDate(null);
+                    setMobileCalOpen(true);
+                  }}
+                  className="flex items-center gap-2.5 text-left cursor-pointer group"
+                  title="Change date in calendar"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-orange-50 group-hover:bg-orange-100 border border-orange-100 flex items-center justify-center flex-shrink-0 transition-colors">
                     <Calendar className="w-4 h-4 text-[#C04A22]" />
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-foreground">{formatDate(selectedDate)}</div>
+                    <div className="text-sm font-bold text-foreground group-hover:text-[#8C3015] transition-colors">{formatDate(selectedDate)}</div>
                     <div className="text-xs text-muted-foreground">
                       {hasEvents ? (
                         <span className="text-[#8C3015] font-medium">{selectedEvents.length} event{selectedEvents.length > 1 ? "s" : ""} on this day</span>
                       ) : "No events scheduled"}
                     </div>
                   </div>
-                </div>
+                </button>
                 <button
-                  onClick={() => setSelectedDate(null)}
+                  onClick={() => {
+                    setSelectedDate(null);
+                    setMobileCalOpen(true);
+                  }}
                   className="flex items-center gap-1 text-xs font-medium text-[#8C3015] hover:text-[#C04A22] px-3 py-1.5 rounded-xl hover:bg-orange-50 transition-colors border border-transparent hover:border-orange-200 cursor-pointer"
+                  title="Open Calendar"
                 >
                   <X className="w-3.5 h-3.5" /> Clear
                 </button>
@@ -1693,7 +1719,10 @@ export function HomeFeed() {
                   <div className="text-base font-bold text-foreground mb-1">{t("cal_no_events")}</div>
                   <div className="text-sm text-muted-foreground mb-4">{t("cal_no_events_hint")}</div>
                   <button
-                    onClick={() => setSelectedDate(null)}
+                    onClick={() => {
+                      setSelectedDate(null);
+                      setMobileCalOpen(true);
+                    }}
                     className="px-5 py-2.5 rounded-2xl bg-[#C04A22] hover:bg-[#8C3015] text-white text-xs font-bold transition shadow-xs cursor-pointer active:scale-98"
                   >
                     {t("cal_back")}
@@ -1787,36 +1816,6 @@ export function HomeFeed() {
                   <Thermometer className="w-5 h-5 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
                 </button>
 
-
-                {/* Centered Floating Calendar Popover on Mobile */}
-                {mobileCalOpen && (
-                  <>
-                    {/* Backdrop */}
-                    <div
-                      className="fixed inset-0 z-40 bg-black/25 backdrop-blur-2xs"
-                      onClick={() => setMobileCalOpen(false)}
-                    />
-                    {/* Centered floating popup */}
-                    <div className="fixed left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-50 w-[min(360px,calc(100vw-2rem))] bg-white rounded-3xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 fade-in duration-200">
-                      <MiniCalendar selectedDate={selectedDate} onSelect={(d) => { setSelectedDate(d); setMobileCalOpen(false); }} />
-                    </div>
-                  </>
-                )}
-
-                {/* Centered Floating Weather Popover on Mobile */}
-                {mobileWeatherOpen && (
-                  <>
-                    {/* Backdrop */}
-                    <div
-                      className="fixed inset-0 z-40 bg-black/25 backdrop-blur-2xs"
-                      onClick={() => setMobileWeatherOpen(false)}
-                    />
-                    {/* Centered floating popup */}
-                    <div className="fixed left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-50 w-[min(360px,calc(100vw-2rem))] bg-white rounded-3xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 fade-in duration-200">
-                      <WeatherWidget />
-                    </div>
-                  </>
-                )}
 
               </div>
 
@@ -1919,6 +1918,42 @@ export function HomeFeed() {
           )}
         </div>
       </div>
+
+      {/* Centered Floating Calendar Popover on Mobile */}
+      {mobileCalOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-50 bg-black/35 backdrop-blur-2xs"
+            onClick={() => setMobileCalOpen(false)}
+          />
+          {/* Centered floating popup */}
+          <div className="fixed left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-50 w-[min(360px,calc(100vw-2rem))] bg-white rounded-3xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 fade-in duration-200">
+            <MiniCalendar
+              selectedDate={selectedDate}
+              onSelect={(d) => {
+                setSelectedDate(d);
+                setMobileCalOpen(false);
+              }}
+            />
+          </div>
+        </>
+      )}
+
+      {/* Centered Floating Weather Popover on Mobile */}
+      {mobileWeatherOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-50 bg-black/35 backdrop-blur-2xs"
+            onClick={() => setMobileWeatherOpen(false)}
+          />
+          {/* Centered floating popup */}
+          <div className="fixed left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-50 w-[min(360px,calc(100vw-2rem))] bg-white rounded-3xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 fade-in duration-200">
+            <WeatherWidget />
+          </div>
+        </>
+      )}
     </AppLayout>
   );
 }

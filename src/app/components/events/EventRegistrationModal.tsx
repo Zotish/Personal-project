@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, CheckCircle2, Clock, MapPin } from "lucide-react";
+import { X, CheckCircle2 } from "lucide-react";
 
 interface EventRegistrationModalProps {
   isOpen: boolean;
@@ -87,28 +87,7 @@ export function EventRegistrationModal({
             </p>
           </div>
         ) : (
-          <>
-            {/* Event Summary Banner */}
-            <div className="bg-orange-50/70 border-b border-orange-100/80 px-5 py-3.5">
-              <h4 className="font-bold text-sm text-slate-900 line-clamp-1">{event.title}</h4>
-              <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-600 flex-wrap">
-                {(event.time || event.date) && (
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-[#C04A22] flex-shrink-0" />
-                    <span>{event.time || event.date}</span>
-                  </div>
-                )}
-                {event.location && (
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-[#C04A22] flex-shrink-0" />
-                    <span className="truncate max-w-[200px]">{event.location}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Registration Form */}
-            <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          <form onSubmit={handleSubmit} className="p-5 space-y-4">
               {/* Full Name */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
@@ -204,7 +183,6 @@ export function EventRegistrationModal({
                 </button>
               </div>
             </form>
-          </>
         )}
       </div>
     </div>
