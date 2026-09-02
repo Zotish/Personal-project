@@ -26,6 +26,7 @@ export function AppLayout({
   onTabChange,
 }: AppLayoutProps) {
   const isSeller = variant === "seller";
+  const isInsideIframe = typeof window !== "undefined" && window.self !== window.top;
 
   return (
     <div className="min-h-screen bg-slate-50/50">
@@ -56,11 +57,11 @@ export function AppLayout({
         )
       )}
 
-      {/* Android Recent Apps Deck Switcher (Mobile-Only) */}
-      <AndroidRecentAppsSwitcher />
+      {/* Android Recent Apps Deck Switcher (Mobile-Only, outside iframe) */}
+      {!isInsideIframe && <AndroidRecentAppsSwitcher />}
 
       {/* Floating Smart Edge Sidebar & Freeform Window */}
-      <SmartEdgeSidebar />
+      {!isInsideIframe && <SmartEdgeSidebar />}
     </div>
   );
 }

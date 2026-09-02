@@ -24,18 +24,18 @@ export const ANDROID_APP_REGISTRY: Record<string, {
   previewGradient: string;
 }> = {
   "/feed": {
-    title: "Community Feed",
-    shortName: "Feed",
-    icon: "🏠",
-    iconBg: "bg-blue-600",
-    category: "Social",
-    themeColor: "#2563EB",
-    previewGradient: "from-blue-600/20 via-slate-900/90 to-slate-950",
+    title: "Pathasathi",
+    shortName: "Pathasathi",
+    icon: "📍",
+    iconBg: "bg-[#C04A22]",
+    category: "Home",
+    themeColor: "#C04A22",
+    previewGradient: "from-[#C04A22]/20 via-slate-900/90 to-slate-950",
   },
   "/map": {
-    title: "Pathasathi Navigation",
+    title: "Live GPS Map",
     shortName: "Map",
-    icon: "📍",
+    icon: "🗺️",
     iconBg: "bg-emerald-600",
     category: "Navigation",
     themeColor: "#059669",
@@ -51,7 +51,7 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-purple-600/20 via-slate-900/90 to-slate-950",
   },
   "/orders": {
-    title: "Marketplace Orders",
+    title: "My Orders",
     shortName: "Orders",
     icon: "🛍️",
     iconBg: "bg-orange-600",
@@ -275,7 +275,7 @@ interface MobileTabContextType {
 
 const MobileTabContext = createContext<MobileTabContextType | null>(null);
 
-const STORAGE_KEY = "android_recent_tasks_v3";
+const STORAGE_KEY = "android_recent_tasks_v4";
 
 export function MobileTabProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
@@ -286,7 +286,21 @@ export function MobileTabProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((t: any) => {
+            const meta = getTaskMeta(t.path || "/feed");
+            return {
+              ...t,
+              title: meta.title,
+              shortName: meta.shortName,
+              icon: meta.icon,
+              iconBg: meta.iconBg,
+              category: meta.category,
+              themeColor: meta.themeColor,
+              previewGradient: meta.previewGradient,
+            };
+          });
+        }
       }
     } catch (_) {}
 
