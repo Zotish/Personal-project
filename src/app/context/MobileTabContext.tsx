@@ -33,7 +33,7 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-[#C04A22]/20 via-slate-900/90 to-slate-950",
   },
   "/map": {
-    title: "Live GPS Map",
+    title: "Map",
     shortName: "Map",
     icon: "🗺️",
     iconBg: "bg-emerald-600",
@@ -42,7 +42,7 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-emerald-600/20 via-slate-900/90 to-slate-950",
   },
   "/services/jobs": {
-    title: "Jobs & Careers",
+    title: "Jobs",
     shortName: "Jobs",
     icon: "💼",
     iconBg: "bg-purple-600",
@@ -51,7 +51,7 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-purple-600/20 via-slate-900/90 to-slate-950",
   },
   "/orders": {
-    title: "My Orders",
+    title: "Orders",
     shortName: "Orders",
     icon: "🛍️",
     iconBg: "bg-orange-600",
@@ -60,7 +60,7 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-orange-600/20 via-slate-900/90 to-slate-950",
   },
   "/reels": {
-    title: "Immigrant Stories & Reels",
+    title: "Reels",
     shortName: "Reels",
     icon: "🎬",
     iconBg: "bg-pink-600",
@@ -69,8 +69,8 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-pink-600/20 via-slate-900/90 to-slate-950",
   },
   "/services/free-food": {
-    title: "Free Food & Pantries",
-    shortName: "Food Bank",
+    title: "Food",
+    shortName: "Food",
     icon: "🍲",
     iconBg: "bg-green-700",
     category: "Aid & Relief",
@@ -78,8 +78,8 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-green-700/20 via-slate-900/90 to-slate-950",
   },
   "/services/food-bank": {
-    title: "Free Food & Pantries",
-    shortName: "Food Bank",
+    title: "Food",
+    shortName: "Food",
     icon: "🥫",
     iconBg: "bg-green-700",
     category: "Aid & Relief",
@@ -87,7 +87,7 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-green-700/20 via-slate-900/90 to-slate-950",
   },
   "/services/housing": {
-    title: "Housing & Rooms",
+    title: "Housing",
     shortName: "Housing",
     icon: "🏡",
     iconBg: "bg-cyan-600",
@@ -96,8 +96,8 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-cyan-600/20 via-slate-900/90 to-slate-950",
   },
   "/services/legal": {
-    title: "Legal Aid & Asylum",
-    shortName: "Legal Aid",
+    title: "Legal",
+    shortName: "Legal",
     icon: "⚖️",
     iconBg: "bg-rose-600",
     category: "Legal",
@@ -105,7 +105,7 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-rose-600/20 via-slate-900/90 to-slate-950",
   },
   "/services/checklist": {
-    title: "Immigration Checklist",
+    title: "Checklist",
     shortName: "Checklist",
     icon: "📋",
     iconBg: "bg-amber-600",
@@ -114,7 +114,7 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-amber-600/20 via-slate-900/90 to-slate-950",
   },
   "/services/religion": {
-    title: "Places of Worship",
+    title: "Worship",
     shortName: "Worship",
     icon: "🕌",
     iconBg: "bg-amber-600",
@@ -123,7 +123,7 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-amber-600/20 via-slate-900/90 to-slate-950",
   },
   "/services/religious": {
-    title: "Places of Worship",
+    title: "Worship",
     shortName: "Worship",
     icon: "🕌",
     iconBg: "bg-amber-600",
@@ -132,8 +132,8 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-amber-600/20 via-slate-900/90 to-slate-950",
   },
   "/services/schools": {
-    title: "Schools & ESL Classes",
-    shortName: "Education",
+    title: "Schools",
+    shortName: "Schools",
     icon: "🎓",
     iconBg: "bg-violet-600",
     category: "Education",
@@ -141,7 +141,7 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-violet-600/20 via-slate-900/90 to-slate-950",
   },
   "/services/hospitals": {
-    title: "Healthcare & Free Clinics",
+    title: "Health",
     shortName: "Health",
     icon: "🏥",
     iconBg: "bg-red-600",
@@ -150,7 +150,7 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-red-600/20 via-slate-900/90 to-slate-950",
   },
   "/services/food": {
-    title: "Halal & Ethnic Grocery",
+    title: "Groceries",
     shortName: "Groceries",
     icon: "🛒",
     iconBg: "bg-yellow-600",
@@ -159,7 +159,7 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-yellow-600/20 via-slate-900/90 to-slate-950",
   },
   "/services/embassy": {
-    title: "Embassy & Consulates",
+    title: "Embassy",
     shortName: "Embassy",
     icon: "🏛️",
     iconBg: "bg-slate-700",
@@ -168,7 +168,7 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-slate-700/20 via-slate-900/90 to-slate-950",
   },
   "/services": {
-    title: "Services Hub",
+    title: "Services",
     shortName: "Services",
     icon: "⚡",
     iconBg: "bg-amber-500",
@@ -177,7 +177,7 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-amber-500/20 via-slate-900/90 to-slate-950",
   },
   "/messages": {
-    title: "Direct Messages",
+    title: "Messages",
     shortName: "Messages",
     icon: "💬",
     iconBg: "bg-teal-600",
@@ -186,7 +186,7 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-teal-600/20 via-slate-900/90 to-slate-950",
   },
   "/explore": {
-    title: "Explore Search",
+    title: "Explore",
     shortName: "Explore",
     icon: "🔍",
     iconBg: "bg-sky-600",
@@ -195,7 +195,7 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-sky-600/20 via-slate-900/90 to-slate-950",
   },
   "/communities": {
-    title: "Diaspora Communities",
+    title: "Communities",
     shortName: "Communities",
     icon: "👥",
     iconBg: "bg-indigo-600",
@@ -204,7 +204,7 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-indigo-600/20 via-slate-900/90 to-slate-950",
   },
   "/qa": {
-    title: "Q&A Forum",
+    title: "Q&A",
     shortName: "Q&A",
     icon: "❓",
     iconBg: "bg-emerald-700",
@@ -213,7 +213,7 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-emerald-700/20 via-slate-900/90 to-slate-950",
   },
   "/saved": {
-    title: "Saved Resources",
+    title: "Saved",
     shortName: "Saved",
     icon: "🔖",
     iconBg: "bg-yellow-600",
@@ -222,7 +222,7 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-yellow-600/20 via-slate-900/90 to-slate-950",
   },
   "/profile": {
-    title: "User Profile",
+    title: "Profile",
     shortName: "Profile",
     icon: "👤",
     iconBg: "bg-slate-700",
@@ -231,8 +231,8 @@ export const ANDROID_APP_REGISTRY: Record<string, {
     previewGradient: "from-slate-700/20 via-slate-900/90 to-slate-950",
   },
   "/more": {
-    title: "All Features Menu",
-    shortName: "All Apps",
+    title: "Menu",
+    shortName: "Menu",
     icon: "✨",
     iconBg: "bg-slate-800",
     category: "System",
@@ -247,10 +247,11 @@ export function getTaskMeta(pathname: string) {
   if (matchKey) return ANDROID_APP_REGISTRY[matchKey];
 
   const clean = pathname.replace("/", "").replace(/-/g, " ") || "Home";
-  const capitalized = clean.charAt(0).toUpperCase() + clean.slice(1);
+  const oneWord = clean.trim().split(" ")[0] || "Home";
+  const capitalized = oneWord.charAt(0).toUpperCase() + oneWord.slice(1);
   return {
     title: capitalized,
-    shortName: capitalized.split(" ")[0],
+    shortName: capitalized,
     icon: "📱",
     iconBg: "bg-indigo-600",
     category: "App",

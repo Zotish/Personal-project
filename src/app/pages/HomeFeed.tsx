@@ -1493,18 +1493,22 @@ export function HomeFeed() {
     }>
       {/* Mobile-only header — hidden on desktop (sidebar handles nav) */}
       <div className="lg:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-border px-4 py-3 flex items-center justify-between">
-        <div
+        <button
+          type="button"
           onClick={() => navigate("/profile")}
-          className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs cursor-pointer active:scale-95 transition"
+          className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-300/80 flex items-center justify-center text-slate-600 flex-shrink-0 shadow-2xs cursor-pointer active:scale-95 transition-all focus:outline-hidden"
           title="My Profile"
+          aria-label="Go to My Profile"
         >
-          <User className="w-4.5 h-4.5 text-slate-500" />
-        </div>
+          <User className="w-4.5 h-4.5 text-slate-600" />
+        </button>
         <Logo size="sm" onClick={() => navigate("/feed")} />
         <button
+          type="button"
           onClick={() => navigate("/notifications")}
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary text-slate-600 hover:text-[#8C3015] active:scale-95 transition cursor-pointer group"
+          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary text-slate-600 hover:text-[#8C3015] active:scale-95 transition cursor-pointer group focus:outline-hidden"
           title="Notifications"
+          aria-label="Go to Notifications"
         >
           <Bell className="w-5 h-5 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
         </button>

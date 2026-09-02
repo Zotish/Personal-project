@@ -607,8 +607,7 @@ export function AndroidRecentAppsSwitcher() {
       {/* ── Top Header Bar ── */}
       <div className="w-full px-5 pt-4 pb-2 flex items-center justify-between text-white/90 safe-area-pt">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-black tracking-tight text-white">Recent Apps</span>
-          <span className="text-[11px] text-amber-200/70 font-semibold bg-white/10 px-2.5 py-0.5 rounded-full">
+          <span className="text-xs text-white font-bold bg-white/20 px-3 py-1 rounded-full shadow-xs tracking-tight">
             {tasks.length} active
           </span>
         </div>
@@ -643,20 +642,16 @@ export function AndroidRecentAppsSwitcher() {
               onTouchMove={(e) => handleCardTouchMove(e, task.id)}
               onTouchEnd={() => handleCardTouchEnd(task.id)}
             >
-              {/* ── 1. App Header Title & Icon with Dropdown Chevron (Exact Vivo OS style) ── */}
+              {/* ── 1. App Header Title with Dropdown Chevron (No left icon, 1-word title) ── */}
               <div
                 onClick={() => switchTask(task.id)}
-                className="flex items-center gap-2 mb-2 px-1 text-white cursor-pointer active:scale-95 transition"
+                className="flex items-center gap-1.5 mb-2 px-1 text-white cursor-pointer active:scale-95 transition"
               >
-                {/* App Icon */}
-                <div className={`w-6 h-6 rounded-lg ${task.iconBg} flex items-center justify-center text-white text-xs shadow-md`}>
-                  {task.icon}
-                </div>
                 {/* App Name + Down Chevron */}
-                <span className="text-xs font-bold text-white tracking-tight drop-shadow-sm">
+                <span className="text-sm font-bold text-white tracking-tight drop-shadow-sm">
                   {task.title}
                 </span>
-                <ChevronDown className="w-3.5 h-3.5 text-white/70" />
+                <ChevronDown className="w-4 h-4 text-white/85 stroke-[2.5]" />
               </div>
 
               {/* ── 2. App Preview Card (Vivo Rounded Rect Deck) ── */}
