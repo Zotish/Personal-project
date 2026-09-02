@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
-  Search, MapPin, Navigation, Bookmark, BookmarkCheck,
+  Search, MapPin, Navigation, Bookmark, BookmarkCheck, Share2,
   Building, ExternalLink, Sparkles, Filter, ChevronRight,
   ChevronLeft, ChevronUp, ChevronDown, Plus, Minus,
   ArrowLeft, ArrowRight, Car, Bike, Footprints,
@@ -1050,20 +1050,37 @@ export function ReligiousFinder() {
                         <MapPin className="w-3.5 h-3.5 text-emerald-400" />
                         <span>{place.distance}</span>
                       </div>
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          toggleSave(place.id);
-                        }}
-                        className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-500 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
-                        title={isSaved ? "Saved" : "Save Place"}
-                      >
-                        {isSaved ? (
-                          <BookmarkCheck className="w-4 h-4 text-[#C04A22]" />
-                        ) : (
-                          <Bookmark className="w-4 h-4" />
-                        )}
-                      </button>
+                      <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            const url = `${window.location.origin}/services/religion?id=${place.id}`;
+                            if (typeof navigator !== "undefined" && navigator.share) {
+                              navigator.share({ title: place.name, text: `Check out ${place.name} on Pathasathi!`, url }).catch(() => {});
+                            } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+                              navigator.clipboard.writeText(url);
+                            }
+                          }}
+                          className="w-8 h-8 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-500 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
+                          title="Share Link"
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            toggleSave(place.id);
+                          }}
+                          className="w-8 h-8 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-500 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
+                          title={isSaved ? "Saved" : "Save Place"}
+                        >
+                          {isSaved ? (
+                            <BookmarkCheck className="w-4 h-4 text-[#C04A22]" />
+                          ) : (
+                            <Bookmark className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
                     </div>
 
                     {/* Card Content */}

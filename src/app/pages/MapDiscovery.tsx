@@ -1501,8 +1501,21 @@ function MapPlaceCard({
   key?: string | number;
 }) {
   const [saved, setSaved] = useState(false);
+  const [copied, setCopied] = useState(false);
   const color = categoryColors[place.category] ?? "#6366f1";
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
+  const handleShare = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/map?placeId=${place.id}`;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      navigator.share({ title: place.name, text: `Check out ${place.name} on Pathasathi!`, url }).catch(() => {});
+    } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    }
+  };
 
   const CARD_W = 295; const CARD_H = place.isJob ? 260 : 340; const GAP = 14;
   const spaceRight = containerSize.w - markerPx.x;
@@ -1516,7 +1529,12 @@ function MapPlaceCard({
   if (place.isJob && place.jobData) {
     const job = place.jobData;
     const jobContent = (
-      <div className="p-4">
+      <div className="p-4 relative">
+        {copied && (
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-slate-900 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg">
+            Link copied!
+          </div>
+        )}
         {/* Top Header with Logo, Title & Close */}
         <div className="flex items-start justify-between gap-2.5 mb-2">
           <div className="flex items-center gap-3 min-w-0">
@@ -1571,8 +1589,16 @@ function MapPlaceCard({
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
           <button
+            onClick={handleShare}
+            className="w-10 h-9 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 border border-[#C04A22]/25 flex items-center justify-center transition cursor-pointer flex-shrink-0 text-[#8C3015]"
+            title="Share Link"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+          </button>
+          <button
             onClick={() => setSaved(!saved)}
             className="w-10 h-9 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 border border-[#C04A22]/25 flex items-center justify-center transition cursor-pointer flex-shrink-0"
+            title="Save"
           >
             <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-[#C04A22] text-[#C04A22]" : "text-[#8C3015]"}`} />
           </button>
@@ -1608,13 +1634,25 @@ function MapPlaceCard({
         <button onClick={onClose} className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow hover:bg-white transition cursor-pointer">
           <X className="w-3.5 h-3.5" />
         </button>
+        <button
+          onClick={handleShare}
+          className="absolute top-2.5 right-11 w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow hover:bg-white text-slate-700 hover:text-[#C04A22] transition cursor-pointer"
+          title="Share Link"
+        >
+          <Share2 className="w-3.5 h-3.5" />
+        </button>
         {place.immigrantFriendly && (
           <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-primary text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
             <CheckCircle className="w-2.5 h-2.5" /> Immigrant-Friendly
           </div>
         )}
       </div>
-      <div className="p-3">
+      <div className="p-3 relative">
+        {copied && (
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 bg-slate-900 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg">
+            Link copied!
+          </div>
+        )}
         <div className="flex items-start justify-between gap-2 mb-1.5">
           <div>
             <div className="font-bold text-sm text-foreground">{place.name}</div>
@@ -1641,7 +1679,10 @@ function MapPlaceCard({
           <button onClick={onViewDetails} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-border text-xs font-semibold hover:bg-secondary transition cursor-pointer">
             Details <ChevronRight className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => setSaved(!saved)} className="w-9 flex items-center justify-center rounded-xl border border-border hover:bg-secondary transition cursor-pointer">
+          <button onClick={handleShare} className="w-9 flex items-center justify-center rounded-xl border border-border hover:bg-secondary text-slate-600 hover:text-[#C04A22] transition cursor-pointer" title="Share Link">
+            <Share2 className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={() => setSaved(!saved)} className="w-9 flex items-center justify-center rounded-xl border border-border hover:bg-secondary transition cursor-pointer" title="Save">
             <Bookmark className={`w-4 h-4 ${saved ? "fill-[#C04A22] text-[#C04A22]" : "text-muted-foreground"}`} />
           </button>
         </div>
@@ -1727,7 +1768,19 @@ function PlaceDetail({ place, onClose, onDirections }: { place: Place; onClose: 
           </div>
           <div className="grid grid-cols-3 gap-2">
             <button className="flex items-center justify-center gap-1 py-2 rounded-xl border border-border text-xs font-medium hover:bg-secondary transition"><Bookmark className="w-3.5 h-3.5" /> Save</button>
-            <button className="flex items-center justify-center gap-1 py-2 rounded-xl border border-border text-xs font-medium hover:bg-secondary transition"><Share2 className="w-3.5 h-3.5" /> Share</button>
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/map?placeId=${place.id}`;
+                if (typeof navigator !== "undefined" && navigator.share) {
+                  navigator.share({ title: place.name, url }).catch(() => {});
+                } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+                  navigator.clipboard.writeText(url);
+                }
+              }}
+              className="flex items-center justify-center gap-1 py-2 rounded-xl border border-border text-xs font-medium hover:bg-secondary transition cursor-pointer"
+            >
+              <Share2 className="w-3.5 h-3.5" /> Share
+            </button>
             <button className="flex items-center justify-center gap-1 py-2 rounded-xl border border-border text-xs font-medium hover:bg-secondary transition text-primary"><MessageCircle className="w-3.5 h-3.5" /> Ask</button>
           </div>
         </div>
@@ -1747,15 +1800,33 @@ function PlaceCard({
   key?: string | number;
 }) {
   const [saved, setSaved] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/map?placeId=${place.id}`;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      navigator.share({ title: place.name, text: `Check out ${place.name} on Pathasathi!`, url }).catch(() => {});
+    } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    }
+  };
 
   // If this place is a Job item, render in Job card format
   if (place.isJob && place.jobData) {
     const job = place.jobData;
     return (
       <div
-        className="bg-white rounded-2xl border border-border p-3.5 hover:shadow-md transition-all cursor-pointer group"
+        className="bg-white rounded-2xl border border-border p-3.5 hover:shadow-md transition-all cursor-pointer group relative"
         onClick={onClick}
       >
+        {copied && (
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-slate-900 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg">
+            Link copied!
+          </div>
+        )}
         <div className="flex items-start justify-between gap-2.5 mb-1.5">
           <div className="flex items-center gap-2.5 min-w-0">
             <span className="text-2xl flex-shrink-0">{job.logo}</span>
@@ -1769,15 +1840,25 @@ function PlaceCard({
               </div>
             </div>
           </div>
-          <button
-            className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition flex-shrink-0"
-            onClick={e => {
-              e.stopPropagation();
-              setSaved(!saved);
-            }}
-          >
-            <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-[#C04A22] text-[#C04A22]" : "text-muted-foreground"}`} />
-          </button>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <button
+              className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-[#C04A22] flex items-center justify-center transition cursor-pointer"
+              onClick={handleShare}
+              title="Share Link"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+            </button>
+            <button
+              className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition cursor-pointer"
+              onClick={e => {
+                e.stopPropagation();
+                setSaved(!saved);
+              }}
+              title="Save"
+            >
+              <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-[#C04A22] text-[#C04A22]" : "text-muted-foreground"}`} />
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5 my-2">
@@ -1811,13 +1892,25 @@ function PlaceCard({
           >
             Details <ChevronRight className="w-3 h-3" />
           </button>
+          <button
+            className="w-8 flex items-center justify-center rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 border border-[#C04A22]/25 text-[#8C3015] transition cursor-pointer"
+            onClick={handleShare}
+            title="Share Link"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-border overflow-hidden hover:shadow-md transition-all cursor-pointer group" onClick={onClick}>
+    <div className="bg-white rounded-2xl border border-border overflow-hidden hover:shadow-md transition-all cursor-pointer group relative" onClick={onClick}>
+      {copied && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-slate-900 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg">
+          Link copied!
+        </div>
+      )}
       <div className="relative h-32 bg-muted overflow-hidden">
         <img src={place.image} alt={place.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
         {place.immigrantFriendly && (
@@ -1825,10 +1918,22 @@ function PlaceCard({
             <CheckCircle className="w-3 h-3" /> Immigrant-Friendly
           </div>
         )}
-        <button className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow-sm hover:bg-white transition-colors cursor-pointer"
-          onClick={e => { e.stopPropagation(); setSaved(!saved); }}>
-          <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-primary text-primary" : "text-muted-foreground"}`} />
-        </button>
+        <div className="absolute top-2 right-2 flex items-center gap-1.5 z-10">
+          <button
+            className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow-sm hover:bg-white text-slate-700 hover:text-[#C04A22] transition-colors cursor-pointer"
+            onClick={handleShare}
+            title="Share Link"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow-sm hover:bg-white transition-colors cursor-pointer"
+            onClick={e => { e.stopPropagation(); setSaved(!saved); }}
+            title="Save"
+          >
+            <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+          </button>
+        </div>
       </div>
       <div className="p-3">
         <div className="flex items-start justify-between gap-2">
@@ -1852,7 +1957,7 @@ function PlaceCard({
             <Navigation className="w-3 h-3" /> Directions
           </button>
           <button className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg border border-border bg-white text-xs font-medium hover:bg-secondary transition cursor-pointer" onClick={e => e.stopPropagation()}><MessageCircle className="w-3 h-3" /></button>
-          <button className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg border border-border bg-white text-xs font-medium hover:bg-secondary transition cursor-pointer" onClick={e => e.stopPropagation()}><Share2 className="w-3 h-3" /></button>
+          <button className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg border border-border bg-white text-xs font-medium hover:bg-secondary text-slate-600 hover:text-[#C04A22] transition cursor-pointer" onClick={handleShare} title="Share Link"><Share2 className="w-3 h-3" /></button>
         </div>
       </div>
     </div>

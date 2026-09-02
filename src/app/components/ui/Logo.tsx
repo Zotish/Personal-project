@@ -2,7 +2,8 @@ import React from "react";
 
 interface LogoProps {
   size?: "sm" | "md" | "lg" | "xl";
-  variant?: "default" | "white" | "dark" | "icon-only";
+  variant?: "default" | "white" | "dark" | "icon-only" | "text-only";
+  showIcon?: boolean;
   showText?: boolean;
   className?: string;
   onClick?: () => void;
@@ -11,6 +12,7 @@ interface LogoProps {
 export function Logo({
   size = "md",
   variant = "default",
+  showIcon = true,
   showText = true,
   className = "",
   onClick,
@@ -32,6 +34,8 @@ export function Logo({
 
   // Color matches Deep Coral: #E05236
   const textColor = variant === "white" ? "text-white" : "text-[#E05236]";
+  const renderIcon = showIcon && variant !== "text-only";
+  const renderText = showText && variant !== "icon-only";
 
   return (
     <div
@@ -41,28 +45,30 @@ export function Logo({
       } ${className}`}
     >
       {/* Deep Coral Squircle Icon (#E05236) */}
-      <div
-        className={`${iconSizes[size]} bg-[#E05236] flex items-center justify-center relative overflow-hidden flex-shrink-0 shadow-sm transition-transform active:scale-95`}
-      >
-        <svg
-          className="w-full h-full p-1.5"
-          viewBox="0 0 100 100"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+      {renderIcon && (
+        <div
+          className={`${iconSizes[size]} bg-[#E05236] flex items-center justify-center relative overflow-hidden flex-shrink-0 shadow-sm transition-transform active:scale-95`}
         >
-          {/* Main Location Pin */}
-          <path
-            d="M50 18C36.745 18 26 28.745 26 42C26 58.5 50 78 50 78C50 78 74 58.5 74 42C74 28.745 63.255 18 50 18ZM50 51C45.029 51 41 46.971 41 42C41 37.029 45.029 33 50 33C54.971 33 59 37.029 59 42C59 46.971 54.971 51 50 51Z"
-            fill="white"
-          />
-          {/* Bottom Left Trail Dots */}
-          <rect x="25" y="70" width="10" height="5" rx="2.5" transform="rotate(-38 25 70)" fill="white" />
-          <rect x="35" y="62" width="10" height="5" rx="2.5" transform="rotate(-38 35 62)" fill="white" />
-        </svg>
-      </div>
+          <svg
+            className="w-full h-full p-1.5"
+            viewBox="0 0 100 100"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            {/* Main Location Pin */}
+            <path
+              d="M50 18C36.745 18 26 28.745 26 42C26 58.5 50 78 50 78C50 78 74 58.5 74 42C74 28.745 63.255 18 50 18ZM50 51C45.029 51 41 46.971 41 42C41 37.029 45.029 33 50 33C54.971 33 59 37.029 59 42C59 46.971 54.971 51 50 51Z"
+              fill="white"
+            />
+            {/* Bottom Left Trail Dots */}
+            <rect x="25" y="70" width="10" height="5" rx="2.5" transform="rotate(-38 25 70)" fill="white" />
+            <rect x="35" y="62" width="10" height="5" rx="2.5" transform="rotate(-38 35 62)" fill="white" />
+          </svg>
+        </div>
+      )}
 
       {/* English Brand Name: Pathasathi (Deep Coral #E05236 color) */}
-      {showText && variant !== "icon-only" && (
+      {renderText && (
         <span className={`${textSizes[size]} ${textColor} font-sans font-bold tracking-tight leading-none flex items-center`}>
           Pathasathi
         </span>

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { useNavigate } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
-  Search, MapPin, Navigation, Bookmark, BookmarkCheck,
+  Search, MapPin, Navigation, Bookmark, BookmarkCheck, Share2,
   Utensils, ExternalLink, Sparkles, Filter, ChevronRight,
   ChevronLeft, ChevronUp, ChevronDown, Plus, Minus,
   ArrowLeft, ArrowRight, Car, Bike, Footprints,
@@ -1117,21 +1117,38 @@ export function FreeFood() {
                           </p>
                         </div>
 
-                        {/* Bookmark Save Button */}
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            toggleSave(listing.id);
-                          }}
-                          className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-[#C04A22] flex items-center justify-center transition cursor-pointer flex-shrink-0"
-                          title={isSaved ? "Saved" : "Save Program"}
-                        >
-                          {isSaved ? (
-                            <BookmarkCheck className="w-4 h-4 text-[#C04A22]" />
-                          ) : (
-                            <Bookmark className="w-4 h-4" />
-                          )}
-                        </button>
+                        {/* Share & Bookmark Buttons */}
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              const url = `${window.location.origin}/services/free-food?id=${listing.id}`;
+                              if (typeof navigator !== "undefined" && navigator.share) {
+                                navigator.share({ title: listing.name, text: `Check out ${listing.name} on Pathasathi!`, url }).catch(() => {});
+                              } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+                                navigator.clipboard.writeText(url);
+                              }
+                            }}
+                            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-[#C04A22] flex items-center justify-center transition cursor-pointer"
+                            title="Share Link"
+                          >
+                            <Share2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              toggleSave(listing.id);
+                            }}
+                            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-[#C04A22] flex items-center justify-center transition cursor-pointer"
+                            title={isSaved ? "Saved" : "Save Program"}
+                          >
+                            {isSaved ? (
+                              <BookmarkCheck className="w-4 h-4 text-[#C04A22]" />
+                            ) : (
+                              <Bookmark className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
                       </div>
 
                       {/* Schedule / Hours summary */}

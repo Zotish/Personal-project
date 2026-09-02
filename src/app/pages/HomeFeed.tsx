@@ -1502,7 +1502,7 @@ export function HomeFeed() {
         >
           <User className="w-4.5 h-4.5 text-slate-600" />
         </button>
-        <Logo size="sm" onClick={() => navigate("/feed")} />
+        <Logo size="sm" showIcon={false} onClick={() => navigate("/feed")} />
         <button
           type="button"
           onClick={() => navigate("/notifications")}

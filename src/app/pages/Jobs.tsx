@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
-  Search, MapPin, Navigation, Bookmark, BookmarkCheck,
+  Search, MapPin, Navigation, Bookmark, BookmarkCheck, Share2,
   Building2, ExternalLink, Sparkles, Filter, ChevronRight,
   ChevronLeft, ChevronUp, ChevronDown, Plus, Minus,
   ArrowLeft, ArrowRight, Car, Bike, Footprints, Briefcase,
@@ -737,21 +737,38 @@ function BariKoiLiveJobsMap({
                 </button>
               </div>
 
-              {/* Top Left: Bookmark Save Button */}
-              <button
-                onClick={e => {
-                  e.stopPropagation();
-                  onToggleSave?.(markerClickedJob.id);
-                }}
-                className="absolute top-2 left-2 w-7.5 h-7.5 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-700 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
-                title={savedJobIds?.includes(markerClickedJob.id) ? "Saved" : "Save Job"}
-              >
-                {savedJobIds?.includes(markerClickedJob.id) ? (
-                  <BookmarkCheck className="w-3.5 h-3.5 text-[#C04A22]" />
-                ) : (
-                  <Bookmark className="w-3.5 h-3.5" />
-                )}
-              </button>
+              {/* Top Left: Share & Bookmark Save Buttons */}
+              <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    const url = `${window.location.origin}/services/jobs?id=${markerClickedJob.id}`;
+                    if (typeof navigator !== "undefined" && navigator.share) {
+                      navigator.share({ title: markerClickedJob.title, text: `Check out this job on Pathasathi!`, url }).catch(() => {});
+                    } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+                      navigator.clipboard.writeText(url);
+                    }
+                  }}
+                  className="w-7.5 h-7.5 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-700 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
+                  title="Share Link"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    onToggleSave?.(markerClickedJob.id);
+                  }}
+                  className="w-7.5 h-7.5 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-700 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
+                  title={savedJobIds?.includes(markerClickedJob.id) ? "Saved" : "Save Job"}
+                >
+                  {savedJobIds?.includes(markerClickedJob.id) ? (
+                    <BookmarkCheck className="w-3.5 h-3.5 text-[#C04A22]" />
+                  ) : (
+                    <Bookmark className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
 
               {/* Bottom Left: Distance Badge on Image */}
               <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[11px] font-medium flex items-center gap-1 shadow-xs">
@@ -1382,19 +1399,38 @@ export function Jobs() {
                         <MapPin className="w-3.5 h-3.5 text-emerald-400" />
                         {job.distance}
                       </div>
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          toggleSave(job.id);
-                        }}
-                        className="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-500 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
-                      >
-                        {isSaved ? (
-                          <BookmarkCheck className="w-4 h-4 text-[#C04A22]" />
-                        ) : (
-                          <Bookmark className="w-4 h-4" />
-                        )}
-                      </button>
+                      {/* Top Left: Share & Bookmark Save Buttons */}
+                      <div className="absolute top-3 left-3 flex items-center gap-1.5 z-10">
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            const url = `${window.location.origin}/services/jobs?id=${job.id}`;
+                            if (typeof navigator !== "undefined" && navigator.share) {
+                              navigator.share({ title: job.title, text: `Check out this job on Pathasathi!`, url }).catch(() => {});
+                            } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+                              navigator.clipboard.writeText(url);
+                            }
+                          }}
+                          className="w-8 h-8 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-500 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
+                          title="Share Link"
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            toggleSave(job.id);
+                          }}
+                          className="w-8 h-8 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-500 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
+                          title={isSaved ? "Saved" : "Save Job"}
+                        >
+                          {isSaved ? (
+                            <BookmarkCheck className="w-4 h-4 text-[#C04A22]" />
+                          ) : (
+                            <Bookmark className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
                     </div>
 
                     {/* Card Body Header */}
