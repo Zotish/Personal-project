@@ -1526,7 +1526,7 @@ function MapPlaceCard({
     }
   };
 
-  const CARD_W = 295; const CARD_H = place.isJob ? 260 : 340; const GAP = 14;
+  const CARD_W = 310; const CARD_H = 220; const GAP = 14;
   const spaceRight = containerSize.w - markerPx.x;
   const left = spaceRight >= CARD_W + GAP + 20
     ? markerPx.x + GAP + 15
@@ -1534,176 +1534,141 @@ function MapPlaceCard({
   let top = markerPx.y - CARD_H / 2;
   top = Math.max(8, Math.min(top, containerSize.h - CARD_H - 8));
 
-  // If this place is a Job item, render in Job card format
-  if (place.isJob && place.jobData) {
-    const job = place.jobData;
-    const jobContent = (
-      <div className="p-4 relative">
-        {copied && (
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-slate-900 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg">
-            Link copied!
-          </div>
-        )}
-        {/* Top Header with Logo, Title & Close */}
-        <div className="flex items-start justify-between gap-2.5 mb-2">
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="text-2xl sm:text-3xl flex-shrink-0">{job.logo}</span>
-            <div className="min-w-0">
-              <h3 className="font-bold text-sm sm:text-base text-slate-900 truncate leading-snug">
-                {job.title}
-              </h3>
-              <p className="text-xs text-slate-600 font-medium truncate flex items-center gap-1 mt-0.5">
-                <Building2 className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                <span className="truncate">{job.company}</span>
-                <span>•</span>
-                <span className="text-[#C04A22] font-semibold flex-shrink-0">{job.distance}</span>
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition text-slate-500 flex-shrink-0 cursor-pointer"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        {/* Highlight Stats / Badges */}
-        <div className="flex flex-wrap items-center gap-1.5 my-3">
-          <span className="px-2.5 py-1 rounded-xl bg-orange-50 text-[#8C3015] border border-orange-100 text-xs font-bold">
-            {job.salary}
-          </span>
-          <span className="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 text-xs font-medium">
-            {job.experience}
-          </span>
-          <span className="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-semibold">
-            {job.type}
-          </span>
-        </div>
-
-        {/* Action buttons styled in signature sidebar theme color */}
-        <div className="flex items-center gap-2 pt-1">
-          <button
-            onClick={onDirections}
-            className="flex-1 py-2.5 px-3 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 shadow-2xs"
-          >
-            <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
-            <span>Direction</span>
-          </button>
-          <button
-            onClick={onViewDetails}
-            className="flex-1 py-2.5 px-3 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 shadow-2xs"
-          >
-            <span>Details</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={handleShare}
-            className="w-10 h-9 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 border border-[#C04A22]/25 flex items-center justify-center transition cursor-pointer flex-shrink-0 text-[#8C3015]"
-            title="Share Link"
-          >
-            <Share2 className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => setSaved(!saved)}
-            className="w-10 h-9 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 border border-[#C04A22]/25 flex items-center justify-center transition cursor-pointer flex-shrink-0"
-            title="Save"
-          >
-            <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-[#C04A22] text-[#C04A22]" : "text-[#8C3015]"}`} />
-          </button>
-        </div>
-      </div>
-    );
-
-    if (isMobile) {
-      return (
-        <div className="absolute bottom-0 left-0 right-0 z-[1000] bg-white rounded-t-3xl shadow-2xl border-t border-slate-200 overflow-hidden animate-in slide-in-from-bottom-3 duration-250 pb-2">
-          <div className="flex justify-center pt-2 pb-1">
-            <div className="w-8 h-1 rounded-full bg-slate-300" />
-          </div>
-          {jobContent}
-        </div>
-      );
-    }
-
-    return (
-      <div
-        className="absolute w-80 bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden z-[1000]"
-        style={{ left, top, transition: "left 0.25s, top 0.25s" }}
-      >
-        {jobContent}
-      </div>
-    );
-  }
+  const isJob = place.isJob && place.jobData;
+  const job = place.jobData;
 
   const cardContent = (
-    <>
-      <div className="relative overflow-hidden" style={{ height: isMobile ? 120 : 144 }}>
-        <img src={place.image} alt={place.name} className="w-full h-full object-cover" />
-        <button onClick={onClose} className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow hover:bg-white transition cursor-pointer">
+    <div className="p-3.5 sm:p-4 relative">
+      {copied && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-slate-900 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg animate-in fade-in">
+          Link copied!
+        </div>
+      )}
+
+      {/* Top Header with Icon/Image, Title, Subtitle & Close */}
+      <div className="flex items-start justify-between gap-2.5 mb-2.5">
+        <div className="flex items-center gap-3 min-w-0">
+          {isJob ? (
+            <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center text-2xl flex-shrink-0 shadow-2xs">
+              {job?.logo || "💼"}
+            </div>
+          ) : place.image ? (
+            <img
+              src={place.image}
+              alt={place.name}
+              className="w-11 h-11 rounded-2xl object-cover border border-slate-200/80 flex-shrink-0 shadow-2xs"
+            />
+          ) : (
+            <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-100/80 flex items-center justify-center text-xl text-[#C04A22] flex-shrink-0 shadow-2xs">
+              {categoryIcons[place.category] || "📍"}
+            </div>
+          )}
+
+          <div className="min-w-0">
+            <h3 className="font-bold text-sm sm:text-base text-slate-900 truncate leading-snug">
+              {isJob ? job?.title : place.name}
+            </h3>
+            <p className="text-xs text-slate-600 font-medium truncate flex items-center gap-1 mt-0.5">
+              {isJob ? (
+                <>
+                  <Building2 className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                  <span className="truncate">{job?.company}</span>
+                </>
+              ) : (
+                <>
+                  <MapPin className="w-3.5 h-3.5 text-[#C04A22] flex-shrink-0" />
+                  <span className="truncate">{place.address || place.category}</span>
+                </>
+              )}
+              <span>•</span>
+              <span className="text-[#C04A22] font-semibold flex-shrink-0">
+                {isJob ? job?.distance : (place.distance || "Nearby")}
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={onClose}
+          className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition text-slate-500 flex-shrink-0 cursor-pointer"
+          title="Close"
+        >
           <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* Highlight Stats / Badges (Exact 3-badge format) */}
+      <div className="flex flex-wrap items-center gap-1.5 my-2.5">
+        {isJob ? (
+          <>
+            <span className="px-2.5 py-1 rounded-xl bg-orange-50 text-[#8C3015] border border-orange-100 text-xs font-bold">
+              {job?.salary}
+            </span>
+            <span className="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 text-xs font-medium">
+              {job?.experience}
+            </span>
+            <span className="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-semibold">
+              {job?.type}
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="px-2.5 py-1 rounded-xl bg-orange-50 text-[#8C3015] border border-orange-100 text-xs font-bold truncate max-w-[130px]">
+              {place.category}
+            </span>
+            <span className="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+              {place.rating} ({place.reviews})
+            </span>
+            <span className={`px-2.5 py-1 rounded-xl text-xs font-semibold flex items-center gap-1 ${
+              place.open ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-red-50 text-red-600 border border-red-100"
+            }`}>
+              <Clock className="w-3 h-3" />
+              {place.open ? `Open · ${place.openUntil}` : "Closed"}
+            </span>
+          </>
+        )}
+      </div>
+
+      {/* Action buttons styled in signature sidebar theme color */}
+      <div className="flex items-center gap-2 pt-0.5">
+        <button
+          onClick={onDirections}
+          className="flex-1 py-2.5 px-3 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 shadow-2xs"
+        >
+          <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
+          <span>Direction</span>
+        </button>
+        <button
+          onClick={onViewDetails}
+          className="flex-1 py-2.5 px-3 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 shadow-2xs"
+        >
+          <span>Details</span>
+          <ChevronRight className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={handleShare}
-          className="absolute top-2.5 right-11 w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow hover:bg-white text-slate-700 hover:text-[#C04A22] transition cursor-pointer"
+          className="w-10 h-9 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 border border-[#C04A22]/25 flex items-center justify-center transition cursor-pointer flex-shrink-0 text-[#8C3015]"
           title="Share Link"
         >
           <Share2 className="w-3.5 h-3.5" />
         </button>
-        {place.immigrantFriendly && (
-          <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-primary text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
-            <CheckCircle className="w-2.5 h-2.5" /> Immigrant-Friendly
-          </div>
-        )}
+        <button
+          onClick={() => setSaved(!saved)}
+          className="w-10 h-9 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 border border-[#C04A22]/25 flex items-center justify-center transition cursor-pointer flex-shrink-0"
+          title="Save"
+        >
+          <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-[#C04A22] text-[#C04A22]" : "text-[#8C3015]"}`} />
+        </button>
       </div>
-      <div className="p-3 relative">
-        {copied && (
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 bg-slate-900 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg">
-            Link copied!
-          </div>
-        )}
-        <div className="flex items-start justify-between gap-2 mb-1.5">
-          <div>
-            <div className="font-bold text-sm text-foreground">{place.name}</div>
-            <div className="text-xs text-muted-foreground">{place.category} · {place.distance}</div>
-          </div>
-          <div className={`flex items-center gap-0.5 flex-shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${place.open ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
-            <Clock className="w-2.5 h-2.5" />{place.open ? `Open · ${place.openUntil}` : "Closed"}
-          </div>
-        </div>
-        <div className="flex items-center gap-1 mb-2">
-          {[1, 2, 3, 4, 5].map(s => (
-            <Star key={s} className={`w-3 h-3 ${s <= Math.round(place.rating) ? "fill-amber-400 text-amber-400" : "text-border"}`} />
-          ))}
-          <span className="text-xs font-semibold ml-0.5">{place.rating}</span>
-          <span className="text-xs text-muted-foreground">({place.reviews})</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
-          <MapPin className="w-3 h-3 flex-shrink-0" style={{ color }} />{place.address}
-        </div>
-        <div className="flex gap-2">
-          <button onClick={onDirections} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[#E06D53] hover:bg-[#C04A22] text-white text-xs font-semibold shadow-sm transition cursor-pointer">
-            <Navigation className="w-3.5 h-3.5" /> Directions
-          </button>
-          <button onClick={onViewDetails} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-border text-xs font-semibold hover:bg-secondary transition cursor-pointer">
-            Details <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={handleShare} className="w-9 flex items-center justify-center rounded-xl border border-border hover:bg-secondary text-slate-600 hover:text-[#C04A22] transition cursor-pointer" title="Share Link">
-            <Share2 className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={() => setSaved(!saved)} className="w-9 flex items-center justify-center rounded-xl border border-border hover:bg-secondary transition cursor-pointer" title="Save">
-            <Bookmark className={`w-4 h-4 ${saved ? "fill-[#C04A22] text-[#C04A22]" : "text-muted-foreground"}`} />
-          </button>
-        </div>
-      </div>
-    </>
+    </div>
   );
 
   if (isMobile) {
     return (
-      <div className="absolute bottom-0 left-0 right-0 z-[1000] bg-white rounded-t-2xl shadow-2xl border-t border-border overflow-hidden animate-in slide-in-from-bottom-3 duration-250">
-        <div className="flex justify-center pt-2 pb-1">
-          <div className="w-8 h-1 rounded-full bg-border" />
+      <div className="absolute bottom-3 left-3 right-3 z-[70] bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden animate-in slide-in-from-bottom-3 duration-250 max-w-md mx-auto pb-1">
+        <div className="flex justify-center pt-2 pb-0.5">
+          <div className="w-8 h-1 rounded-full bg-slate-300" />
         </div>
         {cardContent}
       </div>
@@ -1711,8 +1676,10 @@ function MapPlaceCard({
   }
 
   return (
-    <div className="absolute w-72 bg-white rounded-2xl shadow-2xl border border-border overflow-hidden z-[1000]"
-      style={{ left, top, transition: "left 0.25s, top 0.25s" }}>
+    <div
+      className="absolute w-[320px] bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden z-[1000]"
+      style={{ left, top, transition: "left 0.25s, top 0.25s" }}
+    >
       {cardContent}
     </div>
   );
@@ -2336,7 +2303,7 @@ export function MapDiscoveryContent({
   };
 
   return (
-    <div className={compact ? `flex flex-col ${height || "h-[240px] sm:h-[260px]"} rounded-2xl border border-border overflow-hidden bg-background shadow-xs relative mb-3 sm:mb-4` : embedded ? "flex flex-col h-[580px] sm:h-[650px] rounded-2xl border border-border overflow-hidden bg-background shadow-sm my-1" : "flex flex-col h-screen overflow-hidden bg-background"}>
+    <div className={compact ? `flex flex-col ${height || "h-[240px] sm:h-[260px]"} rounded-2xl border border-border overflow-hidden bg-background shadow-xs relative mb-3 sm:mb-4` : embedded ? "flex flex-col h-[580px] sm:h-[650px] rounded-2xl border border-border overflow-hidden bg-background shadow-sm my-1" : "flex flex-col h-[calc(100dvh-5rem)] lg:h-screen overflow-hidden bg-background"}>
       {compact ? (
         /* ── Compact Embedded Mode (For HomeFeed between top bar & post composer) ── */
         <div

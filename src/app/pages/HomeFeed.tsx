@@ -16,6 +16,7 @@ import {
   Wind, Droplets, Thermometer, ArrowUp, Loader2, CloudSun, Plus, LayoutGrid, Box, Package,
   Cloud, CloudRain, CloudSnow, Sun, CloudLightning, ShoppingBag
 } from "lucide-react";
+import { EventRegistrationModal } from "../components/events/EventRegistrationModal";
 
 // ─── Weather Widget ───────────────────────────────────────────────────────────
 type WeatherData = {
@@ -524,16 +525,16 @@ function MiniCalendar({
     <div className="bg-white rounded-2xl border border-border p-4">
       <div className="flex items-center justify-between mb-3 group cursor-pointer">
         <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
-          <h3 className="font-semibold text-sm text-foreground">
+          <Calendar className="w-4 h-4 text-[#C04A22] group-hover:text-[#8C3015] transition-colors" />
+          <h3 className="font-bold text-sm text-foreground">
             {MONTHS[viewMonth]} {viewYear}
           </h3>
         </div>
         <div className="flex gap-1">
-          <button onClick={prevMonth} className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={prevMonth} className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-orange-50 text-slate-500 hover:text-[#C04A22] transition-colors">
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
-          <button onClick={nextMonth} className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={nextMonth} className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-orange-50 text-slate-500 hover:text-[#C04A22] transition-colors">
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -559,17 +560,15 @@ function MiniCalendar({
               onClick={() => onSelect(isSelected ? null : key)}
               className={`relative flex flex-col items-center justify-center h-8 w-full rounded-lg text-xs font-medium transition-all duration-150 ${
                 isSelected
-                  ? "bg-primary text-primary-foreground shadow-sm scale-105"
-                  : isToday
-                  ? "bg-blue-50 text-primary font-bold"
+                  ? "bg-[#C04A22] text-white shadow-sm scale-105 font-bold"
                   : hasEvents
-                  ? "hover:bg-secondary text-foreground"
+                  ? "hover:bg-orange-50/80 text-foreground font-semibold"
                   : "text-muted-foreground hover:bg-secondary/50"
               }`}
             >
               {day}
               {hasEvents && (
-                <span className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${isSelected ? "bg-white" : "bg-primary"}`} />
+                <span className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white" : "bg-[#C04A22]"}`} />
               )}
             </button>
           );
@@ -578,12 +577,8 @@ function MiniCalendar({
 
       <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
+          <span className="w-2 h-2 rounded-full bg-[#C04A22] inline-block" />
           {t("cal_has_events")}
-        </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span className="w-5 h-4 rounded bg-blue-50 inline-block border border-blue-100" />
-          {t("cal_today")}
         </div>
       </div>
     </div>
@@ -593,39 +588,120 @@ function MiniCalendar({
 // ─── Event Card ────────────────────────────────────────────────────────────────
 
 function EventCard({ event }: { event: CalEvent; key?: string | number }) {
-  const { t } = useLanguage();
   const [saved, setSaved] = useState(false);
+  const [interested, setInterested] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [regModalOpen, setRegModalOpen] = useState(false);
+  const [attendeeCount, setAttendeeCount] = useState(event.attendees);
+
+  const handleInterestedClick = () => {
+    if (interested) {
+      setInterested(false);
+      setAttendeeCount(c => Math.max(event.attendees, c - 1));
+    } else {
+      setRegModalOpen(true);
+    }
+  };
+
+  const handleRegistrationSuccess = () => {
+    setInterested(true);
+    setAttendeeCount(c => c + 1);
+  };
+
+  const handleShare = () => {
+    const url = `${window.location.origin}/?date=${event.time}`;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      navigator.share({ title: event.title, text: `${event.title} - ${event.location}`, url }).catch(() => {});
+    } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
+
   return (
-    <div className={`border rounded-2xl p-4 ${event.color} transition-all hover:shadow-sm`}>
-      <div className="flex items-start gap-3">
-        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-2xl shadow-sm flex-shrink-0">
-          {event.emoji}
+    <>
+      <div className="bg-white rounded-2xl border border-slate-200/90 hover:border-orange-200/90 p-4 sm:p-5 transition-all hover:shadow-md relative group">
+        {copied && (
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-slate-900 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg">
+            Link copied!
+          </div>
+        )}
+
+        {/* Top Header */}
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="min-w-0 flex-1">
+            <h4 className="text-base sm:text-lg font-bold text-foreground leading-snug group-hover:text-[#8C3015] transition-colors">
+              {event.title}
+            </h4>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <span className="text-xs font-semibold text-[#8C3015]">
+                {event.category}
+              </span>
+              <span className="text-xs text-muted-foreground">•</span>
+              <span className="text-xs text-[#C04A22] font-semibold">by {event.organizer}</span>
+            </div>
+          </div>
+          <button
+            onClick={() => setSaved(s => !s)}
+            className="flex-shrink-0 p-1.5 rounded-xl hover:bg-orange-50 transition-colors text-slate-400 hover:text-[#C04A22] cursor-pointer"
+            title={saved ? "Saved" : "Save Event"}
+          >
+            <Bookmark className={`w-4 h-4 ${saved ? "fill-[#C04A22] text-[#C04A22]" : ""}`} />
+          </button>
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <span className="text-sm font-bold text-foreground leading-snug">{event.title}</span>
-            <button onClick={() => setSaved(s => !s)} className={`flex-shrink-0 p-1 rounded-lg transition-colors ${saved ? "text-primary" : "text-muted-foreground hover:text-primary"}`}>
-              <Bookmark className={`w-4 h-4 ${saved ? "fill-primary" : ""}`} />
-            </button>
+
+        <div className="space-y-1.5 my-3">
+          <div className="flex items-center gap-2 text-xs text-slate-700">
+            <Clock className="w-3.5 h-3.5 text-[#C04A22] flex-shrink-0" />
+            <span className="font-medium text-slate-800">{event.time}</span>
           </div>
-          <div className="space-y-1 mb-3">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Clock className="w-3 h-3 flex-shrink-0" />{event.time}</div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><MapPinIcon className="w-3 h-3 flex-shrink-0" />{event.location}</div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Users className="w-3 h-3 flex-shrink-0" />{event.attendees.toLocaleString()} attending · by {event.organizer}</div>
+          <div className="flex items-center gap-2 text-xs text-slate-700">
+            <MapPinIcon className="w-3.5 h-3.5 text-[#C04A22] flex-shrink-0" />
+            <span>{event.location}</span>
           </div>
-          <p className="text-xs text-muted-foreground leading-relaxed mb-3">{event.desc}</p>
-          <div className="flex gap-1.5 flex-wrap mb-3">
-            {event.tags.map(t => (
-              <span key={t} className="text-xs bg-white/70 text-muted-foreground px-2 py-0.5 rounded-full border border-border/40">{t}</span>
-            ))}
+          <div className="flex items-center gap-2 text-xs text-slate-700">
+            <Users className="w-3.5 h-3.5 text-[#C04A22] flex-shrink-0" />
+            <span><strong className="text-[#8C3015] font-semibold">{attendeeCount.toLocaleString()}</strong> attending</span>
           </div>
-          <div className="flex gap-2">
-            <button className="flex-1 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition">{t("widget_interested")}</button>
-            <button className="px-3 py-2 rounded-xl border border-border bg-white/70 text-xs font-medium hover:bg-white transition"><Share2 className="w-3.5 h-3.5" /></button>
-          </div>
+        </div>
+
+        <p className="text-xs text-muted-foreground leading-relaxed mb-4">{event.desc}</p>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleInterestedClick}
+            className={`flex-1 py-2.5 px-4 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 shadow-2xs ${
+              interested
+                ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                : "bg-[#C04A22] hover:bg-[#8C3015] text-white"
+            }`}
+          >
+            {interested ? "Registered ✓" : "Interested"}
+          </button>
+          <button
+            onClick={handleShare}
+            className="w-10 h-9 rounded-2xl bg-[#C04A22]/10 hover:bg-[#C04A22]/20 border border-[#C04A22]/25 text-[#8C3015] flex items-center justify-center transition cursor-pointer flex-shrink-0"
+            title="Share Event"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
-    </div>
+
+      <EventRegistrationModal
+        isOpen={regModalOpen}
+        onClose={() => setRegModalOpen(false)}
+        event={{
+          id: event.id,
+          title: event.title,
+          time: event.time,
+          location: event.location,
+          organizer: event.organizer,
+        }}
+        onSuccess={handleRegistrationSuccess}
+      />
+    </>
   );
 }
 
@@ -1514,8 +1590,8 @@ export function HomeFeed() {
         </button>
       </div>
 
-      {/* Main content: constrained width, centered */}
-      <div className="w-full max-w-2xl mx-auto lg:max-w-none">
+      {/* Main content: expanded width, centered */}
+      <div className="w-full max-w-3xl mx-auto lg:max-w-none">
         {/* Sticky tabs bar */}
         {!selectedDate && (
           <div className="sticky top-0 lg:top-0 z-20 bg-white/90 backdrop-blur-md border-b border-border">
@@ -1583,23 +1659,27 @@ export function HomeFeed() {
           </div>
         )}
 
-        <div className="p-3 sm:p-4 md:p-5 space-y-3 sm:space-y-4">
+        <div className="px-0.5 sm:px-2 md:px-3 py-3 sm:py-4 space-y-3 sm:space-y-4 w-full">
           {selectedDate ? (
             <>
               {/* Date filter header */}
-              <div className="flex items-center justify-between bg-white rounded-2xl border border-border px-3 sm:px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-emerald-600" />
+              <div className="flex items-center justify-between bg-white rounded-2xl border border-border px-3 sm:px-4 py-3 shadow-2xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center flex-shrink-0">
+                    <Calendar className="w-4 h-4 text-[#C04A22]" />
+                  </div>
                   <div>
-                    <div className="text-sm font-semibold text-foreground">{formatDate(selectedDate)}</div>
+                    <div className="text-sm font-bold text-foreground">{formatDate(selectedDate)}</div>
                     <div className="text-xs text-muted-foreground">
-                      {hasEvents ? `${selectedEvents.length} event${selectedEvents.length > 1 ? "s" : ""} on this day` : "No events scheduled"}
+                      {hasEvents ? (
+                        <span className="text-[#8C3015] font-medium">{selectedEvents.length} event{selectedEvents.length > 1 ? "s" : ""} on this day</span>
+                      ) : "No events scheduled"}
                     </div>
                   </div>
                 </div>
                 <button
                   onClick={() => setSelectedDate(null)}
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground px-2.5 py-1.5 rounded-xl hover:bg-secondary transition-colors"
+                  className="flex items-center gap-1 text-xs font-medium text-[#8C3015] hover:text-[#C04A22] px-3 py-1.5 rounded-xl hover:bg-orange-50 transition-colors border border-transparent hover:border-orange-200 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" /> Clear
                 </button>
@@ -1608,11 +1688,14 @@ export function HomeFeed() {
               {hasEvents ? (
                 selectedEvents.map(event => <EventCard key={event.id} event={event} />)
               ) : (
-                <div className="bg-white rounded-2xl border border-border p-8 sm:p-10 text-center">
+                <div className="bg-white rounded-2xl border border-border p-8 sm:p-10 text-center shadow-2xs">
                   <div className="text-4xl mb-3">📅</div>
-                  <div className="text-base font-semibold text-foreground mb-1">{t("cal_no_events")}</div>
+                  <div className="text-base font-bold text-foreground mb-1">{t("cal_no_events")}</div>
                   <div className="text-sm text-muted-foreground mb-4">{t("cal_no_events_hint")}</div>
-                  <button onClick={() => setSelectedDate(null)} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition">
+                  <button
+                    onClick={() => setSelectedDate(null)}
+                    className="px-5 py-2.5 rounded-2xl bg-[#C04A22] hover:bg-[#8C3015] text-white text-xs font-bold transition shadow-xs cursor-pointer active:scale-98"
+                  >
                     {t("cal_back")}
                   </button>
                 </div>
@@ -1646,12 +1729,12 @@ export function HomeFeed() {
                   onClick={() => { setMobileCalOpen(v => !v); setMobileWeatherOpen(false); }}
                   className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all shadow-sm group cursor-pointer ${
                     mobileCalOpen
-                      ? "bg-secondary border border-border shadow-md"
+                      ? "bg-[#C04A22]/10 border border-[#C04A22]/30 shadow-md text-[#8C3015]"
                       : "bg-white border border-border hover:shadow-md"
                   }`}
                   title="Calendar"
                 >
-                  <Calendar className="w-5 h-5 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
+                  <Calendar className={`w-5 h-5 transition-colors ${mobileCalOpen ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
                 </button>
 
                 {/* Center: Post Box Action Button */}
