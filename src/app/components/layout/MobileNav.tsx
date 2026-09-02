@@ -6,17 +6,17 @@ import {
   HelpCircle, Shield, X, ShoppingBag
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
+import { useMobileTabs } from "../../context/MobileTabContext";
 import { LanguageToggle } from "../ui/LanguageToggle";
 
 const mainKeys = [
   { icon: Home,         tKey: "home",     path: "/feed" },
   { icon: Briefcase,    tKey: "services", path: "/services" },
   { icon: Map,          tKey: "map",      path: "/map" },
-  { icon: Clapperboard, tKey: "reels",    path: "/reels" },
-  { icon: ShoppingBag,  tKey: "orders",   path: "/orders" },
 ];
 
 const moreKeys = [
+  { icon: ShoppingBag,  tKey: "orders",        path: "/orders",        badge: null },
   { icon: Search,       tKey: "explore",       path: "/explore",       badge: null },
   { icon: Users,        tKey: "communities",   path: "/communities",   badge: null },
   { icon: MessageCircle,tKey: "messages",      path: "/messages",      badge: "2" },
@@ -32,6 +32,7 @@ export function MobileNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
+  const { tasks, setIsRecentsOpen } = useMobileTabs();
   const [showMore, setShowMore] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
 
@@ -126,9 +127,39 @@ export function MobileNav() {
             );
           })}
 
+          {/* Android Multi-Task Switcher Button (In place of Reels) */}
+          <button
+            onClick={() => setIsRecentsOpen(true)}
+            className="flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-xl transition-all min-w-0 relative group text-slate-600 hover:text-[#8C3015]"
+            title="Android Recent Apps Switcher"
+          >
+            <div className="p-1.5 rounded-xl transition-all relative">
+              <div className="w-5 h-5 rounded-[5px] border-2 border-slate-700 group-hover:border-[#8C3015] flex items-center justify-center font-black text-[10px] text-slate-800 group-hover:text-[#8C3015] transition">
+                {tasks.length}
+              </div>
+              {tasks.length > 1 && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              )}
+            </div>
+            <span className="text-[10px] font-medium leading-none">Recents</span>
+          </button>
+
+          {/* Reels Button (In place of Recents) */}
+          <button
+            onClick={() => navigate("/reels")}
+            className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all min-w-0 relative group ${
+              location.pathname === "/reels" ? "text-[#8C3015] font-semibold" : "text-slate-600 hover:text-[#8C3015]"
+            }`}
+          >
+            <div className={`p-1.5 rounded-xl transition-all ${location.pathname === "/reels" ? "bg-[#C04A22]/10" : ""}`}>
+              <Clapperboard className={`w-5 h-5 transition-colors ${location.pathname === "/reels" ? "text-[#8C3015]" : "text-slate-600 group-hover:text-[#8C3015]"}`} strokeWidth={location.pathname === "/reels" ? 2.3 : 1.8} />
+            </div>
+            <span className="text-[10px] font-medium leading-none">{t("reels")}</span>
+          </button>
+
           {/* More button */}
           <button onClick={() => navigate("/more")}
-            className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all min-w-0 relative group ${
+            className={`flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-xl transition-all min-w-0 relative group ${
               location.pathname === "/more" || isMoreActive ? "text-[#8C3015] font-semibold" : "text-slate-600 hover:text-[#8C3015]"
             }`}>
             <div className={`p-1.5 rounded-xl transition-all ${location.pathname === "/more" || isMoreActive ? "bg-[#C04A22]/10" : ""}`}>

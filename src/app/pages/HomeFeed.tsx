@@ -14,7 +14,7 @@ import {
   Calendar, Clock, X, MapPin as MapPinIcon, UserCheck, Building2,
   Megaphone, Star, TrendingUp, Lock, Hash, Pin, Award, User, Video, Film, Smile,
   Wind, Droplets, Thermometer, ArrowUp, Loader2, CloudSun, Plus, LayoutGrid, Box, Package,
-  Cloud, CloudRain, CloudSnow, Sun, CloudLightning
+  Cloud, CloudRain, CloudSnow, Sun, CloudLightning, ShoppingBag
 } from "lucide-react";
 
 // ─── Weather Widget ───────────────────────────────────────────────────────────
@@ -1493,11 +1493,19 @@ export function HomeFeed() {
     }>
       {/* Mobile-only header — hidden on desktop (sidebar handles nav) */}
       <div className="lg:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-border px-4 py-3 flex items-center justify-between">
-        <div className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs">
+        <div
+          onClick={() => navigate("/profile")}
+          className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs cursor-pointer active:scale-95 transition"
+          title="My Profile"
+        >
           <User className="w-4.5 h-4.5 text-slate-500" />
         </div>
         <Logo size="sm" onClick={() => navigate("/feed")} />
-        <button className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary group">
+        <button
+          onClick={() => navigate("/notifications")}
+          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary text-slate-600 hover:text-[#8C3015] active:scale-95 transition cursor-pointer group"
+          title="Notifications"
+        >
           <Bell className="w-5 h-5 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
         </button>
       </div>
@@ -1507,7 +1515,7 @@ export function HomeFeed() {
         {/* Sticky tabs bar */}
         {!selectedDate && (
           <div className="sticky top-0 lg:top-0 z-20 bg-white/90 backdrop-blur-md border-b border-border">
-            <div className="grid grid-cols-4 w-full items-stretch">
+            <div className="grid grid-cols-5 w-full items-stretch">
               {/* 1. For You */}
               <button
                 onClick={() => setActiveTab("for-you")}
@@ -1539,7 +1547,17 @@ export function HomeFeed() {
                 <span className="hidden sm:inline truncate">{t("tab_following")}</span>
               </button>
 
-              {/* 4. Apps / Local */}
+              {/* 4. Orders (Between Following & 4-Box) */}
+              <button
+                onClick={() => navigate("/orders")}
+                className="w-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 text-xs font-medium transition-all group text-slate-600 hover:text-[#8C3015] hover:bg-slate-50 cursor-pointer"
+                title="My Orders"
+              >
+                <ShoppingBag className="w-5 h-5 sm:w-3.5 sm:h-3.5 flex-shrink-0 transition-colors text-slate-600 group-hover:text-[#8C3015]" />
+                <span className="hidden sm:inline truncate">Orders</span>
+              </button>
+
+              {/* 5. 4 Box (Apps / Local) */}
               <button
                 onClick={() => {
                   setActiveTab("local");

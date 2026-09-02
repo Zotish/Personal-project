@@ -1,6 +1,7 @@
 /* MARKER-MAKE-KIT-INVOKED */
 import { BrowserRouter, Routes, Route, Navigate } from "react-router";
 import { LanguageProvider } from "./context/LanguageContext";
+import { MobileTabProvider } from "./context/MobileTabContext";
 import { AppSplash } from "./pages/AppSplash";
 import { Landing } from "./pages/Landing";
 import { Login, SignUp, EmailVerification } from "./pages/Auth";
@@ -38,73 +39,75 @@ import { PWAInstallPrompt } from "./components/ui/PWAInstallPrompt";
 export default function App() {
   return (
     <LanguageProvider>
-    <BrowserRouter>
-      <PWAInstallPrompt />
-      <Routes>
-        {/* Public */}
-        <Route path="/" element={<AppSplash />} />
-        <Route path="/landing" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/verify-email" element={<EmailVerification />} />
+      <BrowserRouter>
+        <MobileTabProvider>
+          <PWAInstallPrompt />
+          <Routes>
+            {/* Public */}
+            <Route path="/" element={<AppSplash />} />
+            <Route path="/landing" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/verify-email" element={<EmailVerification />} />
 
-        {/* Onboarding (6 steps) */}
-        <Route path="/onboarding/country" element={<OnboardingCountry />} />
-        <Route path="/onboarding/status" element={<OnboardingStatus />} />
-        <Route path="/onboarding/language" element={<OnboardingLanguage />} />
-        <Route path="/onboarding/topics" element={<OnboardingTopics />} />
-        <Route path="/onboarding/people" element={<OnboardingPeople />} />
-        <Route path="/onboarding/communities" element={<OnboardingCommunities />} />
+            {/* Onboarding (6 steps) */}
+            <Route path="/onboarding/country" element={<OnboardingCountry />} />
+            <Route path="/onboarding/status" element={<OnboardingStatus />} />
+            <Route path="/onboarding/language" element={<OnboardingLanguage />} />
+            <Route path="/onboarding/topics" element={<OnboardingTopics />} />
+            <Route path="/onboarding/people" element={<OnboardingPeople />} />
+            <Route path="/onboarding/communities" element={<OnboardingCommunities />} />
 
-        {/* Main App */}
-        <Route path="/feed" element={<HomeFeed />} />
-        <Route path="/explore" element={<Explore />} />
-        <Route path="/map" element={<MapDiscovery />} />
-        <Route path="/services" element={<ServicesHub />} />
-        <Route path="/messages" element={<Messages />} />
-        <Route path="/notifications" element={<Notifications />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/profile/:userId" element={<Profile />} />
-        <Route path="/user/:username" element={<Profile />} />
-        <Route path="/orders" element={<BuyerOrders />} />
-        <Route path="/communities" element={<Communities />} />
-        <Route path="/qa" element={<QandA />} />
-        <Route path="/post/:id" element={<PostDetails />} />
-        <Route path="/saved" element={<SavedResources />} />
-        <Route path="/more" element={<MoreMenu />} />
+            {/* Main App */}
+            <Route path="/feed" element={<HomeFeed />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/map" element={<MapDiscovery />} />
+            <Route path="/services" element={<ServicesHub />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/:userId" element={<Profile />} />
+            <Route path="/user/:username" element={<Profile />} />
+            <Route path="/orders" element={<BuyerOrders />} />
+            <Route path="/communities" element={<Communities />} />
+            <Route path="/qa" element={<QandA />} />
+            <Route path="/post/:id" element={<PostDetails />} />
+            <Route path="/saved" element={<SavedResources />} />
+            <Route path="/more" element={<MoreMenu />} />
 
-        {/* Seller SaaS & Storefront */}
-        <Route path="/seller-dashboard" element={<SellerDashboard />} />
-        <Route path="/seller/:sellerId" element={<SellerProfile />} />
-        <Route path="/store/:storeId" element={<SellerProfile />} />
+            {/* Seller SaaS & Storefront */}
+            <Route path="/seller-dashboard" element={<SellerDashboard />} />
+            <Route path="/seller/:sellerId" element={<SellerProfile />} />
+            <Route path="/store/:storeId" element={<SellerProfile />} />
 
-        {/* Service Pages */}
-        <Route path="/services/jobs" element={<Jobs />} />
-        <Route path="/services/housing" element={<Housing />} />
-        <Route path="/services/free-food" element={<FreeFood />} />
-        <Route path="/services/food-bank" element={<FreeFood />} />
-        <Route path="/services/embassy" element={<Embassy />} />
-        <Route path="/services/consulate" element={<Embassy />} />
-        <Route path="/services/legal" element={<LegalHelp />} />
-        <Route path="/services/checklist" element={<ImmigrationChecklist />} />
-        <Route path="/services/schools" element={<SchoolFinder />} />
-        <Route path="/services/hospitals" element={<HospitalFinder />} />
-        <Route path="/services/religious" element={<ReligiousFinder />} />
-        <Route path="/services/religion" element={<ReligiousFinder />} />
-        <Route path="/services/food" element={<RestaurantGroceryFinder />} />
-        <Route path="/services/:serviceId" element={<ServiceDetail />} />
+            {/* Service Pages */}
+            <Route path="/services/jobs" element={<Jobs />} />
+            <Route path="/services/housing" element={<Housing />} />
+            <Route path="/services/free-food" element={<FreeFood />} />
+            <Route path="/services/food-bank" element={<FreeFood />} />
+            <Route path="/services/embassy" element={<Embassy />} />
+            <Route path="/services/consulate" element={<Embassy />} />
+            <Route path="/services/legal" element={<LegalHelp />} />
+            <Route path="/services/checklist" element={<ImmigrationChecklist />} />
+            <Route path="/services/schools" element={<SchoolFinder />} />
+            <Route path="/services/hospitals" element={<HospitalFinder />} />
+            <Route path="/services/religious" element={<ReligiousFinder />} />
+            <Route path="/services/religion" element={<ReligiousFinder />} />
+            <Route path="/services/food" element={<RestaurantGroceryFinder />} />
+            <Route path="/services/:serviceId" element={<ServiceDetail />} />
 
-        {/* Reels */}
-        <Route path="/reels" element={<Reels />} />
+            {/* Reels */}
+            <Route path="/reels" element={<Reels />} />
 
-        {/* Settings & Admin */}
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/admin" element={<Admin />} />
+            {/* Settings & Admin */}
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/admin" element={<Admin />} />
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </MobileTabProvider>
+      </BrowserRouter>
     </LanguageProvider>
   );
 }

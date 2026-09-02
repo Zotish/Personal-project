@@ -4,6 +4,7 @@ import { MobileNav } from "./MobileNav";
 import { SellerSidebar } from "./SellerSidebar";
 import { SellerMobileNav } from "./SellerMobileNav";
 import { SmartEdgeSidebar } from "../smart-sidebar/SmartEdgeSidebar";
+import { AndroidRecentAppsSwitcher } from "../mobile-multitab/AndroidRecentAppsSwitcher";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -54,6 +55,9 @@ export function AppLayout({
           <MobileNav />
         )
       )}
+
+      {/* Android Recent Apps Deck Switcher (Mobile-Only) */}
+      <AndroidRecentAppsSwitcher />
 
       {/* Floating Smart Edge Sidebar & Freeform Window */}
       <SmartEdgeSidebar />

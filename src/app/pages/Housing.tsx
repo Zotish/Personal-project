@@ -1066,17 +1066,26 @@ export function Housing() {
 
   const nearbyHousing = filteredHousing.filter(j => j.isNearby);
 
-  // Scroll detection for collapsing map height
+  // Scroll detection for collapsing map height with smooth hysteresis (prevents vibration)
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 80);
+      const y = window.scrollY;
+      setIsScrolled(prev => {
+        if (!prev && y > 100) return true;
+        if (prev && y < 40) return false;
+        return prev;
+      });
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // IntersectionObserver to auto-move map to currently visible housing card
+  // IntersectionObserver to auto-move map to currently visible housing card (ONLY for Mobile view < 768px)
   useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth >= 768) {
+      return; // Disable scroll animation on Desktop & Pad/Tablet view!
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries.filter(e => e.isIntersecting);
@@ -1253,8 +1262,8 @@ export function Housing() {
         </div>
 
         {/* ── BARIKOI LIVE MAP (EXPANDED / COMPACT STICKY HEIGHT) ────── */}
-        <div id="housing-map-section" className={`w-full max-w-7xl mx-auto px-2 sm:px-4 pt-2 sm:pt-3 transition-all duration-300 ${
-          isScrolled ? "sticky top-[95px] sm:top-[100px] z-10" : ""
+        <div id="housing-map-section" className={`w-full max-w-7xl mx-auto px-2 sm:px-4 transition-all duration-300 ${
+          isScrolled ? "sticky top-[86px] sm:top-[90px] md:top-[90px] lg:top-[90px] z-10 pt-0" : "pt-2 sm:pt-3"
         }`}>
           <div className="rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm bg-white">
             <BariKoiLiveHousingMap
@@ -1283,335 +1292,175 @@ export function Housing() {
           </div>
         </div>
 
-        {/* ── MAIN HOUSING DIRECTORY CONTENT (2-COLUMN ON DESKTOP) ─────────── */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-2.5 sm:pt-3">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            
-            {/* ── LEFT COLUMN: Filter Toggle & Properties Feed ───────────── */}
-            <div className="lg:col-span-7 space-y-3.5">
-              {/* Compact Toggle Button Header */}
-              <div className="pt-0.5 pb-1">
-                <div className="flex items-center gap-2">
-                  <div
-                    onClick={() => setActiveFilter("nearby")}
-                    className={`flex-1 py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border text-center transition-all cursor-pointer active:scale-99 ${
-                      activeFilter === "nearby"
-                        ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
-                        : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
-                    }`}
-                  >
-                    <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
-                      {nearbyHousing.length} Nearby
-                    </div>
-                  </div>
-
-                  <div
-                    onClick={() => setActiveFilter("all")}
-                    className={`flex-1 py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border text-center transition-all cursor-pointer active:scale-99 ${
-                      activeFilter === "all"
-                        ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
-                        : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
-                    }`}
-                  >
-                    <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
-                      {liveHousing.length} Full State
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Housing Cards Feed */}
-              <div className="space-y-4">
-                {(activeFilter === "nearby" ? nearbyHousing : liveHousing).map(listing => {
-                  const isSelected = selectedListing?.id === listing.id;
-                  const isSaved = savedIds.includes(listing.id);
-                  const isRent = listing.purpose === "Rent";
-
-                  return (
-                    <div
-                      key={listing.id}
-                      data-listing-id={listing.id}
-                      ref={el => {
-                        if (el) cardRefs.current.set(listing.id, el);
-                        else cardRefs.current.delete(listing.id);
-                      }}
-                      onClick={() => setSelectedListing(listing)}
-                      className={`group bg-white rounded-3xl border overflow-hidden transition-all duration-200 cursor-pointer ${
-                        isSelected
-                          ? "border-[#C04A22] ring-2 ring-[#C04A22]/20 shadow-md"
-                          : "border-slate-200/90 hover:border-slate-300 hover:shadow-xs"
-                      }`}
-                    >
-                      {/* Banner Image with Purpose & Agency Corner Badges */}
-                      <div className="relative w-full h-32 sm:h-36 overflow-hidden bg-slate-100">
-                        <img
-                          src={listing.image}
-                          alt={listing.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          loading="lazy"
-                        />
-                        {/* Top-Right: Purpose Badge (Rent / Purchase) */}
-                        <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold shadow-xs border ${
-                          isRent
-                            ? "bg-emerald-600 text-white border-emerald-700/60"
-                            : "bg-indigo-600 text-white border-indigo-700/60"
-                        }`}>
-                          For {listing.purpose}
-                        </div>
-
-                        {/* Top-Left: Agency Badge In The Corner (User Specified!) */}
-                        <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-xs font-bold border border-slate-200/80 shadow-xs">
-                          <span className="truncate max-w-[140px] sm:max-w-[180px]">{listing.agency}</span>
-                        </div>
-
-                        {/* Bottom-Left: Distance Badge */}
-                        <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-medium flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-                          {listing.distance}
-                        </div>
-                      </div>
-
-                      {/* Card Content */}
-                      <div className="p-4 sm:p-5">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug group-hover:text-[#C04A22] transition-colors line-clamp-1">
-                              {listing.title}
-                            </h3>
-                            <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5 flex items-center gap-1">
-                              <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                              <span className="truncate">{listing.location}</span>
-                            </p>
-                          </div>
-
-                          {/* Bookmark Save Button */}
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              toggleSave(listing.id);
-                            }}
-                            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-[#C04A22] flex items-center justify-center transition cursor-pointer flex-shrink-0"
-                            title={isSaved ? "Saved" : "Save Property"}
-                          >
-                            {isSaved ? (
-                              <BookmarkCheck className="w-4 h-4 text-[#C04A22]" />
-                            ) : (
-                              <Bookmark className="w-4 h-4" />
-                            )}
-                          </button>
-                        </div>
-
-                        {/* Specification Chips (Beds, Baths, Sqft, Furnishing) */}
-                        <div className="flex items-center gap-2 flex-wrap mt-2.5">
-                          <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
-                            <Bed className="w-3 h-3 text-[#C04A22]" />
-                            {listing.beds}
-                          </span>
-                          <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
-                            <Bath className="w-3 h-3 text-[#C04A22]" />
-                            {listing.baths}
-                          </span>
-                          <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
-                            <Maximize2 className="w-3 h-3 text-[#C04A22]" />
-                            {listing.sqft}
-                          </span>
-                        </div>
-
-                        {/* Row 1: Price Pill */}
-                        <div className="mt-3.5 flex items-center justify-between">
-                          <span className="px-3.5 py-1.5 rounded-full bg-orange-50/80 text-[#C04A22] text-xs sm:text-sm font-bold border border-orange-100/60 shadow-2xs">
-                            {listing.price}
-                          </span>
-                        </div>
-
-                        {/* Row 2: Direction & Details Buttons (Side by Side Full Width) */}
-                        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              handleShowDirection(listing);
-                            }}
-                            className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
-                            title="Show Road Route to Property"
-                          >
-                            <Navigation className="w-4 h-4 text-[#C04A22]" />
-                            <span>Direction</span>
-                          </button>
-
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              setShowDetailsModal(listing);
-                            }}
-                            className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
-                          >
-                            <span>Details</span>
-                            <ChevronRight className="w-4 h-4 text-[#C04A22]" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+        {/* ── MAIN HOUSING DIRECTORY CONTENT (1-COL MOBILE, 2-COL PAD, 3-COL DESKTOP) ── */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-3 sm:pt-4">
+          {/* Toggle Button Header */}
+          <div className="grid grid-cols-2 gap-2.5 mb-4 max-w-md">
+            <div
+              onClick={() => setActiveFilter("nearby")}
+              className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border text-center transition-all cursor-pointer active:scale-99 ${
+                activeFilter === "nearby"
+                  ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
+                  : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
+              }`}
+            >
+              <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
+                {nearbyHousing.length} Nearby
               </div>
             </div>
 
-            {/* ── RIGHT COLUMN: All Verified Properties Directory ───────── */}
-            <div className="lg:col-span-5 space-y-3.5">
-              {/* Directory Header Banner */}
-              <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-2xl bg-orange-50 border border-orange-200/80 flex items-center justify-center text-[#C04A22]">
-                      <Home className="w-5 h-5" />
+            <div
+              onClick={() => setActiveFilter("all")}
+              className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border text-center transition-all cursor-pointer active:scale-99 ${
+                activeFilter === "all"
+                  ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
+                  : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
+              }`}
+            >
+              <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
+                {liveHousing.length} Full State
+              </div>
+            </div>
+          </div>
+
+          {/* Equal Grid of Housing Cards (1 on mobile, 2 on pad, 3 on desktop) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
+            {(activeFilter === "nearby" ? nearbyHousing : filteredHousing).map(listing => {
+              const isSelected = selectedListing?.id === listing.id;
+              const isSaved = savedIds.includes(listing.id);
+              const isRent = listing.purpose === "Rent";
+
+              return (
+                <div
+                  key={listing.id}
+                  data-listing-id={listing.id}
+                  ref={el => {
+                    if (el) cardRefs.current.set(listing.id, el);
+                    else cardRefs.current.delete(listing.id);
+                  }}
+                  onClick={() => setSelectedListing(listing)}
+                  className={`group bg-white rounded-3xl border overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between h-full ${
+                    isSelected
+                      ? "border-[#C04A22] ring-2 ring-[#C04A22]/20 shadow-md"
+                      : "border-slate-200/90 hover:border-slate-300 hover:shadow-xs"
+                  }`}
+                >
+                  {/* Top: Image & Header Content */}
+                  <div>
+                    {/* Banner Image with Purpose & Agency Corner Badges */}
+                    <div className="relative w-full h-36 sm:h-40 overflow-hidden bg-slate-100">
+                      <img
+                        src={listing.image}
+                        alt={listing.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                      {/* Top-Right: Purpose Badge (Rent / Purchase) */}
+                      <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold shadow-xs border ${
+                        isRent
+                          ? "bg-emerald-600 text-white border-emerald-700/60"
+                          : "bg-indigo-600 text-white border-indigo-700/60"
+                      }`}>
+                        For {listing.purpose}
+                      </div>
+
+                      {/* Top-Left: Agency Badge In The Corner */}
+                      <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-xs font-bold border border-slate-200/80 shadow-xs">
+                        <span className="truncate max-w-[140px] sm:max-w-[180px]">{listing.agency}</span>
+                      </div>
+
+                      {/* Bottom-Left: Distance Badge */}
+                      <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-medium flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                        {listing.distance}
+                      </div>
                     </div>
-                    <div>
-                      <h2 className="text-sm sm:text-base font-bold text-slate-900">
-                        Verified Properties
-                      </h2>
-                      <p className="text-xs text-slate-500 font-medium">
-                        {filteredHousing.length} listings available in your area
-                      </p>
+
+                    {/* Card Content Header */}
+                    <div className="p-4 sm:p-5 pb-0">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug group-hover:text-[#C04A22] transition-colors line-clamp-1">
+                            {listing.title}
+                          </h3>
+                          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5 flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                            <span className="truncate">{listing.location}</span>
+                          </p>
+                        </div>
+
+                        {/* Bookmark Save Button */}
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            toggleSave(listing.id);
+                          }}
+                          className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-[#C04A22] flex items-center justify-center transition cursor-pointer flex-shrink-0"
+                          title={isSaved ? "Saved" : "Save Property"}
+                        >
+                          {isSaved ? (
+                            <BookmarkCheck className="w-4 h-4 text-[#C04A22]" />
+                          ) : (
+                            <Bookmark className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Specification Chips (Beds, Baths, Sqft) */}
+                      <div className="flex items-center gap-2 flex-wrap mt-2.5">
+                        <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
+                          <Bed className="w-3 h-3 text-[#C04A22]" />
+                          {listing.beds}
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
+                          <Bath className="w-3 h-3 text-[#C04A22]" />
+                          {listing.baths}
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
+                          <Maximize2 className="w-3 h-3 text-[#C04A22]" />
+                          {listing.sqft}
+                        </span>
+                      </div>
+
+                      {/* Price Pill */}
+                      <div className="mt-3">
+                        <span className="inline-block px-3.5 py-1.5 rounded-full bg-orange-50/80 text-[#C04A22] text-xs sm:text-sm font-bold border border-orange-100/60 shadow-2xs">
+                          {listing.price}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bottom: Aligned Action Buttons */}
+                  <div className="p-4 sm:p-5 pt-3">
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleShowDirection(listing);
+                        }}
+                        className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                        title="Show Road Route to Property"
+                      >
+                        <Navigation className="w-4 h-4 text-[#C04A22]" />
+                        <span>Direction</span>
+                      </button>
+
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          setShowDetailsModal(listing);
+                        }}
+                        className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                      >
+                        <span>Details</span>
+                        <ChevronRight className="w-4 h-4 text-[#C04A22]" />
+                      </button>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Housing Cards Feed */}
-              <div className="space-y-4">
-                {filteredHousing.map(listing => {
-                  const isSelected = selectedListing?.id === listing.id;
-                  const isSaved = savedIds.includes(listing.id);
-                  const isRent = listing.purpose === "Rent";
-
-                  return (
-                    <div
-                      key={listing.id}
-                      data-listing-id={listing.id}
-                      ref={el => {
-                        if (el) cardRefs.current.set(listing.id, el);
-                        else cardRefs.current.delete(listing.id);
-                      }}
-                      onClick={() => setSelectedListing(listing)}
-                      className={`group bg-white rounded-3xl border overflow-hidden transition-all duration-200 cursor-pointer ${
-                        isSelected
-                          ? "border-[#C04A22] ring-2 ring-[#C04A22]/20 shadow-md"
-                          : "border-slate-200/90 hover:border-slate-300 hover:shadow-xs"
-                      }`}
-                    >
-                      {/* Banner Image with Purpose & Agency Corner Badges */}
-                      <div className="relative w-full h-32 sm:h-36 overflow-hidden bg-slate-100">
-                        <img
-                          src={listing.image}
-                          alt={listing.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          loading="lazy"
-                        />
-                        {/* Top-Right: Purpose Badge */}
-                        <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold shadow-xs border ${
-                          isRent
-                            ? "bg-emerald-600 text-white border-emerald-700/60"
-                            : "bg-indigo-600 text-white border-indigo-700/60"
-                        }`}>
-                          For {listing.purpose}
-                        </div>
-
-                        {/* Top-Left: Agency Badge (User Specified!) */}
-                        <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-xs font-bold border border-slate-200/80 shadow-xs">
-                          <span className="truncate max-w-[140px] sm:max-w-[180px]">{listing.agency}</span>
-                        </div>
-
-                        {/* Bottom-Left: Distance Badge */}
-                        <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-medium flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-                          {listing.distance}
-                        </div>
-                      </div>
-
-                      {/* Card Body */}
-                      <div className="p-4 sm:p-5">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug group-hover:text-[#C04A22] transition-colors line-clamp-1">
-                              {listing.title}
-                            </h3>
-                            <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5 flex items-center gap-1">
-                              <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                              <span className="truncate">{listing.location}</span>
-                            </p>
-                          </div>
-
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              toggleSave(listing.id);
-                            }}
-                            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-[#C04A22] flex items-center justify-center transition cursor-pointer flex-shrink-0"
-                            title={isSaved ? "Saved" : "Save Property"}
-                          >
-                            {isSaved ? (
-                              <BookmarkCheck className="w-4 h-4 text-[#C04A22]" />
-                            ) : (
-                              <Bookmark className="w-4 h-4" />
-                            )}
-                          </button>
-                        </div>
-
-                        {/* Specs */}
-                        <div className="flex items-center gap-2 flex-wrap mt-2.5">
-                          <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
-                            <Bed className="w-3 h-3 text-[#C04A22]" />
-                            {listing.beds}
-                          </span>
-                          <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
-                            <Bath className="w-3 h-3 text-[#C04A22]" />
-                            {listing.baths}
-                          </span>
-                          <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
-                            <Maximize2 className="w-3 h-3 text-[#C04A22]" />
-                            {listing.sqft}
-                          </span>
-                        </div>
-
-                        {/* Row 1: Price Pill */}
-                        <div className="mt-3.5 flex items-center justify-between">
-                          <span className="px-3.5 py-1.5 rounded-full bg-orange-50/80 text-[#C04A22] text-xs sm:text-sm font-bold border border-orange-100/60 shadow-2xs">
-                            {listing.price}
-                          </span>
-                        </div>
-
-                        {/* Row 2: Direction & Details Buttons (Side by Side Full Width) */}
-                        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              handleShowDirection(listing);
-                            }}
-                            className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
-                            title="Show Road Route to Property"
-                          >
-                            <Navigation className="w-4 h-4 text-[#C04A22]" />
-                            <span>Direction</span>
-                          </button>
-
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              setShowDetailsModal(listing);
-                            }}
-                            className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
-                          >
-                            <span>Details</span>
-                            <ChevronRight className="w-4 h-4 text-[#C04A22]" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
+              );
+            })}
           </div>
         </div>
 

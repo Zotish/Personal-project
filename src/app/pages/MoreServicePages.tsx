@@ -74,9 +74,9 @@ export function SchoolFinder() {
             <input type="text" placeholder="Search schools, programs..." className="w-full pl-10 pr-4 py-2.5 bg-input-background rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition" />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {schoolCategories.map(({ id, label, emoji }) => (
-              <button key={id} onClick={() => setActiveCategory(id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-all ${activeCategory === id ? "bg-primary text-white shadow-sm" : "bg-white border border-border text-muted-foreground hover:text-primary"}`}>
-                <span>{emoji}</span>{label}
+            {schoolCategories.map(({ id, label }) => (
+              <button key={id} onClick={() => setActiveCategory(id)} className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-all ${activeCategory === id ? "bg-primary text-white shadow-sm" : "bg-white border border-border text-muted-foreground hover:text-primary"}`}>
+                {label}
               </button>
             ))}
           </div>
@@ -364,9 +364,9 @@ export function RestaurantGroceryFinder() {
             <input type="text" placeholder="Search restaurants, grocery stores..." className="w-full pl-10 pr-4 py-2.5 bg-input-background rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring transition" />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {foodCategories.map(({ id, label, emoji }) => (
-              <button key={id} onClick={() => setActiveCategory(id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-all ${activeCategory === id ? "bg-primary text-white" : "bg-white border border-border text-muted-foreground hover:text-primary"}`}>
-                <span>{emoji}</span>{label}
+            {foodCategories.map(({ id, label }) => (
+              <button key={id} onClick={() => setActiveCategory(id)} className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-all ${activeCategory === id ? "bg-primary text-white" : "bg-white border border-border text-muted-foreground hover:text-primary"}`}>
+                {label}
               </button>
             ))}
           </div>

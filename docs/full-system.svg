@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 820" role="img" aria-labelledby="title desc">
+  <title id="title">ImmigrantConnect full system</title>
+  <desc id="desc">User entry flows through authentication and the app into five modules, which use a shared data layer.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0 0L8 4L0 8Z" fill="#94a3b8"/>
+    </marker>
+    <style>
+      .label { font-family: Inter, Arial, sans-serif; font-size: 26px; font-weight: 500; text-anchor: middle; dominant-baseline: middle; }
+      .arrow { fill: none; stroke: #94a3b8; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect width="1280" height="820" fill="#ffffff"/>
+
+  <!-- Flow arrows: every connector uses the same thin module arrow. -->
+  <path class="arrow" d="M640 88V120"/>
+  <path class="arrow" d="M640 172V216"/>
+  <path class="arrow" d="M640 268V312"/>
+
+  <path class="arrow" d="M640 376L130 430"/>
+  <path class="arrow" d="M640 376L380 430"/>
+  <path class="arrow" d="M640 376L640 430"/>
+  <path class="arrow" d="M640 376L900 430"/>
+  <path class="arrow" d="M640 376L1150 430"/>
+
+  <path class="arrow" d="M130 496L560 560"/>
+  <path class="arrow" d="M380 496L610 560"/>
+  <path class="arrow" d="M640 496L640 560"/>
+  <path class="arrow" d="M900 496L670 560"/>
+  <path class="arrow" d="M1150 496L720 560"/>
+
+  <path class="arrow" d="M640 626L365 700"/>
+  <path class="arrow" d="M640 626L640 700"/>
+  <path class="arrow" d="M640 626L915 700"/>
+
+  <!-- Entry -->
+  <rect x="580" y="24" width="120" height="64" rx="16" fill="#172033"/>
+  <text x="640" y="56" class="label" fill="#ffffff">User</text>
+
+  <rect x="590" y="120" width="100" height="52" rx="14" fill="#f6e7c8" stroke="#d7ae57" stroke-width="1.5"/>
+  <text x="640" y="146" class="label" fill="#5a3b09">Entry</text>
+
+  <rect x="590" y="216" width="100" height="52" rx="14" fill="#f6e7c8" stroke="#d7ae57" stroke-width="1.5"/>
+  <text x="640" y="242" class="label" fill="#5a3b09">Auth</text>
+
+  <rect x="590" y="312" width="100" height="64" rx="16" fill="#f6e7c8" stroke="#d7ae57" stroke-width="1.5"/>
+  <text x="640" y="344" class="label" fill="#5a3b09">App</text>
+
+  <!-- Main modules -->
+  <rect x="30" y="430" width="200" height="66" rx="16" fill="#e8eefc" stroke="#7c93d6" stroke-width="1.5"/>
+  <text x="130" y="463" class="label" fill="#20335f">Community</text>
+
+  <rect x="280" y="430" width="200" height="66" rx="16" fill="#e8eefc" stroke="#7c93d6" stroke-width="1.5"/>
+  <text x="380" y="463" class="label" fill="#20335f">Services</text>
+
+  <rect x="540" y="430" width="200" height="66" rx="16" fill="#e8eefc" stroke="#7c93d6" stroke-width="1.5"/>
+  <text x="640" y="463" class="label" fill="#20335f">Marketplace</text>
+
+  <rect x="800" y="430" width="200" height="66" rx="16" fill="#e8eefc" stroke="#7c93d6" stroke-width="1.5"/>
+  <text x="900" y="463" class="label" fill="#20335f">Identity</text>
+
+  <rect x="1050" y="430" width="200" height="66" rx="16" fill="#e8eefc" stroke="#7c93d6" stroke-width="1.5"/>
+  <text x="1150" y="463" class="label" fill="#20335f">Admin</text>
+
+  <!-- Data -->
+  <rect x="510" y="560" width="260" height="66" rx="16" fill="#ececf5" stroke="#9b9cb9" stroke-width="1.5"/>
+  <text x="640" y="593" class="label" fill="#30314f">Data Layer</text>
+
+  <rect x="255" y="700" width="220" height="60" rx="16" fill="#ececf5" stroke="#9b9cb9" stroke-width="1.5"/>
+  <text x="365" y="730" class="label" fill="#30314f">Mock Data</text>
+
+  <rect x="530" y="700" width="220" height="60" rx="16" fill="#ececf5" stroke="#9b9cb9" stroke-width="1.5"/>
+  <text x="640" y="730" class="label" fill="#30314f">Local Store</text>
+
+  <rect x="805" y="700" width="220" height="60" rx="16" fill="#ececf5" stroke="#9b9cb9" stroke-width="1.5"/>
+  <text x="915" y="730" class="label" fill="#30314f">Live APIs</text>
+</svg>

@@ -5,8 +5,9 @@ import {
   Search, MapPin, Navigation, Star, Clock, Phone,
   Bookmark, Share2, MessageCircle, List, Map as MapIcon, X,
   CheckCircle, ChevronRight, Car, Bike, Footprints, AlertTriangle,
-  DollarSign, Timer, Route, ArrowLeft, Loader2, ChevronDown, Store,
-  Building2, ExternalLink, Briefcase, Maximize2
+  DollarSign, Timer, Route, ArrowLeft, Loader2, ChevronDown, ChevronUp, Store,
+  Building2, ExternalLink, Briefcase, Maximize2, Volume2, VolumeX,
+  CornerUpRight, CornerUpLeft, ArrowUp, CheckCircle2, LocateFixed
 } from "lucide-react";
 
 import { LiveJobListing, generateLiveLocationJobs, isJobQuery } from "../data/jobsData";
@@ -43,6 +44,16 @@ export function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: nu
       Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
+}
+
+export function getBearing(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const y = Math.sin(dLng) * Math.cos((lat2 * Math.PI) / 180);
+  const x =
+    Math.cos((lat1 * Math.PI) / 180) * Math.sin((lat2 * Math.PI) / 180) -
+    Math.sin((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.cos(dLng);
+  const brng = (Math.atan2(y, x) * 180) / Math.PI;
+  return (brng + 360) % 360;
 }
 
 const OSRM_PROFILES: Record<TravelMode, string> = {
@@ -538,6 +549,7 @@ function loadBkoiGL(): Promise<any> {
 // ── Booking.com Style Leaflet map component ──────────────────────────────────
 function LeafletMap({
   visiblePlaces, activePlaceId, routes, selectedRouteId, userLocation, isGPSActive,
+  isLiveNavigating, navUserCoord, navHeading,
   onMarkerClick, onMapClick, onRouteClick, onMarkerHover,
 }: {
   visiblePlaces: Place[];
@@ -546,6 +558,9 @@ function LeafletMap({
   selectedRouteId: number | null;
   userLocation: [number, number] | null;
   isGPSActive?: boolean;
+  isLiveNavigating?: boolean;
+  navUserCoord?: [number, number] | null;
+  navHeading?: number;
   onMarkerClick: (p: Place, px: { x: number; y: number }) => void;
   onMapClick: () => void;
   onRouteClick: (id: number) => void;
@@ -556,6 +571,7 @@ function LeafletMap({
   const markersRef = useRef<Map<number | string, any>>(new Map());
   const routeLinesRef = useRef<any[]>([]);
   const userMarkerRef = useRef<any>(null);
+  const navPuckRef = useRef<any>(null);
   const LRef = useRef<any>(null);
 
   // Booking.com style round icon bubble marker (No name text)
@@ -821,6 +837,66 @@ function LeafletMap({
     }
   }, [userLocation, isGPSActive]);
 
+  // ── Live Navigation Vehicle Marker Sync & Camera Follow ───────────────────
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+    const L = LRef.current;
+    const bkoigl = (window as any).bkoigl;
+
+    if (!isLiveNavigating || !navUserCoord) {
+      if (navPuckRef.current) {
+        if (navPuckRef.current.remove) navPuckRef.current.remove();
+        navPuckRef.current = null;
+      }
+      return;
+    }
+
+    const [lat, lng] = navUserCoord;
+
+    const el = document.createElement("div");
+    el.className = "live-nav-vehicle-puck";
+    el.style.cssText = "position:relative;width:48px;height:48px;display:flex;align-items:center;justify-content:center;pointer-events:none;";
+    el.innerHTML = `
+      <div style="position:absolute;inset:-6px;border-radius:50%;background:rgba(26,115,232,0.25);animation:ping 1.8s cubic-bezier(0,0,0.2,1) infinite;"></div>
+      <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, #1a73e8, #0d47a1);border:3px solid white;box-shadow:0 6px 20px rgba(26,115,232,0.6), 0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;transform:rotate(${navHeading || 0}deg);transition:transform 0.3s ease;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
+        </svg>
+      </div>
+    `;
+
+    if (L && map.addLayer) {
+      const icon = L.divIcon({
+        className: "custom-nav-vehicle-puck",
+        html: el.outerHTML,
+        iconSize: [48, 48],
+        iconAnchor: [24, 24],
+      });
+      if (navPuckRef.current) {
+        navPuckRef.current.setLatLng([lat, lng]);
+        navPuckRef.current.setIcon(icon);
+      } else {
+        navPuckRef.current = L.marker([lat, lng], { icon, zIndexOffset: 2500 }).addTo(map);
+      }
+      map.panTo([lat, lng], { animate: true, duration: 0.8 });
+    } else if (bkoigl || map.project) {
+      const MarkerClass = bkoigl?.Marker || (window as any).maplibregl?.Marker;
+      if (MarkerClass) {
+        if (navPuckRef.current) {
+          navPuckRef.current.setLngLat([lng, lat]);
+          const puckEl = navPuckRef.current.getElement();
+          if (puckEl) puckEl.innerHTML = el.innerHTML;
+        } else {
+          navPuckRef.current = new MarkerClass({ element: el })
+            .setLngLat([lng, lat])
+            .addTo(map);
+        }
+        map.panTo([lng, lat], { duration: 800 });
+      }
+    }
+  }, [isLiveNavigating, navUserCoord, navHeading]);
+
   // ── Draw/Clear Route Polylines (Supports both bkoi-gl & Leaflet) ───────────
   useEffect(() => {
     if (!mapRef.current) return;
@@ -931,10 +1007,310 @@ function LeafletMap({
   return <div ref={containerRef} className="absolute inset-0 w-full h-full" />;
 }
 
+// ── Google Maps Live Turn-by-Turn Navigation HUD (Real GPS Walking & Docked Desktop Area) ──
+function GoogleMapsLiveNavigationHUD({
+  destination,
+  route,
+  userLocation,
+  onExit,
+  onUpdateCoord,
+  onRecenter,
+}: {
+  destination: Place;
+  route: RouteOption;
+  userLocation: [number, number];
+  onExit: () => void;
+  onUpdateCoord: (coord: [number, number], heading: number) => void;
+  onRecenter: () => void;
+}) {
+  const coords = useMemo(() => {
+    return route.coords && route.coords.length > 0
+      ? route.coords
+      : [[destination.lat, destination.lng] as [number, number]];
+  }, [route.coords, destination.lat, destination.lng]);
+
+  const [currentCoord, setCurrentCoord] = useState<[number, number]>(userLocation || coords[0]);
+  const [speed, setSpeed] = useState(0);
+  const [heading, setHeading] = useState(0);
+  const [isVoiceMuted, setIsVoiceMuted] = useState(false);
+  const [hasArrived, setHasArrived] = useState(false);
+  const [remainingDist, setRemainingDist] = useState(route.distance || 1000);
+  const [remainingDuration, setRemainingDuration] = useState(route.duration || 600);
+
+  // ── Real GPS Live Geolocation Tracking (User Walking / Driving in Real Life) ──
+  useEffect(() => {
+    // Initial coordinate tick
+    if (userLocation) {
+      const initialDistKm = getDistanceKm(userLocation[0], userLocation[1], destination.lat, destination.lng);
+      setRemainingDist(Math.round(initialDistKm * 1000));
+      const initHeading = getBearing(userLocation[0], userLocation[1], destination.lat, destination.lng);
+      setHeading(initHeading);
+      onUpdateCoord(userLocation, initHeading);
+    }
+
+    if (!("geolocation" in navigator)) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      pos => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const rawSpeed = pos.coords.speed; // m/s
+        const speedKmh = rawSpeed !== null && !isNaN(rawSpeed) && rawSpeed > 0
+          ? Math.round(rawSpeed * 3.6)
+          : 0;
+        const gpsHeading = pos.coords.heading !== null && !isNaN(pos.coords.heading) && pos.coords.heading > 0
+          ? pos.coords.heading
+          : 0;
+
+        setCurrentCoord([lat, lng]);
+        setSpeed(speedKmh);
+
+        // Real distance to destination in meters
+        const distToDestKm = getDistanceKm(lat, lng, destination.lat, destination.lng);
+        const distMeters = Math.round(distToDestKm * 1000);
+        setRemainingDist(distMeters);
+
+        // Estimate remaining time based on walking (~4.5km/h = 75m/min) or driving speed
+        const currentSpeedMPerMin = speedKmh > 5 ? (speedKmh * 1000) / 60 : 75;
+        const estMinutes = Math.max(1, Math.round(distMeters / currentSpeedMPerMin));
+        setRemainingDuration(estMinutes * 60);
+
+        // Calculate heading angle
+        const calculatedHeading = gpsHeading > 0 ? gpsHeading : getBearing(lat, lng, destination.lat, destination.lng);
+        setHeading(calculatedHeading);
+
+        // Arrived at destination (within 25m)
+        if (distMeters <= 25) {
+          setHasArrived(true);
+        }
+
+        onUpdateCoord([lat, lng], calculatedHeading);
+      },
+      err => {
+        console.warn("Real GPS watchPosition error:", err);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 500,
+        timeout: 10000,
+      }
+    );
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, [destination, userLocation]);
+
+  // Turn Maneuver Direction calculation based on real distance to destination
+  const destName = destination.name.split("(")[0].trim();
+  const currentStep = useMemo(() => {
+    if (remainingDist <= 25) {
+      return { instruction: `You have arrived at ${destName}`, iconType: "destination" };
+    }
+    if (remainingDist < 150) {
+      return { instruction: `Turn into ${destName.split(" ")[0]} Entrance`, iconType: "left" };
+    }
+    if (remainingDist < 450) {
+      return { instruction: "Keep left toward destination", iconType: "slight-left" };
+    }
+    if (remainingDist < 1200) {
+      return { instruction: "Turn right onto main road", iconType: "right" };
+    }
+    return { instruction: `Head toward ${destName}`, iconType: "straight" };
+  }, [remainingDist, destName]);
+
+  const etaTime = useMemo(() => {
+    const d = new Date(Date.now() + remainingDuration * 1000);
+    return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }, [remainingDuration]);
+
+  return (
+    <>
+      {/* ── 1. MOBILE VIEW FLOATING HUD (< md:) ── */}
+      <div className="md:hidden">
+        {/* Top Green Turn Banner */}
+        <div className="absolute top-3 left-3 right-3 z-[1002] bg-[#137333] text-white rounded-2xl p-3 shadow-2xl border border-emerald-600/50 flex items-center justify-between gap-3 animate-in slide-in-from-top-3 backdrop-blur-md">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center flex-shrink-0 text-white shadow-inner">
+              {currentStep.iconType === "right" ? (
+                <CornerUpRight className="w-5 h-5" />
+              ) : currentStep.iconType === "left" || currentStep.iconType === "slight-left" ? (
+                <CornerUpLeft className="w-5 h-5" />
+              ) : currentStep.iconType === "destination" ? (
+                <MapPin className="w-5 h-5 text-emerald-200" />
+              ) : (
+                <ArrowUp className="w-5 h-5" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <div className="text-base font-black tracking-tight leading-tight">
+                {remainingDist > 0 ? (remainingDist > 500 ? `In ${Math.round(remainingDist / 100) * 100} m` : `In ${remainingDist} m`) : "Arriving now"}
+              </div>
+              <div className="text-xs font-semibold text-emerald-100 truncate mt-0.5">
+                {currentStep.instruction}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsVoiceMuted(m => !m)}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer flex-shrink-0 ${
+              isVoiceMuted ? "bg-red-500/40 text-white" : "bg-white/15 hover:bg-white/25 text-white"
+            }`}
+            title={isVoiceMuted ? "Unmute Voice Guidance" : "Mute Voice Guidance"}
+          >
+            {isVoiceMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+
+        {/* Bottom White ETA Bar */}
+        <div className="absolute bottom-20 left-3 right-3 sm:bottom-3 z-[1002] bg-white/98 backdrop-blur-md rounded-2xl p-3 shadow-2xl border border-border/80 flex items-center justify-between gap-3 animate-in slide-in-from-bottom-3">
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-base font-black text-emerald-600 leading-none">
+                {fmtTime(remainingDuration)}
+              </span>
+            </div>
+            <div className="text-[11px] text-muted-foreground font-medium mt-1 flex items-center gap-1.5 truncate">
+              <span className="font-bold text-foreground">{etaTime}</span>
+              <span>•</span>
+              <span>{fmtDist(remainingDist)}</span>
+              <span>•</span>
+              <span className="px-1.5 py-0.2 rounded-md bg-secondary text-[10px] font-bold text-foreground">{speed} km/h</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={onRecenter}
+              className="p-2 rounded-xl bg-secondary hover:bg-border text-foreground transition cursor-pointer flex items-center justify-center shadow-xs"
+              title="Recenter Camera"
+            >
+              <LocateFixed className="w-4 h-4 text-[#C04A22]" />
+            </button>
+            <button
+              onClick={onExit}
+              className="px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200/60 font-bold text-xs transition cursor-pointer flex items-center gap-1 shadow-xs active:scale-95"
+              title="Exit Navigation"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Exit</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 2. DESKTOP & LAPTOP VIEW: DOCKED IN BOTTOM FREE SPACE BELOW MAP (NO MAP OVERLAP) (hidden md:flex) ── */}
+      <div className="hidden md:flex w-full flex-row items-center justify-between gap-3.5 animate-in slide-in-from-bottom-2 duration-200">
+        {/* Left: Green Turn-by-Turn Maneuver Card */}
+        <div className="flex-1 bg-[#137333] text-white rounded-2xl p-3 sm:p-3.5 shadow-md border border-emerald-600/40 flex items-center justify-between gap-3 min-w-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center flex-shrink-0 text-white shadow-inner">
+              {currentStep.iconType === "right" ? (
+                <CornerUpRight className="w-5 h-5" />
+              ) : currentStep.iconType === "left" || currentStep.iconType === "slight-left" ? (
+                <CornerUpLeft className="w-5 h-5" />
+              ) : currentStep.iconType === "destination" ? (
+                <MapPin className="w-5 h-5 text-emerald-200" />
+              ) : (
+                <ArrowUp className="w-5 h-5" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <div className="text-base sm:text-lg font-black tracking-tight leading-tight">
+                {remainingDist > 0 ? (remainingDist > 500 ? `In ${Math.round(remainingDist / 100) * 100} m` : `In ${remainingDist} m`) : "Arriving now"}
+              </div>
+              <div className="text-xs font-semibold text-emerald-100 truncate mt-0.5">
+                {currentStep.instruction}
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setIsVoiceMuted(m => !m)}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition cursor-pointer flex-shrink-0 ${
+              isVoiceMuted ? "bg-red-500/40 text-white" : "bg-white/15 hover:bg-white/25 text-white"
+            }`}
+            title={isVoiceMuted ? "Unmute Voice Guidance" : "Mute Voice Guidance"}
+          >
+            {isVoiceMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+
+        {/* Right: White Live ETA, Speed & Controls Card */}
+        <div className="bg-white rounded-2xl p-3 sm:p-3.5 shadow-md border border-slate-200/90 flex items-center justify-between gap-4 flex-shrink-0 min-w-[290px]">
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-base sm:text-lg font-black text-emerald-600 leading-none">
+                {fmtTime(remainingDuration)}
+              </span>
+            </div>
+            <div className="text-[11px] text-muted-foreground font-medium mt-1 flex items-center gap-1.5 truncate">
+              <span className="font-bold text-foreground">{etaTime}</span>
+              <span>•</span>
+              <span>{fmtDist(remainingDist)}</span>
+              <span>•</span>
+              <span className="px-1.5 py-0.5 rounded-md bg-secondary text-[10px] font-bold text-foreground">{speed} km/h</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={onRecenter}
+              className="p-2.5 rounded-xl bg-secondary hover:bg-border text-foreground transition cursor-pointer flex items-center justify-center shadow-xs"
+              title="Recenter Camera on You"
+            >
+              <LocateFixed className="w-4 h-4 text-[#C04A22]" />
+            </button>
+            <button
+              onClick={onExit}
+              className="px-3.5 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200/60 font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-xs active:scale-95"
+              title="Exit Navigation"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Exit</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Arrival Celebratory Modal ── */}
+      {hasArrived && (
+        <div className="absolute inset-0 z-[1003] bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl border border-border animate-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-3.5 shadow-inner">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-black text-foreground">You Have Arrived!</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              You safely reached <strong className="text-foreground">{destination.name}</strong>.
+            </p>
+            <div className="mt-4 p-3 bg-secondary/80 rounded-2xl text-xs space-y-1.5 text-left">
+              <div className="flex justify-between text-muted-foreground font-medium">
+                <span>Total Distance:</span> <strong className="text-foreground">{fmtDist(remainingDist || route.distance)}</strong>
+              </div>
+              <div className="flex justify-between text-muted-foreground font-medium">
+                <span>Travel Mode:</span> <strong className="text-foreground capitalize">{route.label || "Walking"}</strong>
+              </div>
+            </div>
+            <button
+              onClick={onExit}
+              className="mt-5 w-full py-2.5 bg-[#C04A22] hover:bg-[#8C3015] text-white rounded-xl font-bold text-xs shadow-md transition cursor-pointer active:scale-98"
+            >
+              Done & Exit Navigation
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 // ── Directions Sheet ──────────────────────────────────────────────────────────
 function DirectionsSheet({
   destination, userLocation, onClose,
   onRoutesReady, selectedRouteId, onSelectRoute, routes,
+  onStartNavigation,
 }: {
   destination: Place;
   userLocation: [number, number];
@@ -943,6 +1319,7 @@ function DirectionsSheet({
   selectedRouteId: number | null;
   onSelectRoute: (id: number) => void;
   routes: RouteOption[];
+  onStartNavigation: (route: RouteOption) => void;
 }) {
   const [mode, setMode] = useState<TravelMode>("car");
   const [loading, setLoading] = useState(false);
@@ -967,96 +1344,147 @@ function DirectionsSheet({
   const selected = routes.find(r => r.id === selectedRouteId) ?? routes[0];
 
   return (
-    <div className={`absolute bottom-0 left-0 right-0 z-[1001] bg-white rounded-t-3xl shadow-2xl border-t border-border transition-all duration-300 ${collapsed ? "max-h-[72px]" : "max-h-[72vh]"} overflow-hidden flex flex-col`}>
-      <div className="flex-shrink-0">
-        <div className="flex justify-center pt-2 pb-1">
-          <div className="w-10 h-1 rounded-full bg-border" />
-        </div>
-        <div className="flex items-center gap-3 px-4 pb-3">
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center hover:bg-border transition flex-shrink-0">
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-[#C04A22] flex-shrink-0" />
-              <span className="text-xs text-muted-foreground truncate">Your Location</span>
+    <div className={`absolute z-[1001] transition-all duration-300 overflow-hidden flex flex-col ${
+      /* Mobile View: Above Mobile Bottom Nav Bar */
+      collapsed ? "bottom-20 left-3 right-3 md:bottom-4 md:left-4 md:right-auto md:w-[320px] md:max-w-[calc(100%-32px)]" : "bottom-16 left-0 right-0 md:bottom-4 md:left-4 md:right-auto md:w-[320px] md:max-w-[calc(100%-32px)]"
+    }`}>
+      {collapsed ? (
+        /* 1. Minimized Route Bar (Matching Jobs Map style) */
+        <div
+          onClick={() => setCollapsed(false)}
+          className="w-full bg-white rounded-2xl md:rounded-2xl p-2.5 sm:p-3 shadow-xl border border-slate-200/90 flex items-center justify-between gap-3 cursor-pointer hover:border-[#C04A22]/40 transition backdrop-blur-md bg-white/95"
+          title="Click to view route details"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-xl bg-[#C04A22]/12 text-[#8C3015] flex items-center justify-center flex-shrink-0">
+              <Navigation className="w-4 h-4 text-[#C04A22]" />
             </div>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <MapPin className="w-3.5 h-3.5 text-[#C04A22] flex-shrink-0" />
-              <span className="text-sm font-semibold text-foreground truncate">{destination.name}</span>
+            <div className="min-w-0">
+              <div className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                {destination.name}
+              </div>
+              <div className="text-xs text-[#C04A22] font-bold">
+                ({selected ? fmtDist(selected.distance) : destination.distance || "Route Active"})
+              </div>
             </div>
           </div>
-          <button onClick={() => setCollapsed(c => !c)} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center transition">
-            <ChevronDown className={`w-4 h-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
-          </button>
-        </div>
 
-        <div className="flex gap-2 px-4 pb-3">
-          {MODES.map(({ id, label, icon: Icon }) => (
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             <button
-              key={id}
-              onClick={() => loadRoutes(id)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all ${mode === id
-                ? "bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/25 shadow-2xs font-bold"
-                : "bg-secondary text-muted-foreground hover:bg-[#C04A22]/8 hover:text-[#8C3015]"
-                }`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCollapsed(false);
+              }}
+              className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition cursor-pointer"
+              title="Expand Card"
             >
-              <Icon className="w-3.5 h-3.5" /> {label}
+              <ChevronUp className="w-4 h-4" />
             </button>
-          ))}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+              className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition cursor-pointer"
+              title="Clear Route"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
-      </div>
-
-      {!collapsed && (
-        <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-2">
-          {loading ? (
-            <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
-              <Loader2 className="w-5 h-5 animate-spin text-[#C04A22]" />
-              <span className="text-sm">Finding best routes…</span>
+      ) : (
+        /* 2. Expanded Route Navigation Card */
+        <div className="w-full bg-white rounded-t-3xl md:rounded-2xl shadow-2xl md:shadow-xl border-t md:border border-border/90 flex flex-col max-h-[72vh] md:max-h-[380px] overflow-hidden backdrop-blur-md bg-white/95">
+          <div className="flex-shrink-0">
+            {/* Mobile Drag Bar */}
+            <div className="flex justify-center pt-2 pb-1 md:hidden">
+              <div className="w-10 h-1 rounded-full bg-border" />
             </div>
-          ) : routes.length === 0 ? (
-            <div className="text-center py-8 text-sm text-muted-foreground">No routes found</div>
-          ) : routes.map(route => {
-            const isSel = route.id === selectedRouteId;
-            return (
-              <button
-                key={route.id}
-                onClick={() => onSelectRoute(route.id)}
-                className={`w-full text-left rounded-2xl border-2 p-3 transition-all ${isSel ? "border-[#C04A22] bg-[#C04A22]/5 shadow-sm" : "border-border bg-white hover:border-[#C04A22]/40"
-                  }`}
-              >
-
-
-                <div className="grid grid-cols-3 gap-2 mb-2">
-                  <div className="flex flex-col items-center bg-secondary rounded-xl p-2">
-                    <Timer className="w-3.5 h-3.5 text-[#C04A22] mb-0.5" />
-                    <span className="text-xs font-bold text-foreground">{fmtTime(route.duration)}</span>
-                    <span className="text-[9px] text-muted-foreground">Time</span>
-                  </div>
-                  <div className="flex flex-col items-center bg-secondary rounded-xl p-2">
-                    <Route className="w-3.5 h-3.5 text-[#C04A22] mb-0.5" />
-                    <span className="text-xs font-bold text-foreground">{fmtDist(route.distance)}</span>
-                    <span className="text-[9px] text-muted-foreground">Distance</span>
-                  </div>
-                  <div className="flex flex-col items-center bg-secondary rounded-xl p-2">
-                    <DollarSign className="w-3.5 h-3.5 text-[#C04A22] mb-0.5" />
-                    <span className="text-xs font-bold text-foreground">{route.cost}</span>
-                    <span className="text-[9px] text-muted-foreground">Cost</span>
-                  </div>
-                </div>
-
-
-
-                {isSel && (
-                  <div className="mt-2.5 w-full py-2.5 rounded-xl bg-[#E06D53] hover:bg-[#C04A22] text-white text-xs font-bold shadow-md shadow-[#E06D53]/25 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-98">
-                    <Navigation className="w-3.5 h-3.5" /> Start Navigation
-                  </div>
-                )}
+            <div className="flex items-center gap-2.5 px-3.5 pt-2 pb-2 md:pt-3 md:pb-2">
+              <button onClick={onClose} className="w-7.5 h-7.5 rounded-full bg-secondary flex items-center justify-center hover:bg-border transition flex-shrink-0 cursor-pointer" title="Back">
+                <ArrowLeft className="w-3.5 h-3.5 text-foreground" />
               </button>
-            );
-          })}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-[#C04A22] flex-shrink-0" />
+                  <span className="text-[11px] text-muted-foreground truncate">Your Location</span>
+                </div>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <MapPin className="w-3.5 h-3.5 text-[#C04A22] flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-bold text-foreground truncate">{destination.name}</span>
+                </div>
+              </div>
+              <button onClick={() => setCollapsed(true)} className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center transition cursor-pointer hover:bg-border flex-shrink-0" title="Minimize Card">
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            </div>
 
+            <div className="flex gap-1.5 px-3.5 pb-2.5">
+              {MODES.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => loadRoutes(id)}
+                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${mode === id
+                    ? "bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/25 shadow-2xs font-bold"
+                    : "bg-secondary text-muted-foreground hover:bg-[#C04A22]/8 hover:text-[#8C3015]"
+                    }`}
+                >
+                  <Icon className="w-3.5 h-3.5" /> {label}
+                </button>
+              ))}
+            </div>
+          </div>
 
+          <div className="flex-1 overflow-y-auto px-3.5 pb-3.5 space-y-2 md:max-h-[220px]">
+            {loading ? (
+              <div className="flex items-center justify-center py-6 gap-2 text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin text-[#C04A22]" />
+                <span className="text-xs">Finding best routes…</span>
+              </div>
+            ) : routes.length === 0 ? (
+              <div className="text-center py-6 text-xs text-muted-foreground">No routes found</div>
+            ) : routes.map(route => {
+              const isSel = route.id === selectedRouteId;
+              return (
+                <button
+                  key={route.id}
+                  onClick={() => onSelectRoute(route.id)}
+                  className={`w-full text-left rounded-xl border p-2.5 transition-all cursor-pointer ${isSel ? "border-[#C04A22] bg-[#C04A22]/5 shadow-2xs" : "border-border bg-white hover:border-[#C04A22]/40"
+                    }`}
+                >
+                  <div className="grid grid-cols-3 gap-1.5 mb-1.5">
+                    <div className="flex flex-col items-center bg-secondary/80 rounded-lg p-1.5">
+                      <Timer className="w-3 h-3 text-[#C04A22] mb-0.5" />
+                      <span className="text-[11px] font-bold text-foreground">{fmtTime(route.duration)}</span>
+                      <span className="text-[8px] text-muted-foreground">Time</span>
+                    </div>
+                    <div className="flex flex-col items-center bg-secondary/80 rounded-lg p-1.5">
+                      <Route className="w-3 h-3 text-[#C04A22] mb-0.5" />
+                      <span className="text-[11px] font-bold text-foreground">{fmtDist(route.distance)}</span>
+                      <span className="text-[8px] text-muted-foreground">Distance</span>
+                    </div>
+                    <div className="flex flex-col items-center bg-secondary/80 rounded-lg p-1.5">
+                      <DollarSign className="w-3 h-3 text-[#C04A22] mb-0.5" />
+                      <span className="text-[11px] font-bold text-foreground">{route.cost}</span>
+                      <span className="text-[8px] text-muted-foreground">Cost</span>
+                    </div>
+                  </div>
+
+                  {isSel && (
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onStartNavigation(route);
+                      }}
+                      className="mt-2 w-full py-2 rounded-xl bg-[#E06D53] hover:bg-[#C04A22] text-white text-xs font-bold shadow-sm shadow-[#E06D53]/25 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
+                    >
+                      <Navigation className="w-3.5 h-3.5" /> Start Navigation
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
@@ -1465,6 +1893,19 @@ export function MapDiscoveryContent({
   const [directionsFor, setDirectionsFor] = useState<Place | null>(null);
   const [routes, setRoutes] = useState<RouteOption[]>([]);
   const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
+  const [isLiveNavigating, setIsLiveNavigating] = useState(false);
+  const [navUserCoord, setNavUserCoord] = useState<[number, number] | null>(null);
+  const [navHeading, setNavHeading] = useState<number>(0);
+  const [activeNavRoute, setActiveNavRoute] = useState<RouteOption | null>(null);
+
+  const handleStartDirection = (place: Place) => {
+    setDirectionsFor(place);
+    setIsLiveNavigating(false);
+    setNavUserCoord(null);
+    setActiveNavRoute(null);
+    setMapActiveId(null);
+    setHoverPlace(null);
+  };
 
   // Initialize userLocation from routeState, localStorage cache, or default
   const [userLocation, setUserLocation] = useState<[number, number]>(() => {
@@ -1696,7 +2137,7 @@ export function MapDiscoveryContent({
   };
 
   return (
-    <div className={compact ? `flex flex-col ${height || "h-[240px] sm:h-[260px]"} rounded-2xl border border-border overflow-hidden bg-background shadow-xs relative mb-3 sm:mb-4` : embedded ? "flex flex-col h-[580px] sm:h-[650px] rounded-2xl border border-border overflow-hidden bg-background shadow-sm my-1" : "flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-background"}>
+    <div className={compact ? `flex flex-col ${height || "h-[240px] sm:h-[260px]"} rounded-2xl border border-border overflow-hidden bg-background shadow-xs relative mb-3 sm:mb-4` : embedded ? "flex flex-col h-[580px] sm:h-[650px] rounded-2xl border border-border overflow-hidden bg-background shadow-sm my-1" : "flex flex-col h-screen overflow-hidden bg-background"}>
       {compact ? (
         /* ── Compact Embedded Mode (For HomeFeed between top bar & post composer) ── */
         <div
@@ -1826,188 +2267,252 @@ export function MapDiscoveryContent({
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${activeCategory === cat.id ? "bg-primary text-white shadow-sm scale-105" : "bg-secondary text-muted-foreground hover:bg-border/60 hover:text-foreground"}`}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${activeCategory === cat.id ? "bg-primary text-white shadow-sm scale-105" : "bg-secondary text-muted-foreground hover:bg-border/60 hover:text-foreground"}`}
                 >
-                  <span>{cat.emoji}</span>
-                  <span>{cat.label}</span>
+                  {cat.label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Main Content Area */}
-          <div className="flex-1 relative overflow-hidden flex">
-            {/* Map View */}
-            <div ref={mapContainerRef} className={`relative flex-1 w-full h-full ${viewMode === "list" ? "hidden md:block" : "block"}`}>
-
-            <LeafletMap
-              visiblePlaces={filteredPlaces}
-              activePlaceId={mapActiveId}
-              routes={routes}
-              selectedRouteId={selectedRouteId}
-              userLocation={userLocation}
-              isGPSActive={isGPSActive}
-              onMarkerClick={(p, px) => {
-                setMapActiveId(p.id);
-                setMarkerPx(px);
-                setHoverPlace(null);
-              }}
-              onMapClick={() => {
-                setMapActiveId(null);
-                setHoverPlace(null);
-              }}
-              onRouteClick={id => setSelectedRouteId(id)}
-              onMarkerHover={(p, px) => {
-                setHoverPlace(p);
-                if (px) setHoverPx(px);
-              }}
-            />
-
-            {/* Desktop Hover Card Tooltip */}
-            {hoverPlace && (
-              <HoverTooltipCard
-                place={hoverPlace}
-                px={hoverPx}
-                containerW={mapContainerRef.current?.offsetWidth ?? 800}
-                containerH={mapContainerRef.current?.offsetHeight ?? 600}
-                onDirections={p => setDirectionsFor(p)}
-                onViewDetails={p => handleOpenDetails(p)}
-              />
-            )}
-
-            {/* Selected Place Card Overlay (Desktop Side Card / Mobile Bottom Sheet) */}
-            {mapActiveId !== null && (() => {
-              const activePlace = filteredPlaces.find(p => String(p.id) === String(mapActiveId));
-              if (!activePlace) return null;
-              return (
-                <MapPlaceCard
-                  key={String(mapActiveId)}
-                  place={activePlace}
-                  markerPx={markerPx}
-                  containerSize={{
-                    w: mapContainerRef.current?.offsetWidth ?? 800,
-                    h: mapContainerRef.current?.offsetHeight ?? 600,
-                  }}
-                  onClose={() => setMapActiveId(null)}
-                  onViewDetails={() => handleOpenDetails(activePlace)}
-                  onDirections={() => setDirectionsFor(activePlace)}
-                />
-              );
-            })()}
-
-            {/* Floating My Location Button (Turn ON / Turn OFF Toggle) */}
-            <button
-              onClick={() => {
-                if (isGPSActive) {
-                  // Turn OFF: Revert to default location
-                  setUserLocation(DEFAULT_LOCATION);
-                  setIsGPSActive(false);
-                } else {
-                  // Turn ON: Request device GPS with fallback
-                  if ("geolocation" in navigator) {
-                    setIsLocating(true);
-                    const getPos = (highAcc: boolean) => {
-                      navigator.geolocation.getCurrentPosition(
-                        pos => {
-                          const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
-                          setUserLocation(loc);
-                          setIsGPSActive(true);
-                          setIsLocating(false);
-                        },
-                        err => {
-                          if (highAcc) {
-                            getPos(false);
-                            return;
-                          }
-                          console.warn("Geolocation error:", err);
-                          setIsLocating(false);
-                        },
-                        { enableHighAccuracy: highAcc, timeout: highAcc ? 6000 : 15000, maximumAge: 60000 }
-                      );
-                    };
-                    getPos(true);
-                  }
-                }
-              }}
-              className={`absolute bottom-6 right-6 z-[999] p-3.5 rounded-full shadow-lg border transition-all flex items-center justify-center cursor-pointer active:scale-95 ${
-                isGPSActive
-                  ? "bg-[#D85A30] text-white border-[#D85A30] shadow-[#D85A30]/30"
-                  : "bg-white text-foreground border-border hover:bg-slate-50"
-              }`}
-              title={isGPSActive ? "Turn OFF Live Location (Revert to default)" : "Turn ON Live Location (GPS)"}
-            >
-              {isLocating ? (
-                <Loader2 className="w-5 h-5 animate-spin text-[#D85A30]" />
-              ) : (
-                <Navigation className={`w-5 h-5 transition-transform ${isGPSActive ? "text-white" : "text-[#D85A30]"}`} />
-              )}
-            </button>
-
-            {/* Directions Sheet Modal */}
-            {directionsFor && (
-              <DirectionsSheet
-                destination={directionsFor}
-                userLocation={userLocation}
-                onClose={() => {
-                  setDirectionsFor(null);
-                  setRoutes([]);
-                  setSelectedRouteId(null);
-                }}
-                onRoutesReady={rts => setRoutes(rts)}
-                selectedRouteId={selectedRouteId}
-                onSelectRoute={id => setSelectedRouteId(id)}
-                routes={routes}
-              />
-            )}
-          </div>
-
-          {/* List View Sidebar (shown only when List view mode is selected) */}
-          <div className={`w-full md:w-[420px] bg-white border-l border-border flex-col h-full overflow-y-auto ${viewMode === "list" ? "flex" : "hidden"}`}>
-            <div className="p-4 border-b border-border flex items-center justify-between">
-              <div>
-                <span className="text-sm font-bold text-foreground block">
-                  Showing {filteredPlaces.length} nearby {activeCategory === "jobs" || isJobQuery(query) ? "jobs & opportunities" : "places"}
-                </span>
-                <span className="text-xs text-muted-foreground">Within active radius</span>
-              </div>
-              {query && (
-                <button onClick={() => setQuery("")} className="text-xs text-primary font-semibold hover:underline cursor-pointer">
-                  Clear search
-                </button>
-              )}
-            </div>
-
-            <div className="p-4 space-y-3 flex-1 overflow-y-auto">
-              {filteredPlaces.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center mx-auto mb-3">
-                    <Search className="w-6 h-6 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-base font-semibold text-foreground mb-1">No places or jobs found</h3>
-                  <p className="text-xs text-muted-foreground mb-4">Try searching for "React developer", "Chef", "Used furniture", or "Legal Aid"</p>
-                  <button onClick={() => { setQuery(""); setActiveCategory("all"); }} className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-semibold hover:opacity-90 transition cursor-pointer">
-                    Reset filters
-                  </button>
-                </div>
-              ) : (
-                filteredPlaces.map(p => (
-                  <PlaceCard
-                    key={String(p.id)}
-                    place={p}
-                    onClick={() => {
+          {/* Main Content Area (Matches Categories Pill Bar max-w-4xl width) */}
+          <div className="flex-1 w-full max-w-4xl mx-auto px-2 sm:px-4 pt-2 pb-2 min-h-0 relative flex flex-col gap-2.5 overflow-hidden">
+            {/* Top Row: Map Box and List View */}
+            <div className="flex-1 w-full flex flex-col md:flex-row gap-4 min-h-0">
+              {/* Standalone Map View Box (Rounded border card) */}
+              <div ref={mapContainerRef} className={`relative flex-1 w-full h-full min-h-0 rounded-2xl sm:rounded-3xl overflow-hidden border border-border/80 shadow-sm bg-white ${viewMode === "list" ? "hidden md:block" : "block"}`}>
+                <LeafletMap
+                  visiblePlaces={filteredPlaces}
+                  activePlaceId={mapActiveId}
+                  routes={routes}
+                  selectedRouteId={selectedRouteId}
+                  userLocation={userLocation}
+                  isGPSActive={isGPSActive}
+                  isLiveNavigating={isLiveNavigating}
+                  navUserCoord={navUserCoord}
+                  navHeading={navHeading}
+                  onMarkerClick={(p, px) => {
+                    if (!directionsFor && !isLiveNavigating) {
                       setMapActiveId(p.id);
-                      handleOpenDetails(p);
-                    }}
-                    onDirections={place => setDirectionsFor(place)}
-                    onViewDetails={place => handleOpenDetails(place)}
+                      setMarkerPx(px);
+                      setHoverPlace(null);
+                    }
+                  }}
+                  onMapClick={() => {
+                    setMapActiveId(null);
+                    setHoverPlace(null);
+                  }}
+                  onRouteClick={id => setSelectedRouteId(id)}
+                  onMarkerHover={(p, px) => {
+                    if (!directionsFor && !isLiveNavigating) {
+                      setHoverPlace(p);
+                      if (px) setHoverPx(px);
+                    }
+                  }}
+                />
+
+                {/* Desktop Hover Card Tooltip (Hidden when navigation route is active) */}
+                {!directionsFor && !isLiveNavigating && hoverPlace && (
+                  <HoverTooltipCard
+                    place={hoverPlace}
+                    px={hoverPx}
+                    containerW={mapContainerRef.current?.offsetWidth ?? 800}
+                    containerH={mapContainerRef.current?.offsetHeight ?? 600}
+                    onDirections={p => handleStartDirection(p)}
+                    onViewDetails={p => handleOpenDetails(p)}
                   />
-                ))
-              )}
+                )}
+
+                {/* Selected Place Card Overlay (Hidden when navigation route is active) */}
+                {!directionsFor && !isLiveNavigating && mapActiveId !== null && (() => {
+                  const activePlace = filteredPlaces.find(p => String(p.id) === String(mapActiveId));
+                  if (!activePlace) return null;
+                  return (
+                    <MapPlaceCard
+                      key={String(mapActiveId)}
+                      place={activePlace}
+                      markerPx={markerPx}
+                      containerSize={{
+                        w: mapContainerRef.current?.offsetWidth ?? 800,
+                        h: mapContainerRef.current?.offsetHeight ?? 600,
+                      }}
+                      onClose={() => setMapActiveId(null)}
+                      onViewDetails={() => handleOpenDetails(activePlace)}
+                      onDirections={() => handleStartDirection(activePlace)}
+                    />
+                  );
+                })()}
+
+                {/* Floating My Location Button */}
+                <button
+                  onClick={() => {
+                    if (isGPSActive) {
+                      setUserLocation(DEFAULT_LOCATION);
+                      setIsGPSActive(false);
+                    } else {
+                      if ("geolocation" in navigator) {
+                        setIsLocating(true);
+                        const getPos = (highAcc: boolean) => {
+                          navigator.geolocation.getCurrentPosition(
+                            pos => {
+                              const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+                              setUserLocation(loc);
+                              setIsGPSActive(true);
+                              setIsLocating(false);
+                            },
+                            err => {
+                              if (highAcc) {
+                                getPos(false);
+                                return;
+                              }
+                              console.warn("Geolocation error:", err);
+                              setIsLocating(false);
+                            },
+                            { enableHighAccuracy: highAcc, timeout: highAcc ? 6000 : 15000, maximumAge: 60000 }
+                          );
+                        };
+                        getPos(true);
+                      }
+                    }
+                  }}
+                  className={`absolute bottom-20 right-4 sm:bottom-6 sm:right-6 z-[999] p-3 sm:p-3.5 rounded-full shadow-lg border transition-all flex items-center justify-center cursor-pointer active:scale-95 ${
+                    isGPSActive
+                      ? "bg-[#D85A30] text-white border-[#D85A30] shadow-[#D85A30]/30"
+                      : "bg-white text-foreground border-border hover:bg-slate-50"
+                  }`}
+                  title={isGPSActive ? "Turn OFF Live Location (Revert to default)" : "Turn ON Live Location (GPS)"}
+                >
+                  {isLocating ? (
+                    <Loader2 className="w-5 h-5 animate-spin text-[#D85A30]" />
+                  ) : (
+                    <Navigation className={`w-5 h-5 transition-transform ${isGPSActive ? "text-white" : "text-[#D85A30]"}`} />
+                  )}
+                </button>
+
+                {/* Mobile Floating Overlay only (hidden on desktop) */}
+                {isLiveNavigating && directionsFor && activeNavRoute && (
+                  <div className="md:hidden">
+                    <GoogleMapsLiveNavigationHUD
+                      destination={directionsFor}
+                      route={activeNavRoute}
+                      userLocation={userLocation}
+                      onExit={() => {
+                        setIsLiveNavigating(false);
+                        setNavUserCoord(null);
+                      }}
+                      onUpdateCoord={(coord, heading) => {
+                        setNavUserCoord(coord);
+                        setNavHeading(heading);
+                      }}
+                      onRecenter={() => {
+                        if (navUserCoord) {
+                          setNavUserCoord([...navUserCoord]);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Directions Sheet Modal (when not in live navigation mode) */}
+                {!isLiveNavigating && directionsFor && (
+                  <DirectionsSheet
+                    destination={directionsFor}
+                    userLocation={userLocation}
+                    onClose={() => {
+                      setDirectionsFor(null);
+                      setRoutes([]);
+                      setSelectedRouteId(null);
+                      setIsLiveNavigating(false);
+                      setNavUserCoord(null);
+                      setActiveNavRoute(null);
+                    }}
+                    onRoutesReady={rts => setRoutes(rts)}
+                    selectedRouteId={selectedRouteId}
+                    onSelectRoute={id => setSelectedRouteId(id)}
+                    routes={routes}
+                    onStartNavigation={r => {
+                      setSelectedRouteId(r.id);
+                      setActiveNavRoute(r);
+                      setIsLiveNavigating(true);
+                      if (r.coords && r.coords.length > 0) {
+                        setNavUserCoord(r.coords[0]);
+                      }
+                    }}
+                  />
+                )}
+              </div>
+
+              {/* List View Sidebar (shown only when List view mode is selected) */}
+              <div className={`w-full md:w-[420px] bg-white rounded-2xl sm:rounded-3xl border border-border/80 shadow-sm flex-col h-full min-h-0 overflow-hidden ${viewMode === "list" ? "flex" : "hidden"}`}>
+                <div className="p-4 border-b border-border flex items-center justify-between">
+                  <div>
+                    <span className="text-sm font-bold text-foreground block">
+                      Showing {filteredPlaces.length} nearby {activeCategory === "jobs" || isJobQuery(query) ? "jobs & opportunities" : "places"}
+                    </span>
+                    <span className="text-xs text-muted-foreground">Within active radius</span>
+                  </div>
+                  {query && (
+                    <button onClick={() => setQuery("")} className="text-xs text-primary font-semibold hover:underline cursor-pointer">
+                      Clear search
+                    </button>
+                  )}
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {filteredPlaces.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center mx-auto mb-3">
+                        <MapPin className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                      <h3 className="text-base font-semibold text-foreground mb-1">No places or jobs found</h3>
+                      <p className="text-xs text-muted-foreground mb-4">Try searching for "React developer", "Chef", "Used furniture", or "Legal Aid"</p>
+                      <button onClick={() => { setQuery(""); setActiveCategory("all"); }} className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-semibold hover:opacity-90 transition cursor-pointer">
+                        Reset filters
+                      </button>
+                    </div>
+                  ) : (
+                    filteredPlaces.map(p => (
+                      <PlaceCard
+                        key={String(p.id)}
+                        place={p}
+                        onClick={() => {
+                          setMapActiveId(p.id);
+                          handleOpenDetails(p);
+                        }}
+                        onDirections={place => handleStartDirection(place)}
+                        onViewDetails={place => handleOpenDetails(place)}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
+
+            {/* Desktop & Laptop Live Navigation Bar (Outside Map Box in Bottom Free Space) */}
+            {isLiveNavigating && directionsFor && activeNavRoute && (
+              <div className="hidden md:flex w-full flex-shrink-0 pt-0 pb-0.5 animate-in slide-in-from-bottom-2 duration-200">
+                <GoogleMapsLiveNavigationHUD
+                  destination={directionsFor}
+                  route={activeNavRoute}
+                  userLocation={userLocation}
+                  onExit={() => {
+                    setIsLiveNavigating(false);
+                    setNavUserCoord(null);
+                  }}
+                  onUpdateCoord={(coord, heading) => {
+                    setNavUserCoord(coord);
+                    setNavHeading(heading);
+                  }}
+                  onRecenter={() => {
+                    if (navUserCoord) {
+                      setNavUserCoord([...navUserCoord]);
+                    }
+                  }}
+                />
+              </div>
+            )}
           </div>
-        </div>
-      </>
-    )}
+        </>
+      )}
 
 
       {/* Full Detail Modal for Regular Places */}
@@ -2019,7 +2524,7 @@ export function MapDiscoveryContent({
           onDirections={() => {
             const p = detailPlace;
             setDetailPlace(null);
-            setDirectionsFor(p);
+            handleStartDirection(p);
           }}
         />
       )}
@@ -2032,7 +2537,7 @@ export function MapDiscoveryContent({
           setDetailJob(null);
           const p = filteredPlaces.find(pl => pl.isJob && pl.jobData?.id === j.id);
           if (p) {
-            setDirectionsFor(p);
+            handleStartDirection(p);
           }
         }}
       />
@@ -2043,7 +2548,7 @@ export function MapDiscoveryContent({
 
 export function MapDiscovery() {
   return (
-    <AppLayout>
+    <AppLayout noPad={true}>
       <MapDiscoveryContent />
     </AppLayout>
   );

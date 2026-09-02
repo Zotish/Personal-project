@@ -1075,17 +1075,26 @@ export function Jobs() {
 
   const nearbyJobs = filteredJobs.filter(j => j.isNearby);
 
-  // Scroll detection for collapsing map height
+  // Scroll detection for collapsing map height with smooth hysteresis (prevents vibration)
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 80);
+      const y = window.scrollY;
+      setIsScrolled(prev => {
+        if (!prev && y > 100) return true;
+        if (prev && y < 40) return false;
+        return prev;
+      });
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // IntersectionObserver to auto-move map to currently visible job card
+  // IntersectionObserver to auto-move map to currently visible job card (ONLY for Mobile view < 768px)
   useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth >= 768) {
+      return; // Disable scroll animation on Desktop & Pad/Tablet view!
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries.filter(e => e.isIntersecting);
@@ -1274,8 +1283,9 @@ export function Jobs() {
         </div>
 
         {/* ── BARIKOI LIVE MAP (EXPANDED / COMPACT STICKY HEIGHT) ────── */}
-        <div id="jobs-map-section" className={`w-full max-w-7xl mx-auto px-2 sm:px-4 pt-2 sm:pt-3 transition-all duration-300 ${isScrolled ? "sticky top-[95px] sm:top-[100px] z-10" : ""
-          }`}>
+        <div id="jobs-map-section" className={`w-full max-w-7xl mx-auto px-2 sm:px-4 transition-all duration-300 ${
+          isScrolled ? "sticky top-[86px] sm:top-[90px] md:top-[90px] lg:top-[90px] z-10 pt-0" : "pt-2 sm:pt-3"
+        }`}>
           <div className="rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm bg-white">
             <BariKoiLiveJobsMap
               userCoords={userCoords}
@@ -1303,258 +1313,137 @@ export function Jobs() {
           </div>
         </div>
 
-        {/* ── MAIN JOB DIRECTORY CONTENT (2-COLUMN ON DESKTOP) ─────────────── */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-2.5 sm:pt-3">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* ── MAIN JOB DIRECTORY CONTENT (1-COL MOBILE, 2-COL PAD, 3-COL DESKTOP) ── */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-3 sm:pt-4">
+          {/* Filter Option Buttons */}
+          <div className="grid grid-cols-2 gap-2.5 mb-4 max-w-md">
+            {/* Left Option: Nearby Me Jobs */}
+            <div
+              onClick={() => setActiveFilter(activeFilter === "nearby" ? "all" : "nearby")}
+              className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
+                activeFilter === "nearby"
+                  ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
+                  : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
+              }`}
+            >
+              <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
+                {nearbyJobs.length} jobs nearby
+              </div>
+            </div>
 
-            {/* ════════ LEFT COLUMN: NEARBY FOR YOU (6 cols) ════════ */}
-            <div className="lg:col-span-6 space-y-3.5">
-              <div>
-                {/* 2-Card Options Matching Screenshot */}
-                <div className="grid grid-cols-2 gap-2.5 mb-2.5">
-                  {/* Left Option: Nearby Me Jobs */}
-                  <div
-                    onClick={() => setActiveFilter(activeFilter === "nearby" ? "all" : "nearby")}
-                    className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${activeFilter === "nearby"
-                        ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
-                        : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
-                      }`}
-                  >
-                    <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
-                      {nearbyJobs.length} jobs nearby
-                    </div>
-                  </div>
+            {/* Right Option: Full State Jobs */}
+            <div
+              onClick={() => setActiveFilter("all")}
+              className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
+                activeFilter === "all"
+                  ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
+                  : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
+              }`}
+            >
+              <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
+                {liveJobs.length} full state jobs
+              </div>
+            </div>
+          </div>
 
-                  {/* Right Option: Full State Jobs */}
-                  <div
-                    onClick={() => setActiveFilter("all")}
-                    className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${activeFilter === "all"
-                        ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
-                        : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
-                      }`}
-                  >
-                    <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
-                      {liveJobs.length} full state jobs
-                    </div>
-                  </div>
-                </div>
-
-
-                {/* Job Cards Feed (Screenshot Style) */}
-                <div className="space-y-4">
-                  {(activeFilter === "nearby" ? nearbyJobs : liveJobs).map(job => {
-                    const isSelected = selectedJob?.id === job.id;
-                    const isSaved = savedJobIds.includes(job.id);
-                    return (
-                      <div
-                        key={job.id}
-                        data-job-id={job.id}
-                        ref={el => {
-                          if (el) cardRefs.current.set(job.id, el);
-                          else cardRefs.current.delete(job.id);
+          {/* Equal Grid of Job Cards (1 column on mobile, 2 on pad, 3 on desktop) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
+            {(activeFilter === "nearby" ? nearbyJobs : filteredJobs).map(job => {
+              const isSelected = selectedJob?.id === job.id;
+              const isSaved = savedJobIds.includes(job.id);
+              return (
+                <div
+                  key={job.id}
+                  data-job-id={job.id}
+                  ref={el => {
+                    if (el) cardRefs.current.set(job.id, el);
+                    else cardRefs.current.delete(job.id);
+                  }}
+                  onClick={() => setSelectedJob(job)}
+                  className={`group bg-white rounded-3xl border overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between h-full ${
+                    isSelected
+                      ? "border-[#C04A22] ring-2 ring-[#C04A22]/20 shadow-md"
+                      : "border-slate-200/90 hover:border-slate-300 hover:shadow-xs"
+                  }`}
+                >
+                  {/* Banner Image with Type & Distance Floating Badges */}
+                  <div>
+                    <div className="relative w-full h-36 sm:h-40 overflow-hidden bg-slate-100">
+                      <img
+                        src={job.image}
+                        alt={job.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                      <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-white/95 backdrop-blur-md text-slate-800 text-xs font-bold shadow-xs border border-slate-200/60">
+                        {job.type}
+                      </div>
+                      <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-medium flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                        {job.distance}
+                      </div>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          toggleSave(job.id);
                         }}
-                        onClick={() => setSelectedJob(job)}
-                        className={`group bg-white rounded-3xl border overflow-hidden transition-all duration-200 cursor-pointer ${isSelected
-                            ? "border-[#C04A22] ring-2 ring-[#C04A22]/20 shadow-md"
-                            : "border-slate-200/90 hover:border-slate-300 hover:shadow-xs"
-                          }`}
+                        className="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-500 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
                       >
-                        {/* Banner Image with Type & Distance Floating Badges */}
-                        <div className="relative w-full h-32 sm:h-36 overflow-hidden bg-slate-100">
-                          <img
-                            src={job.image}
-                            alt={job.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            loading="lazy"
-                          />
-                          <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-white/95 backdrop-blur-md text-slate-800 text-xs font-bold shadow-xs border border-slate-200/60">
-                            {job.type}
-                          </div>
-                          <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-medium flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-                            {job.distance}
-                          </div>
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              toggleSave(job.id);
-                            }}
-                            className="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-500 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
-                          >
-                            {isSaved ? (
-                              <BookmarkCheck className="w-4 h-4 text-[#C04A22]" />
-                            ) : (
-                              <Bookmark className="w-4 h-4" />
-                            )}
-                          </button>
-                        </div>
-
-                        {/* Card Body */}
-                        <div className="p-4 sm:p-5">
-                          <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug line-clamp-1 group-hover:text-[#C04A22] transition-colors">
-                            {job.title}
-                          </h3>
-                          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-                            {job.company} • {job.location}
-                          </p>
-
-                          {/* Row 1: Salary Pill */}
-                          <div className="mt-3 flex items-center justify-between">
-                            <span className="px-3 py-1.5 rounded-full bg-orange-50/80 text-[#C04A22] text-xs sm:text-sm font-bold border border-orange-100/60">
-                              {job.salary}
-                            </span>
-                          </div>
-
-                          {/* Row 2: Direction & Details Buttons (Side by Side) */}
-                          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
-                            <button
-                              onClick={e => {
-                                e.stopPropagation();
-                                handleShowDirection(job);
-                              }}
-                              className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
-                              title="Show direction route from your location"
-                            >
-                              <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
-                              <span>Direction</span>
-                            </button>
-                            <button
-                              onClick={e => {
-                                e.stopPropagation();
-                                setShowApplyModal(job);
-                              }}
-                              className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
-                            >
-                              <span>Details</span>
-                              <ArrowRight className="w-3.5 h-3.5 text-[#C04A22]" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* ════════ RIGHT COLUMN: ALL LOCAL JOBS DIRECTORY (6 cols) ════════ */}
-            <div className="lg:col-span-6 space-y-4">
-
-              {/* Directory Header Card */}
-              <div className="bg-white rounded-3xl border border-slate-200 p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm">
-                      <Briefcase className="w-4 h-4 text-[#C04A22]" />
+                        {isSaved ? (
+                          <BookmarkCheck className="w-4 h-4 text-[#C04A22]" />
+                        ) : (
+                          <Bookmark className="w-4 h-4" />
+                        )}
+                      </button>
                     </div>
-                    <div>
-                      <h2 className="text-base font-bold text-slate-900 leading-tight">
-                        Live Jobs Directory
-                      </h2>
-                      <p className="text-xs text-slate-500">
-                        {filteredJobs.length} verified jobs around {userArea}
+
+                    {/* Card Body Header */}
+                    <div className="p-4 sm:p-5 pb-0">
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug line-clamp-1 group-hover:text-[#C04A22] transition-colors">
+                        {job.title}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+                        {job.company} • {job.location}
                       </p>
+
+                      {/* Salary Pill */}
+                      <div className="mt-3">
+                        <span className="inline-block px-3 py-1.5 rounded-full bg-orange-50/80 text-[#C04A22] text-xs sm:text-sm font-bold border border-orange-100/60">
+                          {job.salary}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Body Footer: Direction & Details Buttons Aligned Equally */}
+                  <div className="p-4 sm:p-5 pt-3">
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleShowDirection(job);
+                        }}
+                        className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                        title="Show direction route from your location"
+                      >
+                        <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
+                        <span>Direction</span>
+                      </button>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          setShowApplyModal(job);
+                        }}
+                        className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                      >
+                        <span>Details</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-[#C04A22]" />
+                      </button>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Job Cards Feed (Screenshot Style) */}
-              <div className="space-y-4">
-                {filteredJobs.map(job => {
-                  const isSelected = selectedJob?.id === job.id;
-                  const isSaved = savedJobIds.includes(job.id);
-                  return (
-                    <div
-                      key={job.id}
-                      data-job-id={job.id}
-                      ref={el => {
-                        if (el) cardRefs.current.set(job.id, el);
-                        else cardRefs.current.delete(job.id);
-                      }}
-                      onClick={() => setSelectedJob(job)}
-                      className={`group bg-white rounded-3xl border overflow-hidden transition-all duration-200 cursor-pointer ${isSelected
-                          ? "border-[#C04A22] ring-2 ring-[#C04A22]/20 shadow-md"
-                          : "border-slate-200/90 hover:border-slate-300 hover:shadow-xs"
-                        }`}
-                    >
-                      {/* Banner Image with Type & Distance Floating Badges */}
-                      <div className="relative w-full h-32 sm:h-36 overflow-hidden bg-slate-100">
-                        <img
-                          src={job.image}
-                          alt={job.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          loading="lazy"
-                        />
-                        <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-white/95 backdrop-blur-md text-slate-800 text-xs font-bold shadow-xs border border-slate-200/60">
-                          {job.type}
-                        </div>
-                        <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-medium flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-                          {job.distance}
-                        </div>
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            toggleSave(job.id);
-                          }}
-                          className="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-500 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
-                        >
-                          {isSaved ? (
-                            <BookmarkCheck className="w-4 h-4 text-[#C04A22]" />
-                          ) : (
-                            <Bookmark className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
-
-                      {/* Card Body */}
-                      <div className="p-4 sm:p-5">
-                        <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug line-clamp-1 group-hover:text-[#C04A22] transition-colors">
-                          {job.title}
-                        </h3>
-                        <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-                          {job.company} • {job.location}
-                        </p>
-
-                        {/* Row 1: Salary Pill */}
-                        <div className="mt-3 flex items-center justify-between">
-                          <span className="px-3 py-1.5 rounded-full bg-orange-50/80 text-[#C04A22] text-xs sm:text-sm font-bold border border-orange-100/60">
-                            {job.salary}
-                          </span>
-                        </div>
-
-                        {/* Row 2: Direction & Details Buttons (Side by Side) */}
-                        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              handleShowDirection(job);
-                            }}
-                            className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
-                            title="Show direction route from your location"
-                          >
-                            <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
-                            <span>Direction</span>
-                          </button>
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              setShowApplyModal(job);
-                            }}
-                            className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
-                          >
-                            <span>Details</span>
-                            <ArrowRight className="w-3.5 h-3.5 text-[#C04A22]" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
+              );
+            })}
           </div>
         </div>
 

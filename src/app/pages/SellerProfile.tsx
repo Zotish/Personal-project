@@ -175,8 +175,8 @@ export function SellerProfile() {
             <div className="flex items-center gap-2 overflow-x-auto pb-1">
               {[
                 { id: "all", label: "All Items" },
-                { id: "Used Furniture", label: "🪑 Used Furniture" },
-                { id: "Grocery & Food", label: "🛒 Groceries & Food" },
+                { id: "Used Furniture", label: "Used Furniture" },
+                { id: "Grocery & Food", label: "Groceries & Food" },
               ].map(cat => (
                 <button
                   key={cat.id}
