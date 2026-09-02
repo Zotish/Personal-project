@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
   Search, MapPin, Navigation, Bookmark, BookmarkCheck, Share2,
@@ -1048,6 +1048,24 @@ export function Housing() {
   const [directionListing, setDirectionListing] = useState<LiveHousingListing | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  // Deep linking: auto-focus and show details if opened via shared link
+  const routerLocation = useLocation();
+  const searchParams = useMemo(() => new URLSearchParams(routerLocation.search), [routerLocation.search]);
+  const sharedId = searchParams.get("id") || searchParams.get("houseId");
+
+  useEffect(() => {
+    if (!sharedId) return;
+    const target = liveHousing.find(h => String(h.id) === String(sharedId));
+    if (target) {
+      setSelectedListing(target);
+      setShowDetailsModal(target);
+      setUserCoords([target.lat, target.lng]);
+      setTimeout(() => {
+        cardRefs.current.get(target.id)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 500);
+    }
+  }, [sharedId, liveHousing]);
 
   // Filter Housing based on Search Query & Filter Pills
   const filteredHousing = liveHousing.filter(listing => {

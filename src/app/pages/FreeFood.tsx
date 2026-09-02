@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
   Search, MapPin, Navigation, Bookmark, BookmarkCheck, Share2,
@@ -904,6 +904,24 @@ export function FreeFood() {
     return generateLiveLocationFreeFood(userCoords[0], userCoords[1], userArea, userCity);
   }, [userCoords, userArea, userCity]);
 
+  // Deep linking: auto-focus and show details if opened via shared link
+  const routerLocation = useLocation();
+  const searchParams = useMemo(() => new URLSearchParams(routerLocation.search), [routerLocation.search]);
+  const sharedId = searchParams.get("id") || searchParams.get("foodId");
+
+  useEffect(() => {
+    if (!sharedId) return;
+    const target = liveFood.find(l => String(l.id) === String(sharedId));
+    if (target) {
+      setSelectedListing(target);
+      setShowDetailsModal(target);
+      setUserCoords([target.lat, target.lng]);
+      setTimeout(() => {
+        cardRefs.current.get(target.id)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 500);
+    }
+  }, [sharedId, liveFood]);
+
   // Filter Food drives based on Search Query & Filter Pills
   const filteredFood = useMemo(() => {
     return liveFood.filter(listing => {
@@ -1124,7 +1142,7 @@ export function FreeFood() {
                               e.stopPropagation();
                               const url = `${window.location.origin}/services/free-food?id=${listing.id}`;
                               if (typeof navigator !== "undefined" && navigator.share) {
-                                navigator.share({ title: listing.name, text: `Check out ${listing.name} on Pathasathi!`, url }).catch(() => {});
+                                navigator.share({ title: listing.title, text: `Check out ${listing.title} on Pathasathi!`, url }).catch(() => {});
                               } else if (typeof navigator !== "undefined" && navigator.clipboard) {
                                 navigator.clipboard.writeText(url);
                               }

@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
   Search, MapPin, Navigation, Bookmark, BookmarkCheck, Share2,
@@ -820,6 +820,24 @@ export function ReligiousFinder() {
   const nearbyPlaces = filteredPlaces.filter(p => p.isNearby);
 
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  // Deep linking: auto-focus and show details if opened via shared link
+  const routerLocation = useLocation();
+  const searchParams = useMemo(() => new URLSearchParams(routerLocation.search), [routerLocation.search]);
+  const sharedId = searchParams.get("id") || searchParams.get("placeId");
+
+  useEffect(() => {
+    if (!sharedId) return;
+    const target = livePlaces.find(p => String(p.id) === String(sharedId));
+    if (target) {
+      setSelectedPlace(target);
+      setActiveModalPlace(target);
+      setUserCoords([target.lat, target.lng]);
+      setTimeout(() => {
+        cardRefs.current.get(target.id)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 500);
+    }
+  }, [sharedId, livePlaces]);
 
   // IntersectionObserver to auto-move map to currently visible religious card (ONLY for Mobile view < 768px)
   useEffect(() => {

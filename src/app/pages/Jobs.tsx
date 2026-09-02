@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
   Search, MapPin, Navigation, Bookmark, BookmarkCheck, Share2,
@@ -1074,6 +1074,24 @@ export function Jobs() {
   const [directionJob, setDirectionJob] = useState<LiveJobListing | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  // Deep linking: auto-focus and show details if opened via shared link
+  const routerLocation = useLocation();
+  const searchParams = useMemo(() => new URLSearchParams(routerLocation.search), [routerLocation.search]);
+  const sharedId = searchParams.get("id") || searchParams.get("jobId");
+
+  useEffect(() => {
+    if (!sharedId) return;
+    const target = liveJobs.find(j => String(j.id) === String(sharedId) || String(j.id) === `job-${sharedId}`);
+    if (target) {
+      setSelectedJob(target);
+      setShowApplyModal(target);
+      setUserCoords([target.lat, target.lng]);
+      setTimeout(() => {
+        cardRefs.current.get(target.id)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 500);
+    }
+  }, [sharedId, liveJobs]);
 
   // Filter Jobs based on Search Query & Filter Pills
   const filteredJobs = liveJobs.filter(job => {

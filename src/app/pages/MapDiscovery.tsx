@@ -767,19 +767,19 @@ function LeafletMap({
     if (LRef.current && map.flyTo) {
       map.flyTo([p.lat, p.lng], 16, { duration: 1.0 });
     } else if (map.flyTo) {
-      map.flyTo({ center: [p.lng, p.lat], zoom: 15, duration: 1000 });
+      map.flyTo({ center: [p.lng, p.lat], zoom: 16, duration: 1000 });
     }
   }, [activePlaceId, visiblePlaces]);
 
   useEffect(() => {
-    if (!mapRef.current || !LRef.current || visiblePlaces.length === 0 || routes.length > 0 || isGPSActive) return;
+    if (!mapRef.current || !LRef.current || visiblePlaces.length === 0 || routes.length > 0 || isGPSActive || activePlaceId !== null) return;
     if (visiblePlaces.length === 1) {
       mapRef.current.flyTo([visiblePlaces[0].lat, visiblePlaces[0].lng], 16, { duration: 1.0 });
     } else if (visiblePlaces.length > 1) {
       const bounds = LRef.current.latLngBounds(visiblePlaces.map(p => [p.lat, p.lng]));
       mapRef.current.fitBounds(bounds, { padding: [60, 60] });
     }
-  }, [visiblePlaces, routes.length, isGPSActive]);
+  }, [visiblePlaces, routes.length, isGPSActive, activePlaceId]);
 
   // ── Sync User Location Marker & Center Map (Works on both bkoi-gl & Leaflet) ──
   useEffect(() => {
@@ -1507,7 +1507,7 @@ function MapPlaceCard({
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/map?placeId=${place.id}`;
+    const url = `${window.location.origin}/map?placeId=${place.id}&lat=${place.lat}&lng=${place.lng}`;
     if (typeof navigator !== "undefined" && navigator.share) {
       navigator.share({ title: place.name, text: `Check out ${place.name} on Pathasathi!`, url }).catch(() => {});
     } else if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -1770,7 +1770,7 @@ function PlaceDetail({ place, onClose, onDirections }: { place: Place; onClose: 
             <button className="flex items-center justify-center gap-1 py-2 rounded-xl border border-border text-xs font-medium hover:bg-secondary transition"><Bookmark className="w-3.5 h-3.5" /> Save</button>
             <button
               onClick={() => {
-                const url = `${window.location.origin}/map?placeId=${place.id}`;
+                const url = `${window.location.origin}/map?placeId=${place.id}&lat=${place.lat}&lng=${place.lng}`;
                 if (typeof navigator !== "undefined" && navigator.share) {
                   navigator.share({ title: place.name, url }).catch(() => {});
                 } else if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -1804,7 +1804,7 @@ function PlaceCard({
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/map?placeId=${place.id}`;
+    const url = `${window.location.origin}/map?placeId=${place.id}&lat=${place.lat}&lng=${place.lng}`;
     if (typeof navigator !== "undefined" && navigator.share) {
       navigator.share({ title: place.name, text: `Check out ${place.name} on Pathasathi!`, url }).catch(() => {});
     } else if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -1978,6 +1978,11 @@ export function MapDiscoveryContent({
 }) {
   const navigate = useNavigate();
   const routerLocation = useLocation();
+  const searchParams = useMemo(() => new URLSearchParams(routerLocation.search), [routerLocation.search]);
+  const urlPlaceId = searchParams.get("placeId") || searchParams.get("id") || searchParams.get("place");
+  const urlLat = searchParams.get("lat");
+  const urlLng = searchParams.get("lng");
+
   const routeState = routerLocation.state as {
     userLocation?: [number, number];
     isGPSActive?: boolean;
@@ -1988,7 +1993,7 @@ export function MapDiscoveryContent({
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState(routeState?.activeCategory || "all");
   const [viewMode, setViewMode] = useState<"list" | "map">("map");
-  const [mapActiveId, setMapActiveId] = useState<number | string | null>(routeState?.selectedPlaceId || null);
+  const [mapActiveId, setMapActiveId] = useState<number | string | null>(urlPlaceId || routeState?.selectedPlaceId || null);
   const [markerPx, setMarkerPx] = useState({ x: 0, y: 0 });
   const [hoverPlace, setHoverPlace] = useState<Place | null>(null);
   const [hoverPx, setHoverPx] = useState({ x: 0, y: 0 });
@@ -2012,8 +2017,11 @@ export function MapDiscoveryContent({
     setHoverPlace(null);
   };
 
-  // Initialize userLocation from routeState, localStorage cache, or default
+  // Initialize userLocation from URL query params, routeState, localStorage cache, or default
   const [userLocation, setUserLocation] = useState<[number, number]>(() => {
+    if (urlLat && urlLng && !isNaN(Number(urlLat)) && !isNaN(Number(urlLng))) {
+      return [Number(urlLat), Number(urlLng)];
+    }
     if (routeState?.userLocation) return routeState.userLocation;
     try {
       const cached = localStorage.getItem("bkoi_last_user_coords");
@@ -2028,6 +2036,7 @@ export function MapDiscoveryContent({
   });
 
   const [isGPSActive, setIsGPSActive] = useState<boolean>(() => {
+    if (urlLat && urlLng) return true;
     if (routeState?.isGPSActive !== undefined) return routeState.isGPSActive;
     try {
       return !!localStorage.getItem("bkoi_last_user_coords");
@@ -2138,6 +2147,31 @@ export function MapDiscoveryContent({
   const allPlaces = useMemo(() => {
     return [...places, ...jobPlaces, ...bkoiPlaces];
   }, [jobPlaces, bkoiPlaces]);
+
+  // Deep-linking from shared link: automatically center, zoom in, and open the active place card
+  useEffect(() => {
+    const targetId = urlPlaceId || routeState?.selectedPlaceId;
+    if (!targetId) return;
+
+    const target = allPlaces.find(
+      p => String(p.id) === String(targetId) ||
+           String(p.id) === `job-${targetId}` ||
+           (p.isJob && String(p.jobData?.id) === String(targetId))
+    );
+
+    if (target) {
+      setMapActiveId(target.id);
+      setActiveCategory("all");
+      setUserLocation([target.lat, target.lng]);
+      if (mapContainerRef.current) {
+        const w = mapContainerRef.current.offsetWidth || 800;
+        const h = mapContainerRef.current.offsetHeight || 600;
+        setMarkerPx({ x: w / 2, y: h / 2 });
+      }
+    } else if (urlLat && urlLng && !isNaN(Number(urlLat)) && !isNaN(Number(urlLng))) {
+      setUserLocation([Number(urlLat), Number(urlLng)]);
+    }
+  }, [urlPlaceId, urlLat, urlLng, routeState?.selectedPlaceId, allPlaces]);
 
   // Search filter matching name, category, description, address, languages, job attributes
   const filteredPlaces = useMemo(() => {
