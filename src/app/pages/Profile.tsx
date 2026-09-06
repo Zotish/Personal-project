@@ -8,8 +8,9 @@ import {
   HelpCircle, Zap, UserPlus, BarChart2, X, Search, UserCheck, ChevronRight, User,
   ArrowLeft, Mail, Bell, BellOff, Flag, UserX, VolumeX, Sparkles, Check, Play,
   Download, Eye, MessageSquare, ExternalLink, ShieldCheck, GraduationCap, Briefcase, Languages,
-  Video, Smile, FileText
+  Video, Smile, FileText, Store, ArrowLeftRight, Shield
 } from "lucide-react";
+import { useAccountMode } from "../context/AccountModeContext";
 import { InvoiceModal, InvoiceData } from "../components/InvoiceModal";
 
 export interface UserProfileData {
@@ -569,6 +570,13 @@ export function Profile() {
   };
 
   const isSelf = activeUser.handle === "@rafiq_ahmed";
+  const {
+    hasSellerAccount,
+    openMigrateModal,
+    switchMode,
+    toggleGhostBlock,
+    isGhostBlocked,
+  } = useAccountMode();
 
   // Interactive States
   const [activeTab, setActiveTab] = useState<"posts" | "replies" | "likes" | "orders">("posts");
@@ -785,13 +793,24 @@ export function Profile() {
             {/* Right Side Action Buttons */}
             <div className="flex items-center gap-2 pb-1">
               {isSelf ? (
-                /* Edit Profile Button for Own Profile */
-                <button
-                  onClick={() => setShowEditModal(true)}
-                  className="px-5 py-2 rounded-full border border-slate-300 font-bold text-xs sm:text-sm text-slate-800 hover:bg-slate-100 transition-all cursor-pointer active:scale-95 shadow-2xs"
-                >
-                  Edit profile
-                </button>
+                /* Edit Profile & Seller Action for Own Profile */
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  {!hasSellerAccount && (
+                    <button
+                      onClick={openMigrateModal}
+                      className="px-3.5 py-2 rounded-full bg-orange-50 hover:bg-orange-100 text-[#8C3015] border border-orange-200 font-bold text-xs sm:text-sm transition-all cursor-pointer active:scale-95 shadow-2xs flex items-center gap-1.5"
+                    >
+                      <Store className="w-4 h-4 text-[#C04A22]" />
+                      <span>Become a Seller</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowEditModal(true)}
+                    className="px-5 py-2 rounded-full border border-slate-300 font-bold text-xs sm:text-sm text-slate-800 hover:bg-slate-100 transition-all cursor-pointer active:scale-95 shadow-2xs"
+                  >
+                    Edit profile
+                  </button>
+                </div>
               ) : (
                 /* Actions when viewing another Universal User */
                 <>
@@ -829,6 +848,25 @@ export function Profile() {
                           >
                             <VolumeX className="w-4 h-4 text-slate-500 flex-shrink-0" />
                             <span className="truncate">{isMuted ? `Unmute ${activeUser.handle}` : `Mute ${activeUser.handle}`}</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowMoreMenu(false);
+                              toggleGhostBlock(activeUser.handle);
+                              showToast(
+                                isGhostBlocked(activeUser.handle)
+                                  ? `Removed Ghost Block from ${activeUser.handle}`
+                                  : `🛡️ Ghost Blocked ${activeUser.handle} — your account is now invisible to them`
+                              );
+                            }}
+                            className="w-full px-3.5 py-2.5 flex items-center gap-2.5 hover:bg-purple-50 text-purple-700 transition text-left cursor-pointer"
+                          >
+                            <Shield className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                            <span className="truncate">
+                              {isGhostBlocked(activeUser.handle)
+                                ? "Remove Ghost Block"
+                                : "🛡️ Ghost Block (Anti-Stalking)"}
+                            </span>
                           </button>
                           <button
                             onClick={() => {

@@ -14,7 +14,7 @@ import {
   Calendar, Clock, X, MapPin as MapPinIcon, UserCheck, Building2,
   Megaphone, Star, TrendingUp, Lock, Hash, Pin, Award, User, Video, Film, Smile,
   Wind, Droplets, Thermometer, ArrowUp, Loader2, CloudSun, Plus, LayoutGrid, Box, Package,
-  Cloud, CloudRain, CloudSnow, Sun, CloudLightning, ShoppingBag
+  Cloud, CloudRain, CloudSnow, Sun, CloudLightning, ShoppingBag, Shield
 } from "lucide-react";
 import { EventRegistrationModal } from "../components/events/EventRegistrationModal";
 
@@ -909,6 +909,7 @@ function PostComposer({ onAddPost, onClose }: { onAddPost?: (newPost: any) => vo
   const { t } = useLanguage();
   const [postType, setPostType] = useState("regular");
   const [text, setText] = useState("");
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [mediaFile, setMediaFile] = useState<{ url: string; type: "image" | "video"; name: string } | null>(null);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -953,11 +954,11 @@ function PostComposer({ onAddPost, onClose }: { onAddPost?: (newPost: any) => vo
       onAddPost({
         id: Date.now(),
         author: {
-          name: "PathaSathi User",
-          handle: "@pathasathi_user",
-          avatar: "U",
-          color: "from-[#e6653c] to-[#D85A30]",
-          verified: true,
+          name: isAnonymous ? "Anonymous Neighbor (বেনামী সদস্য)" : "Rafiq Ahmed",
+          handle: isAnonymous ? "@anonymous_neighbor" : "@rafiq_ahmed",
+          avatar: isAnonymous ? "🛡️" : "RA",
+          color: isAnonymous ? "from-slate-700 to-slate-900" : "from-[#e6653c] to-[#D85A30]",
+          verified: !isAnonymous,
         },
         time: "Just now",
         content: text,
@@ -970,6 +971,7 @@ function PostComposer({ onAddPost, onClose }: { onAddPost?: (newPost: any) => vo
     }
     setText("");
     setMediaFile(null);
+    setIsAnonymous(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -1049,9 +1051,19 @@ function PostComposer({ onAddPost, onClose }: { onAddPost?: (newPost: any) => vo
         className="hidden"
       />
 
+      {/* Anonymous Immigrant Privacy Shield Notice */}
+      {isAnonymous && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-slate-900 text-slate-100 rounded-xl text-xs font-medium mt-2 animate-in fade-in">
+          <Shield className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <span>
+            <strong>Immigrant Privacy Shield Active:</strong> Your name and profile will be displayed as <em>Anonymous Neighbor (বেনামী সদস্য)</em> to protect against doxxing and harassment.
+          </span>
+        </div>
+      )}
+
       {/* Bottom Action Bar */}
       <div className="flex items-center justify-between pt-2.5 border-t border-border mt-2">
-        <div className="flex gap-1 items-center relative">
+        <div className="flex gap-1 items-center relative flex-wrap">
           {/* Photo Button (Icon Only) */}
           <button
             type="button"
@@ -1110,6 +1122,21 @@ function PostComposer({ onAddPost, onClose }: { onAddPost?: (newPost: any) => vo
           {/* Poll Icon */}
           <button type="button" className="p-2 rounded-xl text-slate-700 hover:text-[#8C3015] hover:bg-[#C04A22]/10 transition-colors" title="Create Poll">
             <BarChart2 className="w-5 h-5 text-[#C04A22]" />
+          </button>
+
+          {/* Anonymous Post Toggle (Immigrant Privacy Protection) */}
+          <button
+            type="button"
+            onClick={() => setIsAnonymous(!isAnonymous)}
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              isAnonymous
+                ? "bg-slate-900 text-emerald-400 shadow-2xs border border-slate-700"
+                : "text-slate-600 hover:text-[#8C3015] hover:bg-[#C04A22]/10"
+            }`}
+            title="Post Anonymously (Hide your identity from public feed)"
+          >
+            <Shield className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+            <span className="hidden sm:inline">{isAnonymous ? "Anonymous ✓" : "Anonymous"}</span>
           </button>
         </div>
 
@@ -1540,13 +1567,32 @@ export function HomeFeed() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [mobileCalOpen, setMobileCalOpen] = useState(false);
   const [mobileWeatherOpen, setMobileWeatherOpen] = useState(false);
-  const [customPosts, setCustomPosts] = useState<any[]>([]);
+  const [customPosts, setCustomPosts] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem("immigrantconnect_custom_posts");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [mobileFollowedUsers, setMobileFollowedUsers] = useState<string[]>([]);
   const [isPostBoxOpen, setIsPostBoxOpen] = useState(false);
 
+  // Sync newly created posts from TwitterPostModal (Sidebar) or other triggers
+  useEffect(() => {
+    const handleNewPost = (e: any) => {
+      if (e.detail) {
+        setCustomPosts(prev => {
+          if (prev.some(p => p.id === e.detail.id)) return prev;
+          return [e.detail, ...prev];
+        });
+      }
+    };
+    window.addEventListener("new-post-created", handleNewPost);
+    return () => window.removeEventListener("new-post-created", handleNewPost);
+  }, []);
 
   const handleToggleMobileFollow = (e: React.MouseEvent, handle: string) => {
-
     e.stopPropagation();
     setMobileFollowedUsers(prev =>
       prev.includes(handle) ? prev.filter(h => h !== handle) : [...prev, handle]
@@ -1664,10 +1710,8 @@ export function HomeFeed() {
                 }`}
                 title="Apps & Tools"
               >
-                {/* On mobile: App icon (LayoutGrid), on desktop: MapPin */}
-                <LayoutGrid className={`sm:hidden w-5 h-5 flex-shrink-0 transition-colors ${activeTab === "local" ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
-                <MapPin className={`hidden sm:block w-3.5 h-3.5 flex-shrink-0 transition-colors ${activeTab === "local" ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
-                <span className="hidden sm:inline truncate">{t("tab_local")}</span>
+                {/* 5. 4 Box (Apps / Smart Sidebar) */}
+                <LayoutGrid className={`w-5 h-5 sm:w-4.5 sm:h-4.5 flex-shrink-0 transition-colors ${activeTab === "local" ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
               </button>
             </div>
           </div>

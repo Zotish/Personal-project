@@ -7,6 +7,7 @@ import {
 import { LanguageToggle } from "../ui/LanguageToggle";
 import { Logo } from "../ui/Logo";
 import { GoldenBadge } from "../ui/GoldenBadge";
+import { useAccountMode } from "../../context/AccountModeContext";
 
 interface SellerSidebarProps {
   activeTab?: string;
@@ -16,6 +17,7 @@ interface SellerSidebarProps {
 export function SellerSidebar({ activeTab = "overview", onTabChange }: SellerSidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, sellerProfile, switchMode } = useAccountMode();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const handleLogout = () => {
@@ -100,15 +102,33 @@ export function SellerSidebar({ activeTab = "overview", onTabChange }: SellerSid
       {/* Merchant Profile Footer with Logout Popover Menu */}
       <div className="p-3 border-t border-slate-100 bg-slate-50/80 relative">
         
-        {/* Logout Popover Menu */}
+        {/* Profile Popover Menu */}
         {showProfileMenu && (
-          <div className="absolute bottom-full left-3 right-3 mb-2 bg-white rounded-2xl border border-slate-200 shadow-xl p-2 z-50 transition-all">
+          <div className="absolute bottom-full left-3 right-3 mb-2 bg-white rounded-2xl border border-slate-200 shadow-xl p-2 z-50 transition-all space-y-1">
             <div className="px-3 py-2 border-b border-slate-100 mb-1">
-              <span className="text-xs font-bold text-slate-900 block">Gulshan</span>
+              <span className="text-xs font-bold text-slate-900 block truncate">
+                {sellerProfile?.shopName || "Gulshan Resale & Mart"}
+              </span>
+              <span className="text-[10px] text-slate-500 block">
+                Owned by {user.name} ({user.handle})
+              </span>
             </div>
+
+            {/* Switch to Member */}
+            <button
+              onClick={() => {
+                setShowProfileMenu(false);
+                switchMode("member");
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-[#8C3015] bg-[#C04A22]/10 hover:bg-[#C04A22]/20 transition text-left cursor-pointer"
+            >
+              <ArrowLeftRight className="w-4 h-4 text-[#C04A22] flex-shrink-0" />
+              <span>Switch to Member</span>
+            </button>
+
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition text-left"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition text-left cursor-pointer"
             >
               <LogOut className="w-4 h-4 text-rose-500" />
               <span>Log Out</span>
@@ -125,7 +145,7 @@ export function SellerSidebar({ activeTab = "overview", onTabChange }: SellerSid
           </div>
           <div className="flex-1 min-w-0 flex items-center justify-between">
             <div className="text-xs font-bold text-slate-900 truncate flex items-center gap-1.5">
-              <span>Gulshan</span>
+              <span className="truncate">{sellerProfile?.shopName || "Gulshan Mart"}</span>
               <GoldenBadge size={16} title="Verified Merchant" />
             </div>
             <ChevronUp className={`w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-transform ${showProfileMenu ? "rotate-180" : ""}`} />

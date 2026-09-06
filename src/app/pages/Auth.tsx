@@ -25,7 +25,6 @@ export function Login() {
   const [method, setMethod] = useState<"email" | "phone">("email");
   const [countryCode, setCountryCode] = useState("+1");
   const [step, setStep] = useState<"form" | "otp">("form");
-  const [role, setRole] = useState<"user" | "seller">("user");
   
   // OTP state
   const [otp, setOtp] = useState(["4", "2", "7", "1", "8", "9"]);
@@ -39,11 +38,7 @@ export function Login() {
   const handleVerifyOtp = () => {
     const fullCode = otp.join("").trim();
     if (fullCode.length === 6 && fullCode === "427189") {
-      if (role === "seller") {
-        navigate("/seller-dashboard");
-      } else {
-        navigate("/feed");
-      }
+      navigate("/feed");
     } else {
       setErrorMsg("Invalid OTP verification code. Please enter valid code (e.g. 427189) to proceed.");
     }
@@ -62,7 +57,7 @@ export function Login() {
           </button>
 
           <h1 className="text-2xl font-bold text-foreground mb-2">
-            {role === "seller" ? "Seller OTP Verification" : "OTP Verification"}
+            OTP Verification
           </h1>
           <p className="text-muted-foreground text-sm mb-6">
             Enter the 6-digit code sent to your {method === "email" ? "email" : "phone number"}
@@ -125,43 +120,12 @@ export function Login() {
         <div className="text-center mb-6 flex flex-col items-center">
           <Logo size="lg" onClick={() => navigate("/")} className="mb-2" />
           <p className="text-xs text-slate-500 font-medium">
-            {role === "seller" ? "Sign in to your Merchant SaaS Portal" : "Sign in to your PathaSathi Account"}
+            Sign in to your PathaSathi Account
           </p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-border p-5 sm:p-6">
           <div className="space-y-4">
-            
-            {/* 0. Account Type Side-by-Side Segmented Selector */}
-            <div>
-              <label className="text-sm font-medium text-foreground block mb-1.5">
-                Account Type
-              </label>
-              <div className="grid grid-cols-2 gap-2 p-1 bg-secondary/80 rounded-xl border border-border">
-                <button
-                  type="button"
-                  onClick={() => setRole("user")}
-                  className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${role === "user"
-                      ? "bg-white text-[#D85A30] shadow-xs border border-border/40"
-                      : "text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                  <User className="w-3.5 h-3.5" />
-                  <span>Member</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRole("seller")}
-                  className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${role === "seller"
-                      ? "bg-[#D85A30] text-white shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                  <Store className="w-3.5 h-3.5" />
-                  <span>Seller</span>
-                </button>
-              </div>
-            </div>
 
             {/* Unified Contact Field with Dropdown Method Box */}
             <div>
@@ -299,11 +263,6 @@ export function SignUp() {
   const [method, setMethod] = useState<"email" | "phone">("email");
   const [countryCode, setCountryCode] = useState("+1");
 
-  // Role & Seller Onboarding State
-  const [role, setRole] = useState<"user" | "seller">("user");
-  const [sellerType, setSellerType] = useState<"individual" | "business">("individual");
-  const [businessCategory, setBusinessCategory] = useState("furniture");
-
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -311,7 +270,7 @@ export function SignUp() {
         <div className="text-center mb-4 flex flex-col items-center">
           <Logo size="lg" onClick={() => navigate("/")} className="mb-2" />
           <h1 className="text-2xl font-bold text-foreground">
-            {role === "seller" ? "Create Seller Account" : "Create your account"}
+            Create your account
           </h1>
         </div>
 
@@ -319,95 +278,11 @@ export function SignUp() {
           {/* Form Input Fields */}
           <div className="space-y-4">
 
-            {/* 0. Account Type Side-by-Side Segmented Selector */}
-            <div>
-              <label className="text-sm font-medium text-foreground block mb-1.5">
-                Account Type
-              </label>
-              <div className="grid grid-cols-2 gap-2 p-1 bg-secondary/80 rounded-xl border border-border">
-                <button
-                  type="button"
-                  onClick={() => setRole("user")}
-                  className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${role === "user"
-                      ? "bg-white text-[#D85A30] shadow-xs border border-border/40"
-                      : "text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                  <User className="w-3.5 h-3.5" />
-                  <span>Member</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRole("seller")}
-                  className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${role === "seller"
-                      ? "bg-[#D85A30] text-white shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                  <Store className="w-3.5 h-3.5" />
-                  <span>Seller</span>
-                </button>
-              </div>
-            </div>
-
-            {/* BUSINESS / MERCHANT SPECIFIC ONBOARDING UI */}
-            {role === "seller" && (
-              <div className="space-y-3 p-3 bg-[#D85A30]/10 rounded-xl border border-[#D85A30]/20 animate-in fade-in duration-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#D85A30] flex items-center gap-1">
-                    <Store className="w-3.5 h-3.5" /> Merchant / Shop Profile Mode
-                  </span>
-                  <span className="text-[10px] bg-[#D85A30]/20 text-[#D85A30] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3 text-[#D85A30]" /> Anti-Scam Protected
-                  </span>
-                </div>
-
-                {/* Business Name Field for Shop Owners */}
-                <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1">Business / Shop Name</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Queens Used Furniture & Resale"
-                    className="w-full px-3 py-2 bg-white rounded-lg border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#D85A30] transition shadow-xs"
-                  />
-                </div>
-
-                {/* Business Category Selection */}
-                <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1">Business Category</label>
-                  <div className="relative">
-                    <select
-                      value={businessCategory}
-                      onChange={(e) => setBusinessCategory(e.target.value)}
-                      className="w-full px-3 py-2 bg-white rounded-lg border border-border text-xs font-medium text-foreground focus:outline-none cursor-pointer appearance-none pr-7 shadow-xs"
-                    >
-                      <option value="furniture">🪑 Used Furniture & Resale</option>
-                      <option value="grocery">🛒 Grocery & Supermarket</option>
-                      <option value="legal">⚖️ Legal & Immigration Services</option>
-                      <option value="electronics">🔌 Electronics & Appliances</option>
-                      <option value="general">📦 General Thrift & Goods</option>
-                    </select>
-                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* ITIN / EIN Optional Tax Field for Business Verification */}
-                <div>
-                  <label className="text-xs font-semibold text-foreground block mb-1">ITIN or EIN Number (Optional)</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 9XX-XX-XXXX (For Verified Shop Badge)"
-                    className="w-full px-3 py-2 bg-white rounded-lg border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#D85A30] transition shadow-xs"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* 1. First Name & Last Name (or Owner Name for Business) */}
+            {/* 1. First Name & Last Name */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium text-foreground block mb-1.5">
-                  {role === "seller" && sellerType === "business" ? "Owner first name" : "First name"}
+                  First name
                 </label>
                 <input
                   type="text"
@@ -417,7 +292,7 @@ export function SignUp() {
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground block mb-1.5">
-                  {role === "seller" && sellerType === "business" ? "Owner last name" : "Last name"}
+                  Last name
                 </label>
                 <input
                   type="text"
@@ -510,27 +385,24 @@ export function SignUp() {
                 className="mt-0.5 w-4 h-4 rounded border-[#D85A30]/40 text-[#D85A30] focus:ring-[#D85A30] cursor-pointer flex-shrink-0"
               />
               <p className="text-xs text-[#993C1D] leading-relaxed font-medium">
-                {role === "seller"
-                  ? "By creating a seller account, you agree to our Seller Code of Conduct, Escrow Policy, and Anti-Scam Protection terms."
-                  : "By creating an account, you agree to our Terms of Service and Privacy Policy. Your data is safe and never sold."}
+                By creating an account, you agree to our Terms of Service and Privacy Policy. Your data is safe and never sold.
               </p>
             </label>
 
             {/* Submit Button */}
             <button
-              onClick={() => navigate(role === "seller" ? "/seller-dashboard" : method === "email" ? "/verify-email" : "/onboarding/country")}
+              onClick={() => navigate(method === "email" ? "/verify-email" : "/onboarding/country")}
               className="w-full py-3 rounded-xl text-white font-bold text-sm shadow-sm hover:opacity-90 transition mt-2 flex items-center justify-center gap-2"
               style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
             >
-              {role === "seller" ? <Store className="w-4 h-4" /> : null}
-              <span>{role === "seller" ? "Create Seller Account" : "Create Account"}</span>
+              <span>Create Account</span>
             </button>
 
             {/* Divider */}
             <div className="relative flex items-center gap-3 my-5">
               <div className="flex-1 h-px bg-border" />
               <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                {role === "seller" ? "or sign up seller with" : "or sign up with"}
+                or sign up with
               </span>
               <div className="flex-1 h-px bg-border" />
             </div>

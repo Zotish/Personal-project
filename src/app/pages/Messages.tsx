@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronDown, Phone, PhoneOff, Video, VideoOff, CheckCheck, Image as ImageIcon,
   User, Volume2, VolumeX, Camera, FileText, Download, Play, Pause,
   BellOff, Pin, Trash2, Flag, UserX, X, Sparkles, File, FileImage,
-  Copy, Reply, Share2, CornerUpLeft, MessageSquare
+  Copy, Reply, Share2, CornerUpLeft, MessageSquare, Shield
 } from "lucide-react";
 
 interface MessageItem {
@@ -499,6 +499,16 @@ function ChatScreen({
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Immigrant Safety & Anti-Harassment Firewall Warning */}
+      <div className="bg-amber-50/90 border-b border-amber-200/80 px-4 py-2 flex items-center justify-between text-xs text-amber-900 z-10">
+        <div className="flex items-center gap-2">
+          <Shield className="w-4 h-4 text-amber-600 flex-shrink-0" />
+          <span className="text-[11px] leading-tight">
+            <strong>Immigrant Privacy Shield:</strong> Never share your SSN, case/A-number, passport, or home address in chat with strangers.
+          </span>
         </div>
       </div>
 

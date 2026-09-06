@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
-import { ChevronRight, ChevronLeft, Globe, MapPin, CheckCircle, Languages, Users, Heart, Check } from "lucide-react";
+import { ChevronLeft, MapPin, CheckCircle, Check, User, Loader2 } from "lucide-react";
+import { GoldenBadge } from "../components/ui/GoldenBadge";
 
 // Progress indicator
 function OnboardingProgress({ step, total }: { step: number; total: number }) {
@@ -10,7 +11,12 @@ function OnboardingProgress({ step, total }: { step: number; total: number }) {
         <div
           key={i}
           className="h-1.5 rounded-full flex-1 transition-all duration-300"
-          style={{ background: i < step ? "var(--primary)" : i === step ? "var(--ring)" : "var(--border)" }}
+          style={{
+            background: i <= step
+              ? "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)"
+              : "#E2E8F0",
+            opacity: i <= step ? 1 : 0.6
+          }}
         />
       ))}
     </div>
@@ -18,20 +24,30 @@ function OnboardingProgress({ step, total }: { step: number; total: number }) {
 }
 
 // Step wrapper
-function StepWrapper({ step, total, title, subtitle, children, onNext, onBack, nextLabel = "Continue", nextDisabled = false }: {
+function StepWrapper({ step, total, title, subtitle, children, onNext, onBack, onSkip, nextLabel = "Continue", nextDisabled = false }: {
   step: number; total: number; title: string; subtitle?: string; children: ReactNode;
-  onNext: () => void; onBack?: () => void; nextLabel?: string; nextDisabled?: boolean;
+  onNext: () => void; onBack?: () => void; onSkip?: () => void; nextLabel?: string; nextDisabled?: boolean;
 }) {
+  const navigate = useNavigate();
+
+  const handleSkip = () => {
+    if (onSkip) {
+      onSkip();
+    } else {
+      navigate("/feed");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         <div className="flex items-center justify-between mb-2">
           {onBack ? (
-            <button onClick={onBack} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <button onClick={onBack} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-[#D85A30] cursor-pointer transition">
               <ChevronLeft className="w-4 h-4" /> Back
             </button>
           ) : <div />}
-          <span className="text-sm text-muted-foreground">Step {step} of {total}</span>
+          <span className="text-sm font-medium text-muted-foreground">Step {step} of {total}</span>
         </div>
         <OnboardingProgress step={step - 1} total={total} />
         <div className="mb-6">
@@ -42,12 +58,16 @@ function StepWrapper({ step, total, title, subtitle, children, onNext, onBack, n
         <button
           onClick={onNext}
           disabled={nextDisabled}
-          className="w-full py-3.5 rounded-xl text-white font-semibold text-sm shadow-sm hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          style={{ background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" }}
+          className="w-full py-3.5 rounded-xl text-white font-semibold text-sm shadow-md hover:opacity-95 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer active:scale-[0.99]"
+          style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
         >
-          {nextLabel} <ChevronRight className="w-4 h-4" />
+          {nextLabel}
         </button>
-        <button className="w-full mt-3 py-2 text-sm text-muted-foreground hover:text-foreground transition">
+        <button
+          type="button"
+          onClick={handleSkip}
+          className="w-full mt-3 py-2 text-sm text-muted-foreground hover:text-[#D85A30] font-medium transition cursor-pointer"
+        >
           Skip for now
         </button>
       </div>
@@ -59,7 +79,59 @@ function StepWrapper({ step, total, title, subtitle, children, onNext, onBack, n
 export function OnboardingCountry() {
   const navigate = useNavigate();
   const [selected, setSelected] = useState("Bangladesh");
-  const [city, setCity] = useState("New York, NY");
+  const [city, setCity] = useState("");
+  const [isLocating, setIsLocating] = useState(false);
+
+  const detectLocation = () => {
+    if (!("geolocation" in navigator)) {
+      setCity("New York, NY");
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 4000);
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`,
+            { signal: controller.signal }
+          );
+          clearTimeout(timeoutId);
+          if (res.ok) {
+            const data = await res.json();
+            const addr = data.address || {};
+            const cityPart = addr.city || addr.town || addr.village || addr.suburb || addr.county || addr.state_district || "Local City";
+            const statePart = addr.state || addr.country || "USA";
+            setCity(`${cityPart}, ${statePart}`);
+          } else {
+            setCity("New York, NY");
+          }
+        } catch {
+          if (lat >= 20 && lat <= 27 && lng >= 88 && lng <= 93) {
+            setCity("Dhaka, Bangladesh");
+          } else if (lat >= 40.5 && lat <= 41.0 && lng >= -74.3 && lng <= -73.7) {
+            setCity("New York, NY");
+          } else {
+            setCity("New York, NY");
+          }
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      (error) => {
+        console.warn("Geolocation error:", error);
+        setIsLocating(false);
+        if (!city) {
+          setCity("New York, NY");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
 
   const countries = [
     { flag: "🇧🇩", name: "Bangladesh" }, { flag: "🇮🇳", name: "India" }, { flag: "🇲🇽", name: "Mexico" },
@@ -72,45 +144,47 @@ export function OnboardingCountry() {
   ];
 
   return (
-    <StepWrapper step={1} total={6} title="Where are you from?" subtitle="This helps us connect you with your home community."
+    <StepWrapper step={1} total={6} title="Where are you from?"
       onNext={() => navigate("/onboarding/status")} onBack={() => navigate("/verify-email")}>
       <div className="space-y-4">
         <div>
-          <label className="text-sm font-medium text-foreground block mb-2">Country of origin</label>
           <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-48 overflow-y-auto pr-1">
             {countries.map(({ flag, name }) => (
               <button
                 key={name}
                 onClick={() => setSelected(name)}
-                className={`flex flex-col items-center gap-1 p-2 rounded-xl border text-xs font-medium transition-all ${
-                  selected === name ? "border-primary bg-blue-50 text-primary" : "border-border bg-white text-muted-foreground hover:border-primary/40"
+                className={`flex flex-col items-center gap-1 p-2 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
+                  selected === name
+                    ? "border-[#D85A30] bg-[#D85A30]/10 text-[#D85A30] shadow-xs font-semibold"
+                    : "border-border bg-white text-muted-foreground hover:border-[#D85A30]/40"
                 }`}
               >
                 <span className="text-xl">{flag}</span>
                 <span className="text-center leading-tight">{name}</span>
-                {selected === name && <Check className="w-3 h-3 text-primary" />}
+                {selected === name && <Check className="w-3 h-3 text-[#D85A30]" />}
               </button>
             ))}
           </div>
-          {selected && (
-            <div className="mt-2 p-2 bg-blue-50 rounded-lg flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-primary" />
-              <span className="text-sm text-primary font-medium">Selected: {selected}</span>
-            </div>
-          )}
         </div>
         <div>
-          <label className="text-sm font-medium text-foreground block mb-2">Your current US city/state</label>
-          <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={city}
-              onChange={e => setCity(e.target.value)}
-              placeholder="e.g., New York, NY"
-              className="w-full pl-10 pr-4 py-2.5 bg-white rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition"
-            />
-          </div>
+          <label className="text-sm font-medium text-foreground block mb-2">Your Location</label>
+          <button
+            type="button"
+            onClick={detectLocation}
+            className="w-full flex items-center px-4 py-3 bg-white rounded-xl border border-border hover:border-[#D85A30]/50 hover:bg-[#D85A30]/5 transition-all text-left group cursor-pointer shadow-2xs"
+            title="Click to detect current location"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              {isLocating ? (
+                <Loader2 className="w-4 h-4 text-[#D85A30] animate-spin flex-shrink-0" />
+              ) : (
+                <MapPin className={`w-4 h-4 flex-shrink-0 transition-colors ${city ? "text-[#D85A30]" : "text-muted-foreground group-hover:text-[#D85A30]"}`} />
+              )}
+              <span className={`text-sm truncate ${city ? "font-semibold text-slate-900" : "text-muted-foreground"}`}>
+                {isLocating ? "Detecting your location..." : city || "e.g., New York, NY"}
+              </span>
+            </div>
+          </button>
         </div>
       </div>
     </StepWrapper>
@@ -123,35 +197,37 @@ export function OnboardingStatus() {
   const [selected, setSelected] = useState("Student");
 
   const statuses = [
-    { id: "Student", icon: "🎓", label: "Student", desc: "F-1, J-1 or other student visa" },
-    { id: "Worker", icon: "💼", label: "Worker", desc: "H-1B, L-1, O-1 or work visa" },
-    { id: "Permanent Resident", icon: "🏡", label: "Permanent Resident", desc: "Green card holder" },
-    { id: "Asylum Seeker", icon: "🕊️", label: "Asylum Seeker", desc: "Seeking protection in the USA" },
-    { id: "Refugee", icon: "⛺", label: "Refugee", desc: "Admitted as a refugee" },
-    { id: "Family Visa", icon: "👨‍👩‍👧", label: "Family Visa", desc: "IR, CR, or family preference" },
-    { id: "Tourist", icon: "✈️", label: "Tourist / Visitor", desc: "B-1/B-2 visa holder" },
-    { id: "New Citizen", icon: "🇺🇸", label: "New Citizen", desc: "Recently naturalized" },
-    { id: "Other", icon: "❓", label: "Other / Unsure", desc: "I'll share more later" },
+    { id: "Student", label: "Student", desc: "F-1, J-1 or other student visa" },
+    { id: "Worker", label: "Worker", desc: "H-1B, L-1, O-1 or work visa" },
+    { id: "Permanent Resident", label: "Permanent Resident", desc: "Green card holder" },
+    { id: "Asylum Seeker", label: "Asylum Seeker", desc: "Seeking protection in the USA" },
+    { id: "Refugee", label: "Refugee", desc: "Admitted as a refugee" },
+    { id: "Family Visa", label: "Family Visa", desc: "IR, CR, or family preference" },
+    { id: "Tourist", label: "Tourist / Visitor", desc: "B-1/B-2 visa holder" },
+    { id: "New Citizen", label: "New Citizen", desc: "Recently naturalized" },
   ];
 
   return (
-    <StepWrapper step={2} total={6} title="What's your immigration status?" subtitle="We'll personalize guidance and resources for your specific situation."
+    <StepWrapper step={2} total={6} title="What's your immigration status?"
       onNext={() => navigate("/onboarding/language")} onBack={() => navigate("/onboarding/country")}>
       <div className="grid grid-cols-1 gap-2">
-        {statuses.map(({ id, icon, label, desc }) => (
+        {statuses.map(({ id, label, desc }) => (
           <button
             key={id}
             onClick={() => setSelected(id)}
-            className={`flex items-center gap-4 p-3.5 rounded-xl border text-left transition-all ${
-              selected === id ? "border-primary bg-blue-50" : "border-border bg-white hover:border-primary/40"
+            className={`flex items-center justify-between p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+              selected === id
+                ? "border-[#D85A30] bg-[#D85A30]/10 shadow-xs"
+                : "border-border bg-white hover:border-[#D85A30]/40"
             }`}
           >
-            <span className="text-2xl">{icon}</span>
             <div className="flex-1">
-              <div className={`text-sm font-semibold ${selected === id ? "text-primary" : "text-foreground"}`}>{label}</div>
+              <div className={`text-sm font-semibold ${selected === id ? "text-[#D85A30]" : "text-foreground"}`}>{label}</div>
               <div className="text-xs text-muted-foreground">{desc}</div>
             </div>
-            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selected === id ? "border-primary bg-primary" : "border-border"}`}>
+            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+              selected === id ? "border-[#D85A30] bg-[#D85A30]" : "border-border"
+            }`}>
               {selected === id && <Check className="w-3 h-3 text-white" />}
             </div>
           </button>
@@ -186,7 +262,7 @@ export function OnboardingLanguage() {
   };
 
   return (
-    <StepWrapper step={3} total={6} title="What languages do you speak?" subtitle="Choose all that apply. Your feed will include content in these languages."
+    <StepWrapper step={3} total={6} title="What languages do you speak?"
       onNext={() => navigate("/onboarding/topics")} onBack={() => navigate("/onboarding/status")}>
       <div className="grid grid-cols-2 gap-2">
         {languages.map(({ name, native, flag }) => {
@@ -195,22 +271,22 @@ export function OnboardingLanguage() {
             <button
               key={name}
               onClick={() => toggle(name)}
-              className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
-                active ? "border-primary bg-blue-50" : "border-border bg-white hover:border-primary/40"
+              className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                active ? "border-[#D85A30] bg-[#D85A30]/10 shadow-xs" : "border-border bg-white hover:border-[#D85A30]/40"
               }`}
             >
               <span className="text-xl">{flag}</span>
               <div className="flex-1 min-w-0">
-                <div className={`text-sm font-medium ${active ? "text-primary" : "text-foreground"}`}>{name}</div>
+                <div className={`text-sm font-semibold ${active ? "text-[#D85A30]" : "text-foreground"}`}>{name}</div>
                 <div className="text-xs text-muted-foreground">{native}</div>
               </div>
-              {active && <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />}
+              {active && <CheckCircle className="w-4 h-4 text-[#D85A30] flex-shrink-0" />}
             </button>
           );
         })}
       </div>
       {selected.length > 0 && (
-        <p className="text-sm text-primary mt-3 font-medium">{selected.length} language{selected.length > 1 ? "s" : ""} selected</p>
+        <p className="text-sm text-[#D85A30] mt-3 font-semibold">{selected.length} language{selected.length > 1 ? "s" : ""} selected</p>
       )}
     </StepWrapper>
   );
@@ -220,54 +296,90 @@ export function OnboardingLanguage() {
 export function OnboardingTopics() {
   const navigate = useNavigate();
   const [selected, setSelected] = useState(["Immigration Help", "Jobs", "Housing", "Bangladeshi Community"]);
+  const [showAll, setShowAll] = useState(false);
 
-  const topics = [
-    { label: "Immigration Help", icon: "📋" }, { label: "Jobs", icon: "💼" },
-    { label: "Housing", icon: "🏠" }, { label: "Education", icon: "📚" },
-    { label: "Health Care", icon: "🏥" }, { label: "Legal Help", icon: "⚖️" },
-    { label: "Driving License", icon: "🚗" }, { label: "Banking", icon: "🏦" },
-    { label: "Taxes", icon: "📊" }, { label: "English Learning", icon: "📖" },
-    { label: "Religious Community", icon: "🕌" }, { label: "Cultural Community", icon: "🎭" },
-    { label: "Food & Grocery", icon: "🛒" }, { label: "Local Events", icon: "📅" },
-    { label: "Student Life", icon: "🎓" }, { label: "Family Support", icon: "👨‍👩‍👧" },
-    { label: "Emergency Help", icon: "🆘" }, { label: "Government Services", icon: "🏛️" },
-    { label: "Small Business", icon: "🏪" }, { label: "New York Immigrants", icon: "🗽" },
-    { label: "Texas Immigrants", icon: "⭐" }, { label: "California Immigrants", icon: "🌴" },
-    { label: "Bangladeshi Community", icon: "🇧🇩" }, { label: "Indian Community", icon: "🇮🇳" },
-    { label: "Latino Community", icon: "🌮" }, { label: "Muslim Community", icon: "☪️" },
-    { label: "Christian Community", icon: "✝️" }, { label: "Hindu Community", icon: "🕉️" },
+  const mainTopics = [
+    "Immigration Help",
+    "Jobs",
+    "Housing",
+    "Legal Help",
+    "Health Care",
+    "Bangladeshi Community",
   ];
+
+  const moreTopics = [
+    "Education",
+    "Driving License",
+    "Banking",
+    "Taxes",
+    "English Learning",
+    "Religious Community",
+    "Cultural Community",
+    "Food & Grocery",
+    "Local Events",
+    "Student Life",
+    "Family Support",
+    "Emergency Help",
+    "Government Services",
+    "Small Business",
+    "New York Immigrants",
+    "Texas Immigrants",
+    "California Immigrants",
+    "Indian Community",
+    "Latino Community",
+    "Muslim Community",
+    "Christian Community",
+    "Hindu Community",
+  ];
+
+  const visibleTopics = showAll ? [...mainTopics, ...moreTopics] : mainTopics;
 
   const toggle = (label: string) => {
     setSelected(s => s.includes(label) ? s.filter(x => x !== label) : [...s, label]);
   };
 
   return (
-    <StepWrapper step={4} total={6} title="What topics interest you?" subtitle="Pick at least 3 topics to personalize your feed and recommendations."
+    <StepWrapper step={4} total={6} title="What topics interest you?"
       onNext={() => navigate("/onboarding/people")} onBack={() => navigate("/onboarding/language")}
       nextDisabled={selected.length < 3}>
       <div className="flex flex-wrap gap-2">
-        {topics.map(({ label, icon }) => {
+        {visibleTopics.map((label) => {
           const active = selected.includes(label);
           return (
             <button
               key={label}
               onClick={() => toggle(label)}
-              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-sm font-semibold border transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold border transition-all cursor-pointer ${
                 active
-                  ? "border-[#E05236]/30 bg-[#FFF7F4] text-[#8C3015] shadow-2xs"
-                  : "border-slate-200 bg-white text-slate-700 hover:border-[#E05236]/30 hover:bg-[#FFF7F4]/60 hover:text-[#8C3015]"
+                  ? "border-[#D85A30] bg-[#D85A30]/10 text-[#D85A30] shadow-xs"
+                  : "border-slate-200 bg-white text-slate-700 hover:border-[#D85A30]/40 hover:bg-[#D85A30]/5 hover:text-[#D85A30]"
               }`}
             >
-              <span>{icon}</span>
               {label}
-              {active && <Check className="w-3.5 h-3.5 text-[#E05236]" />}
+              {active && <Check className="w-3.5 h-3.5 text-[#D85A30]" />}
             </button>
           );
         })}
+        {!showAll ? (
+          <button
+            type="button"
+            onClick={() => setShowAll(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-dashed border-[#D85A30]/50 bg-[#D85A30]/5 text-[#D85A30] hover:bg-[#D85A30]/15 transition-all cursor-pointer shadow-2xs"
+          >
+            + More
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowAll(false)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all cursor-pointer"
+          >
+            - Less
+          </button>
+        )}
       </div>
       {selected.length > 0 && (
-        <p className="text-sm text-primary mt-4 font-medium">{selected.length} topics selected</p>
+        <p className="text-sm text-[#D85A30] mt-4 font-semibold">{selected.length} topics selected</p>
       )}
     </StepWrapper>
   );
@@ -279,12 +391,12 @@ export function OnboardingPeople() {
   const [followed, setFollowed] = useState<string[]>([]);
 
   const people = [
-    { name: "Nadia Islam", handle: "@nadia_nyc", avatar: "NI", color: "from-emerald-400 to-teal-500", bio: "Immigration attorney. Helping Bangladeshi families navigate the US system. Free Q&A every Friday.", location: "New York, NY", topics: ["Legal Help", "Immigration"], verified: true, followers: "12.4K" },
-    { name: "Carlos Rivera", handle: "@carlos_helps", avatar: "CR", color: "from-orange-400 to-rose-400", bio: "I moved from Mexico 5 years ago. Now I help new arrivals find jobs and housing in Texas. DMs open!", location: "Houston, TX", topics: ["Jobs", "Housing"], verified: false, followers: "8.2K" },
-    { name: "Dr. Priya Menon", handle: "@dr_priya_health", avatar: "PM", color: "from-purple-400 to-indigo-500", bio: "Healthcare navigator for South Asian immigrants. Helping you understand insurance and find the right doctor.", location: "California", topics: ["Health Care", "Education"], verified: true, followers: "15.8K" },
-    { name: "Ahmed Hassan", handle: "@ahmed_taxes", avatar: "AH", color: "from-blue-400 to-cyan-400", bio: "CPA specializing in immigrant tax returns. ITIN applications, FBAR, and more. Free consult for new followers.", location: "Chicago, IL", topics: ["Taxes", "Banking"], verified: true, followers: "6.5K" },
-    { name: "Maria Santos", handle: "@maria_studentlife", avatar: "MS", color: "from-pink-400 to-rose-500", bio: "International student coordinator at NYU. Tips on OPT, CPT, and student life for new internationals.", location: "New York, NY", topics: ["Student Life", "Education"], verified: false, followers: "9.1K" },
-    { name: "Rahim Chowdhury", handle: "@rahim_bdconnect", avatar: "RC", color: "from-green-400 to-emerald-500", bio: "Connecting Bangladeshis in the USA. Community leader, restaurant owner in Queens. Join our WhatsApp group!", location: "Queens, NY", topics: ["Bangladeshi Community", "Food & Grocery"], verified: false, followers: "22.3K" },
+    { name: "Nadia Islam, Esq.", followers: "14.8K", verified: true },
+    { name: "Carlos Rivera", followers: "8.2K", verified: false },
+    { name: "Dr. Priya Menon", followers: "15.8K", verified: true },
+    { name: "Ahmed Hassan", followers: "6.5K", verified: true },
+    { name: "Maria Santos", followers: "9.1K", verified: false },
+    { name: "Rahim Chowdhury", followers: "22.3K", verified: true },
   ];
 
   const toggle = (name: string) => {
@@ -292,57 +404,51 @@ export function OnboardingPeople() {
   };
 
   return (
-    <StepWrapper step={5} total={6} title="Who to follow?" subtitle="Based on your topics and community — follow people who can help you."
+    <StepWrapper step={5} total={6} title="Who to follow?"
       onNext={() => navigate("/onboarding/communities")} onBack={() => navigate("/onboarding/topics")}
       nextLabel="Continue">
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {people.map((p) => {
           const isFollowing = followed.includes(p.name);
           return (
-            <div key={p.name} className="bg-white rounded-2xl border border-border p-4 flex gap-3">
-              <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${p.color} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
-                {p.avatar}
+            <div
+              key={p.name}
+              className="bg-white rounded-2xl border border-slate-200/90 p-3.5 sm:p-4 flex gap-3 items-center hover:border-[#D85A30]/40 transition shadow-2xs"
+            >
+              <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs">
+                <User className="w-5 h-5 text-slate-500" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-semibold text-foreground">{p.name}</span>
-                      {p.verified && (
-                        <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
-                          <Check className="w-2.5 h-2.5 text-white" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground">{p.handle} · {p.followers} followers</div>
-                  </div>
-                  <button
-                    onClick={() => toggle(p.name)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold flex-shrink-0 transition-all ${
-                      isFollowing
-                        ? "bg-secondary text-primary border border-primary"
-                        : "bg-primary text-white hover:opacity-90"
-                    }`}
-                  >
-                    {isFollowing ? "Following" : "Follow"}
-                  </button>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-bold text-slate-900 truncate">{p.name}</span>
+                  {p.verified && (
+                    <GoldenBadge size={15} title="Verified Account" />
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed line-clamp-2">{p.bio}</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <MapPin className="w-3 h-3 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">{p.location}</span>
-                </div>
-                <div className="flex gap-1 mt-2 flex-wrap">
-                  {p.topics.map(t => (
-                    <span key={t} className="text-xs bg-secondary text-primary px-2 py-0.5 rounded-full">{t}</span>
-                  ))}
-                </div>
+                <div className="text-xs text-slate-500">{p.followers} followers</div>
               </div>
+              <button
+                type="button"
+                onClick={() => toggle(p.name)}
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold flex-shrink-0 transition-all cursor-pointer active:scale-95 ${
+                  isFollowing
+                    ? "bg-[#D85A30] text-white border border-[#D85A30] shadow-xs"
+                    : "bg-[#D85A30]/15 text-[#8C3015] border border-[#D85A30]/30 hover:bg-[#D85A30]/25"
+                }`}
+              >
+                {isFollowing ? "Following ✓" : "Follow"}
+              </button>
             </div>
           );
         })}
       </div>
-      <p className="text-sm text-muted-foreground mt-3 text-center">{followed.length} people followed</p>
+      <p className="text-sm text-muted-foreground mt-3 text-center">
+        {followed.length > 0 ? (
+          <span className="text-[#D85A30] font-semibold">{followed.length} people followed</span>
+        ) : (
+          "0 people followed"
+        )}
+      </p>
     </StepWrapper>
   );
 }
@@ -353,13 +459,13 @@ export function OnboardingCommunities() {
   const [joined, setJoined] = useState<string[]>(["Bangladeshi New Yorkers"]);
 
   const communities = [
-    { name: "Bangladeshi New Yorkers", image: "🇧🇩", members: "14.2K", tags: ["Community", "Culture"], desc: "The largest Bangladeshi community network in New York. Events, help, and connections." },
-    { name: "International Students USA", image: "🎓", members: "89.4K", tags: ["Student Life", "Education"], desc: "Support network for international students across all US universities." },
-    { name: "New Immigrants in Texas", image: "⭐", members: "32.1K", tags: ["Texas", "Settlement"], desc: "Resources, meetups, and mutual support for immigrants settling in Texas." },
-    { name: "USA Job Help for Immigrants", image: "💼", members: "56.7K", tags: ["Jobs", "Career"], desc: "Job postings, resume help, interview tips, and networking for immigrants." },
-    { name: "Immigration Legal Q&A", image: "⚖️", members: "28.3K", tags: ["Legal Help", "Immigration"], desc: "Ask immigration attorneys and experienced community members your legal questions." },
-    { name: "Muslim Community USA", image: "☪️", members: "41.5K", tags: ["Religious", "Muslim"], desc: "Islamic centers, halal food, prayer times, and community events across the US." },
-    { name: "Local Food & Grocery Help", image: "🛒", members: "19.8K", tags: ["Food", "Local"], desc: "Find ethnic grocery stores, restaurants, and food-related recommendations near you." },
+    { name: "Bangladeshi New Yorkers", members: "14.2K", category: "Community" },
+    { name: "International Students USA", members: "89.4K", category: "Education" },
+    { name: "New Immigrants in Texas", members: "32.1K", category: "Settlement" },
+    { name: "USA Job Help for Immigrants", members: "56.7K", category: "Jobs" },
+    { name: "Immigration Legal Q&A", members: "28.3K", category: "Legal" },
+    { name: "Muslim Community USA", members: "41.5K", category: "Religious" },
+    { name: "Local Food & Grocery Help", members: "19.8K", category: "Food" },
   ];
 
   const toggle = (name: string) => {
@@ -367,46 +473,43 @@ export function OnboardingCommunities() {
   };
 
   return (
-    <StepWrapper step={6} total={6} title="Join communities" subtitle="Find your people. Join communities based on your background and interests."
+    <StepWrapper step={6} total={6} title="Join communities"
       onNext={() => navigate("/feed")} onBack={() => navigate("/onboarding/people")}
       nextLabel="Finish Setup 🎉">
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {communities.map((c) => {
           const isJoined = joined.includes(c.name);
           return (
-            <div key={c.name} className="bg-white rounded-2xl border border-border p-4 flex gap-3 items-start">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-2xl flex-shrink-0">
-                {c.image}
-              </div>
+            <div
+              key={c.name}
+              className="bg-white rounded-2xl border border-slate-200/90 p-3.5 sm:p-4 flex gap-3 items-center justify-between hover:border-[#D85A30]/40 transition shadow-2xs"
+            >
               <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="text-sm font-semibold text-foreground">{c.name}</div>
-                    <div className="text-xs text-muted-foreground">{c.members} members</div>
-                  </div>
-                  <button
-                    onClick={() => toggle(c.name)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold flex-shrink-0 transition-all ${
-                      isJoined
-                        ? "bg-secondary text-primary border border-primary"
-                        : "bg-primary text-white hover:opacity-90"
-                    }`}
-                  >
-                    {isJoined ? "Joined ✓" : "Join"}
-                  </button>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{c.desc}</p>
-                <div className="flex gap-1 mt-2">
-                  {c.tags.map(t => (
-                    <span key={t} className="text-xs bg-secondary text-primary px-2 py-0.5 rounded-full">{t}</span>
-                  ))}
-                </div>
+                <div className="text-sm font-bold text-slate-900 truncate">{c.name}</div>
+                <div className="text-xs text-slate-500">{c.members} members · {c.category}</div>
               </div>
+              <button
+                type="button"
+                onClick={() => toggle(c.name)}
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold flex-shrink-0 transition-all cursor-pointer active:scale-95 ${
+                  isJoined
+                    ? "bg-[#D85A30] text-white border border-[#D85A30] shadow-xs"
+                    : "bg-[#D85A30]/15 text-[#8C3015] border border-[#D85A30]/30 hover:bg-[#D85A30]/25"
+                }`}
+              >
+                {isJoined ? "Joined ✓" : "Join"}
+              </button>
             </div>
           );
         })}
       </div>
-      <p className="text-sm text-muted-foreground mt-3 text-center">{joined.length} communities joined</p>
+      <p className="text-sm text-muted-foreground mt-3 text-center">
+        {joined.length > 0 ? (
+          <span className="text-[#D85A30] font-semibold">{joined.length} communities joined</span>
+        ) : (
+          "0 communities joined"
+        )}
+      </p>
     </StepWrapper>
   );
 }

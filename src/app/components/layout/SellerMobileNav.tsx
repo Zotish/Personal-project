@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from "react-router";
 import { BarChart2, Package, ShoppingCart, MessageSquare, Settings, Store, ArrowLeftRight } from "lucide-react";
+import { useAccountMode } from "../../context/AccountModeContext";
 
 interface SellerMobileNavProps {
   activeTab?: string;
@@ -9,6 +10,7 @@ interface SellerMobileNavProps {
 export function SellerMobileNav({ activeTab = "overview", onTabChange }: SellerMobileNavProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { switchMode } = useAccountMode();
 
   const sellerItems = [
     { id: "overview", label: "Overview", icon: BarChart2 },
@@ -52,13 +54,13 @@ export function SellerMobileNav({ activeTab = "overview", onTabChange }: SellerM
 
         {/* Switch back to Buyer Feed */}
         <button
-          onClick={() => navigate("/feed")}
-          className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-slate-600 hover:text-[#8C3015] transition-all group"
+          onClick={() => switchMode("member")}
+          className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-slate-600 hover:text-[#8C3015] transition-all group cursor-pointer"
         >
           <div className="p-1.5 rounded-xl bg-slate-50 group-hover:bg-[#C04A22]/10">
             <ArrowLeftRight className="w-5 h-5 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
           </div>
-          <span className="text-[10px] leading-none font-medium">Buyer Mode</span>
+          <span className="text-[10px] leading-none font-medium">Member Mode</span>
         </button>
       </div>
     </nav>

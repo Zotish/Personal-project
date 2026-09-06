@@ -35,14 +35,18 @@ import { SellerProfile } from "./pages/SellerProfile";
 import { MoreMenu } from "./pages/MoreMenu";
 import { BuyerOrders } from "./pages/BuyerOrders";
 import { PWAInstallPrompt } from "./components/ui/PWAInstallPrompt";
+import { AccountModeProvider } from "./context/AccountModeContext";
+import { SellerMigrationModal } from "./components/seller/SellerMigrationModal";
 
 export default function App() {
   return (
     <LanguageProvider>
       <BrowserRouter>
-        <MobileTabProvider>
-          <PWAInstallPrompt />
-          <Routes>
+        <AccountModeProvider>
+          <MobileTabProvider>
+            <PWAInstallPrompt />
+            <SellerMigrationModal />
+            <Routes>
             {/* Public */}
             <Route path="/" element={<AppSplash />} />
             <Route path="/landing" element={<Landing />} />
@@ -106,7 +110,8 @@ export default function App() {
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </MobileTabProvider>
+          </MobileTabProvider>
+        </AccountModeProvider>
       </BrowserRouter>
     </LanguageProvider>
   );

@@ -3,10 +3,11 @@ import { useNavigate, useLocation } from "react-router";
 import {
   Home, Search, Map, Briefcase, Clapperboard, MoreHorizontal,
   Users, MessageCircle, Bell, User, Settings, Bookmark,
-  HelpCircle, Shield, X, ShoppingBag
+  HelpCircle, Shield, X, ShoppingBag, Store, ArrowLeftRight
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useMobileTabs } from "../../context/MobileTabContext";
+import { useAccountMode } from "../../context/AccountModeContext";
 import { LanguageToggle } from "../ui/LanguageToggle";
 
 const mainKeys = [
@@ -33,6 +34,7 @@ export function MobileNav() {
   const location = useLocation();
   const { t } = useLanguage();
   const { tasks, setIsRecentsOpen } = useMobileTabs();
+  const { hasSellerAccount, sellerProfile, openMigrateModal, switchMode } = useAccountMode();
   const [showMore, setShowMore] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
 
@@ -73,6 +75,43 @@ export function MobileNav() {
               className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center">
               <X className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
+          </div>
+
+          {/* Seller Switch / Migration Action */}
+          <div className="p-2 border-b border-border">
+            {!hasSellerAccount ? (
+              <button
+                onClick={() => {
+                  setShowMore(false);
+                  openMigrateModal();
+                }}
+                className="w-full flex items-center gap-2.5 p-2 rounded-xl bg-orange-50 hover:bg-orange-100/80 border border-orange-200/80 text-left transition cursor-pointer"
+              >
+                <div className="w-7 h-7 rounded-lg bg-[#C04A22]/15 text-[#8C3015] flex items-center justify-center flex-shrink-0">
+                  <Store className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#8C3015]">Become a Seller</span>
+                    <span className="text-[9px] bg-[#C04A22] text-white px-1.5 py-0.2 rounded-full font-bold">New</span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-normal">Migrate account</div>
+                </div>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setShowMore(false);
+                  switchMode("seller");
+                }}
+                className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-orange-50 hover:bg-orange-100/80 border border-orange-200/80 text-left transition cursor-pointer"
+              >
+                <div className="w-7 h-7 rounded-lg bg-[#C04A22]/15 text-[#8C3015] flex items-center justify-center flex-shrink-0">
+                  <ArrowLeftRight className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-bold text-[#8C3015]">Switch to Seller</span>
+              </button>
+            )}
           </div>
 
           {/* Items */}

@@ -6,6 +6,7 @@ const STORAGE_KEY = "ic_lang";
 
 interface LanguageContextValue {
   lang: Lang;
+  language: Lang;
   setLang: (l: Lang) => void;
   t: (key: string) => string;
 }
@@ -29,7 +30,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <LanguageContext.Provider value={{ lang, setLang, t }}>
+    <LanguageContext.Provider value={{ lang, language: lang, setLang, t }}>
       {children}
     </LanguageContext.Provider>
   );

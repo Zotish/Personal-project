@@ -3,11 +3,15 @@ import { useNavigate, useLocation } from "react-router";
 import {
   Home, Search, Map, Briefcase, Users, MessageCircle,
   Bell, User, Settings, HelpCircle, Globe, Shield, Bookmark,
-  MoreHorizontal, X, Clapperboard, UserPlus, LogOut, ChevronUp
+  MoreHorizontal, X, Clapperboard, UserPlus, LogOut, ChevronUp,
+  Store, ArrowLeftRight, Feather
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
+import { useAccountMode } from "../../context/AccountModeContext";
 import { LanguageToggle } from "../ui/LanguageToggle";
 import { Logo } from "../ui/Logo";
+import { TwitterPostModal } from "../post/TwitterPostModal";
+
 
 const navKeys = [
   { icon: Home,          tKey: "home",          path: "/feed" },
@@ -19,16 +23,18 @@ const navKeys = [
   { icon: MessageCircle, tKey: "messages",      path: "/messages" },
   { icon: Bell,          tKey: "notifications", path: "/notifications" },
   { icon: User,          tKey: "profile",       path: "/profile" },
-  { icon: Shield,        tKey: "admin",         path: "/admin" },
+  { icon: Feather,       tKey: "post_btn",      isPost: true },
 ];
 
 const moreKeys = [
+  { icon: Shield,     tKey: "admin",    path: "/admin",    descKey: "admin_desc" },
   { icon: HelpCircle, tKey: "qa",       path: "/qa",       descKey: "qa_desc" },
   { icon: Bookmark,   tKey: "saved",    path: "/saved",    descKey: "saved_desc" },
   { icon: Settings,   tKey: "settings", path: "/settings", descKey: "settings_desc" },
 ];
 
 const descFallbacks: Record<string, string> = {
+  admin_desc: "Admin & moderation panel",
   qa_desc: "Community questions",
   saved_desc: "Your saved resources",
   settings_desc: "Account & preferences",
@@ -38,9 +44,42 @@ export function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
+  const {
+    user,
+    hasSellerAccount,
+    sellerProfile,
+    openMigrateModal,
+    switchMode,
+  } = useAccountMode();
   const [showMore, setShowMore] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
+
+  // Global listener for shortcut (key "n" or "p" opens post modal, like Twitter)
+  useEffect(() => {
+    const handleGlobalKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+      if (e.key === "n" || e.key === "p") {
+        setIsPostModalOpen(true);
+      }
+    };
+    const handleOpenEvent = () => setIsPostModalOpen(true);
+    window.addEventListener("keydown", handleGlobalKey);
+    window.addEventListener("open-post-modal", handleOpenEvent);
+    return () => {
+      window.removeEventListener("keydown", handleGlobalKey);
+      window.removeEventListener("open-post-modal", handleOpenEvent);
+    };
+  }, []);
+
 
   // Close popover when clicking outside
   useEffect(() => {
@@ -56,7 +95,8 @@ export function Sidebar() {
   const isMoreActive = moreKeys.some(item => location.pathname === item.path);
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 min-h-screen bg-white border-r border-border fixed left-0 top-0 z-40 shadow-sm">
+    <>
+      <aside className="hidden lg:flex flex-col w-64 min-h-screen bg-white border-r border-border fixed left-0 top-0 z-40 shadow-sm">
       {/* Logo */}
       <div className="p-4 border-b border-border">
         <Logo size="md" onClick={() => navigate("/feed")} />
@@ -64,7 +104,30 @@ export function Sidebar() {
 
       {/* Nav Items */}
       <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-        {navKeys.map(({ icon: Icon, tKey, path }) => {
+        {navKeys.map((item) => {
+          const { icon: Icon, tKey } = item;
+          if ("isPost" in item && item.isPost) {
+            const active = isPostModalOpen;
+            return (
+              <button
+                key="post-action-btn"
+                type="button"
+                onClick={() => setIsPostModalOpen(true)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 group cursor-pointer ${
+                  active
+                    ? "bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/20"
+                    : "text-slate-700 hover:bg-[#C04A22]/10 hover:text-[#8C3015]"
+                }`}
+              >
+                <Icon className={`w-5 h-5 flex-shrink-0 transition-colors ${
+                  active ? "text-[#8C3015]" : "text-slate-600 group-hover:text-[#8C3015]"
+                }`} />
+                <span>{t(tKey) || "Post"}</span>
+              </button>
+            );
+          }
+
+          const path = (item as any).path;
           const active = location.pathname === path;
           const label = t(tKey);
           return (
@@ -177,10 +240,41 @@ export function Sidebar() {
         {showUserMenu && (
           <div className="absolute bottom-full left-3 right-3 mb-2 bg-white rounded-2xl border border-slate-200 shadow-xl p-2 z-50 transition-all space-y-1">
             <div className="px-3 py-2 border-b border-slate-100 mb-1">
-              <span className="text-xs font-bold text-slate-900 block">Rafiq Ahmed</span>
-              <span className="text-[10px] text-slate-500 block">@rafiq_ahmed</span>
+              <span className="text-xs font-bold text-slate-900 block">{user.name}</span>
+              <span className="text-[10px] text-slate-500 block">{user.handle}</span>
             </div>
             
+            {/* Account Switcher or Migration Option */}
+            {!hasSellerAccount ? (
+              <button
+                onClick={() => {
+                  setShowUserMenu(false);
+                  openMigrateModal();
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-[#8C3015] bg-[#C04A22]/10 hover:bg-[#C04A22]/15 transition text-left cursor-pointer group"
+              >
+                <Store className="w-4 h-4 text-[#C04A22] flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span>Become a Seller</span>
+                    <span className="text-[9px] bg-[#C04A22] text-white px-1.5 py-0.5 rounded-full font-bold">New</span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-normal">Migrate account to start selling</div>
+                </div>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setShowUserMenu(false);
+                  switchMode("seller");
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-[#8C3015] bg-[#C04A22]/10 hover:bg-[#C04A22]/20 transition text-left cursor-pointer group"
+              >
+                <ArrowLeftRight className="w-4 h-4 text-[#C04A22] flex-shrink-0" />
+                <span>Switch to Seller</span>
+              </button>
+            )}
+
             {/* Add Existing Account */}
             <button
               onClick={() => { setShowUserMenu(false); navigate("/auth"); }}
@@ -196,7 +290,7 @@ export function Sidebar() {
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition text-left"
             >
               <LogOut className="w-4 h-4 text-rose-500" />
-              <span>Log out @rafiq_ahmed</span>
+              <span>Log out {user.handle}</span>
             </button>
           </div>
         )}
@@ -210,13 +304,20 @@ export function Sidebar() {
           </div>
           <div className="flex-1 min-w-0 flex items-center justify-between">
             <div className="text-left flex-1 min-w-0">
-              <div className="text-xs font-bold text-slate-900 truncate">Rafiq Ahmed</div>
-              <div className="text-[11px] text-slate-500 truncate">@rafiq_ahmed</div>
+              <div className="text-xs font-bold text-slate-900 truncate">{user.name}</div>
+              <div className="text-[11px] text-slate-500 truncate">{user.handle}</div>
             </div>
             <ChevronUp className={`w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-transform ${showUserMenu ? "rotate-180" : ""}`} />
           </div>
         </div>
       </div>
     </aside>
+
+    {/* Twitter-Style Post Box Composer Modal */}
+    <TwitterPostModal
+      isOpen={isPostModalOpen}
+      onClose={() => setIsPostModalOpen(false)}
+    />
+  </>
   );
 }
