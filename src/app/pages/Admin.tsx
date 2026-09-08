@@ -232,7 +232,7 @@ export function Admin() {
 
   return (
     <AppLayout>
-      <div className="max-w-6xl mx-auto space-y-4 pb-12">
+      <div className="max-w-6xl mx-auto space-y-4 pb-12 px-3 sm:px-0">
         {/* Top Control Bar / Command Center Header */}
         <div className="bg-slate-900 text-white rounded-3xl p-4 sm:p-6 shadow-xl border border-slate-800 relative overflow-hidden">
           {/* Background glow */}

@@ -7,7 +7,7 @@ import {
   Building2, ExternalLink, Sparkles, Filter, ChevronRight,
   ChevronLeft, ChevronUp, ChevronDown, Plus, Minus,
   ArrowLeft, ArrowRight, Car, Bike, Footprints, Briefcase,
-  ShieldCheck, Loader2, X
+  ShieldCheck, Loader2, X, ArrowLeftRight, ListFilter
 } from "lucide-react";
 import { LiveJobListing, generateLiveLocationJobs, formatDistance, getDistanceKm, matchJobQuery } from "../data/jobsData";
 import { JobDetailsModal } from "../components/jobs/JobDetailsModal";
@@ -738,49 +738,6 @@ function BariKoiLiveJobsMap({
                 </button>
               </div>
 
-              {/* Top Left: Share & Bookmark Save Buttons */}
-              <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10">
-                <button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    const url = buildMapShareUrl({
-                      id: markerClickedJob.id,
-                      title: markerClickedJob.title,
-                      lat: markerClickedJob.lat,
-                      lng: markerClickedJob.lng,
-                      category: `💼 Job (${markerClickedJob.type})`,
-                      address: markerClickedJob.location,
-                      image: markerClickedJob.image,
-                      phone: markerClickedJob.contactPhone,
-                      description: `${markerClickedJob.title} at ${markerClickedJob.company} • ${markerClickedJob.salary}`,
-                    });
-                    await shareOrCopy({
-                      title: markerClickedJob.title,
-                      text: `Check out ${markerClickedJob.title} on Pathasathi Map!`,
-                      url,
-                    });
-                  }}
-                  className="w-7.5 h-7.5 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-700 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
-                  title="Share on Map"
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={e => {
-                    e.stopPropagation();
-                    onToggleSave?.(markerClickedJob.id);
-                  }}
-                  className="w-7.5 h-7.5 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-700 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
-                  title={savedJobIds?.includes(markerClickedJob.id) ? "Saved" : "Save Job"}
-                >
-                  {savedJobIds?.includes(markerClickedJob.id) ? (
-                    <BookmarkCheck className="w-3.5 h-3.5 text-[#C04A22]" />
-                  ) : (
-                    <Bookmark className="w-3.5 h-3.5" />
-                  )}
-                </button>
-              </div>
-
               {/* Bottom Left: Distance Badge on Image */}
               <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[11px] font-medium flex items-center gap-1 shadow-xs">
                 <MapPin className="w-3 h-3 text-emerald-400" />
@@ -1086,6 +1043,22 @@ export function Jobs() {
   const [isScrolled, setIsScrolled] = useState(false);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
+  // View Layout: "horizontal" (পাশাপাশি সোয়াইপ/স্ক্রোল) or "vertical" (নিচে নিচে স্ক্রোল)
+  const [viewLayout, setViewLayout] = useState<"horizontal" | "vertical">("horizontal");
+  const horizontalListRef = useRef<HTMLDivElement>(null);
+
+  const scrollHorizontal = (direction: "left" | "right") => {
+    if (!horizontalListRef.current) return;
+    const container = horizontalListRef.current;
+    const firstCard = container.querySelector("[data-job-id]") as HTMLElement | null;
+    const cardWidth = firstCard ? firstCard.offsetWidth : 320;
+    const scrollAmount = cardWidth + 14;
+    container.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth"
+    });
+  };
+
   // Deep linking: auto-focus and show details if opened via shared link
   const routerLocation = useLocation();
   const searchParams = useMemo(() => new URLSearchParams(routerLocation.search), [routerLocation.search]);
@@ -1171,10 +1144,7 @@ export function Jobs() {
     });
 
     return () => observer.disconnect();
-  }, [liveJobs, nearbyJobs, filteredJobs, activeFilter, selectedJob]);
-
-
-  // Request Live GPS Location strictly from device GPS when navigation button is clicked
+  }, [liveJobs, nearbyJobs, filteredJobs, activeFilter, selectedJob]);  // Request Live GPS Location strictly from device GPS when navigation button is clicked
   const executeGeolocation = useCallback((highAccuracy: boolean = true) => {
     setIsLocating(true);
     if (!("geolocation" in navigator)) {
@@ -1275,7 +1245,7 @@ export function Jobs() {
     <AppLayout noPad={true}>
       <div className="w-full min-h-screen bg-[#FAFAFA] pb-16">
         {/* ── TOP STICKY BAR: Search Jobs ───────────────────────────────────── */}
-        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 sm:px-6 shadow-2xs">
+        <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 sm:px-6 shadow-2xs">
           <div className="max-w-7xl mx-auto flex items-center gap-3">
             <button
               onClick={() => navigate(-1)}
@@ -1329,8 +1299,8 @@ export function Jobs() {
         </div>
 
         {/* ── BARIKOI LIVE MAP (EXPANDED / COMPACT STICKY HEIGHT) ────── */}
-        <div id="jobs-map-section" className={`w-full max-w-7xl mx-auto px-2 sm:px-4 transition-all duration-300 ${
-          isScrolled ? "sticky top-[86px] sm:top-[90px] md:top-[90px] lg:top-[90px] z-10 pt-0" : "pt-2 sm:pt-3"
+        <div id="jobs-map-section" className={`w-full max-w-7xl mx-auto px-2 sm:px-4 transition-all duration-300 relative z-20 ${
+          isScrolled ? "sticky top-[86px] sm:top-[90px] md:top-[90px] lg:top-[90px] pt-0 bg-[#FAFAFA]" : "pt-2 sm:pt-3"
         }`}>
           <div className="rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm bg-white">
             <BariKoiLiveJobsMap
@@ -1360,40 +1330,104 @@ export function Jobs() {
         </div>
 
         {/* ── MAIN JOB DIRECTORY CONTENT (1-COL MOBILE, 2-COL PAD, 3-COL DESKTOP) ── */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-3 sm:pt-4">
-          {/* Filter Option Buttons */}
-          <div className="grid grid-cols-2 gap-2.5 mb-4 max-w-md">
-            {/* Left Option: Nearby Me Jobs */}
-            <div
-              onClick={() => setActiveFilter(activeFilter === "nearby" ? "all" : "nearby")}
-              className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
-                activeFilter === "nearby"
-                  ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
-                  : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
-              }`}
-            >
-              <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
-                {nearbyJobs.length} jobs nearby
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-3 sm:pt-4 relative z-0">
+          {/* Controls Bar: Filter Options + View Toggle (Horizontal ↔ vs Vertical ↕) */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            {/* Filter Option Buttons */}
+            <div className="grid grid-cols-2 gap-2.5 max-w-md w-full">
+              {/* Left Option: Nearby Me Jobs */}
+              <div
+                onClick={() => setActiveFilter(activeFilter === "nearby" ? "all" : "nearby")}
+                className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
+                  activeFilter === "nearby"
+                    ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
+                    : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
+                }`}
+              >
+                <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
+                  {nearbyJobs.length} jobs nearby
+                </div>
+              </div>
+
+              {/* Right Option: Full State Jobs */}
+              <div
+                onClick={() => setActiveFilter("all")}
+                className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
+                  activeFilter === "all"
+                    ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
+                    : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
+                }`}
+              >
+                <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
+                  {liveJobs.length} full state jobs
+                </div>
               </div>
             </div>
 
-            {/* Right Option: Full State Jobs */}
-            <div
-              onClick={() => setActiveFilter("all")}
-              className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
-                activeFilter === "all"
-                  ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
-                  : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
-              }`}
-            >
-              <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
-                {liveJobs.length} full state jobs
+            {/* Layout Toggle (Horizontal / পাশাপাশি vs Vertical / নিচে নিচে) & Navigation Arrows */}
+            <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+              <div className="flex items-center bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setViewLayout("horizontal")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    viewLayout === "horizontal"
+                      ? "bg-white text-[#C04A22] shadow-xs font-bold"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                  title="পাশাপাশি সোয়াইপ ও স্ক্রোল (Horizontal Scroll)"
+                >
+                  <ArrowLeftRight className="w-3.5 h-3.5" />
+                  <span>পাশাপাশি (↔)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewLayout("vertical")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    viewLayout === "vertical"
+                      ? "bg-white text-[#C04A22] shadow-xs font-bold"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                  title="নিচে নিচে স্ক্রোল (Vertical List)"
+                >
+                  <ListFilter className="w-3.5 h-3.5" />
+                  <span>নিচে নিচে (↕)</span>
+                </button>
               </div>
+
+              {/* Horizontal Scroll Arrows (visible in horizontal mode) */}
+              {viewLayout === "horizontal" && (
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => scrollHorizontal("left")}
+                    className="w-8 h-8 rounded-xl bg-white border border-slate-200/80 hover:bg-slate-50 text-slate-700 flex items-center justify-center shadow-2xs transition active:scale-95 cursor-pointer"
+                    title="আগের কার্ড (Left)"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollHorizontal("right")}
+                    className="w-8 h-8 rounded-xl bg-white border border-slate-200/80 hover:bg-slate-50 text-slate-700 flex items-center justify-center shadow-2xs transition active:scale-95 cursor-pointer"
+                    title="পরের কার্ড (Right)"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Equal Grid of Job Cards (1 column on mobile, 2 on pad, 3 on desktop) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
+          {/* Card Container: Swipeable Horizontal Carousel on Mobile OR Equal Grid */}
+          <div
+            ref={horizontalListRef}
+            className={
+              viewLayout === "horizontal"
+                ? "flex overflow-x-auto snap-x snap-mandatory gap-3.5 sm:gap-5 pb-4 pt-1 px-1 no-scrollbar scroll-smooth md:grid md:grid-cols-2 lg:grid-cols-3"
+                : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch"
+            }
+          >
             {(activeFilter === "nearby" ? nearbyJobs : filteredJobs).map(job => {
               const isSelected = selectedJob?.id === job.id;
               const isSaved = savedJobIds.includes(job.id);
@@ -1406,7 +1440,11 @@ export function Jobs() {
                     else cardRefs.current.delete(job.id);
                   }}
                   onClick={() => setSelectedJob(job)}
-                  className={`group bg-white rounded-3xl border overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between h-full ${
+                  className={`group bg-white rounded-3xl border overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between ${
+                    viewLayout === "horizontal"
+                      ? "w-[85vw] max-w-[340px] flex-shrink-0 snap-center md:w-auto md:max-w-none h-full"
+                      : "h-full"
+                  } ${
                     isSelected
                       ? "border-[#C04A22] ring-2 ring-[#C04A22]/20 shadow-md"
                       : "border-slate-200/90 hover:border-slate-300 hover:shadow-xs"
@@ -1429,7 +1467,7 @@ export function Jobs() {
                         {job.distance}
                       </div>
                       {/* Top Left: Share & Bookmark Save Buttons */}
-                      <div className="absolute top-3 left-3 flex items-center gap-1.5 z-10">
+                      <div className="absolute top-3 left-3 flex items-center gap-1.5 z-[2]">
                         <button
                           onClick={async (e) => {
                             e.stopPropagation();
@@ -1520,6 +1558,23 @@ export function Jobs() {
               );
             })}
           </div>
+
+          {/* Helpful Navigation Tip & Quick Switcher when in Horizontal mode */}
+          {viewLayout === "horizontal" && (
+            <div className="mt-3 mb-2 p-3 rounded-2xl bg-orange-50/50 border border-orange-100/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div className="text-xs text-slate-600 flex items-center gap-1.5">
+                <span className="font-bold text-[#8C3015]">💡 টিপস:</span>
+                <span>কার্ডগুলো ডানে-বামে (↔) সোয়াইপ করুন অথবা স্ক্রোল করে নিচে নামুন</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewLayout("vertical")}
+                className="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-white border border-slate-200/80 text-[#C04A22] text-xs font-bold hover:bg-orange-50 transition shadow-2xs cursor-pointer"
+              >
+                সবগুলো নিচে দেখুন (↕)
+              </button>
+            </div>
+          )}
         </div>
 
         {/* ── JOB DETAILS & EXTERNAL APPLICATION MODAL ───────────────────────── */}

@@ -986,9 +986,9 @@ function ReelsGrid({ onSelectReel, onUpload }: { onSelectReel: (idx: number) => 
   );
 
   return (
-    <div className="w-full max-w-2xl sm:max-w-3xl xl:max-w-4xl mx-auto min-h-screen flex flex-col py-3 sm:py-5 px-3 sm:px-4 space-y-4">
-      {/* Header Bar */}
-      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+    <div className="w-full max-w-2xl sm:max-w-3xl xl:max-w-4xl mx-auto min-h-screen flex flex-col">
+      {/* Header Bar - Edge-to-edge with 0 padding from all sides */}
+      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs">
         <div className="flex items-center justify-between px-4 sm:px-5 py-3">
           <div className="flex items-center gap-2.5">
             <button onClick={() => navigate(-1)}
@@ -1043,54 +1043,57 @@ function ReelsGrid({ onSelectReel, onUpload }: { onSelectReel: (idx: number) => 
         </div>
       </div>
 
-      {/* Featured reel — top hero */}
-      {!searchQuery && (
-        <div className="relative rounded-3xl overflow-hidden cursor-pointer h-44 sm:h-52 group shadow-sm border border-slate-200/60"
-          onClick={() => onSelectReel(0)}>
-          <img src={reels[0].poster} alt="Featured" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/40 to-transparent" />
-          <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-8">
-            <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-[#d4522a] to-[#C04A22] text-white text-[10px] font-bold px-2.5 py-1 rounded-full mb-2 w-fit shadow-xs">
-              <Flame className="w-3 h-3" /> FEATURED
+      {/* Main Content Area */}
+      <div className="px-3 sm:px-4 pt-3 sm:pt-4 space-y-4 flex-1">
+        {/* Featured reel — top hero */}
+        {!searchQuery && (
+          <div className="relative rounded-3xl overflow-hidden cursor-pointer h-44 sm:h-52 group shadow-sm border border-slate-200/60"
+            onClick={() => onSelectReel(0)}>
+            <img src={reels[0].poster} alt="Featured" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/40 to-transparent" />
+            <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-8">
+              <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-[#d4522a] to-[#C04A22] text-white text-[10px] font-bold px-2.5 py-1 rounded-full mb-2 w-fit shadow-xs">
+                <Flame className="w-3 h-3" /> FEATURED
+              </div>
+              <h2 className="text-white font-bold text-base sm:text-lg leading-tight max-w-md line-clamp-2 drop-shadow">{reels[0].caption}</h2>
+              <div className="flex items-center gap-2 mt-2">
+                <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${reels[0].author.color} flex items-center justify-center text-white text-[10px] font-bold shadow-xs`}>{reels[0].author.avatar[0]}</div>
+                <span className="text-white/90 text-xs font-medium">{reels[0].author.name}</span>
+                <span className="text-white/50 text-xs">·</span>
+                <span className="text-white/70 text-xs font-medium">{reels[0].views} views</span>
+              </div>
             </div>
-            <h2 className="text-white font-bold text-base sm:text-lg leading-tight max-w-md line-clamp-2 drop-shadow">{reels[0].caption}</h2>
-            <div className="flex items-center gap-2 mt-2">
-              <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${reels[0].author.color} flex items-center justify-center text-white text-[10px] font-bold shadow-xs`}>{reels[0].author.avatar[0]}</div>
-              <span className="text-white/90 text-xs font-medium">{reels[0].author.name}</span>
-              <span className="text-white/50 text-xs">·</span>
-              <span className="text-white/70 text-xs font-medium">{reels[0].views} views</span>
+            <div className="absolute right-5 bottom-5">
+              <div className="w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/40 flex items-center justify-center shadow-lg transition-transform group-hover:scale-110">
+                <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+              </div>
             </div>
           </div>
-          <div className="absolute right-5 bottom-5">
-            <div className="w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/40 flex items-center justify-center shadow-lg transition-transform group-hover:scale-110">
-              <Play className="w-5 h-5 text-white fill-white ml-0.5" />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Grid */}
-      <div className="pb-16 flex-1">
-        {filtered.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-200 p-12 flex flex-col items-center justify-center text-center shadow-2xs">
-            <Search className="w-10 h-10 text-slate-300 mb-3" />
-            <p className="font-bold text-slate-800 text-sm">No reels found</p>
-            <p className="text-xs text-slate-500 mt-1">Try a different keyword or category</p>
-          </div>
-        ) : (
-          <>
-            <div className="flex items-center justify-between mb-3 px-1">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                {searchQuery ? `${filtered.length} results found` : "Suggested for you"}
-              </p>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {filtered.map((reel) => (
-                <ReelThumb key={reel.id} reel={reel} onClick={() => onSelectReel(reels.indexOf(reel))} />
-              ))}
-            </div>
-          </>
         )}
+
+        {/* Grid */}
+        <div className="pb-16 flex-1">
+          {filtered.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-12 flex flex-col items-center justify-center text-center shadow-2xs">
+              <Search className="w-10 h-10 text-slate-300 mb-3" />
+              <p className="font-bold text-slate-800 text-sm">No reels found</p>
+              <p className="text-xs text-slate-500 mt-1">Try a different keyword or category</p>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-3 px-1">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  {searchQuery ? `${filtered.length} results found` : "Suggested for you"}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {filtered.map((reel) => (
+                  <ReelThumb key={reel.id} reel={reel} onClick={() => onSelectReel(reels.indexOf(reel))} />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

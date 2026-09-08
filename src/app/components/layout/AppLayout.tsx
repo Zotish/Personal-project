@@ -37,7 +37,7 @@ export function AppLayout({
       )}
 
       <div className="lg:ml-64 min-h-screen">
-        <div className={`w-full max-w-[1536px] mx-auto flex gap-0 ${noPad ? "" : "px-3 sm:px-5 lg:px-6 pt-0 pb-6 sm:pb-8 lg:pb-8"}`}>
+        <div className={`w-full max-w-[1536px] mx-auto flex gap-0 ${noPad ? "" : "px-0 sm:px-5 lg:px-6 pt-0 pb-6 sm:pb-8 lg:pb-8"}`}>
           <main className={`flex-1 min-w-0 ${hideNav ? "pb-0" : "pb-20 lg:pb-0"}`}>
             {children}
           </main>

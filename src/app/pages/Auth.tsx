@@ -378,14 +378,14 @@ export function SignUp() {
             </div>
 
             {/* Terms notice with Checkbox */}
-            <label className="flex items-start gap-2.5 cursor-pointer bg-[#D85A30]/10 p-3 rounded-xl border border-[#D85A30]/20 hover:bg-[#D85A30]/15 transition">
+            <label className="flex items-center gap-2.5 cursor-pointer bg-[#D85A30]/10 p-2.5 sm:p-3 rounded-xl border border-[#D85A30]/20 hover:bg-[#D85A30]/15 transition">
               <input
                 type="checkbox"
                 defaultChecked
-                className="mt-0.5 w-4 h-4 rounded border-[#D85A30]/40 text-[#D85A30] focus:ring-[#D85A30] cursor-pointer flex-shrink-0"
+                className="w-4 h-4 rounded border-[#D85A30]/40 text-[#D85A30] focus:ring-[#D85A30] cursor-pointer flex-shrink-0"
               />
-              <p className="text-xs text-[#993C1D] leading-relaxed font-medium">
-                By creating an account, you agree to our Terms of Service and Privacy Policy. Your data is safe and never sold.
+              <p className="text-xs text-[#993C1D] leading-tight font-medium">
+                I agree to the <span className="font-semibold underline">Terms</span> &amp; <span className="font-semibold underline">Privacy Policy</span>.
               </p>
             </label>
 

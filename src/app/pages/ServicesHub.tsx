@@ -6,7 +6,7 @@ import {
   Languages, AlertTriangle, Store, Bus, Building2, FileText, Sparkles, Search,
   LayoutGrid, Truck, BookOpen, Car, Armchair, Film, Cpu, Shirt, Building,
   ShoppingBag, Leaf, Laptop, KeyRound, Users, Wrench, Award, ShieldCheck, Gift, MapPin, Map, Calendar,
-  Tag, TrendingUp, ChevronUp, Landmark, Trophy, Ticket
+  Tag, TrendingUp, ChevronUp, Landmark, Trophy, Ticket, X, ChevronRight
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -61,7 +61,7 @@ const allServices: ServiceItem[] = [
   // ─── TIER 4: COMMUNITY & LIFESTYLE ─────────────────────────────────────────
   { id: "buy-sell", name: "Buy & Sell", desc: "Buy and sell goods in your community", icon: ShoppingBag, link: "/services/buy-sell", category: "utility" },
   { id: "rentals", name: "Rentals", desc: "Furniture, car, and equipment rentals", icon: KeyRound, link: "/services/rentals", category: "housing" },
-  { id: "sports", name: "Sports", desc: "Cricket, soccer leagues, tournaments & local clubs", icon: Trophy, link: "/explore", category: "utility" },
+  { id: "sports", name: "Sports", desc: "Cricket, soccer leagues, tournaments & local clubs", icon: Trophy, link: "/services/sports", category: "utility" },
   { id: "fashion", name: "Fashion", desc: "Clothes, shoes, and accessories for all cultures", icon: Shirt, link: "/services/fashion", category: "utility" },
   { id: "event-tickets", name: "Tickets", desc: "Concerts, events, movie & show tickets", icon: Ticket, link: "/services/movie-hall", category: "utility" },
 ];
@@ -375,6 +375,7 @@ export function ServicesHub() {
     typeof window !== "undefined" ? window.innerWidth < 640 : false
   );
 
+  const [selectedProduct, setSelectedProduct] = useState<FeaturedProduct | null>(null);
   const servicesScrollRef = React.useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
 
@@ -412,7 +413,7 @@ export function ServicesHub() {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto space-y-4 pb-12 pt-3 sm:pt-5 px-1 sm:px-0">
+      <div className="max-w-4xl mx-auto space-y-4 pb-12 pt-2 sm:pt-5 px-3 sm:px-0">
 
         {/* QUICK SEARCH BAR + MAP LAUNCHER BUTTON */}
         <div className="flex items-center gap-2.5">
@@ -558,7 +559,7 @@ export function ServicesHub() {
               {activeTabProducts.map(prod => (
                 <div
                   key={prod.id}
-                  onClick={() => navigate(prod.link)}
+                  onClick={() => setSelectedProduct(prod)}
                   className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-2xs hover:shadow-md hover:border-[#C04A22]/40 transition-all cursor-pointer flex flex-col justify-between"
                 >
                   <div>
@@ -590,9 +591,15 @@ export function ServicesHub() {
                     <span className="text-xs font-extrabold text-[#8C3015] bg-[#C04A22]/10 px-2.5 py-0.5 rounded-lg whitespace-nowrap">
                       {prod.price}
                     </span>
-                    <span className="text-xs font-semibold text-[#C04A22] group-hover:underline">
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        setSelectedProduct(prod);
+                      }}
+                      className="text-xs font-semibold text-[#C04A22] group-hover:underline flex items-center gap-0.5 cursor-pointer"
+                    >
                       Explore →
-                    </span>
+                    </button>
                   </div>
                 </div>
               ))}
@@ -607,7 +614,7 @@ export function ServicesHub() {
                   {pageItems.map(prod => (
                     <div
                       key={prod.id}
-                      onClick={() => navigate(prod.link)}
+                      onClick={() => setSelectedProduct(prod)}
                       className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-2xs hover:shadow-md hover:border-[#C04A22]/40 transition-all cursor-pointer flex flex-col justify-between h-[285px]"
                     >
                       <div>
@@ -639,9 +646,15 @@ export function ServicesHub() {
                         <span className="text-[11px] font-extrabold text-[#8C3015] bg-[#C04A22]/10 px-2 py-0.5 rounded-lg whitespace-nowrap">
                           {prod.price}
                         </span>
-                        <span className="text-xs font-semibold text-[#C04A22] group-hover:underline">
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            setSelectedProduct(prod);
+                          }}
+                          className="text-xs font-semibold text-[#C04A22] group-hover:underline flex items-center gap-0.5 cursor-pointer"
+                        >
                           Explore →
-                        </span>
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -652,6 +665,104 @@ export function ServicesHub() {
         </div>
 
       </div>
+
+      {/* 🌟 FEATURED PRODUCT DETAILS MODAL ("Explore a gele baki details dekhabe") */}
+      {selectedProduct && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in"
+          onClick={e => {
+            if (e.target === e.currentTarget) setSelectedProduct(null);
+          }}
+        >
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/90 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 my-auto">
+            {/* Header Image */}
+            <div className="relative h-48 sm:h-56 w-full bg-slate-100 overflow-hidden">
+              <img
+                src={selectedProduct.image}
+                alt={selectedProduct.title}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
+
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedProduct(null)}
+                className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-slate-900/70 text-white flex items-center justify-center hover:bg-slate-900 transition cursor-pointer z-10"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              {/* Badge & Category */}
+              <div className="absolute bottom-3.5 left-4 right-4 flex items-center justify-between text-white">
+                <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold border border-white/30 capitalize">
+                  {selectedProduct.tag === "new" ? "New Arrival" : selectedProduct.tag}
+                </span>
+                <span className="px-3 py-1 rounded-full bg-[#C04A22] text-xs font-bold shadow-md">
+                  {selectedProduct.badge}
+                </span>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 sm:p-6 space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 leading-snug">
+                    {selectedProduct.title}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-600 mt-1.5 leading-relaxed">
+                    {selectedProduct.desc}
+                  </p>
+                </div>
+                {selectedProduct.price && (
+                  <span className="text-sm font-extrabold text-[#8C3015] bg-[#C04A22]/10 px-3 py-1 rounded-xl whitespace-nowrap flex-shrink-0 border border-[#C04A22]/20">
+                    {selectedProduct.price}
+                  </span>
+                )}
+              </div>
+
+              {/* Highlights Box */}
+              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-2">
+                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  Service Highlights & Details
+                </h4>
+                <div className="grid grid-cols-2 gap-2 text-xs text-slate-700">
+                  <div className="p-2.5 bg-white rounded-xl border border-slate-100">
+                    <span className="text-[10px] text-slate-400 font-bold block">CATEGORY</span>
+                    <span className="font-semibold text-slate-800 capitalize">{selectedProduct.tag}</span>
+                  </div>
+                  <div className="p-2.5 bg-white rounded-xl border border-slate-100">
+                    <span className="text-[10px] text-slate-400 font-bold block">OFFER VALUE</span>
+                    <span className="font-semibold text-[#8C3015]">{selectedProduct.badge}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                <button
+                  onClick={() => {
+                    const link = selectedProduct.link;
+                    setSelectedProduct(null);
+                    navigate(link);
+                  }}
+                  className="flex-1 py-3 px-4 rounded-full text-white text-sm font-bold shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
+                  style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
+                >
+                  <span>Open Service & Map</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setSelectedProduct(null)}
+                  className="py-3 px-5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold transition cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 🌟 FLOATING BACK-TO-TOP UP ARROW BUTTON (Mobile only, hidden on desktop) */}
       {isMobile && showScrollTop && (

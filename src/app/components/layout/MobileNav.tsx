@@ -39,6 +39,47 @@ export function MobileNav() {
   const popupRef = useRef<HTMLDivElement>(null);
 
   const isMoreActive = moreKeys.some(i => location.pathname === i.path);
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  // Auto-hide bottom nav bar on scroll down, instantly bring back on scroll up
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentY = window.scrollY;
+
+          // Always show at the top of the page
+          if (currentY <= 15) {
+            setIsVisible(true);
+            lastScrollY.current = currentY;
+            ticking = false;
+            return;
+          }
+
+          const diff = currentY - lastScrollY.current;
+
+          // If scrolled down by more than 5px, instantly hide bottom bar
+          if (diff > 5) {
+            setIsVisible(false);
+            setShowMore(false);
+          } else if (diff < -5) {
+            // If scrolled up by more than 5px, immediately restore bottom bar
+            setIsVisible(true);
+          }
+
+          lastScrollY.current = currentY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Close on outside tap
   useEffect(() => {
@@ -52,8 +93,12 @@ export function MobileNav() {
     return () => document.removeEventListener("mousedown", handle);
   }, [showMore]);
 
-  // Close on route change
-  useEffect(() => { setShowMore(false); }, [location.pathname]);
+  // Reset visibility and close on route change
+  useEffect(() => {
+    setShowMore(false);
+    setIsVisible(true);
+    lastScrollY.current = window.scrollY;
+  }, [location.pathname]);
 
   return (
     <>
@@ -149,7 +194,9 @@ export function MobileNav() {
       )}
 
       {/* Bottom nav bar */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-border safe-area-pb shadow-sm">
+      <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-border safe-area-pb shadow-sm transition-all duration-250 ease-out ${
+        isVisible ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
+      }`}>
         <div className="flex items-center justify-around px-1 py-1">
           {mainKeys.map(({ icon: Icon, tKey, path }) => {
             const active = location.pathname === path;

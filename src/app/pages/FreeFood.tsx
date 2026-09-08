@@ -972,7 +972,7 @@ export function FreeFood() {
     <AppLayout>
       <div className="min-h-screen bg-[#FDFBF9] pb-16">
         {/* ── TOP STICKY BAR: Search Free Food & Time Filter ────────────────── */}
-        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 sm:px-6 shadow-2xs">
+        <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 sm:px-6 shadow-2xs">
           <div className="max-w-7xl mx-auto flex items-center gap-3">
             <button
               onClick={() => navigate(-1)}
@@ -1022,8 +1022,8 @@ export function FreeFood() {
         </div>
 
         {/* ── BARIKOI LIVE MAP (EXPANDED / COMPACT STICKY HEIGHT) ────── */}
-        <div id="food-map-section" className={`w-full max-w-7xl mx-auto px-2 sm:px-4 transition-all duration-300 ${
-          isScrolled ? "sticky top-[86px] sm:top-[90px] md:top-[90px] lg:top-[90px] z-10 pt-0" : "pt-2 sm:pt-3"
+        <div id="food-map-section" className={`w-full max-w-7xl mx-auto px-2 sm:px-4 transition-all duration-300 relative z-20 ${
+          isScrolled ? "sticky top-[86px] sm:top-[90px] md:top-[90px] lg:top-[90px] pt-0 bg-[#FDFBF9]" : "pt-2 sm:pt-3"
         }`}>
           <div className="rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm bg-white">
             <BariKoiLiveFoodMap
@@ -1049,7 +1049,7 @@ export function FreeFood() {
         </div>
 
         {/* ── MAIN FOOD DIRECTORY CONTENT (1-COL MOBILE, 2-COL PAD, 3-COL DESKTOP) ── */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-3 sm:pt-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-3 sm:pt-4 relative z-0">
           {/* Toggle Button Header */}
           <div className="grid grid-cols-2 gap-2.5 mb-4 max-w-md">
             <div

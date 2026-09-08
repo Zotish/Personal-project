@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { BarChart2, Package, ShoppingCart, MessageSquare, Settings, Store, ArrowLeftRight } from "lucide-react";
 import { useAccountMode } from "../../context/AccountModeContext";
@@ -11,6 +12,48 @@ export function SellerMobileNav({ activeTab = "overview", onTabChange }: SellerM
   const navigate = useNavigate();
   const location = useLocation();
   const { switchMode } = useAccountMode();
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  // Auto-hide bottom nav bar on scroll down, instantly bring back on scroll up
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentY = window.scrollY;
+
+          if (currentY <= 15) {
+            setIsVisible(true);
+            lastScrollY.current = currentY;
+            ticking = false;
+            return;
+          }
+
+          const diff = currentY - lastScrollY.current;
+
+          if (diff > 5) {
+            setIsVisible(false);
+          } else if (diff < -5) {
+            setIsVisible(true);
+          }
+
+          lastScrollY.current = currentY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    setIsVisible(true);
+    lastScrollY.current = window.scrollY;
+  }, [location.pathname]);
 
   const sellerItems = [
     { id: "overview", label: "Overview", icon: BarChart2 },
@@ -30,7 +73,9 @@ export function SellerMobileNav({ activeTab = "overview", onTabChange }: SellerM
   };
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-slate-200 text-slate-900 safe-area-pb shadow-lg">
+    <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-slate-200 text-slate-900 safe-area-pb shadow-lg transition-all duration-250 ease-out ${
+      isVisible ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
+    }`}>
       <div className="flex items-center justify-around px-1 py-1.5">
         {sellerItems.map(item => {
           const Icon = item.icon;

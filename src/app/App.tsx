@@ -24,6 +24,16 @@ import { Communities } from "./pages/Communities";
 import { QandA } from "./pages/QandA";
 import { Jobs, Housing, FreeFood, LegalHelp, ImmigrationChecklist, Embassy } from "./pages/ServicePages";
 import { SchoolFinder, HospitalFinder, ReligiousFinder, RestaurantGroceryFinder } from "./pages/MoreServicePages";
+import {
+  HalalFoodServicePage,
+  LegalAidServicePage,
+  HospitalServicePage,
+  PharmacyServicePage,
+  FreeMedicineServicePage,
+  SocialAidServicePage,
+  GasEVServicePage,
+  SportsServicePage,
+} from "./pages/ServiceDirectoryPages";
 import { ServiceDetail } from "./pages/ServiceDetail";
 import { PostDetails } from "./pages/PostDetails";
 import { SavedResources } from "./pages/SavedResources";
@@ -84,20 +94,31 @@ export default function App() {
             <Route path="/seller/:sellerId" element={<SellerProfile />} />
             <Route path="/store/:storeId" element={<SellerProfile />} />
 
-            {/* Service Pages */}
+            {/* Service Pages (Interactive Map Directory Standard) */}
             <Route path="/services/jobs" element={<Jobs />} />
             <Route path="/services/housing" element={<Housing />} />
             <Route path="/services/free-food" element={<FreeFood />} />
             <Route path="/services/food-bank" element={<FreeFood />} />
             <Route path="/services/embassy" element={<Embassy />} />
             <Route path="/services/consulate" element={<Embassy />} />
-            <Route path="/services/legal" element={<LegalHelp />} />
+            <Route path="/services/legal" element={<LegalAidServicePage />} />
+            <Route path="/services/legal-aid" element={<LegalAidServicePage />} />
+            <Route path="/services/home-kitchen" element={<HalalFoodServicePage />} />
+            <Route path="/services/halal-food" element={<HalalFoodServicePage />} />
+            <Route path="/services/community-hospital" element={<HospitalServicePage />} />
+            <Route path="/services/hospitals" element={<HospitalServicePage />} />
+            <Route path="/services/pharmacy" element={<PharmacyServicePage />} />
+            <Route path="/services/free-medicine" element={<FreeMedicineServicePage />} />
+            <Route path="/services/social-services" element={<SocialAidServicePage />} />
+            <Route path="/services/social-aid" element={<SocialAidServicePage />} />
+            <Route path="/services/petrol" element={<GasEVServicePage />} />
+            <Route path="/services/gas" element={<GasEVServicePage />} />
+            <Route path="/services/sports" element={<SportsServicePage />} />
             <Route path="/services/checklist" element={<ImmigrationChecklist />} />
             <Route path="/services/schools" element={<SchoolFinder />} />
-            <Route path="/services/hospitals" element={<HospitalFinder />} />
             <Route path="/services/religious" element={<ReligiousFinder />} />
             <Route path="/services/religion" element={<ReligiousFinder />} />
-            <Route path="/services/food" element={<RestaurantGroceryFinder />} />
+            <Route path="/services/food" element={<HalalFoodServicePage />} />
             <Route path="/services/:serviceId" element={<ServiceDetail />} />
 
             {/* Reels */}
