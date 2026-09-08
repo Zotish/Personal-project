@@ -490,13 +490,13 @@ export function ServicesHub() {
           )}
         </div>
 
-        {/* 🌟 STICKY ONE-LINE HORIZONTAL SCROLLABLE SERVICES BAR (Flush to top, rounded bottom corners) */}
+        {/* 🌟 STICKY ONE-LINE HORIZONTAL SCROLLABLE SERVICES BAR (Flush to top, reduced vertical height) */}
         {isStickyServices && (
-          <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md rounded-t-none rounded-b-3xl border-b border-x border-t-0 border-border p-3 sm:p-4 shadow-md animate-in slide-in-from-top-2 duration-200">
+          <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md rounded-t-none rounded-b-2xl border-b border-x border-t-0 border-border px-2.5 sm:px-3 pt-1 pb-1.5 sm:pt-1.5 sm:pb-2 shadow-md animate-in slide-in-from-top-2 duration-200">
             {/* Horizontal Scrollable Service Icons in Single Row */}
             <div
               ref={stickyBarScrollRef}
-              className="w-full overflow-x-auto no-scrollbar flex items-center gap-1 sm:gap-2 py-0.5 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="w-full overflow-x-auto no-scrollbar flex items-center gap-1 sm:gap-1.5 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {allServices.map(service => {
                 const Icon = service.icon;
@@ -504,15 +504,15 @@ export function ServicesHub() {
                   <button
                     key={service.id}
                     onClick={() => navigate(service.link)}
-                    className="group flex flex-col items-center text-center px-2 py-1 rounded-2xl hover:bg-[#C04A22]/10 transition-all duration-200 cursor-pointer active:scale-95 flex-shrink-0 min-w-[66px] sm:min-w-[76px]"
+                    className="group flex flex-col items-center text-center px-1.5 py-0.5 rounded-xl hover:bg-[#C04A22]/10 transition-all duration-200 cursor-pointer active:scale-95 flex-shrink-0 min-w-[58px] sm:min-w-[68px]"
                   >
                     {/* Clean Coral Vector Icon */}
-                    <div className="p-1 flex items-center justify-center transition-all duration-200 mb-0.5">
-                      <Icon className="w-6 h-6 text-[#C04A22] group-hover:text-[#8C3015] group-hover:scale-110 transition-all duration-200" />
+                    <div className="p-0.5 flex items-center justify-center transition-all duration-200 mb-0.5">
+                      <Icon className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-[#C04A22] group-hover:text-[#8C3015] group-hover:scale-105 transition-all duration-200" />
                     </div>
 
                     {/* Short & Clear Name */}
-                    <span className="text-[11px] sm:text-xs font-normal text-slate-900 group-hover:text-[#8C3015] leading-tight truncate w-full transition-colors">
+                    <span className="text-[10px] sm:text-[11px] font-medium text-slate-900 group-hover:text-[#8C3015] leading-none truncate w-full transition-colors">
                       {service.name}
                     </span>
                   </button>
@@ -598,7 +598,7 @@ export function ServicesHub() {
                       }}
                       className="text-xs font-semibold text-[#C04A22] group-hover:underline flex items-center gap-0.5 cursor-pointer"
                     >
-                      Explore →
+                      Explore
                     </button>
                   </div>
                 </div>
@@ -653,7 +653,7 @@ export function ServicesHub() {
                           }}
                           className="text-xs font-semibold text-[#C04A22] group-hover:underline flex items-center gap-0.5 cursor-pointer"
                         >
-                          Explore →
+                          Explore
                         </button>
                       </div>
                     </div>

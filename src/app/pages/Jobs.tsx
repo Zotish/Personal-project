@@ -7,7 +7,7 @@ import {
   Building2, ExternalLink, Sparkles, Filter, ChevronRight,
   ChevronLeft, ChevronUp, ChevronDown, Plus, Minus,
   ArrowLeft, ArrowRight, Car, Bike, Footprints, Briefcase,
-  ShieldCheck, Loader2, X, ArrowLeftRight, ListFilter
+  ShieldCheck, Loader2, X
 } from "lucide-react";
 import { LiveJobListing, generateLiveLocationJobs, formatDistance, getDistanceKm, matchJobQuery } from "../data/jobsData";
 import { JobDetailsModal } from "../components/jobs/JobDetailsModal";
@@ -372,6 +372,29 @@ function BariKoiLiveJobsMap({
           mapRef.current = map;
           syncMapMarkers();
         });
+
+        map.on("dragend", () => {
+          try {
+            const center = map.getCenter();
+            if (!center) return;
+            const lat = typeof center.lat === "function" ? center.lat() : center.lat;
+            const lng = typeof center.lng === "function" ? center.lng() : center.lng;
+            if (typeof lat !== "number" || typeof lng !== "number") return;
+            let closest: LiveJobListing | null = null;
+            let minD = Infinity;
+            jobs.forEach(j => {
+              const d = Math.hypot(j.lat - lat, j.lng - lng);
+              if (d < minD) {
+                minD = d;
+                closest = j;
+              }
+            });
+            if (closest && minD < 0.04) {
+              onSelectJob(closest);
+            }
+          } catch (_) { }
+        });
+
         mapRef.current = map;
       })
       .catch(() => {
@@ -393,6 +416,25 @@ function BariKoiLiveJobsMap({
               maxZoom: 19,
             }
           ).addTo(map);
+
+          map.on("dragend", () => {
+            try {
+              const center = map.getCenter();
+              if (!center) return;
+              let closest: LiveJobListing | null = null;
+              let minD = Infinity;
+              jobs.forEach(j => {
+                const d = Math.hypot(j.lat - center.lat, j.lng - center.lng);
+                if (d < minD) {
+                  minD = d;
+                  closest = j;
+                }
+              });
+              if (closest && minD < 0.04) {
+                onSelectJob(closest);
+              }
+            } catch (_) { }
+          });
 
           mapRef.current = map;
           LRef.current = L;
@@ -1043,21 +1085,15 @@ export function Jobs() {
   const [isScrolled, setIsScrolled] = useState(false);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  // View Layout: "horizontal" (পাশাপাশি সোয়াইপ/স্ক্রোল) or "vertical" (নিচে নিচে স্ক্রোল)
-  const [viewLayout, setViewLayout] = useState<"horizontal" | "vertical">("horizontal");
-  const horizontalListRef = useRef<HTMLDivElement>(null);
-
-  const scrollHorizontal = (direction: "left" | "right") => {
-    if (!horizontalListRef.current) return;
-    const container = horizontalListRef.current;
-    const firstCard = container.querySelector("[data-job-id]") as HTMLElement | null;
-    const cardWidth = firstCard ? firstCard.offsetWidth : 320;
-    const scrollAmount = cardWidth + 14;
-    container.scrollBy({
-      left: direction === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth"
-    });
-  };
+  const handleSelectJob = useCallback((job: LiveJobListing | null) => {
+    setSelectedJob(job);
+    if (job) {
+      const cardEl = cardRefs.current.get(job.id);
+      if (cardEl) {
+        cardEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }
+  }, []);
 
   // Deep linking: auto-focus and show details if opened via shared link
   const routerLocation = useLocation();
@@ -1108,21 +1144,20 @@ export function Jobs() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // IntersectionObserver to auto-move map to currently visible job card (ONLY for Mobile view < 768px)
+  // IntersectionObserver to auto-sync map with currently visible job card during scroll
   useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth >= 768) {
-      return; // Disable scroll animation on Desktop & Pad/Tablet view!
-    }
-
     const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries.filter(e => e.isIntersecting);
         if (visible.length > 0) {
-          // Find card closest to top center of screen
-          const topEntry = visible.reduce((prev, curr) =>
-            curr.boundingClientRect.top < prev.boundingClientRect.top ? curr : prev
-          );
-          const jobId = topEntry.target.getAttribute("data-job-id");
+          // Find card closest to viewport center
+          const viewportMid = window.innerHeight / 2;
+          const centerEntry = visible.reduce((prev, curr) => {
+            const prevMid = prev.boundingClientRect.top + prev.boundingClientRect.height / 2;
+            const currMid = curr.boundingClientRect.top + curr.boundingClientRect.height / 2;
+            return Math.abs(currMid - viewportMid) < Math.abs(prevMid - viewportMid) ? curr : prev;
+          });
+          const jobId = centerEntry.target.getAttribute("data-job-id");
           if (jobId && jobId !== selectedJob?.id) {
             const targetJob = (activeFilter === "nearby" ? nearbyJobs : liveJobs).find(j => j.id === jobId) ||
               filteredJobs.find(j => j.id === jobId);
@@ -1134,7 +1169,7 @@ export function Jobs() {
       },
       {
         root: null,
-        rootMargin: "-15% 0px -45% 0px",
+        rootMargin: "-10% 0px -25% 0px",
         threshold: [0.2, 0.5]
       }
     );
@@ -1308,7 +1343,7 @@ export function Jobs() {
               isLocationGranted={isLocationGranted}
               jobs={filteredJobs}
               selectedJob={selectedJob}
-              onSelectJob={job => setSelectedJob(job)}
+              onSelectJob={handleSelectJob}
               onNavigationClick={handleNavigationClick}
               onRequestLocation={() => executeGeolocation(true)}
               onDenyLocation={() => setShowPermissionPrompt(false)}
@@ -1329,10 +1364,10 @@ export function Jobs() {
           </div>
         </div>
 
-        {/* ── MAIN JOB DIRECTORY CONTENT (1-COL MOBILE, 2-COL PAD, 3-COL DESKTOP) ── */}
+        {/* ── MAIN JOB DIRECTORY CONTENT (EQUAL GRID ON ALL DEVICES) ── */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-3 sm:pt-4 relative z-0">
-          {/* Controls Bar: Filter Options + View Toggle (Horizontal ↔ vs Vertical ↕) */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          {/* Controls Bar: Filter Options */}
+          <div className="flex items-center justify-between gap-3 mb-4">
             {/* Filter Option Buttons */}
             <div className="grid grid-cols-2 gap-2.5 max-w-md w-full">
               {/* Left Option: Nearby Me Jobs */}
@@ -1363,71 +1398,10 @@ export function Jobs() {
                 </div>
               </div>
             </div>
-
-            {/* Layout Toggle (Horizontal / পাশাপাশি vs Vertical / নিচে নিচে) & Navigation Arrows */}
-            <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-              <div className="flex items-center bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shadow-2xs">
-                <button
-                  type="button"
-                  onClick={() => setViewLayout("horizontal")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    viewLayout === "horizontal"
-                      ? "bg-white text-[#C04A22] shadow-xs font-bold"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                  title="পাশাপাশি সোয়াইপ ও স্ক্রোল (Horizontal Scroll)"
-                >
-                  <ArrowLeftRight className="w-3.5 h-3.5" />
-                  <span>পাশাপাশি (↔)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewLayout("vertical")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    viewLayout === "vertical"
-                      ? "bg-white text-[#C04A22] shadow-xs font-bold"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                  title="নিচে নিচে স্ক্রোল (Vertical List)"
-                >
-                  <ListFilter className="w-3.5 h-3.5" />
-                  <span>নিচে নিচে (↕)</span>
-                </button>
-              </div>
-
-              {/* Horizontal Scroll Arrows (visible in horizontal mode) */}
-              {viewLayout === "horizontal" && (
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => scrollHorizontal("left")}
-                    className="w-8 h-8 rounded-xl bg-white border border-slate-200/80 hover:bg-slate-50 text-slate-700 flex items-center justify-center shadow-2xs transition active:scale-95 cursor-pointer"
-                    title="আগের কার্ড (Left)"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => scrollHorizontal("right")}
-                    className="w-8 h-8 rounded-xl bg-white border border-slate-200/80 hover:bg-slate-50 text-slate-700 flex items-center justify-center shadow-2xs transition active:scale-95 cursor-pointer"
-                    title="পরের কার্ড (Right)"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
 
-          {/* Card Container: Swipeable Horizontal Carousel on Mobile OR Equal Grid */}
-          <div
-            ref={horizontalListRef}
-            className={
-              viewLayout === "horizontal"
-                ? "flex overflow-x-auto snap-x snap-mandatory gap-3.5 sm:gap-5 pb-4 pt-1 px-1 no-scrollbar scroll-smooth md:grid md:grid-cols-2 lg:grid-cols-3"
-                : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch"
-            }
-          >
+          {/* Equal Grid of Job Cards (Consistent positioning & equal heights on both sides) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
             {(activeFilter === "nearby" ? nearbyJobs : filteredJobs).map(job => {
               const isSelected = selectedJob?.id === job.id;
               const isSaved = savedJobIds.includes(job.id);
@@ -1439,12 +1413,8 @@ export function Jobs() {
                     if (el) cardRefs.current.set(job.id, el);
                     else cardRefs.current.delete(job.id);
                   }}
-                  onClick={() => setSelectedJob(job)}
-                  className={`group bg-white rounded-3xl border overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between ${
-                    viewLayout === "horizontal"
-                      ? "w-[85vw] max-w-[340px] flex-shrink-0 snap-center md:w-auto md:max-w-none h-full"
-                      : "h-full"
-                  } ${
+                  onClick={() => handleSelectJob(job)}
+                  className={`group bg-white rounded-3xl border overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between h-full ${
                     isSelected
                       ? "border-[#C04A22] ring-2 ring-[#C04A22]/20 shadow-md"
                       : "border-slate-200/90 hover:border-slate-300 hover:shadow-xs"
@@ -1558,23 +1528,6 @@ export function Jobs() {
               );
             })}
           </div>
-
-          {/* Helpful Navigation Tip & Quick Switcher when in Horizontal mode */}
-          {viewLayout === "horizontal" && (
-            <div className="mt-3 mb-2 p-3 rounded-2xl bg-orange-50/50 border border-orange-100/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-              <div className="text-xs text-slate-600 flex items-center gap-1.5">
-                <span className="font-bold text-[#8C3015]">💡 টিপস:</span>
-                <span>কার্ডগুলো ডানে-বামে (↔) সোয়াইপ করুন অথবা স্ক্রোল করে নিচে নামুন</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setViewLayout("vertical")}
-                className="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-white border border-slate-200/80 text-[#C04A22] text-xs font-bold hover:bg-orange-50 transition shadow-2xs cursor-pointer"
-              >
-                সবগুলো নিচে দেখুন (↕)
-              </button>
-            </div>
-          )}
         </div>
 
         {/* ── JOB DETAILS & EXTERNAL APPLICATION MODAL ───────────────────────── */}

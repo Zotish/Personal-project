@@ -665,20 +665,18 @@ function CreateCommunityModal({ onClose, onCreate }: {
                   <label className="text-xs font-semibold text-foreground mb-1.5 block">Privacy</label>
                   <div className="grid grid-cols-2 gap-2">
                     {([
-                      { val: "public", icon: Globe, label: "Public", sub: "Anyone can find & join" },
-                      { val: "private", icon: Lock, label: "Private", sub: "Invite-only membership" },
-                    ] as const).map(({ val, icon: Icon, label, sub }) => (
+                      { val: "public", icon: Globe, label: "Public" },
+                      { val: "private", icon: Lock, label: "Private" },
+                    ] as const).map(({ val, icon: Icon, label }) => (
                       <button
                         key={val}
+                        type="button"
                         onClick={() => setPrivacy(val)}
-                        className={`flex items-center gap-3 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${privacy === val ? "border-[#C04A22]/50 bg-[#C04A22]/10 shadow-[0_0_10px_rgba(192,74,34,0.18)]" : "border-slate-200 bg-secondary hover:border-[#C04A22]/30"
+                        className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border text-left transition-all cursor-pointer ${privacy === val ? "border-[#C04A22]/50 bg-[#C04A22]/10 shadow-[0_0_10px_rgba(192,74,34,0.18)]" : "border-slate-200 bg-secondary hover:border-[#C04A22]/30"
                           }`}
                       >
                         <Icon className={`w-4 h-4 flex-shrink-0 ${privacy === val ? "text-[#8C3015]" : "text-muted-foreground"}`} />
-                        <div>
-                          <div className={`text-xs font-semibold ${privacy === val ? "text-[#8C3015]" : "text-foreground"}`}>{label}</div>
-                          <div className="text-[10px] text-muted-foreground">{sub}</div>
-                        </div>
+                        <span className={`text-xs font-semibold ${privacy === val ? "text-[#8C3015]" : "text-foreground"}`}>{label}</span>
                       </button>
                     ))}
                   </div>

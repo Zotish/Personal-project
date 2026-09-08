@@ -168,23 +168,38 @@ export function OnboardingCountry() {
         </div>
         <div>
           <label className="text-sm font-medium text-foreground block mb-2">Your Location</label>
-          <button
-            type="button"
-            onClick={detectLocation}
-            className="w-full flex items-center px-4 py-3 bg-transparent rounded-xl border border-slate-300 hover:border-[#D85A30]/50 transition-all text-left group cursor-pointer"
-            title="Click to detect current location"
-          >
-            <div className="flex items-center gap-3 min-w-0">
+          <div className="w-full min-h-[46px] flex items-center px-3.5 py-1.5 bg-transparent rounded-xl border border-slate-300 focus-within:border-[#D85A30] transition-all">
+            <div className="flex items-center gap-2.5 flex-1 min-w-0 mr-2">
               {isLocating ? (
                 <Loader2 className="w-4 h-4 text-[#D85A30] animate-spin flex-shrink-0" />
               ) : (
-                <MapPin className={`w-4 h-4 flex-shrink-0 transition-colors ${city ? "text-[#D85A30]" : "text-muted-foreground group-hover:text-[#D85A30]"}`} />
+                <MapPin className={`w-4 h-4 flex-shrink-0 transition-colors ${city ? "text-[#D85A30]" : "text-muted-foreground"}`} />
               )}
-              <span className={`text-sm truncate ${city ? "font-semibold text-slate-900" : "text-muted-foreground"}`}>
-                {isLocating ? "Detecting your location..." : city || "e.g., New York, NY"}
-              </span>
+              <input
+                type="text"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="e.g., New York, NY"
+                className="w-full bg-transparent border-0 outline-none p-0 text-sm text-slate-900 placeholder:text-muted-foreground focus:ring-0"
+              />
             </div>
-          </button>
+            <button
+              type="button"
+              onClick={detectLocation}
+              disabled={isLocating}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#D85A30]/10 text-[#D85A30] hover:bg-[#D85A30]/20 active:scale-95 transition-all cursor-pointer flex-shrink-0 disabled:opacity-50"
+              title="Auto detect current location"
+            >
+              {isLocating ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Detecting...</span>
+                </>
+              ) : (
+                <span>Auto Detect</span>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </StepWrapper>

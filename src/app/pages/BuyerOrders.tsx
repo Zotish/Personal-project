@@ -169,14 +169,14 @@ export function BuyerOrders() {
                             {step.done ? (
                               <CheckCircle2 className="w-3.5 h-3.5 text-[#C04A22] flex-shrink-0" />
                             ) : (
-                              <Clock className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                              <Clock className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
                             )}
-                            <span className={`text-[11px] font-bold ${step.done ? "text-slate-900" : "text-slate-400"}`}>
+                            <span className={`text-[11px] font-bold ${step.done ? "text-slate-900" : "text-slate-600"}`}>
                               Step {idx + 1}
                             </span>
                           </div>
                           <span className="text-[11px] text-slate-700 leading-tight line-clamp-2">{step.label}</span>
-                          <span className="text-[10px] text-slate-400">{step.time}</span>
+                          <span className="text-xs font-medium text-slate-800">{step.time}</span>
                         </div>
                       ))}
                     </div>

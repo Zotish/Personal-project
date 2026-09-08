@@ -14,7 +14,7 @@ import {
   Calendar, Clock, X, MapPin as MapPinIcon, UserCheck, Building2,
   Megaphone, Star, TrendingUp, Lock, Hash, Pin, Award, User, Video, Film, Smile,
   Wind, Droplets, Thermometer, ArrowUp, Loader2, CloudSun, Plus, LayoutGrid, Box, Package,
-  Cloud, CloudRain, CloudSnow, Sun, CloudLightning, ShoppingBag, Shield
+  Cloud, CloudRain, CloudSnow, Sun, CloudLightning, ShoppingBag, Shield, Menu, SquarePen, Camera, ArrowLeft, Music
 } from "lucide-react";
 import { EventRegistrationModal } from "../components/events/EventRegistrationModal";
 
@@ -495,9 +495,11 @@ const MONTHS = ["January","February","March","April","May","June","July","August
 function MiniCalendar({
   selectedDate,
   onSelect,
+  onClose,
 }: {
   selectedDate: string | null;
   onSelect: (key: string | null) => void;
+  onClose?: () => void;
 }) {
   const { t } = useLanguage();
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -523,9 +525,24 @@ function MiniCalendar({
 
   return (
     <div className="bg-white rounded-2xl border border-border p-4">
-      <div className="flex items-center justify-between mb-3 group cursor-pointer">
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-[#C04A22] group-hover:text-[#8C3015] transition-colors" />
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onClose) {
+                onClose();
+              } else {
+                onSelect(null);
+              }
+            }}
+            className="p-1 -ml-1 rounded-lg hover:bg-orange-50 text-slate-700 hover:text-[#C04A22] active:scale-95 transition cursor-pointer"
+            title="Back to home"
+            aria-label="Back"
+          >
+            <ArrowLeft className="w-4 h-4 text-slate-700 hover:text-[#C04A22] transition-colors" strokeWidth={2.4} />
+          </button>
           <h3 className="font-bold text-sm text-foreground">
             {MONTHS[viewMonth]} {viewYear}
           </h3>
@@ -896,6 +913,341 @@ function PostCard({ post }: { post: Post; key?: string | number }) {
         </button>
         <button onClick={() => setBookmarked(!bookmarked)} className={`flex items-center gap-1 sm:gap-1.5 text-xs transition-colors cursor-pointer ${bookmarked ? "text-primary font-bold" : "text-muted-foreground hover:text-primary"}`}>
           <Bookmark className={`w-4 h-4 ${bookmarked ? "fill-primary text-primary" : ""}`} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Facebook-Style Mobile Post Modal ─────────────────────────────────────────
+
+function MobileFacebookPostModal({
+  onAddPost,
+  onClose,
+}: {
+  onAddPost?: (newPost: any) => void;
+  onClose: () => void;
+}) {
+  const { t } = useLanguage();
+  const [text, setText] = useState("");
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [mediaFile, setMediaFile] = useState<{ url: string; type: "image" | "video"; name: string } | null>(null);
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const QUICK_EMOJIS = ["😊", "🚀", "❤️", "👍", "🎉", "🙏", "💡", "✨", "🔥", "💯"];
+
+  // Lock body scroll on mount
+  useEffect(() => {
+    const originalStyle = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalStyle;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
+
+  // Focus textarea on open
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 150);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      const isVideo = file.type.startsWith("video/");
+      setMediaFile({
+        url,
+        type: isVideo ? "video" : "image",
+        name: file.name,
+      });
+    }
+  };
+
+  const removeMedia = () => {
+    setMediaFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
+  };
+
+  const insertEmoji = (emoji: string) => {
+    setText(prev => prev + (prev.endsWith(" ") || prev === "" ? "" : " ") + emoji);
+    setEmojiPickerOpen(false);
+    textareaRef.current?.focus();
+  };
+
+  const insertTag = (tag: string) => {
+    setText(prev => prev + (prev.endsWith(" ") || prev === "" ? "" : " ") + tag + " ");
+    textareaRef.current?.focus();
+  };
+
+  const handlePostSubmit = () => {
+    if (!text.trim() && !mediaFile) return;
+    if (onAddPost) {
+      onAddPost({
+        id: Date.now(),
+        author: {
+          name: isAnonymous ? "Anonymous Neighbor (বেনামী সদস্য)" : "Rasel Ahmed",
+          handle: isAnonymous ? "@anonymous_neighbor" : "@rasel_ahmed",
+          avatar: isAnonymous ? "🛡️" : "RA",
+          color: isAnonymous ? "from-slate-700 to-slate-900" : "from-[#1877f2] to-[#0d65d9]",
+          verified: !isAnonymous,
+        },
+        time: "Just now",
+        content: text,
+        image: mediaFile?.type === "image" ? mediaFile.url : undefined,
+        video: mediaFile?.type === "video" ? mediaFile.url : undefined,
+        likes: 0,
+        comments: 0,
+        reposts: 0,
+      });
+    }
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-white text-slate-900 flex flex-col justify-between animate-in slide-in-from-bottom duration-250 ease-out select-none">
+      {/* Top Header: X on left, "New post" centered */}
+      <div className="pt-3 sm:pt-4 pt-[max(0.75rem,env(safe-area-inset-top))] px-4 pb-3 border-b border-slate-100 bg-white flex items-center justify-between sticky top-0 z-20">
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-1.5 -ml-1.5 rounded-full hover:bg-slate-100 text-slate-900 active:scale-95 transition cursor-pointer"
+          aria-label="Close"
+        >
+          <X className="w-6 h-6 text-slate-900" strokeWidth={2.2} />
+        </button>
+
+        <h2 className="text-base font-bold text-slate-900 tracking-tight">New post</h2>
+
+        {/* Empty placeholder for perfect centering */}
+        <div className="w-6" />
+      </div>
+
+      {/* Author Profile Row */}
+      <div className="px-4 pt-3.5 pb-1 flex items-center gap-3">
+        {/* Profile Avatar Image */}
+        <div className="w-12 h-12 rounded-full overflow-hidden border border-slate-200 shadow-xs flex-shrink-0 bg-slate-100 flex items-center justify-center text-slate-800 font-bold">
+          {isAnonymous ? (
+            <Shield className="w-6 h-6 text-emerald-500" />
+          ) : (
+            <img
+              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=140&auto=format&fit=crop&q=80"
+              alt="Rasel Ahmed"
+              className="w-full h-full object-cover"
+            />
+          )}
+        </div>
+
+        {/* User Name */}
+        <div className="flex flex-col">
+          <span className="text-base font-bold text-slate-900 leading-snug">
+            {isAnonymous ? "Anonymous Neighbor" : "Rasel Ahmed"}
+          </span>
+        </div>
+      </div>
+
+      {/* Horizontal Action Pills (Music, People, Location, Feeling, Anonymous) */}
+      <div className="px-4 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar scrollbar-hide [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {/* Music Pill */}
+        <button
+          type="button"
+          onClick={() => insertTag("🎵 Music")}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-xs font-semibold whitespace-nowrap transition border border-slate-200/80 active:scale-95 cursor-pointer"
+        >
+          <Music className="w-3.5 h-3.5 text-slate-600" />
+          <span>Music</span>
+        </button>
+
+        {/* People Pill */}
+        <button
+          type="button"
+          onClick={() => insertTag("👥 People")}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-xs font-semibold whitespace-nowrap transition border border-slate-200/80 active:scale-95 cursor-pointer"
+        >
+          <User className="w-3.5 h-3.5 text-slate-600" />
+          <span>People</span>
+        </button>
+
+        {/* Location Pill */}
+        <button
+          type="button"
+          onClick={() => insertTag("📍 Location")}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-xs font-semibold whitespace-nowrap transition border border-slate-200/80 active:scale-95 cursor-pointer"
+        >
+          <MapPin className="w-3.5 h-3.5 text-slate-600" />
+          <span>Location</span>
+        </button>
+
+        {/* Feeling Pill */}
+        <button
+          type="button"
+          onClick={() => setEmojiPickerOpen(v => !v)}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-xs font-semibold whitespace-nowrap transition border border-slate-200/80 active:scale-95 cursor-pointer"
+        >
+          <Smile className="w-3.5 h-3.5 text-slate-600" />
+          <span>Feeling</span>
+        </button>
+
+        {/* Anonymous Privacy Shield Pill */}
+        <button
+          type="button"
+          onClick={() => setIsAnonymous(!isAnonymous)}
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition border active:scale-95 cursor-pointer ${
+            isAnonymous
+              ? "bg-emerald-600 text-white border-emerald-500 font-bold"
+              : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200/80"
+          }`}
+        >
+          <Shield className={`w-3.5 h-3.5 ${isAnonymous ? "text-white" : "text-emerald-600"}`} />
+          <span>{isAnonymous ? "Anonymous ✓" : "Anonymous"}</span>
+        </button>
+      </div>
+
+      {/* Main Textarea Area with "What's on your mind?" */}
+      <div className="flex-1 overflow-y-auto px-4 pt-3 flex flex-col min-h-0 bg-white">
+        <textarea
+          ref={textareaRef}
+          value={text}
+          onChange={e => setText(e.target.value)}
+          placeholder="What's on your mind?"
+          className="w-full text-xl sm:text-2xl text-slate-900 placeholder:text-slate-400 resize-none border-none outline-none focus:ring-0 min-h-[220px] bg-transparent leading-relaxed font-normal"
+          rows={8}
+        />
+
+        {/* Media Preview Box */}
+        {mediaFile && (
+          <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 group mt-2 max-w-lg">
+            {mediaFile.type === "image" ? (
+              <img src={mediaFile.url} alt="Media preview" className="w-full max-h-72 object-cover" />
+            ) : (
+              <video src={mediaFile.url} controls className="w-full max-h-72 object-cover" />
+            )}
+            <button
+              type="button"
+              onClick={removeMedia}
+              className="absolute top-2.5 right-2.5 p-1.5 rounded-full bg-slate-900/80 text-white hover:bg-red-600 transition shadow-md cursor-pointer"
+              title="Remove media"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Anonymous Immigrant Privacy Shield Notice */}
+        {isAnonymous && (
+          <div className="flex items-center gap-2 px-3.5 py-2.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-xs font-medium mt-3 animate-in fade-in">
+            <Shield className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <span>
+              <strong>Privacy Shield Active:</strong> Your post will be published anonymously to protect your privacy.
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Hidden File Inputs */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/*,video/*"
+        className="hidden"
+      />
+      <input
+        type="file"
+        ref={cameraInputRef}
+        onChange={handleFileChange}
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+      />
+
+      {/* Bottom Action Bar: Photo, GIF, Star, Video on left | Post button on right */}
+      <div className="border-t border-slate-100 bg-white px-4 pt-3 pb-8 sm:pb-10 pb-[max(2rem,env(safe-area-inset-bottom))] flex items-center justify-between sticky bottom-0 z-20">
+        {/* Left Toolbar Icons */}
+        <div className="flex items-center gap-3 sm:gap-4 relative">
+          {/* Photo / Gallery */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition cursor-pointer"
+            title="Photo / video"
+          >
+            <Image className="w-6 h-6" />
+          </button>
+
+          {/* GIF Button */}
+          <button
+            type="button"
+            onClick={() => setEmojiPickerOpen(v => !v)}
+            className="w-7 h-7 rounded-md border-[1.8px] border-slate-500 text-slate-700 hover:text-slate-900 hover:border-slate-900 flex items-center justify-center text-[10px] font-black leading-none active:scale-95 transition cursor-pointer"
+            title="GIF"
+          >
+            GIF
+          </button>
+
+          {/* Star Icon */}
+          <button
+            type="button"
+            onClick={() => insertTag("⭐ Highlight")}
+            className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition cursor-pointer"
+            title="Highlight / Star"
+          >
+            <Star className="w-6 h-6" />
+          </button>
+
+          {/* Camera / Video */}
+          <button
+            type="button"
+            onClick={() => cameraInputRef.current?.click()}
+            className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition cursor-pointer"
+            title="Live video / Camera"
+          >
+            <Video className="w-6 h-6" />
+          </button>
+
+          {/* Emoji Picker Popover */}
+          {emojiPickerOpen && (
+            <>
+              <div className="fixed inset-0 z-30" onClick={() => setEmojiPickerOpen(false)} />
+              <div className="absolute left-0 bottom-14 z-40 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150">
+                {QUICK_EMOJIS.map(emo => (
+                  <button
+                    key={emo}
+                    type="button"
+                    onClick={() => insertEmoji(emo)}
+                    className="w-8 h-8 rounded-xl hover:bg-slate-100 flex items-center justify-center text-lg transition-transform hover:scale-125 cursor-pointer"
+                  >
+                    {emo}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Right: Post Button */}
+        <button
+          type="button"
+          onClick={handlePostSubmit}
+          disabled={!text.trim() && !mediaFile}
+          className={`px-6 py-2 rounded-xl text-sm font-bold transition active:scale-95 ${
+            text.trim() || mediaFile
+              ? "bg-[#1877f2] hover:bg-[#166fe5] text-white shadow-md cursor-pointer"
+              : "bg-slate-100 text-slate-400 border border-slate-200/80 cursor-not-allowed"
+          }`}
+        >
+          Post
         </button>
       </div>
     </div>
@@ -1628,26 +1980,49 @@ export function HomeFeed() {
       <RightPanel selectedDate={selectedDate} onDateSelect={setSelectedDate} />
     }>
       {/* Mobile-only header — hidden on desktop (sidebar handles nav) */}
-      <div className="lg:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-border px-4 py-3 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => navigate("/profile")}
-          className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-300/80 flex items-center justify-center text-slate-600 flex-shrink-0 shadow-2xs cursor-pointer active:scale-95 transition-all focus:outline-hidden"
-          title="My Profile"
-          aria-label="Go to My Profile"
-        >
-          <User className="w-4.5 h-4.5 text-slate-600" />
-        </button>
-        <Logo size="sm" showIcon={false} onClick={() => navigate("/feed")} />
-        <button
-          type="button"
-          onClick={() => navigate("/notifications")}
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary text-slate-600 hover:text-[#8C3015] active:scale-95 transition cursor-pointer group focus:outline-hidden"
-          title="Notifications"
-          aria-label="Go to Notifications"
-        >
-          <Bell className="w-5 h-5 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
-        </button>
+      <div className="lg:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-border px-3.5 py-2.5 flex items-center justify-between">
+        {/* Left: 3-line Menu + Pathasathi to its right */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate("/more")}
+            className="w-9 h-9 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-700 flex-shrink-0 active:scale-95 transition-all cursor-pointer focus:outline-hidden"
+            title="More Menu"
+            aria-label="Open More Menu"
+          >
+            <Menu className="w-5 h-5 text-slate-700" />
+          </button>
+          <Logo size="sm" showIcon={false} onClick={() => navigate("/feed")} />
+        </div>
+
+        {/* Right: Temperature on left, Notifications on right */}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => {
+              setMobileWeatherOpen(v => !v);
+              setMobileCalOpen(false);
+            }}
+            className={`w-9 h-9 flex items-center justify-center rounded-full transition cursor-pointer group focus:outline-hidden ${
+              mobileWeatherOpen
+                ? "bg-[#C04A22]/10 text-[#C04A22]"
+                : "hover:bg-secondary text-slate-600 hover:text-[#8C3015]"
+            }`}
+            title="Weather"
+            aria-label="Open Weather"
+          >
+            <Thermometer className="w-5 h-5 transition-colors" />
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate("/notifications")}
+            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-secondary text-slate-600 hover:text-[#8C3015] active:scale-95 transition cursor-pointer group focus:outline-hidden"
+            title="Notifications"
+            aria-label="Go to Notifications"
+          >
+            <Bell className="w-5 h-5 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
+          </button>
+        </div>
       </div>
 
       {/* Main content: expanded width, centered */}
@@ -1674,27 +2049,47 @@ export function HomeFeed() {
                 <QuickAccessBox navigate={navigate} variant="desktop" />
               </div>
 
-              {/* 3. Following */}
+              {/* 3. Post (Pen Box Icon from 2nd screenshot) */}
               <button
-                onClick={() => setActiveTab("following")}
-                className={`w-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 text-xs font-medium transition-all group ${
-                  activeTab === "following"
+                onClick={() => {
+                  setIsPostBoxOpen(v => !v);
+                  if (!isPostBoxOpen && typeof window !== "undefined" && window.innerWidth >= 1024) {
+                    setTimeout(() => {
+                      const composer = document.getElementById("home-post-composer");
+                      if (composer) {
+                        composer.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                        const textarea = composer.querySelector("textarea");
+                        if (textarea) textarea.focus();
+                      }
+                    }, 50);
+                  }
+                }}
+                className={`w-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 text-xs font-medium transition-all group cursor-pointer ${
+                  isPostBoxOpen
                     ? "text-[#8C3015] font-bold border-b-2 border-[#C04A22]"
                     : "text-slate-600 hover:text-[#8C3015] hover:bg-slate-50"
                 }`}
+                title={isPostBoxOpen ? "Close Post Composer" : "Create a Post"}
               >
-                <UserCheck className={`w-5 h-5 sm:w-3.5 sm:h-3.5 flex-shrink-0 transition-colors ${activeTab === "following" ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
-                <span className="hidden sm:inline truncate">{t("tab_following")}</span>
+                <SquarePen className={`w-5 h-5 sm:w-4 sm:h-4 flex-shrink-0 transition-colors ${isPostBoxOpen ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} strokeWidth={2.2} />
+                <span className="hidden sm:inline truncate font-semibold">Post</span>
               </button>
 
-              {/* 4. Orders (Between Following & 4-Box) */}
+              {/* 4. Calendar (Right side of Post button) */}
               <button
-                onClick={() => navigate("/orders")}
-                className="w-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 text-xs font-medium transition-all group text-slate-600 hover:text-[#8C3015] hover:bg-slate-50 cursor-pointer"
-                title="My Orders"
+                onClick={() => {
+                  setMobileCalOpen(v => !v);
+                  setMobileWeatherOpen(false);
+                }}
+                className={`w-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 text-xs font-medium transition-all group cursor-pointer ${
+                  mobileCalOpen || selectedDate
+                    ? "text-[#8C3015] font-bold border-b-2 border-[#C04A22]"
+                    : "text-slate-600 hover:text-[#8C3015] hover:bg-slate-50"
+                }`}
+                title="Calendar"
               >
-                <ShoppingBag className="w-5 h-5 sm:w-3.5 sm:h-3.5 flex-shrink-0 transition-colors text-slate-600 group-hover:text-[#8C3015]" />
-                <span className="hidden sm:inline truncate">Orders</span>
+                <Calendar className={`w-5 h-5 sm:w-3.5 sm:h-3.5 flex-shrink-0 transition-colors ${mobileCalOpen || selectedDate ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
+                <span className="hidden sm:inline truncate font-semibold">Calendar</span>
               </button>
 
               {/* 5. 4 Box (Apps / Local) */}
@@ -1781,87 +2176,37 @@ export function HomeFeed() {
               {/* ── Compact Live Map (Between Top Bar & Post Box) ── */}
               <MapDiscoveryContent compact={true} height="h-[230px] sm:h-[250px]" />
 
-              {/* ── Post Creation Box (Hidden initially, dynamically appears here on +Post click) ── */}
+              {/* ── Post Creation Box ── */}
               {isPostBoxOpen && (
-                <div className="relative animate-in slide-in-from-top-2 fade-in duration-200">
-                  <PostComposer
-                    onAddPost={(newPost) => {
-                      handleAddPost(newPost);
-                      setIsPostBoxOpen(false);
-                    }}
-                    onClose={() => setIsPostBoxOpen(false)}
-                  />
-                </div>
+                <>
+                  {/* Desktop: Inline Post Box (Only on lg screens) */}
+                  <div className="hidden lg:block relative animate-in slide-in-from-top-2 fade-in duration-200">
+                    <PostComposer
+                      onAddPost={(newPost) => {
+                        handleAddPost(newPost);
+                        setIsPostBoxOpen(false);
+                      }}
+                      onClose={() => setIsPostBoxOpen(false)}
+                    />
+                  </div>
+
+                  {/* Mobile: Facebook-Style Dedicated Fullscreen Modal (Only for mobile devices) */}
+                  <div className="lg:hidden">
+                    {createPortal(
+                      <MobileFacebookPostModal
+                        onAddPost={(newPost) => {
+                          handleAddPost(newPost);
+                          setIsPostBoxOpen(false);
+                        }}
+                        onClose={() => setIsPostBoxOpen(false)}
+                      />,
+                      document.body
+                    )}
+                  </div>
+                </>
               )}
 
-              {/* Mobile quick-access icon bar — icon-only buttons with centered floating popups */}
-              <div className="xl:hidden relative flex items-center justify-between">
 
-                {/* Calendar icon button */}
-                <button
-                  onClick={() => { setMobileCalOpen(v => !v); setMobileWeatherOpen(false); }}
-                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all shadow-sm group cursor-pointer ${
-                    mobileCalOpen
-                      ? "bg-[#C04A22]/10 border border-[#C04A22]/30 shadow-md text-[#8C3015]"
-                      : "bg-white border border-border hover:shadow-md"
-                  }`}
-                  title="Calendar"
-                >
-                  <Calendar className={`w-5 h-5 transition-colors ${mobileCalOpen ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
-                </button>
-
-                {/* Center: Post Box Action Button */}
-                <div className="flex-1 mx-2">
-                  <button
-                    onClick={() => {
-                      setIsPostBoxOpen(v => !v);
-                      if (!isPostBoxOpen) {
-                        setTimeout(() => {
-                          const composer = document.getElementById("home-post-composer");
-                          if (composer) {
-                            composer.scrollIntoView({ behavior: "smooth", block: "nearest" });
-                            const textarea = composer.querySelector("textarea");
-                            if (textarea) textarea.focus();
-                          }
-                        }, 50);
-                      }
-                    }}
-                    className={`w-full h-11 rounded-2xl flex items-center justify-center gap-1.5 border transition-all shadow-sm group cursor-pointer ${
-                      isPostBoxOpen
-                        ? "bg-[#C04A22]/10 border-[#C04A22]/30 shadow-md text-[#8C3015]"
-                        : "bg-white border-border hover:shadow-md hover:bg-slate-50 text-slate-700"
-                    }`}
-                    title={isPostBoxOpen ? "Close Post Box" : "Write a Post"}
-                  >
-                    {isPostBoxOpen ? (
-                      <>
-                        <X className="w-4 h-4 text-[#C04A22]" />
-                        <span className="text-xs font-bold text-[#8C3015]">Close</span>
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
-                        <span className="text-xs font-semibold text-slate-700 group-hover:text-[#8C3015] transition-colors">Post</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                {/* Weather icon button */}
-                <button
-                  onClick={() => { setMobileWeatherOpen(v => !v); setMobileCalOpen(false); }}
-                  className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all shadow-sm group cursor-pointer ${
-                    mobileWeatherOpen
-                      ? "bg-secondary border border-border shadow-md"
-                      : "bg-white border border-border hover:shadow-md"
-                  }`}
-                  title="Weather"
-                >
-                  <Thermometer className="w-5 h-5 text-slate-600 group-hover:text-[#8C3015] transition-colors" />
-                </button>
-
-
-              </div>
 
               {/* Tab-specific banner */}
               {activeTab === "community" && <CommunityBanner />}
@@ -1979,6 +2324,7 @@ export function HomeFeed() {
                 setSelectedDate(d);
                 setMobileCalOpen(false);
               }}
+              onClose={() => setMobileCalOpen(false)}
             />
           </div>
         </>

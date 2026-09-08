@@ -276,40 +276,65 @@ const categoryColors: Record<string, string> = {
   "🔍 IT & Software": "#C04A22",
   "🎧 Customer Care": "#0d9488",
   "💼 Jobs": "#C04A22",
+  "💼 IT & Software": "#C04A22",
+  "💼 Hospitality": "#C04A22",
+  "💼 Finance": "#C04A22",
+  "💼 Logistics": "#C04A22",
+  "💼 Healthcare": "#C04A22",
+  "💼 Sales": "#C04A22",
+  "💼 Design": "#C04A22",
+  "💼 Operations": "#C04A22",
+  "💼 Marketing": "#C04A22",
+  "💼 Technical": "#C04A22",
+  "💼 Customer Care": "#C04A22",
 };
 
 const categoryIcons: Record<string, string> = {
   "🪑 Used Furniture": "🪑",
-  "🏢 Furniture Agency": "🏢",
-  "🛍️ Furniture Shop": "🛍️",
-  "📦 Furniture Resale": "📦",
+  "🏢 Furniture Agency": "🪑",
+  "🛍️ Furniture Shop": "🪑",
+  "📦 Furniture Resale": "🪑",
   "🕌 Mosque": "🕌", "⛪ Church": "⛪", "🛕 Temple": "🛕",
   "⚖️ Legal Aid": "⚖️", "🛒 Grocery": "🛒",
   "🏥 Hospital": "🏥", "🏥 Clinic": "🏥",
   "📚 Library": "📚", "🚗 DMV": "🚗",
   "🏫 School": "🏫", "🏛️ Community Center": "🏛️",
   "🍽️ Restaurant": "🍽️", "🏦 Bank": "🏦", "🚌 Transit": "🚌",
-  // Job Category Icons
-  "💻 IT & Software": "💻",
-  "🍽️ Hospitality": "🍽️",
-  "📊 Finance": "📊",
-  "🛵 Logistics": "🛵",
-  "💊 Healthcare": "💊",
-  "🛍️ Sales": "🛍️",
-  "🎨 Design": "🎨",
-  "📦 Operations": "📦",
-  "📱 Marketing": "📱",
-  "⚡ Technical": "⚡",
-  "🔍 IT & Software": "🔍",
-  "🎧 Customer Care": "🎧",
+  // Job Category Icons - all map to clean Job icon 💼
+  "💻 IT & Software": "💼",
+  "🍽️ Hospitality": "💼",
+  "📊 Finance": "💼",
+  "🛵 Logistics": "💼",
+  "💊 Healthcare": "💼",
+  "🛍️ Sales": "💼",
+  "🎨 Design": "💼",
+  "📦 Operations": "💼",
+  "📱 Marketing": "💼",
+  "⚡ Technical": "💼",
+  "🔍 IT & Software": "💼",
+  "🎧 Customer Care": "💼",
   "💼 Jobs": "💼",
+  "💼 IT & Software": "💼",
+  "💼 Hospitality": "💼",
+  "💼 Finance": "💼",
+  "💼 Logistics": "💼",
+  "💼 Healthcare": "💼",
+  "💼 Sales": "💼",
+  "💼 Design": "💼",
+  "💼 Operations": "💼",
+  "💼 Marketing": "💼",
+  "💼 Technical": "💼",
+  "💼 Customer Care": "💼",
 };
 
 const categoryMap: Record<string, string[]> = {
   jobs: [
     "💻 IT & Software", "🍽️ Hospitality", "📊 Finance", "🛵 Logistics",
     "💊 Healthcare", "🛍️ Sales", "🎨 Design", "📦 Operations",
-    "📱 Marketing", "⚡ Technical", "🔍 IT & Software", "🎧 Customer Care", "💼 Jobs"
+    "📱 Marketing", "⚡ Technical", "🔍 IT & Software", "🎧 Customer Care", "💼 Jobs",
+    "💼 IT & Software", "💼 Hospitality", "💼 Finance", "💼 Logistics",
+    "💼 Healthcare", "💼 Sales", "💼 Design", "💼 Operations",
+    "💼 Marketing", "💼 Technical", "💼 Customer Care"
   ],
   furniture: ["🪑 Used Furniture", "🏢 Furniture Agency", "🛍️ Furniture Shop", "📦 Furniture Resale"],
   religious: ["🕌 Mosque", "⛪ Church", "🛕 Temple"],
@@ -576,12 +601,86 @@ function LeafletMap({
   const navPuckRef = useRef<any>(null);
   const LRef = useRef<any>(null);
 
-  // Booking.com style round icon bubble marker with Google Maps pulse ring for active place
+  // Booking.com style round icon bubble marker with clean service-related SVG vector icons
+  function getMarkerIconSvg(place: Place, active: boolean) {
+    const size = active ? 20 : 16;
+    const isJob = place.isJob || place.category.includes("💼") || place.category.toLowerCase().includes("job");
+
+    if (isJob) {
+      // Exact Briefcase SVG matching Jobs.tsx
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`;
+    }
+
+    const cat = place.category.toLowerCase();
+
+    if (cat.includes("furniture")) {
+      // Armchair / Furniture SVG
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3"/><path d="M3 11v5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v2H7v-2a2 2 0 0 0-4 0Z"/><path d="M5 18v2"/><path d="M19 18v2"/></svg>`;
+    }
+
+    if (cat.includes("hospital") || cat.includes("clinic") || cat.includes("health")) {
+      // Medical cross SVG
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>`;
+    }
+
+    if (cat.includes("school") || cat.includes("education")) {
+      // Graduation cap SVG
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>`;
+    }
+
+    if (cat.includes("restaurant") || cat.includes("food") || cat.includes("dining")) {
+      // Utensils SVG
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2v6a3 3 0 0 1-3 3 3 3 0 0 1-3-3V2"/><path d="M15 11v11"/><path d="M5 2v14a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2V2"/><path d="M9 2v6"/></svg>`;
+    }
+
+    if (cat.includes("grocery") || cat.includes("market") || cat.includes("shop")) {
+      // Shopping cart SVG
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>`;
+    }
+
+    if (cat.includes("mosque")) {
+      return `<span style="font-size:${active ? '18px' : '15px'};line-height:1;">🕌</span>`;
+    }
+    if (cat.includes("church")) {
+      return `<span style="font-size:${active ? '18px' : '15px'};line-height:1;">⛪</span>`;
+    }
+    if (cat.includes("temple")) {
+      return `<span style="font-size:${active ? '18px' : '15px'};line-height:1;">🛕</span>`;
+    }
+
+    if (cat.includes("legal")) {
+      // Scale SVG
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>`;
+    }
+
+    if (cat.includes("bank")) {
+      // Landmark SVG
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18"/><line x1="10" x2="10" y1="18"/><line x1="14" x2="14" y1="18"/><line x1="18" x2="18" y1="18"/><polygon points="12 2 20 7 4 7"/></svg>`;
+    }
+
+    if (cat.includes("library")) {
+      // BookOpen SVG
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`;
+    }
+
+    if (cat.includes("dmv") || cat.includes("transit") || cat.includes("transport")) {
+      // Car SVG
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>`;
+    }
+
+    if (cat.includes("community")) {
+      // Users SVG
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
+    }
+
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`;
+  }
+
   function makeMarkerHtml(place: Place, active: boolean) {
-    const isJob = place.isJob && place.jobData;
+    const isJob = place.isJob || place.category.includes("💼") || place.category.toLowerCase().includes("job");
     const color = isJob ? "#C04A22" : (categoryColors[place.category] ?? "#2563eb");
-    const iconSymbol = isJob ? (place.jobData?.logo || "💼") : (categoryIcons[place.category] || place.category.split(" ")[0] || "📍");
-    const size = active ? 44 : 34;
+    const iconSvg = getMarkerIconSvg(place, active);
+    const size = active ? 40 : 32;
 
     const pulseRing = active
       ? `<div style="position:absolute;bottom:-6px;width:34px;height:14px;border-radius:50%;background:rgba(216,90,48,0.45);animation:ping 1.5s cubic-bezier(0,0,0.2,1) infinite;z-index:-1;"></div>`
@@ -589,10 +688,10 @@ function LeafletMap({
 
     return `<div style="position:relative;display:inline-flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.25s ease;">
       ${pulseRing}
-      <div style="background:${active ? '#C04A22' : color};color:white;width:${size}px;height:${size}px;border-radius:50%;border:${active ? '3px' : '2px'} solid white;box-shadow:${active ? '0 12px 28px rgba(192,74,34,0.6), 0 0 0 4px rgba(255,255,255,0.85)' : '0 4px 14px rgba(0,0,0,0.25)'};display:flex;align-items:center;justify-content:center;transform:${active ? 'scale(1.2)' : 'scale(1)'};">
-        <span style="font-size:${active ? '20px' : '15px'};line-height:1;">${iconSymbol}</span>
+      <div style="background:${active ? '#C04A22' : color};color:white;width:${size}px;height:${size}px;border-radius:50%;border:${active ? '3px' : '2px'} solid white;box-shadow:${active ? '0 12px 28px rgba(192,74,34,0.6), 0 0 0 4px rgba(255,255,255,0.85)' : '0 4px 14px rgba(0,0,0,0.25)'};display:flex;align-items:center;justify-content:center;transform:${active ? 'scale(1.15)' : 'scale(1)'};">
+        ${iconSvg}
       </div>
-      <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid ${active ? '#C04A22' : color};margin-top:-1px;"></div>
+      <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid ${active ? '#C04A22' : color};margin-top:-1px;"></div>
     </div>`;
   }
 
@@ -1135,8 +1234,8 @@ function GoogleMapsLiveNavigationHUD({
     <>
       {/* ── 1. MOBILE VIEW FLOATING HUD (< md:) ── */}
       <div className="md:hidden">
-        {/* Top Green Turn Banner */}
-        <div className="absolute top-3 left-3 right-3 z-[1002] bg-[#137333] text-white rounded-2xl p-3 shadow-2xl border border-emerald-600/50 flex items-center justify-between gap-3 animate-in slide-in-from-top-3 backdrop-blur-md">
+        {/* Top Green Turn Banner - Attached to map top border */}
+        <div className="absolute top-0 inset-x-0 z-[1002] bg-[#137333] text-white px-3.5 py-2.5 sm:px-4 sm:py-3 shadow-md border-b border-emerald-600/40 flex items-center justify-between gap-3 animate-in slide-in-from-top-3 backdrop-blur-md">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center flex-shrink-0 text-white shadow-inner">
               {currentStep.iconType === "right" ? (
@@ -1169,8 +1268,8 @@ function GoogleMapsLiveNavigationHUD({
           </button>
         </div>
 
-        {/* Bottom White ETA Bar */}
-        <div className="absolute bottom-20 left-3 right-3 sm:bottom-3 z-[1002] bg-white/98 backdrop-blur-md rounded-2xl p-3 shadow-2xl border border-border/80 flex items-center justify-between gap-3 animate-in slide-in-from-bottom-3">
+        {/* Bottom White ETA Bar - Attached to map bottom border */}
+        <div className="absolute bottom-0 inset-x-0 z-[1002] bg-white/98 backdrop-blur-md px-3.5 py-2.5 sm:px-4 sm:py-3 shadow-lg border-t border-border/80 flex items-center justify-between gap-3 animate-in slide-in-from-bottom-3">
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -1549,15 +1648,9 @@ function MapPlaceCard({
       <div className="flex items-start justify-between gap-2.5 mb-2.5">
         <div className="flex items-center gap-3 min-w-0">
           {isJob ? (
-            <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center text-2xl flex-shrink-0 shadow-2xs">
-              {job?.logo || "💼"}
+            <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center flex-shrink-0 shadow-2xs">
+              <Briefcase className="w-6 h-6 text-[#C04A22]" />
             </div>
-          ) : place.image ? (
-            <img
-              src={place.image}
-              alt={place.name}
-              className="w-11 h-11 rounded-2xl object-cover border border-slate-200/80 flex-shrink-0 shadow-2xs"
-            />
           ) : (
             <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-100/80 flex items-center justify-center text-xl text-[#C04A22] flex-shrink-0 shadow-2xs">
               {categoryIcons[place.category] || "📍"}
@@ -2064,7 +2157,7 @@ export function MapDiscoveryContent({
       lat: j.lat,
       lng: j.lng,
       name: j.title,
-      category: `${j.logo} ${j.category}`,
+      category: `💼 ${j.category}`,
       distance: j.distance,
       rating: 4.9,
       reviews: 32,
@@ -2527,8 +2620,8 @@ export function MapDiscoveryContent({
                   );
                 })()}
 
-                {/* Floating My Location Button (hidden when Recent Apps Switcher is open) */}
-                {!isRecentsOpen && (
+                {/* Floating My Location Button (hidden when Recent Apps Switcher is open or live navigating) */}
+                {!isRecentsOpen && !isLiveNavigating && (
                   <button
                     onClick={() => {
                       if (isGPSActive) {

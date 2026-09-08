@@ -243,16 +243,16 @@ export function MobileNav() {
             <span className="text-[10px] font-medium leading-none">{t("reels")}</span>
           </button>
 
-          {/* More button */}
-          <button onClick={() => navigate("/more")}
+          {/* Profile button (in place of More) */}
+          <button onClick={() => navigate("/profile")}
             className={`flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-xl transition-all min-w-0 relative group ${
-              location.pathname === "/more" || isMoreActive ? "text-[#8C3015] font-semibold" : "text-slate-600 hover:text-[#8C3015]"
+              location.pathname === "/profile" ? "text-[#8C3015] font-semibold" : "text-slate-600 hover:text-[#8C3015]"
             }`}>
-            <div className={`p-1.5 rounded-xl transition-all ${location.pathname === "/more" || isMoreActive ? "bg-[#C04A22]/10" : ""}`}>
-              <MoreHorizontal className={`w-5 h-5 transition-colors ${location.pathname === "/more" || isMoreActive ? "text-[#8C3015]" : "text-slate-600 group-hover:text-[#8C3015]"}`} strokeWidth={location.pathname === "/more" || isMoreActive ? 2.3 : 1.8} />
+            <div className={`p-1.5 rounded-xl transition-all ${location.pathname === "/profile" ? "bg-[#C04A22]/10" : ""}`}>
+              <User className={`w-5 h-5 transition-colors ${location.pathname === "/profile" ? "text-[#8C3015]" : "text-slate-600 group-hover:text-[#8C3015]"}`} strokeWidth={location.pathname === "/profile" ? 2.3 : 1.8} />
             </div>
-            <span className="text-[10px] font-medium leading-none">{t("more")}</span>
-            {(location.pathname === "/more" || isMoreActive) && (
+            <span className="text-[10px] font-medium leading-none">{t("profile")}</span>
+            {location.pathname === "/profile" && (
               <span className="absolute top-1.5 right-2.5 w-2 h-2 rounded-full bg-[#C04A22]" />
             )}
           </button>

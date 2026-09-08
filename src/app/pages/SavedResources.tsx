@@ -111,7 +111,10 @@ export function SavedResources() {
           </div>
 
           {/* Filter Pills */}
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
+          <div
+            className="flex gap-2 overflow-x-auto no-scrollbar scrollbar-hide py-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
             {FILTER_TABS.map(tab => {
               const active = activeTab === tab;
               return (

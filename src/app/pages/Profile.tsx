@@ -8,7 +8,7 @@ import {
   HelpCircle, Zap, UserPlus, BarChart2, X, Search, UserCheck, ChevronRight, User,
   ArrowLeft, Mail, Bell, BellOff, Flag, UserX, VolumeX, Sparkles, Check, Play,
   Download, Eye, MessageSquare, ExternalLink, ShieldCheck, GraduationCap, Briefcase, Languages,
-  Video, Smile, FileText, Store, ArrowLeftRight, Shield
+  Video, Smile, FileText, Store, ArrowLeftRight, Shield, Camera
 } from "lucide-react";
 import { useAccountMode } from "../context/AccountModeContext";
 import { InvoiceModal, InvoiceData } from "../components/InvoiceModal";
@@ -600,6 +600,8 @@ export function Profile() {
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -607,6 +609,26 @@ export function Profile() {
       const url = URL.createObjectURL(file);
       setMediaPreview(url);
     }
+  };
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setProfileData(prev => ({ ...prev, avatarImage: url }));
+      showToast("Profile photo updated!");
+    }
+    if (e.target) e.target.value = "";
+  };
+
+  const handleBannerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setProfileData(prev => ({ ...prev, bannerImage: url }));
+      showToast("Cover photo updated!");
+    }
+    if (e.target) e.target.value = "";
   };
 
   const insertEmoji = (emoji: string) => {
@@ -765,12 +787,30 @@ export function Profile() {
 
           {isSelf && (
             <button
-              onClick={() => setShowEditModal(true)}
-              className="absolute top-3 right-3 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-xs transition cursor-pointer text-xs flex items-center gap-1.5 font-medium shadow-md"
+              type="button"
+              onClick={() => bannerInputRef.current?.click()}
+              className="absolute top-3 right-3 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/60 hover:bg-black/80 text-white backdrop-blur-xs transition cursor-pointer flex items-center justify-center shadow-md active:scale-95 z-20"
+              title="Change Header Photo"
             >
-              <ImageIcon className="w-3.5 h-3.5" /> Change Header
+              <Camera className="w-4 h-4" />
             </button>
           )}
+
+          {/* Hidden File Inputs for Profile Photo & Banner Photo Upload */}
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarFileChange}
+          />
+          <input
+            ref={bannerInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleBannerFileChange}
+          />
         </div>
 
         {/* ── Profile Header Details (Twitter Layout) ── */}
@@ -787,29 +827,42 @@ export function Profile() {
                   <User className="w-12 h-12 sm:w-16 sm:h-16 text-slate-500" />
                 )}
               </div>
-              <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white shadow-xs" title="Online" />
+              {isSelf ? (
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="absolute bottom-0 right-0 sm:bottom-1 sm:right-1 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-900 hover:bg-[#C04A22] text-white border-2 border-white shadow-md flex items-center justify-center transition cursor-pointer active:scale-95 z-20"
+                  title="Change Profile Photo"
+                >
+                  <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </button>
+              ) : (
+                <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white shadow-xs" title="Online" />
+              )}
             </div>
 
             {/* Right Side Action Buttons */}
             <div className="flex items-center gap-2 pb-1">
               {isSelf ? (
-                /* Edit Profile & Seller Action for Own Profile */
-                <div className="flex items-center gap-2 flex-wrap justify-end">
-                  {!hasSellerAccount && (
-                    <button
-                      onClick={openMigrateModal}
-                      className="px-3.5 py-2 rounded-full bg-orange-50 hover:bg-orange-100 text-[#8C3015] border border-orange-200 font-bold text-xs sm:text-sm transition-all cursor-pointer active:scale-95 shadow-2xs flex items-center gap-1.5"
-                    >
-                      <Store className="w-4 h-4 text-[#C04A22]" />
-                      <span>Become a Seller</span>
-                    </button>
-                  )}
+                /* Edit Profile & Seller Action for Own Profile (Edit Profile in original position outside banner, Become a Seller below it) */
+                <div className="relative flex flex-col items-end">
                   <button
                     onClick={() => setShowEditModal(true)}
-                    className="px-5 py-2 rounded-full border border-slate-300 font-bold text-xs sm:text-sm text-slate-800 hover:bg-slate-100 transition-all cursor-pointer active:scale-95 shadow-2xs"
+                    className="px-5 py-2 rounded-full border border-slate-300 font-bold text-xs sm:text-sm text-slate-800 hover:bg-slate-100 transition-all cursor-pointer active:scale-95 shadow-2xs bg-white"
                   >
                     Edit profile
                   </button>
+                  {!hasSellerAccount && (
+                    <div className="absolute top-full right-0 mt-2 z-10 whitespace-nowrap">
+                      <button
+                        onClick={openMigrateModal}
+                        className="px-3.5 py-1.5 rounded-full bg-orange-50 hover:bg-orange-100 text-[#8C3015] border border-orange-200 font-bold text-xs sm:text-sm transition-all cursor-pointer active:scale-95 shadow-2xs flex items-center gap-1.5"
+                      >
+                        <Store className="w-3.5 h-3.5 text-[#C04A22]" />
+                        <span>Become a Seller</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 /* Actions when viewing another Universal User */
@@ -945,7 +998,7 @@ export function Profile() {
           </div>
 
           {/* User Name & Handle */}
-          <div className="mb-3">
+          <div className={`mb-2.5 ${isSelf && !hasSellerAccount ? "pr-36 sm:pr-0" : ""}`}>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
                 {profileData.name}
@@ -963,6 +1016,24 @@ export function Profile() {
                 </span>
               )}
             </div>
+          </div>
+
+          {/* Following & Followers Counts - Positioned directly below User Name & Handle */}
+          <div className="flex items-center gap-4 text-sm mb-3">
+            <button
+              onClick={() => setPeopleModal("following")}
+              className="hover:underline cursor-pointer transition flex items-center gap-1"
+            >
+              <span className="font-bold text-slate-900">{profileData.followingCount}</span>
+              <span className="text-slate-500 font-normal">Following</span>
+            </button>
+            <button
+              onClick={() => setPeopleModal("followers")}
+              className="hover:underline cursor-pointer transition flex items-center gap-1"
+            >
+              <span className="font-bold text-slate-900">{followersCount}</span>
+              <span className="text-slate-500 font-normal">Followers</span>
+            </button>
           </div>
 
           {/* Bio text with clickable hashtags */}
@@ -990,24 +1061,6 @@ export function Profile() {
                 <span>{profileData.languages.join(", ")}</span>
               </div>
             )}
-          </div>
-
-          {/* Following & Followers Counts - Exact same text size as bio (text-sm) */}
-          <div className="flex items-center gap-4 text-sm mb-3">
-            <button
-              onClick={() => setPeopleModal("following")}
-              className="hover:underline cursor-pointer transition flex items-center gap-1"
-            >
-              <span className="font-bold text-slate-900">{profileData.followingCount}</span>
-              <span className="text-slate-500 font-normal">Following</span>
-            </button>
-            <button
-              onClick={() => setPeopleModal("followers")}
-              className="hover:underline cursor-pointer transition flex items-center gap-1"
-            >
-              <span className="font-bold text-slate-900">{followersCount}</span>
-              <span className="text-slate-500 font-normal">Followers</span>
-            </button>
           </div>
 
           {/* Mutual Followers Preview Bar */}
