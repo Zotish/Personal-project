@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useNavigate, useLocation, useSearchParams } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import { buildMapShareUrl, shareOrCopy } from "../utils/shareUtils";
 import {
@@ -1000,9 +1000,21 @@ function BariKoiLiveHousingMap({
 
 export function Housing() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   // Search & Filter State
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(
+    () => searchParams.get("q") || searchParams.get("query") || location.state?.searchQuery || ""
+  );
+
+  useEffect(() => {
+    const q = searchParams.get("q") || searchParams.get("query") || location.state?.searchQuery;
+    if (q !== undefined && q !== null) {
+      setSearchQuery(q);
+    }
+  }, [searchParams, location.state]);
+
   const [activeFilter, setActiveFilter] = useState<string>("all"); // "all" | "nearby" | "rent" | "purchase"
 
   // Geolocation & Device Location State
@@ -1051,8 +1063,6 @@ export function Housing() {
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   // Deep linking: auto-focus and show details if opened via shared link
-  const routerLocation = useLocation();
-  const searchParams = useMemo(() => new URLSearchParams(routerLocation.search), [routerLocation.search]);
   const sharedId = searchParams.get("id") || searchParams.get("houseId");
 
   useEffect(() => {

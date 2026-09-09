@@ -1,13 +1,15 @@
 import { useState } from "react";
 import {
   X, Store, ShieldCheck, CheckCircle2, ArrowLeftRight,
-  Sparkles, Lock, MapPin, Phone, Building2
+  Sparkles, Lock, MapPin, Phone, Building2, PlusCircle
 } from "lucide-react";
 import { useAccountMode } from "../../context/AccountModeContext";
 
 export function SellerMigrationModal() {
   const {
     user,
+    hasSellerAccount,
+    sellerProfiles,
     isMigrateModalOpen,
     closeMigrateModal,
     migrateToSeller,
@@ -21,23 +23,29 @@ export function SellerMigrationModal() {
   const [agreed, setAgreed] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [createdShopName, setCreatedShopName] = useState("");
 
   if (!isMigrateModalOpen) return null;
+
+  const isCreatingAdditional = hasSellerAccount && sellerProfiles.length > 0;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!shopName.trim() || !agreed) return;
 
     setLoading(true);
+    const targetName = shopName.trim();
     setTimeout(() => {
       migrateToSeller({
-        shopName,
+        shopName: targetName,
         category,
         phone,
         safeZone,
       });
+      setCreatedShopName(targetName);
       setLoading(false);
       setSubmitted(true);
+      setShopName("");
     }, 600);
   };
 
@@ -62,14 +70,14 @@ export function SellerMigrationModal() {
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-2xl bg-[#C04A22]/10 text-[#8C3015] flex items-center justify-center">
-              <Store className="w-5 h-5" />
+              {isCreatingAdditional ? <PlusCircle className="w-5 h-5 text-[#C04A22]" /> : <Store className="w-5 h-5 text-[#C04A22]" />}
             </div>
             <div>
               <h3 className="font-bold text-base text-slate-900 leading-tight">
-                Migrate to Seller Account
+                {isCreatingAdditional ? "Create New Business Account" : "Migrate to Seller Account"}
               </h3>
               <p className="text-xs text-slate-500">
-                Single Login · 1-Tap Account Switch
+                {isCreatingAdditional ? `Linked to ${user.email} · Multi-Storefront` : "Single Login · 1-Tap Account Switch"}
               </p>
             </div>
           </div>
@@ -95,26 +103,35 @@ export function SellerMigrationModal() {
 
             <div className="space-y-2">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200/60">
-                <Sparkles className="w-3.5 h-3.5" /> Migration Completed!
+                <Sparkles className="w-3.5 h-3.5" />
+                {isCreatingAdditional ? "Business Account Created!" : "Migration Completed!"}
               </div>
               <h4 className="text-xl font-bold text-slate-900">
-                Seller Account Activated!
+                {isCreatingAdditional ? "New Storefront Activated!" : "Seller Account Activated!"}
               </h4>
               <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
-                Your existing account (<strong className="text-slate-800">{user.handle}</strong>) now has full Merchant capabilities. You can seamlessly switch between Member and Seller modes anytime.
+                {isCreatingAdditional ? (
+                  <>
+                    <strong className="text-slate-800">{createdShopName}</strong> has been added under your account (<strong className="text-slate-800">{user.email}</strong>). You can now switch between all your business accounts with 1 tap.
+                  </>
+                ) : (
+                  <>
+                    Your existing account (<strong className="text-slate-800">{user.handle}</strong>) now has full Merchant capabilities. You can seamlessly switch between Member and Seller modes anytime.
+                  </>
+                )}
               </p>
             </div>
 
             {/* Account Card Preview */}
             <div className="p-4 rounded-2xl bg-orange-50/60 border border-orange-200/70 text-left space-y-2 max-w-sm mx-auto">
               <div className="flex items-center justify-between text-xs font-bold text-[#8C3015]">
-                <span>🏪 {shopName}</span>
-                <span className="text-[10px] bg-[#C04A22] text-white px-2 py-0.5 rounded-full font-semibold">Active Seller</span>
+                <span>🏪 {createdShopName}</span>
+                <span className="text-[10px] bg-[#C04A22] text-white px-2 py-0.5 rounded-full font-semibold">Active Business</span>
               </div>
               <div className="text-[11px] text-slate-600 flex items-center gap-2">
                 <span>Category: {category}</span>
                 <span>•</span>
-                <span>Owner: {user.name}</span>
+                <span>Owner: {user.name} ({user.email})</span>
               </div>
               <div className="text-[10px] text-emerald-700 font-medium flex items-center gap-1 pt-1 border-t border-orange-100">
                 <ShieldCheck className="w-3.5 h-3.5" /> Zero-Leak Immigrant Privacy Shield Active
@@ -128,7 +145,7 @@ export function SellerMigrationModal() {
                 onClick={handleFinishStay}
                 className="flex-1 py-2.5 px-4 rounded-2xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition cursor-pointer"
               >
-                Stay as Member
+                Stay in Current Mode
               </button>
               <button
                 type="button"
@@ -136,12 +153,12 @@ export function SellerMigrationModal() {
                 className="flex-1 py-2.5 px-4 rounded-2xl bg-[#C04A22] hover:bg-[#8C3015] text-white text-xs font-bold transition shadow-xs cursor-pointer active:scale-98 flex items-center justify-center gap-1.5"
               >
                 <ArrowLeftRight className="w-3.5 h-3.5" />
-                Go to Seller Dashboard
+                Go to {createdShopName ? createdShopName.slice(0, 16) : "Store"} Dashboard
               </button>
             </div>
           </div>
         ) : (
-          /* Migration Form */
+          /* Migration / Business Creation Form */
           <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
             {/* Identity Notice Box */}
             <div className="p-3.5 rounded-2xl bg-orange-50/70 border border-orange-100 flex items-start gap-3">
@@ -150,10 +167,18 @@ export function SellerMigrationModal() {
               </div>
               <div className="text-xs">
                 <div className="font-bold text-slate-900">
-                  Dual-Profile Integration
+                  {isCreatingAdditional ? "Multi-Business Integration" : "Dual-Profile Integration"}
                 </div>
                 <div className="text-slate-600 text-[11px] leading-relaxed mt-0.5">
-                  Migrating allows you to sell while keeping your current login (<strong className="text-slate-800">{user.email}</strong>). No separate credentials needed.
+                  {isCreatingAdditional ? (
+                    <>
+                      You currently have <strong>{sellerProfiles.length}</strong> business account{sellerProfiles.length > 1 ? "s" : ""} under <strong className="text-slate-800">{user.email}</strong>. Adding this new business gives you an independent storefront with separate inventory & orders under the same login.
+                    </>
+                  ) : (
+                    <>
+                      Migrating allows you to sell while keeping your current login (<strong className="text-slate-800">{user.email}</strong>). No separate credentials needed.
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -169,7 +194,7 @@ export function SellerMigrationModal() {
                 required
                 value={shopName}
                 onChange={(e) => setShopName(e.target.value)}
-                placeholder="e.g. Gulshan Resale & Grocery Mart"
+                placeholder={isCreatingAdditional ? "e.g. Deshi Tech & Electronics Repair" : "e.g. Gulshan Resale & Grocery Mart"}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-hidden focus:border-[#C04A22] focus:ring-1 focus:ring-[#C04A22] transition-colors"
               />
             </div>
@@ -262,11 +287,11 @@ export function SellerMigrationModal() {
                 className="flex-1 py-2.5 px-4 rounded-2xl bg-[#C04A22] hover:bg-[#8C3015] text-white text-xs font-bold transition shadow-xs cursor-pointer active:scale-98 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading ? (
-                  <span>Migrating Account...</span>
+                  <span>{isCreatingAdditional ? "Creating Business Account..." : "Migrating Account..."}</span>
                 ) : (
                   <>
                     <Store className="w-4 h-4" />
-                    <span>Activate Seller Account</span>
+                    <span>{isCreatingAdditional ? "Create Business Account" : "Activate Seller Account"}</span>
                   </>
                 )}
               </button>

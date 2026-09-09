@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Fragment, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation, useSearchParams } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import { Logo } from "../components/ui/Logo";
 import { GoldenBadge } from "../components/ui/GoldenBadge";
@@ -1675,6 +1675,16 @@ function QuickAccessBox({ navigate, variant = "mobile" }: { navigate: (p: string
   // Refresh favourites whenever popup opens
   useEffect(() => { if (open) setFavs(getFavourites()); }, [open]);
 
+  // Listen to open-mybox-drawer event or open=box url param
+  useEffect(() => {
+    const handleOpen = () => setOpen(true);
+    window.addEventListener("open-mybox-drawer", handleOpen);
+    if (typeof window !== "undefined" && window.location.search.includes("open=box")) {
+      setOpen(true);
+    }
+    return () => window.removeEventListener("open-mybox-drawer", handleOpen);
+  }, []);
+
   // Auto-pin heavily used features
   useEffect(() => {
     const current = getPinned();
@@ -1914,11 +1924,13 @@ function QuickAccessBox({ navigate, variant = "mobile" }: { navigate: (p: string
 
 export function HomeFeed() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState("for-you");
+  const [activeTab, setActiveTab] = useState(() => searchParams.get("tab") || location.state?.tab || "for-you");
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [mobileCalOpen, setMobileCalOpen] = useState(false);
-  const [mobileWeatherOpen, setMobileWeatherOpen] = useState(false);
+  const [mobileCalOpen, setMobileCalOpen] = useState(() => searchParams.get("open") === "calendar" || location.state?.open === "calendar");
+  const [mobileWeatherOpen, setMobileWeatherOpen] = useState(() => searchParams.get("open") === "weather" || location.state?.open === "weather");
   const [customPosts, setCustomPosts] = useState<any[]>(() => {
     try {
       const saved = localStorage.getItem("immigrantconnect_custom_posts");
@@ -1928,7 +1940,72 @@ export function HomeFeed() {
     }
   });
   const [mobileFollowedUsers, setMobileFollowedUsers] = useState<string[]>([]);
-  const [isPostBoxOpen, setIsPostBoxOpen] = useState(false);
+  const [isPostBoxOpen, setIsPostBoxOpen] = useState(() => searchParams.get("open") === "post" || location.state?.open === "post");
+
+  // Sync with URL params or navigation state
+  useEffect(() => {
+    const openParam = searchParams.get("open") || location.state?.open;
+    const tabParam = searchParams.get("tab") || location.state?.tab;
+
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+    if (openParam === "weather") {
+      setMobileWeatherOpen(true);
+      setMobileCalOpen(false);
+    } else if (openParam === "calendar") {
+      setMobileCalOpen(true);
+      setMobileWeatherOpen(false);
+    } else if (openParam === "post") {
+      setIsPostBoxOpen(true);
+      setTimeout(() => {
+        const composer = document.getElementById("home-post-composer");
+        if (composer) {
+          composer.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          composer.querySelector("textarea")?.focus();
+        }
+      }, 100);
+    } else if (openParam === "box") {
+      window.dispatchEvent(new CustomEvent("open-mybox-drawer"));
+    }
+  }, [searchParams, location.state]);
+
+  // Event Listeners for Assistant triggers
+  useEffect(() => {
+    const handleOpenWeather = () => {
+      setMobileWeatherOpen(true);
+      setMobileCalOpen(false);
+    };
+    const handleOpenCalendar = () => {
+      setMobileCalOpen(true);
+      setMobileWeatherOpen(false);
+    };
+    const handleOpenPost = () => {
+      setIsPostBoxOpen(true);
+      setTimeout(() => {
+        const composer = document.getElementById("home-post-composer");
+        if (composer) {
+          composer.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          composer.querySelector("textarea")?.focus();
+        }
+      }, 100);
+    };
+    const handleSelectTab = (e: any) => {
+      if (e.detail?.tab) setActiveTab(e.detail.tab);
+    };
+
+    window.addEventListener("open-weather-modal", handleOpenWeather);
+    window.addEventListener("open-calendar-modal", handleOpenCalendar);
+    window.addEventListener("open-post-composer", handleOpenPost);
+    window.addEventListener("select-feed-tab", handleSelectTab);
+
+    return () => {
+      window.removeEventListener("open-weather-modal", handleOpenWeather);
+      window.removeEventListener("open-calendar-modal", handleOpenCalendar);
+      window.removeEventListener("open-post-composer", handleOpenPost);
+      window.removeEventListener("select-feed-tab", handleSelectTab);
+    };
+  }, []);
 
   // Sync newly created posts from TwitterPostModal (Sidebar) or other triggers
   useEffect(() => {

@@ -327,7 +327,7 @@ const categoryIcons: Record<string, string> = {
   "💼 Customer Care": "💼",
 };
 
-const categoryMap: Record<string, string[]> = {
+export const categoryMap: Record<string, string[]> = {
   jobs: [
     "💻 IT & Software", "🍽️ Hospitality", "📊 Finance", "🛵 Logistics",
     "💊 Healthcare", "🛍️ Sales", "🎨 Design", "📦 Operations",
@@ -345,7 +345,7 @@ const categoryMap: Record<string, string[]> = {
   transport: ["🚌 Transit"],
 };
 
-const categories = [
+export const categories = [
   { id: "all", label: "All", emoji: "📍" },
   { id: "jobs", label: "Jobs", emoji: "💼" },
   { id: "furniture", label: "Furniture", emoji: "🪑" },
@@ -383,7 +383,7 @@ export type Place = {
   jobData?: LiveJobListing;
 };
 
-const places: Place[] = [
+export const places: Place[] = [
   // ── Used Furniture Shops & Agencies ──
   { id: 28, lat: 23.7925, lng: 90.4078, name: "Gulshan Used Furniture & Resale", category: "🪑 Used Furniture", distance: "0.5 km", rating: 4.8, reviews: 312, open: true, openUntil: "8:00 PM", address: "Road 11, Gulshan-1, Dhaka", phone: "+880 1711-424998", languages: ["Bengali", "English"], immigrantFriendly: true, description: "Affordable pre-owned sofas, dining tables, beds, and household furniture. Delivery available across Dhaka.", image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=200&fit=crop" },
   { id: 29, lat: 23.7937, lng: 90.4045, name: "Banani Furniture Agency & Thrift", category: "🏢 Furniture Agency", distance: "1.1 km", rating: 4.7, reviews: 245, open: true, openUntil: "7:00 PM", address: "Road 11, Block D, Banani, Dhaka", phone: "+880 1819-899771", languages: ["Bengali", "English"], immigrantFriendly: true, description: "Community agency providing discounted gently used furniture, desks, and home decor.", image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=200&fit=crop" },
@@ -1154,58 +1154,98 @@ function GoogleMapsLiveNavigationHUD({
       onUpdateCoord(userLocation, initHeading);
     }
 
-    if (!("geolocation" in navigator)) return;
+    let simInterval: any = null;
+    let currentStepIdx = 0;
 
-    const watchId = navigator.geolocation.watchPosition(
-      pos => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        const rawSpeed = pos.coords.speed; // m/s
-        const speedKmh = rawSpeed !== null && !isNaN(rawSpeed) && rawSpeed > 0
-          ? Math.round(rawSpeed * 3.6)
-          : 0;
-        const gpsHeading = pos.coords.heading !== null && !isNaN(pos.coords.heading) && pos.coords.heading > 0
-          ? pos.coords.heading
-          : 0;
-
-        setCurrentCoord([lat, lng]);
-        setSpeed(speedKmh);
-
-        // Real distance to destination in meters
-        const distToDestKm = getDistanceKm(lat, lng, destination.lat, destination.lng);
-        const distMeters = Math.round(distToDestKm * 1000);
-        setRemainingDist(distMeters);
-
-        // Estimate remaining time based on walking (~4.5km/h = 75m/min) or driving speed
-        const currentSpeedMPerMin = speedKmh > 5 ? (speedKmh * 1000) / 60 : 75;
-        const estMinutes = Math.max(1, Math.round(distMeters / currentSpeedMPerMin));
-        setRemainingDuration(estMinutes * 60);
-
-        // Calculate heading angle
-        const calculatedHeading = gpsHeading > 0 ? gpsHeading : getBearing(lat, lng, destination.lat, destination.lng);
-        setHeading(calculatedHeading);
-
-        // Arrived at destination (within 25m)
-        if (distMeters <= 25) {
+    const startSimulationFallback = () => {
+      if (simInterval) return;
+      const simCoords = coords.length > 1 ? coords : [[userLocation[0], userLocation[1]], [destination.lat, destination.lng]];
+      simInterval = setInterval(() => {
+        if (currentStepIdx < simCoords.length - 1) {
+          currentStepIdx++;
+          const nextCoord = simCoords[currentStepIdx] as [number, number];
+          setCurrentCoord(nextCoord);
+          setSpeed(28);
+          const distToDestKm = getDistanceKm(nextCoord[0], nextCoord[1], destination.lat, destination.lng);
+          const distMeters = Math.round(distToDestKm * 1000);
+          setRemainingDist(distMeters);
+          const estMinutes = Math.max(1, Math.round(distMeters / ((28 * 1000) / 60)));
+          setRemainingDuration(estMinutes * 60);
+          const nextHeading = getBearing(nextCoord[0], nextCoord[1], destination.lat, destination.lng);
+          setHeading(nextHeading);
+          if (distMeters <= 25) {
+            setHasArrived(true);
+            clearInterval(simInterval);
+          }
+          onUpdateCoord(nextCoord, nextHeading);
+        } else {
           setHasArrived(true);
+          clearInterval(simInterval);
         }
+      }, 2500);
+    };
 
-        onUpdateCoord([lat, lng], calculatedHeading);
-      },
-      err => {
-        console.warn("Real GPS watchPosition error:", err);
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 500,
-        timeout: 10000,
-      }
-    );
+    let watchId: number | null = null;
+    if ("geolocation" in navigator) {
+      watchId = navigator.geolocation.watchPosition(
+        pos => {
+          if (simInterval) {
+            clearInterval(simInterval);
+            simInterval = null;
+          }
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const rawSpeed = pos.coords.speed; // m/s
+          const speedKmh = rawSpeed !== null && !isNaN(rawSpeed) && rawSpeed > 0
+            ? Math.round(rawSpeed * 3.6)
+            : 0;
+          const gpsHeading = pos.coords.heading !== null && !isNaN(pos.coords.heading) && pos.coords.heading > 0
+            ? pos.coords.heading
+            : 0;
+
+          setCurrentCoord([lat, lng]);
+          setSpeed(speedKmh);
+
+          // Real distance to destination in meters
+          const distToDestKm = getDistanceKm(lat, lng, destination.lat, destination.lng);
+          const distMeters = Math.round(distToDestKm * 1000);
+          setRemainingDist(distMeters);
+
+          // Estimate remaining time based on walking (~4.5km/h = 75m/min) or driving speed
+          const currentSpeedMPerMin = speedKmh > 5 ? (speedKmh * 1000) / 60 : 75;
+          const estMinutes = Math.max(1, Math.round(distMeters / currentSpeedMPerMin));
+          setRemainingDuration(estMinutes * 60);
+
+          // Calculate heading angle
+          const calculatedHeading = gpsHeading > 0 ? gpsHeading : getBearing(lat, lng, destination.lat, destination.lng);
+          setHeading(calculatedHeading);
+
+          // Arrived at destination (within 25m)
+          if (distMeters <= 25) {
+            setHasArrived(true);
+          }
+
+          onUpdateCoord([lat, lng], calculatedHeading);
+        },
+        err => {
+          console.warn("Real GPS watchPosition error, using fallback progress simulation:", err);
+          startSimulationFallback();
+        },
+        {
+          enableHighAccuracy: false,
+          maximumAge: 5000,
+          timeout: 8000,
+        }
+      );
+    } else {
+      startSimulationFallback();
+    }
 
     return () => {
-      navigator.geolocation.clearWatch(watchId);
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+      if (simInterval) clearInterval(simInterval);
     };
-  }, [destination, userLocation]);
+  }, [destination, userLocation, coords]);
 
   // Turn Maneuver Direction calculation based on real distance to destination
   const destName = destination.name.split("(")[0].trim();
@@ -2064,8 +2104,15 @@ export function MapDiscoveryContent({
     activeCategory?: string;
   } | null;
 
-  const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState(routeState?.activeCategory || "all");
+  const [query, setQuery] = useState(searchParams.get("q") || searchParams.get("query") || routeState?.searchQuery || "");
+  const [activeCategory, setActiveCategory] = useState(searchParams.get("category") || routeState?.activeCategory || "all");
+
+  useEffect(() => {
+    const cat = searchParams.get("category") || routeState?.activeCategory;
+    if (cat) setActiveCategory(cat);
+    const q = searchParams.get("q") || searchParams.get("query") || routeState?.searchQuery;
+    if (q !== undefined && q !== null) setQuery(q);
+  }, [routerLocation.search, routeState]);
   const [viewMode, setViewMode] = useState<"list" | "map">("map");
   const [mapActiveId, setMapActiveId] = useState<number | string | null>(urlPlaceId || routeState?.selectedPlaceId || null);
   const [markerPx, setMarkerPx] = useState({ x: 0, y: 0 });
@@ -2127,9 +2174,17 @@ export function MapDiscoveryContent({
   useEffect(() => {
     if (routeState?.userLocation) return;
 
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
+    const detectExactLocation = async () => {
+      // 1. Try browser device geolocation first
+      if ("geolocation" in navigator) {
+        try {
+          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: false,
+              timeout: 4000,
+              maximumAge: 60000,
+            });
+          });
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
           setUserLocation([lat, lng]);
@@ -2137,13 +2192,41 @@ export function MapDiscoveryContent({
           try {
             localStorage.setItem("bkoi_last_user_coords", JSON.stringify([lat, lng]));
           } catch (_) {}
-        },
-        (err) => {
-          console.warn("Auto-geolocation check:", err);
-        },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
-      );
-    }
+          return;
+        } catch (_) {}
+      }
+
+      // 2. Exact IP Geolocation fallback (Resolves Mac CoreLocation kCLErrorLocationUnknown!)
+      try {
+        const res = await fetch("https://ipwho.is/");
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.success && typeof data.latitude === "number" && typeof data.longitude === "number") {
+            const coords: [number, number] = [data.latitude, data.longitude];
+            setUserLocation(coords);
+            setIsGPSActive(true);
+            try {
+              localStorage.setItem("bkoi_last_user_coords", JSON.stringify(coords));
+            } catch (_) {}
+            return;
+          }
+        }
+      } catch (_) {}
+
+      // 3. Cached coordinate fallback
+      try {
+        const cached = localStorage.getItem("bkoi_last_user_coords");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length === 2 && !isNaN(parsed[0]) && !isNaN(parsed[1])) {
+            setUserLocation([parsed[0], parsed[1]]);
+            setIsGPSActive(true);
+          }
+        }
+      } catch (_) {}
+    };
+
+    detectExactLocation();
   }, [routeState]);
 
   // Live Location Jobs generated dynamically around the user's location
@@ -2434,21 +2517,49 @@ export function MapDiscoveryContent({
                     localStorage.removeItem("bkoi_last_user_coords");
                   } catch (_) {}
                 } else {
+                  setIsLocating(true);
+                  const activateLocation = (coords: [number, number]) => {
+                    setUserLocation(coords);
+                    setIsGPSActive(true);
+                    setIsLocating(false);
+                    try {
+                      localStorage.setItem("bkoi_last_user_coords", JSON.stringify(coords));
+                    } catch (_) {}
+                  };
+
+                  const fallbackLocation = async () => {
+                    try {
+                      const res = await fetch("https://ipwho.is/");
+                      if (res.ok) {
+                        const data = await res.json();
+                        if (data?.success && typeof data.latitude === "number" && typeof data.longitude === "number") {
+                          activateLocation([data.latitude, data.longitude]);
+                          return;
+                        }
+                      }
+                    } catch (_) {}
+
+                    let fb = DEFAULT_LOCATION;
+                    try {
+                      const cached = localStorage.getItem("bkoi_last_user_coords");
+                      if (cached) {
+                        const parsed = JSON.parse(cached);
+                        if (Array.isArray(parsed) && parsed.length === 2 && !isNaN(parsed[0]) && !isNaN(parsed[1])) {
+                          fb = [parsed[0], parsed[1]];
+                        }
+                      }
+                    } catch (_) {}
+                    activateLocation(fb);
+                  };
+
                   if ("geolocation" in navigator) {
-                    setIsLocating(true);
                     navigator.geolocation.getCurrentPosition(
-                      pos => {
-                        const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
-                        setUserLocation(coords);
-                        setIsGPSActive(true);
-                        setIsLocating(false);
-                        try {
-                          localStorage.setItem("bkoi_last_user_coords", JSON.stringify(coords));
-                        } catch (_) {}
-                      },
-                      () => setIsLocating(false),
-                      { enableHighAccuracy: true, timeout: 6000 }
+                      pos => activateLocation([pos.coords.latitude, pos.coords.longitude]),
+                      () => fallbackLocation(),
+                      { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
                     );
+                  } else {
+                    fallbackLocation();
                   }
                 }
               }}
@@ -2628,28 +2739,49 @@ export function MapDiscoveryContent({
                         setUserLocation(DEFAULT_LOCATION);
                         setIsGPSActive(false);
                       } else {
+                        setIsLocating(true);
+                        const activate = (coords: [number, number]) => {
+                          setUserLocation(coords);
+                          setIsGPSActive(true);
+                          setIsLocating(false);
+                          try {
+                            localStorage.setItem("bkoi_last_user_coords", JSON.stringify(coords));
+                          } catch (_) {}
+                        };
+
+                        const fallback = async () => {
+                          try {
+                            const res = await fetch("https://ipwho.is/");
+                            if (res.ok) {
+                              const data = await res.json();
+                              if (data?.success && typeof data.latitude === "number" && typeof data.longitude === "number") {
+                                activate([data.latitude, data.longitude]);
+                                return;
+                              }
+                            }
+                          } catch (_) {}
+
+                          let fb = DEFAULT_LOCATION;
+                          try {
+                            const cached = localStorage.getItem("bkoi_last_user_coords");
+                            if (cached) {
+                              const parsed = JSON.parse(cached);
+                              if (Array.isArray(parsed) && parsed.length === 2 && !isNaN(parsed[0]) && !isNaN(parsed[1])) {
+                                fb = [parsed[0], parsed[1]];
+                              }
+                            }
+                          } catch (_) {}
+                          activate(fb);
+                        };
+
                         if ("geolocation" in navigator) {
-                          setIsLocating(true);
-                          const getPos = (highAcc: boolean) => {
-                            navigator.geolocation.getCurrentPosition(
-                              pos => {
-                                const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
-                                setUserLocation(loc);
-                                setIsGPSActive(true);
-                                setIsLocating(false);
-                              },
-                              err => {
-                                if (highAcc) {
-                                  getPos(false);
-                                  return;
-                                }
-                                console.warn("Geolocation error:", err);
-                                setIsLocating(false);
-                              },
-                              { enableHighAccuracy: highAcc, timeout: highAcc ? 6000 : 15000, maximumAge: 60000 }
-                            );
-                          };
-                          getPos(true);
+                          navigator.geolocation.getCurrentPosition(
+                            pos => activate([pos.coords.latitude, pos.coords.longitude]),
+                            () => fallback(),
+                            { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
+                          );
+                        } else {
+                          fallback();
                         }
                       }
                     }}

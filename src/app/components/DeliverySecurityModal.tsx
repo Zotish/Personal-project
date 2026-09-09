@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import {
   ShieldCheck, Lock, PhoneCall, PhoneOff, Mic, MicOff, Volume2,
   CheckCircle2, AlertTriangle, Key, Trash2, Clock, MapPin, Truck,
-  Check, X, RefreshCw, Sparkles, UserCheck, ShieldAlert, EyeOff, User, Store
+  Check, X, RefreshCw, Sparkles, UserCheck, ShieldAlert, EyeOff, User, Store,
+  ArrowRight, Bike, Home, Package
 } from "lucide-react";
 
 interface DeliverySecurityModalProps {
@@ -117,7 +118,7 @@ export function DeliverySecurityModal({
           {currentRole === "buyer" && (
             <>
               {/* RIDER LIVE STATUS TRACKING STEPPER (TOP OF MODAL) */}
-              <div className="bg-[#C04A22]/5 border border-[#C04A22]/20 rounded-2xl p-4 space-y-3 shadow-2xs">
+              <div className="bg-[#C04A22]/5 rounded-2xl p-4 sm:p-5 space-y-3 shadow-2xs -mx-2 sm:-mx-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Truck className="w-4.5 h-4.5 text-[#C04A22]" />
@@ -128,50 +129,64 @@ export function DeliverySecurityModal({
                   </span>
                 </div>
 
-                {/* 4-Step Progress Stepper */}
-                <div className="grid grid-cols-4 gap-1 relative pt-1">
+                {/* 4-Step Progress Stepper with connecting arrows */}
+                <div className="flex items-start justify-between relative pt-1 gap-1">
                   {/* Step 1: Placed */}
-                  <div className="flex flex-col items-center text-center space-y-1">
-                    <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
-                      ✓
+                  <div className="flex flex-col items-center text-center space-y-1 flex-1 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                      <Check className="w-4 h-4 stroke-[3]" />
                     </div>
-                    <span className="text-[10px] font-bold text-slate-900">Order Placed</span>
-                    <span className="text-[9px] text-slate-500">10:15 AM</span>
+                    <span className="text-[10px] font-bold text-slate-900 leading-tight">Order Placed</span>
+                    <span className="text-[9px] text-black font-semibold">10:15 AM</span>
                   </div>
+
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 mt-2 flex-shrink-0" />
 
                   {/* Step 2: Handover */}
-                  <div className="flex flex-col items-center text-center space-y-1">
-                    <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
-                      ✓
+                  <div className="flex flex-col items-center text-center space-y-1 flex-1 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                      <Check className="w-4 h-4 stroke-[3]" />
                     </div>
-                    <span className="text-[10px] font-bold text-slate-900">Packed</span>
-                    <span className="text-[9px] text-slate-500">5:30 PM</span>
+                    <span className="text-[10px] font-bold text-slate-900 leading-tight">Packed</span>
+                    <span className="text-[9px] text-black font-semibold">5:30 PM</span>
                   </div>
+
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 mt-2 flex-shrink-0" />
 
                   {/* Step 3: Out for Delivery (Active Step) */}
-                  <div className="flex flex-col items-center text-center space-y-1">
-                    <div className={`w-7 h-7 rounded-full text-white flex items-center justify-center text-xs font-bold shadow-xs ${
+                  <div className="flex flex-col items-center text-center space-y-1 flex-1 min-w-0">
+                    <div className={`w-8 h-8 rounded-full text-white flex items-center justify-center shadow-xs ${
                       deliveryStatus === "completed" ? "bg-emerald-600" : "bg-[#C04A22] ring-4 ring-[#C04A22]/20 animate-pulse"
                     }`}>
-                      {deliveryStatus === "completed" ? "✓" : "🏍️"}
+                      {deliveryStatus === "completed" ? (
+                        <Check className="w-4 h-4 stroke-[3]" />
+                      ) : (
+                        <Bike className="w-4.5 h-4.5 text-white" />
+                      )}
                     </div>
-                    <span className={`text-[10px] ${deliveryStatus === "completed" ? "font-bold text-slate-900" : "font-extrabold text-[#8C3015]"}`}>
+                    <span className={`text-[10px] leading-tight ${deliveryStatus === "completed" ? "font-bold text-slate-900" : "font-extrabold text-[#8C3015]"}`}>
                       Out for Delivery
                     </span>
-                    <span className="text-[9px] text-[#8C3015] font-bold">Arif (Pathao)</span>
+                    <span className="text-[9px] text-black font-semibold">Arif (Pathao)</span>
                   </div>
 
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 mt-2 flex-shrink-0" />
+
                   {/* Step 4: Delivered */}
-                  <div className="flex flex-col items-center text-center space-y-1">
-                    <div className={`w-7 h-7 rounded-full text-xs font-bold ${
-                      deliveryStatus === "completed" ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-200 text-slate-500 border border-slate-300"
+                  <div className="flex flex-col items-center text-center space-y-1 flex-1 min-w-0">
+                    <div className={`w-8 h-8 rounded-full ${
+                      deliveryStatus === "completed" ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 text-slate-600 border border-slate-300"
                     } flex items-center justify-center`}>
-                      {deliveryStatus === "completed" ? "✓" : "🏠"}
+                      {deliveryStatus === "completed" ? (
+                        <Check className="w-4 h-4 stroke-[3]" />
+                      ) : (
+                        <Home className="w-4.5 h-4.5 text-slate-600" />
+                      )}
                     </div>
-                    <span className={`text-[10px] ${deliveryStatus === "completed" ? "font-bold text-emerald-700" : "font-bold text-slate-600"}`}>
+                    <span className={`text-[10px] leading-tight ${deliveryStatus === "completed" ? "font-bold text-emerald-700" : "font-bold text-slate-600"}`}>
                       {deliveryStatus === "completed" ? "Delivered" : "Pending OTP"}
                     </span>
-                    <span className="text-[9px] text-slate-400">{deliveryStatus === "completed" ? "Completed" : "Doorstep"}</span>
+                    <span className="text-[9px] text-black font-semibold">{deliveryStatus === "completed" ? "Completed" : "Doorstep"}</span>
                   </div>
                 </div>
               </div>
@@ -296,7 +311,7 @@ export function DeliverySecurityModal({
           {currentRole === "seller" && (
             <>
               {/* RIDER LIVE STATUS TRACKING STEPPER (TOP OF MODAL) */}
-              <div className="bg-[#C04A22]/5 border border-[#C04A22]/20 rounded-2xl p-4 space-y-3 shadow-2xs">
+              <div className="bg-[#C04A22]/5 rounded-2xl p-4 sm:p-5 space-y-3 shadow-2xs -mx-2 sm:-mx-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Truck className="w-4.5 h-4.5 text-[#C04A22]" />
@@ -308,41 +323,47 @@ export function DeliverySecurityModal({
                 </div>
 
                 {/* 4-Step Progress Stepper */}
-                <div className="grid grid-cols-4 gap-1 relative pt-1">
+                <div className="flex items-start justify-between relative pt-1 gap-1">
                   {/* Step 1: Confirmed */}
-                  <div className="flex flex-col items-center text-center space-y-1">
-                    <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
-                      ✓
+                  <div className="flex flex-col items-center text-center space-y-1 flex-1 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                      <Check className="w-4 h-4 stroke-[3]" />
                     </div>
-                    <span className="text-[10px] font-bold text-slate-900">Order Placed</span>
-                    <span className="text-[9px] text-slate-500">10:15 AM</span>
+                    <span className="text-[10px] font-bold text-slate-900 leading-tight">Order Placed</span>
+                    <span className="text-[9px] text-black font-semibold">10:15 AM</span>
                   </div>
+
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 mt-2 flex-shrink-0" />
 
                   {/* Step 2: Rider Assigned (Active Step) */}
-                  <div className="flex flex-col items-center text-center space-y-1">
-                    <div className="w-7 h-7 rounded-full bg-[#C04A22] text-white flex items-center justify-center text-xs font-bold shadow-xs ring-4 ring-[#C04A22]/20 animate-pulse">
-                      🏍️
+                  <div className="flex flex-col items-center text-center space-y-1 flex-1 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-[#C04A22] text-white flex items-center justify-center text-xs font-bold shadow-xs ring-4 ring-[#C04A22]/20 animate-pulse">
+                      <Bike className="w-4.5 h-4.5 text-white" />
                     </div>
-                    <span className="text-[10px] font-extrabold text-[#8C3015]">Rider Assigned</span>
-                    <span className="text-[9px] text-[#8C3015] font-bold">Arif (Pathao)</span>
+                    <span className="text-[10px] font-extrabold text-[#8C3015] leading-tight">Rider Assigned</span>
+                    <span className="text-[9px] text-black font-semibold">Arif (Pathao)</span>
                   </div>
+
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 mt-2 flex-shrink-0" />
 
                   {/* Step 3: Package Handover */}
-                  <div className="flex flex-col items-center text-center space-y-1">
-                    <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold border border-slate-300">
-                      📦
+                  <div className="flex flex-col items-center text-center space-y-1 flex-1 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold border border-slate-300">
+                      <Package className="w-4.5 h-4.5 text-slate-600" />
                     </div>
-                    <span className="text-[10px] font-bold text-slate-600">Pickup OTP</span>
-                    <span className="text-[9px] text-slate-400">Handover</span>
+                    <span className="text-[10px] font-bold text-slate-600 leading-tight">Pickup OTP</span>
+                    <span className="text-[9px] text-black font-semibold">Handover</span>
                   </div>
 
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 mt-2 flex-shrink-0" />
+
                   {/* Step 4: Delivered */}
-                  <div className="flex flex-col items-center text-center space-y-1">
-                    <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold border border-slate-300">
-                      🏠
+                  <div className="flex flex-col items-center text-center space-y-1 flex-1 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold border border-slate-300">
+                      <Home className="w-4.5 h-4.5 text-slate-600" />
                     </div>
-                    <span className="text-[10px] font-bold text-slate-600">Delivered</span>
-                    <span className="text-[9px] text-slate-400">Buyer OTP</span>
+                    <span className="text-[10px] font-bold text-slate-600 leading-tight">Delivered</span>
+                    <span className="text-[9px] text-black font-semibold">Buyer OTP</span>
                   </div>
                 </div>
               </div>

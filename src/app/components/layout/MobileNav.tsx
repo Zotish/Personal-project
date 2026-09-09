@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from "react-router";
 import {
   Home, Search, Map, Briefcase, Clapperboard, MoreHorizontal,
   Users, MessageCircle, Bell, User, Settings, Bookmark,
-  HelpCircle, Shield, X, ShoppingBag, Store, ArrowLeftRight
+  HelpCircle, Shield, X, ShoppingBag, Store, ArrowLeftRight,
+  PlusCircle, Check
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useMobileTabs } from "../../context/MobileTabContext";
@@ -34,7 +35,15 @@ export function MobileNav() {
   const location = useLocation();
   const { t } = useLanguage();
   const { tasks, setIsRecentsOpen } = useMobileTabs();
-  const { hasSellerAccount, sellerProfile, openMigrateModal, switchMode } = useAccountMode();
+  const {
+    hasSellerAccount,
+    sellerProfile,
+    sellerProfiles,
+    activeSellerId,
+    openMigrateModal,
+    switchMode,
+    switchActiveSeller,
+  } = useAccountMode();
   const [showMore, setShowMore] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
 
@@ -123,39 +132,72 @@ export function MobileNav() {
           </div>
 
           {/* Seller Switch / Migration Action */}
-          <div className="p-2 border-b border-border">
+          <div className="p-2.5 border-b border-border">
             {!hasSellerAccount ? (
               <button
                 onClick={() => {
                   setShowMore(false);
                   openMigrateModal();
                 }}
-                className="w-full flex items-center gap-2.5 p-2 rounded-xl bg-orange-50 hover:bg-orange-100/80 border border-orange-200/80 text-left transition cursor-pointer"
+                className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-orange-50 hover:bg-orange-100/80 border border-orange-200/80 text-left transition cursor-pointer"
               >
-                <div className="w-7 h-7 rounded-lg bg-[#C04A22]/15 text-[#8C3015] flex items-center justify-center flex-shrink-0">
-                  <Store className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-lg bg-[#C04A22]/15 text-[#8C3015] flex items-center justify-center flex-shrink-0">
+                  <Store className="w-4.5 h-4.5" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-[#8C3015]">Become a Seller</span>
                     <span className="text-[9px] bg-[#C04A22] text-white px-1.5 py-0.2 rounded-full font-bold">New</span>
                   </div>
-                  <div className="text-[10px] text-slate-500 font-normal">Migrate account</div>
+                  <div className="text-[10px] text-slate-500 font-normal">Migrate account to start selling</div>
                 </div>
               </button>
             ) : (
-              <button
-                onClick={() => {
-                  setShowMore(false);
-                  switchMode("seller");
-                }}
-                className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-orange-50 hover:bg-orange-100/80 border border-orange-200/80 text-left transition cursor-pointer"
-              >
-                <div className="w-7 h-7 rounded-lg bg-[#C04A22]/15 text-[#8C3015] flex items-center justify-center flex-shrink-0">
-                  <ArrowLeftRight className="w-4 h-4" />
+              <div className="space-y-1.5">
+                <div className="px-1">
+                  <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                    Business Accounts ({sellerProfiles.length})
+                  </span>
                 </div>
-                <span className="text-xs font-bold text-[#8C3015]">Switch to Seller</span>
-              </button>
+
+                <div className="space-y-1 max-h-36 overflow-y-auto">
+                  {sellerProfiles.map(shop => {
+                    const isActive = shop.id === activeSellerId;
+                    return (
+                      <button
+                        key={shop.id}
+                        onClick={() => {
+                          setShowMore(false);
+                          switchActiveSeller(shop.id, true);
+                        }}
+                        className={`w-full flex items-center justify-between gap-2 p-2 rounded-xl text-left transition cursor-pointer ${
+                          isActive
+                            ? "bg-[#C04A22]/12 border border-[#C04A22]/25 text-[#8C3015]"
+                            : "bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200/70"
+                        }`}
+                      >
+                        <span className="text-xs font-bold truncate min-w-0">{shop.shopName}</span>
+                        {isActive && (
+                          <span className="text-[9px] bg-[#C04A22] text-white px-1.5 py-0.5 rounded-full font-bold flex items-center gap-0.5 flex-shrink-0">
+                            <Check className="w-2.5 h-2.5 stroke-[3]" /> Active
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={() => {
+                    setShowMore(false);
+                    openMigrateModal();
+                  }}
+                  className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-dashed border-[#C04A22]/40 text-[#8C3015] hover:bg-[#C04A22]/10 text-xs font-bold transition cursor-pointer"
+                >
+                  <PlusCircle className="w-3.5 h-3.5 text-[#C04A22]" />
+                  <span>+ Create another business</span>
+                </button>
+              </div>
             )}
           </div>
 

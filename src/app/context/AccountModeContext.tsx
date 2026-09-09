@@ -12,6 +12,7 @@ export interface UserProfile {
 }
 
 export interface SellerProfile {
+  id: string;
   shopName: string;
   category: string;
   phone: string;
@@ -27,6 +28,8 @@ interface AccountModeContextType {
   currentMode: "member" | "seller";
   hasSellerAccount: boolean;
   sellerProfile: SellerProfile | null;
+  sellerProfiles: SellerProfile[];
+  activeSellerId: string;
   isMigrateModalOpen: boolean;
   openMigrateModal: () => void;
   closeMigrateModal: () => void;
@@ -36,6 +39,8 @@ interface AccountModeContextType {
     phone?: string;
     safeZone?: string;
   }) => void;
+  switchActiveSeller: (sellerId: string, andSwitchMode?: boolean) => void;
+  updateActiveSellerProfile: (updates: Partial<SellerProfile>) => void;
   switchMode: (targetMode?: "member" | "seller") => void;
   ghostBlockedUsers: string[];
   toggleGhostBlock: (userIdOrHandle: string) => void;
@@ -45,9 +50,23 @@ interface AccountModeContextType {
 const AccountModeContext = createContext<AccountModeContextType | undefined>(undefined);
 
 const STORAGE_HAS_SELLER = "pathasathi_has_seller_account";
+const STORAGE_ALL_SELLER_PROFILES = "pathasathi_all_seller_profiles";
+const STORAGE_ACTIVE_SELLER_ID = "pathasathi_active_seller_id";
 const STORAGE_SELLER_PROFILE = "pathasathi_seller_profile_data";
 const STORAGE_ACCOUNT_MODE = "pathasathi_current_account_mode";
 const STORAGE_GHOST_BLOCKS = "pathasathi_ghost_blocked_users";
+
+const DEFAULT_SELLER_PROFILE: SellerProfile = {
+  id: "biz_default",
+  shopName: "Gulshan Resale & Grocery Mart",
+  category: "Food & Groceries / Furniture",
+  phone: "+1 (718) 555-0192",
+  safeZone: "Jackson Heights Community Safe-Zone (Queens, NY)",
+  rating: 4.9,
+  reviewsCount: 312,
+  verified: true,
+  createdAt: "2024",
+};
 
 export function AccountModeProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
@@ -63,38 +82,52 @@ export function AccountModeProvider({ children }: { children: ReactNode }) {
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop",
   });
 
-  // Has migrated to seller
-  const [hasSellerAccount, setHasSellerAccount] = useState<boolean>(() => {
+  // Multiple Seller Profiles List
+  const [sellerProfiles, setSellerProfiles] = useState<SellerProfile[]>(() => {
     try {
-      return localStorage.getItem(STORAGE_HAS_SELLER) === "true";
+      const savedList = localStorage.getItem(STORAGE_ALL_SELLER_PROFILES);
+      if (savedList) {
+        const parsed = JSON.parse(savedList);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      // Check legacy single profile
+      const savedSingle = localStorage.getItem(STORAGE_SELLER_PROFILE);
+      if (savedSingle) {
+        const parsed = JSON.parse(savedSingle);
+        return [{ ...parsed, id: parsed.id || "biz_default" }];
+      }
+      // Default: if user had seller enabled previously
+      if (localStorage.getItem(STORAGE_HAS_SELLER) === "true") {
+        return [DEFAULT_SELLER_PROFILE];
+      }
+      return [];
     } catch {
-      return false;
+      return [];
     }
   });
 
-  // Seller profile data
-  const [sellerProfile, setSellerProfile] = useState<SellerProfile | null>(() => {
+  // Active Seller ID
+  const [activeSellerId, setActiveSellerId] = useState<string>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_SELLER_PROFILE);
-      if (saved) return JSON.parse(saved);
-      // If user had seller enabled previously, default to Gulshan Mart
-      if (localStorage.getItem(STORAGE_HAS_SELLER) === "true") {
-        return {
-          shopName: "Gulshan Resale & Grocery Mart",
-          category: "Food & Groceries / Furniture",
-          phone: "+1 (718) 555-0192",
-          safeZone: "Jackson Heights Community Safe-Zone (Queens, NY)",
-          rating: 4.9,
-          reviewsCount: 312,
-          verified: true,
-          createdAt: "2024",
-        };
+      const saved = localStorage.getItem(STORAGE_ACTIVE_SELLER_ID);
+      if (saved) return saved;
+      const savedList = localStorage.getItem(STORAGE_ALL_SELLER_PROFILES);
+      if (savedList) {
+        const parsed = JSON.parse(savedList);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed[0].id;
       }
-      return null;
+      return "biz_default";
     } catch {
-      return null;
+      return "biz_default";
     }
   });
+
+  // Has migrated to seller (true if at least 1 business account exists)
+  const hasSellerAccount = sellerProfiles.length > 0;
+
+  // Currently active seller profile (computed)
+  const sellerProfile: SellerProfile | null =
+    sellerProfiles.find(s => s.id === activeSellerId) || sellerProfiles[0] || null;
 
   // Current active mode (member vs seller)
   const [currentMode, setCurrentMode] = useState<"member" | "seller">(() => {
@@ -119,11 +152,26 @@ export function AccountModeProvider({ children }: { children: ReactNode }) {
     }
   });
 
+  // Sync seller profiles to localStorage whenever updated
+  useEffect(() => {
+    try {
+      if (sellerProfiles.length > 0) {
+        localStorage.setItem(STORAGE_ALL_SELLER_PROFILES, JSON.stringify(sellerProfiles));
+        localStorage.setItem(STORAGE_HAS_SELLER, "true");
+        if (sellerProfile) {
+          localStorage.setItem(STORAGE_SELLER_PROFILE, JSON.stringify(sellerProfile));
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [sellerProfiles, sellerProfile]);
+
   // Open / Close Migration Modal
   const openMigrateModal = () => setIsMigrateModalOpen(true);
   const closeMigrateModal = () => setIsMigrateModalOpen(false);
 
-  // Complete Seller Migration
+  // Complete Seller Migration or Create Additional Business Account
   const migrateToSeller = (data: {
     shopName: string;
     category: string;
@@ -131,6 +179,7 @@ export function AccountModeProvider({ children }: { children: ReactNode }) {
     safeZone?: string;
   }) => {
     const newProfile: SellerProfile = {
+      id: "biz_" + Date.now(),
       shopName: data.shopName.trim() || "My Immigrant Community Shop",
       category: data.category || "Food & Groceries",
       phone: data.phone?.trim() || user.phone,
@@ -141,15 +190,52 @@ export function AccountModeProvider({ children }: { children: ReactNode }) {
       createdAt: new Date().getFullYear().toString(),
     };
 
-    setSellerProfile(newProfile);
-    setHasSellerAccount(true);
+    setSellerProfiles(prev => {
+      const updated = [...prev, newProfile];
+      try {
+        localStorage.setItem(STORAGE_ALL_SELLER_PROFILES, JSON.stringify(updated));
+        localStorage.setItem(STORAGE_HAS_SELLER, "true");
+        localStorage.setItem(STORAGE_ACTIVE_SELLER_ID, newProfile.id);
+        localStorage.setItem(STORAGE_SELLER_PROFILE, JSON.stringify(newProfile));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
 
+    setActiveSellerId(newProfile.id);
+  };
+
+  // Switch Active Seller Profile
+  const switchActiveSeller = (sellerId: string, andSwitchMode = true) => {
+    const target = sellerProfiles.find(s => s.id === sellerId);
+    if (!target) return;
+
+    setActiveSellerId(sellerId);
     try {
-      localStorage.setItem(STORAGE_HAS_SELLER, "true");
-      localStorage.setItem(STORAGE_SELLER_PROFILE, JSON.stringify(newProfile));
+      localStorage.setItem(STORAGE_ACTIVE_SELLER_ID, sellerId);
+      localStorage.setItem(STORAGE_SELLER_PROFILE, JSON.stringify(target));
     } catch (e) {
       console.error(e);
     }
+
+    if (andSwitchMode) {
+      setCurrentMode("seller");
+      try {
+        localStorage.setItem(STORAGE_ACCOUNT_MODE, "seller");
+      } catch (e) {
+        console.error(e);
+      }
+      navigate("/seller-dashboard");
+    }
+  };
+
+  // Update Active Seller Profile Details
+  const updateActiveSellerProfile = (updates: Partial<SellerProfile>) => {
+    if (!sellerProfile) return;
+    setSellerProfiles(prev =>
+      prev.map(p => (p.id === sellerProfile.id ? { ...p, ...updates } : p))
+    );
   };
 
   // Switch between Member and Seller
@@ -201,10 +287,14 @@ export function AccountModeProvider({ children }: { children: ReactNode }) {
         currentMode,
         hasSellerAccount,
         sellerProfile,
+        sellerProfiles,
+        activeSellerId,
         isMigrateModalOpen,
         openMigrateModal,
         closeMigrateModal,
         migrateToSeller,
+        switchActiveSeller,
+        updateActiveSellerProfile,
         switchMode,
         ghostBlockedUsers,
         toggleGhostBlock,

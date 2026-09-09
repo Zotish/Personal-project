@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import {
   BarChart2, Package, ShoppingCart, MessageSquare, Settings, Store,
-  Globe, ArrowLeftRight, ExternalLink, ShieldCheck, ChevronRight, User, ArrowLeft, Check, LogOut, ChevronUp
+  Globe, ArrowLeftRight, ExternalLink, ShieldCheck, ChevronRight, User, ArrowLeft, Check, LogOut, ChevronUp,
+  PlusCircle, ArrowRight
 } from "lucide-react";
 import { LanguageToggle } from "../ui/LanguageToggle";
 import { Logo } from "../ui/Logo";
@@ -17,7 +18,15 @@ interface SellerSidebarProps {
 export function SellerSidebar({ activeTab = "overview", onTabChange }: SellerSidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, sellerProfile, switchMode } = useAccountMode();
+  const {
+    user,
+    sellerProfile,
+    sellerProfiles,
+    activeSellerId,
+    switchActiveSeller,
+    openMigrateModal,
+    switchMode
+  } = useAccountMode();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const handleLogout = () => {
@@ -104,31 +113,72 @@ export function SellerSidebar({ activeTab = "overview", onTabChange }: SellerSid
         
         {/* Profile Popover Menu */}
         {showProfileMenu && (
-          <div className="absolute bottom-full left-3 right-3 mb-2 bg-white rounded-2xl border border-slate-200 shadow-xl p-2 z-50 transition-all space-y-1">
-            <div className="px-3 py-2 border-b border-slate-100 mb-1">
-              <span className="text-xs font-bold text-slate-900 block truncate">
-                {sellerProfile?.shopName || "Gulshan Resale & Mart"}
-              </span>
-              <span className="text-[10px] text-slate-500 block">
-                Owned by {user.name} ({user.handle})
-              </span>
+          <div className="absolute bottom-full left-3 right-3 mb-2 bg-white rounded-2xl border border-slate-200 shadow-xl p-2 z-50 transition-all space-y-1.5 w-64 max-w-[280px]">
+            {/* List of Business Accounts */}
+            <div className="py-0.5 space-y-1">
+              <div className="px-2 pt-1 pb-1">
+                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                  My Stores ({sellerProfiles.length})
+                </span>
+              </div>
+
+              <div className="max-h-36 overflow-y-auto space-y-1 pr-0.5">
+                {sellerProfiles.map(shop => {
+                  const isActive = shop.id === activeSellerId;
+                  return (
+                    <button
+                      key={shop.id}
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        switchActiveSeller(shop.id, true);
+                      }}
+                      className={`w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl text-xs font-bold transition text-left cursor-pointer group ${
+                        isActive
+                          ? "bg-[#C04A22]/10 text-[#8C3015] border border-[#C04A22]/20"
+                          : "hover:bg-slate-100 text-slate-700 hover:text-slate-900"
+                      }`}
+                    >
+                      <span className="truncate font-bold text-xs">{shop.shopName}</span>
+                      {isActive && (
+                        <span className="text-[9px] bg-[#C04A22] text-white px-1.5 py-0.2 rounded-full font-bold flex items-center gap-0.5 flex-shrink-0">
+                          <Check className="w-2.5 h-2.5 stroke-[3]" /> Active
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Add Another Business Button */}
+              <button
+                onClick={() => {
+                  setShowProfileMenu(false);
+                  openMigrateModal();
+                }}
+                className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-bold text-[#8C3015] hover:bg-[#C04A22]/10 transition text-left cursor-pointer group border border-dashed border-[#C04A22]/30 mt-1"
+              >
+                <PlusCircle className="w-3.5 h-3.5 text-[#C04A22]" />
+                <span>+ Create another business</span>
+              </button>
             </div>
 
             {/* Switch to Member */}
-            <button
-              onClick={() => {
-                setShowProfileMenu(false);
-                switchMode("member");
-              }}
-              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-[#8C3015] bg-[#C04A22]/10 hover:bg-[#C04A22]/20 transition text-left cursor-pointer"
-            >
-              <ArrowLeftRight className="w-4 h-4 text-[#C04A22] flex-shrink-0" />
-              <span>Switch to Member</span>
-            </button>
+            <div className="pt-1 border-t border-slate-100">
+              <button
+                onClick={() => {
+                  setShowProfileMenu(false);
+                  switchMode("member");
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-[#8C3015] bg-orange-50 hover:bg-orange-100 transition text-left cursor-pointer"
+              >
+                <ArrowLeftRight className="w-4 h-4 text-[#C04A22] flex-shrink-0" />
+                <span>Switch to {user.name}</span>
+              </button>
+            </div>
 
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition text-left cursor-pointer"
+              className="w-full flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition text-left cursor-pointer"
             >
               <LogOut className="w-4 h-4 text-rose-500" />
               <span>Log Out</span>

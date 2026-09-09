@@ -601,20 +601,20 @@ export function AndroidRecentAppsSwitcher() {
 
   return (
     <div className="lg:hidden fixed inset-0 z-[999999] isolate flex flex-col justify-between overflow-hidden select-none animate-in fade-in duration-200">
-      {/* ── Ambient Wallpaper Background with Soft Blur (Matching Vivo OS screenshot) ── */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#8C6B3E]/95 via-[#4A3B22]/98 to-[#1A140A] backdrop-blur-3xl" />
+      {/* ── Minimal soft overlay so the background has NO heavy shadow ── */}
+      <div className="absolute inset-0 bg-black/5 backdrop-blur-[2px]" />
 
       {/* ── Top Header Bar ── */}
-      <div className="relative z-10 w-full px-5 pt-4 pb-2 flex items-center justify-between text-white/90 safe-area-pt">
+      <div className="relative z-10 w-full px-5 pt-4 pb-2 flex items-center justify-between safe-area-pt">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-white font-bold bg-white/20 px-3 py-1 rounded-full shadow-xs tracking-tight">
+          <span className="text-xs text-slate-800 font-bold bg-white/90 border border-slate-200/80 px-3 py-1 rounded-full shadow-xs tracking-tight">
             {tasks.length} active
           </span>
         </div>
 
         <button
           onClick={() => setIsRecentsOpen(false)}
-          className="text-xs text-white/80 hover:text-white font-bold px-3 py-1 rounded-full bg-white/10 active:scale-95 transition cursor-pointer"
+          className="text-xs text-slate-800 font-bold px-3 py-1 rounded-full bg-white/90 hover:bg-white border border-slate-200/80 shadow-xs active:scale-95 transition cursor-pointer"
         >
           Done
         </button>
@@ -642,25 +642,25 @@ export function AndroidRecentAppsSwitcher() {
               onTouchMove={(e) => handleCardTouchMove(e, task.id)}
               onTouchEnd={() => handleCardTouchEnd(task.id)}
             >
-              {/* ── 1. App Header Title with Dropdown Chevron (No left icon, 1-word title) ── */}
+              {/* ── 1. App Header Title with Dropdown Chevron ── */}
               <div
                 onClick={() => switchTask(task.id)}
-                className="flex items-center gap-1.5 mb-2 px-1 text-white cursor-pointer active:scale-95 transition"
+                className="flex items-center gap-1.5 mb-2 px-3 py-1 rounded-full bg-white/90 border border-slate-200/80 text-slate-800 shadow-xs cursor-pointer active:scale-95 transition"
               >
                 {/* App Name + Down Chevron */}
-                <span className="text-sm font-bold text-white tracking-tight drop-shadow-sm">
+                <span className="text-xs font-bold text-slate-800 tracking-tight">
                   {task.title}
                 </span>
-                <ChevronDown className="w-4 h-4 text-white/85 stroke-[2.5]" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-600 stroke-[2.5]" />
               </div>
 
               {/* ── 2. App Preview Card (Vivo Rounded Rect Deck) ── */}
               <div
                 onClick={() => switchTask(task.id)}
-                className={`w-[74vw] max-w-[295px] h-[56vh] max-h-[460px] rounded-[28px] overflow-hidden shadow-2xl border transition-all cursor-pointer relative group active:scale-[0.98] bg-white ${
+                className={`w-[74vw] max-w-[295px] h-[56vh] max-h-[460px] rounded-[28px] overflow-hidden border transition-all cursor-pointer relative group active:scale-[0.98] bg-white ${
                   isActive
-                    ? "border-white/50 ring-4 ring-white/25 shadow-black/70"
-                    : "border-white/20 hover:border-white/35 shadow-black/50"
+                    ? "border-[#C04A22] ring-4 ring-[#C04A22]/20 shadow-xl"
+                    : "border-slate-200/80 hover:border-slate-300 shadow-md"
                 }`}
               >
                 {/* 100% Exact Live Scaled Viewport / Iframe - Perfectly Centered */}
@@ -698,16 +698,16 @@ export function AndroidRecentAppsSwitcher() {
         })}
       </div>
 
-      {/* ── 3. Bottom Close All Circular Button (Exact Vivo / Android OS `( ✕ )` button) ── */}
+      {/* ── 3. Bottom Close All Circular Button ── */}
       <div className="relative z-10 flex flex-col items-center justify-center pt-1 pb-6 flex-shrink-0 safe-area-pb">
         <button
           onClick={clearAllTasks}
-          className="w-14 h-14 rounded-full bg-white/20 hover:bg-white/30 active:bg-white/40 border border-white/25 backdrop-blur-xl flex items-center justify-center text-white shadow-2xl transition active:scale-90 cursor-pointer mb-2"
+          className="w-14 h-14 rounded-full bg-white/90 hover:bg-white active:bg-slate-100 border border-slate-200/80 text-slate-800 shadow-lg flex items-center justify-center transition active:scale-90 cursor-pointer mb-2"
           title="Clear All Background Apps"
         >
           <X className="w-6 h-6 stroke-[2.5]" />
         </button>
-        <span className="text-[10px] text-white/60 font-semibold">Swipe up on card to dismiss</span>
+        <span className="text-[10px] text-slate-600 font-semibold bg-white/80 px-2.5 py-0.5 rounded-full shadow-2xs">Swipe up on card to dismiss</span>
       </div>
     </div>
   );

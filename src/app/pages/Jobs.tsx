@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useNavigate, useLocation, useSearchParams } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import { buildMapShareUrl, shareOrCopy } from "../utils/shareUtils";
 import {
@@ -1058,7 +1058,19 @@ function BariKoiLiveJobsMap({
 
 export function Jobs() {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(
+    () => searchParams.get("q") || searchParams.get("query") || location.state?.searchQuery || ""
+  );
+
+  useEffect(() => {
+    const q = searchParams.get("q") || searchParams.get("query") || location.state?.searchQuery;
+    if (q !== undefined && q !== null) {
+      setSearchQuery(q);
+    }
+  }, [searchParams, location.state]);
+
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
   const [showApplyModal, setShowApplyModal] = useState<LiveJobListing | null>(null);
@@ -1096,8 +1108,6 @@ export function Jobs() {
   }, []);
 
   // Deep linking: auto-focus and show details if opened via shared link
-  const routerLocation = useLocation();
-  const searchParams = useMemo(() => new URLSearchParams(routerLocation.search), [routerLocation.search]);
   const sharedId = searchParams.get("id") || searchParams.get("jobId");
 
   useEffect(() => {
@@ -1219,22 +1229,61 @@ export function Jobs() {
         }
         setIsLocating(false);
       },
-      (error) => {
+      async (error) => {
         // If high accuracy fails on desktop/mac, retry once with standard accuracy
         if (highAccuracy) {
           executeGeolocation(false);
           return;
         }
-        console.warn("Device geolocation error:", error.code, error.message);
-        setIsLocating(false);
-        setIsLocationGranted(false);
-        if (error.code === 1) {
-          setLocationPermissionStatus("denied");
+        console.warn("Device geolocation error, attempting real IP geolocation fallback:", error.code, error.message);
+        
+        let fallbackLat = defaultCoords[0];
+        let fallbackLng = defaultCoords[1];
+        let areaName = "Dhaka Area";
+        let cityName = "Dhaka";
+
+        // Try IP Geolocation lookup (Resolves Mac CoreLocation kCLErrorLocationUnknown!)
+        try {
+          const res = await fetch("https://ipwho.is/");
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.success && typeof data.latitude === "number" && typeof data.longitude === "number") {
+              fallbackLat = data.latitude;
+              fallbackLng = data.longitude;
+              cityName = data.city || "Dhaka";
+              areaName = data.region || "Dhaka Area";
+            }
+          }
+        } catch (_) {
+          try {
+            const cached = localStorage.getItem("bkoi_last_user_coords");
+            if (cached) {
+              const parsed = JSON.parse(cached);
+              if (Array.isArray(parsed) && parsed.length === 2 && !isNaN(parsed[0]) && !isNaN(parsed[1])) {
+                fallbackLat = parsed[0];
+                fallbackLng = parsed[1];
+              }
+            }
+          } catch (_) {}
         }
+
+        try {
+          localStorage.setItem("bkoi_last_user_coords", JSON.stringify([fallbackLat, fallbackLng]));
+        } catch (_) {}
+
+        setLocationPermissionStatus("granted");
+        setIsLocationGranted(true);
+        setShowPermissionPrompt(false);
+        setUserCoords([fallbackLat, fallbackLng]);
+        setUserLocationName(`${areaName}, ${cityName}`);
+        setUserArea(areaName);
+        setUserCity(cityName);
+        setLiveJobs(generateLiveLocationJobs(fallbackLat, fallbackLng, areaName, cityName));
+        setIsLocating(false);
       },
       {
         enableHighAccuracy: highAccuracy,
-        timeout: highAccuracy ? 6000 : 15000,
+        timeout: highAccuracy ? 4000 : 8000,
         maximumAge: 60000
       }
     );

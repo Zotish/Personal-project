@@ -1,4 +1,4 @@
-import React, { useState, useRef, type FormEvent } from "react";
+import React, { useState, useRef, useEffect, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
@@ -13,6 +13,7 @@ import { InvoiceModal, InvoiceData } from "../components/InvoiceModal";
 import { ProductCard } from "../components/ProductCard";
 import { GoldenBadge } from "../components/ui/GoldenBadge";
 import { LanguageToggle } from "../components/ui/LanguageToggle";
+import { useAccountMode } from "../context/AccountModeContext";
 
 export type Product = {
   id: number;
@@ -239,6 +240,16 @@ export const INITIAL_SELLER_PRODUCTS: Product[] = [
 
 export function SellerDashboard() {
   const navigate = useNavigate();
+  const {
+    user,
+    sellerProfile,
+    sellerProfiles,
+    activeSellerId,
+    switchActiveSeller,
+    openMigrateModal,
+    updateActiveSellerProfile,
+  } = useAccountMode();
+
   const [activeTab, setActiveTab] = useState<"overview" | "products" | "orders" | "messages" | "settings">("overview");
   const [products, setProducts] = useState<Product[]>(INITIAL_SELLER_PRODUCTS);
   const [searchQuery, setSearchQuery] = useState("");
@@ -265,13 +276,22 @@ export function SellerDashboard() {
   const [formImage, setFormImage] = useState("");
   const [formDescription, setFormDescription] = useState("");
 
-  // Shop Info State
-  const [shopName, setShopName] = useState("Gulshan Resale & Grocery Mart");
+  // Shop Info State (synchronized with active seller profile)
+  const [shopName, setShopName] = useState(sellerProfile?.shopName || "Gulshan Resale & Grocery Mart");
   const [shopDescription, setShopDescription] = useState("Leading supplier of authentic groceries, halal food, and pre-owned household furniture for newcomer families in Dhaka & NYC.");
-  const [shopPhone, setShopPhone] = useState("+880 1711-424998");
-  const [shopAddress, setShopAddress] = useState("Road 11, Gulshan-1, Dhaka, Bangladesh");
+  const [shopPhone, setShopPhone] = useState(sellerProfile?.phone || "+1 (718) 555-0192");
+  const [shopAddress, setShopAddress] = useState(sellerProfile?.safeZone || "Jackson Heights Community Safe-Zone (Queens, NY)");
   const [storeStatus, setStoreStatus] = useState<"open" | "busy" | "closed">("open");
   const [shopImage, setShopImage] = useState<string | null>(null);
+
+  // Update shop state whenever active seller profile changes
+  useEffect(() => {
+    if (sellerProfile) {
+      setShopName(sellerProfile.shopName);
+      setShopPhone(sellerProfile.phone);
+      setShopAddress(sellerProfile.safeZone);
+    }
+  }, [sellerProfile?.id]);
 
   // Dynamic Conversations State
   const [conversations, setConversations] = useState([
@@ -516,8 +536,10 @@ export function SellerDashboard() {
                 )}
               </div>
               <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{shopName}</h1>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
+                    {shopName}
+                  </h1>
                   <GoldenBadge size={20} title="Verified Seller" />
                 </div>
                 <p className="text-xs sm:text-sm text-slate-500 mt-1 flex items-center gap-3 flex-wrap">
@@ -527,8 +549,8 @@ export function SellerDashboard() {
               </div>
             </div>
 
-            {/* Public View Button: Centered on mobile/iPad (<lg), Right-aligned on laptop/desktop (>=lg) */}
-            <div className="w-full lg:w-auto flex justify-center lg:justify-end items-center mt-2 lg:mt-0">
+            {/* Public View: Centered on mobile/iPad (<lg), Right-aligned on laptop/desktop (>=lg) */}
+            <div className="w-full lg:w-auto flex justify-center lg:justify-end items-center gap-2 mt-2 lg:mt-0 flex-wrap">
               <button
                 onClick={() => navigate("/seller/28")}
                 className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-95"
