@@ -272,11 +272,16 @@ interface MobileTabContextType {
   switchToNextTask: () => void;
   switchToPrevTask: () => void;
   activeTaskToast: string | null;
+  isCurrentPageInRecents: boolean;
+  addPageToRecents: (path?: string) => void;
+  removePageFromRecents: (path?: string) => void;
+  togglePageInRecents: (path?: string) => boolean;
+  showToast: (msg: string) => void;
 }
 
 const MobileTabContext = createContext<MobileTabContextType | null>(null);
 
-const STORAGE_KEY = "android_recent_tasks_v4";
+const STORAGE_KEY = "android_recent_tasks_v5";
 
 export function MobileTabProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
@@ -288,15 +293,17 @@ export function MobileTabProvider({ children }: { children: ReactNode }) {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((t: any) => {
-            const meta = getTaskMeta(t.path || "/feed");
+          return parsed.map((item: any) => {
+            const meta = getTaskMeta(item.path);
             return {
-              ...t,
-              title: meta.title,
-              shortName: meta.shortName,
-              icon: meta.icon,
-              iconBg: meta.iconBg,
-              category: meta.category,
+              id: item.id || `task-${Date.now()}-${Math.random()}`,
+              path: item.path,
+              title: item.title || meta.title,
+              shortName: item.shortName || meta.shortName,
+              icon: item.icon || meta.icon,
+              iconBg: item.iconBg || meta.iconBg,
+              category: item.category || meta.category,
+              timestamp: item.timestamp || Date.now(),
               themeColor: meta.themeColor,
               previewGradient: meta.previewGradient,
             };
@@ -305,103 +312,74 @@ export function MobileTabProvider({ children }: { children: ReactNode }) {
       }
     } catch (_) {}
 
-    // Varied distinct open tasks matching common app features
-    const feedMeta = getTaskMeta("/feed");
-    const mapMeta = getTaskMeta("/map");
-    const jobsMeta = getTaskMeta("/services/jobs");
-    const ordersMeta = getTaskMeta("/orders");
-
-    return [
-      {
-        id: "task-feed",
-        path: "/feed",
-        title: feedMeta.title,
-        shortName: feedMeta.shortName,
-        icon: feedMeta.icon,
-        iconBg: feedMeta.iconBg,
-        category: feedMeta.category,
-        themeColor: feedMeta.themeColor,
-        previewGradient: feedMeta.previewGradient,
-        timestamp: Date.now() - 40000,
-      },
-      {
-        id: "task-map",
-        path: "/map",
-        title: mapMeta.title,
-        shortName: mapMeta.shortName,
-        icon: mapMeta.icon,
-        iconBg: mapMeta.iconBg,
-        category: mapMeta.category,
-        themeColor: mapMeta.themeColor,
-        previewGradient: mapMeta.previewGradient,
-        timestamp: Date.now() - 25000,
-      },
-      {
-        id: "task-jobs",
-        path: "/services/jobs",
-        title: jobsMeta.title,
-        shortName: jobsMeta.shortName,
-        icon: jobsMeta.icon,
-        iconBg: jobsMeta.iconBg,
-        category: jobsMeta.category,
-        themeColor: jobsMeta.themeColor,
-        previewGradient: jobsMeta.previewGradient,
-        timestamp: Date.now() - 10000,
-      },
-      {
-        id: "task-orders",
-        path: "/orders",
-        title: ordersMeta.title,
-        shortName: ordersMeta.shortName,
-        icon: ordersMeta.icon,
-        iconBg: ordersMeta.iconBg,
-        category: ordersMeta.category,
-        themeColor: ordersMeta.themeColor,
-        previewGradient: ordersMeta.previewGradient,
-        timestamp: Date.now(),
-      },
-    ];
+    // Initially NO tabs in recents! (User manually adds tabs)
+    return [];
   });
 
   const [activeTaskId, setActiveTaskId] = useState<string>(() => {
-    return tasks[0]?.id || "task-feed";
+    return tasks[0]?.id || "";
   });
 
   const [isRecentsOpen, setIsRecentsOpen] = useState(false);
   const [activeTaskToast, setActiveTaskToast] = useState<string | null>(null);
 
-  // Sync tasks
+  // Sync tasks to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
     } catch (_) {}
   }, [tasks]);
 
-  // Track location changes and add task
+  // Track location changes: only update activeTaskId if route ALREADY exists in tasks.
+  // NEVER auto-add routes (user manually customizes recents via bubble)
   useEffect(() => {
-    const currentPath = location.pathname;
+    setTasks(prev => {
+      const existing = prev.find(t => t.path === location.pathname);
+      if (existing) {
+        setActiveTaskId(existing.id);
+        return prev.map(t => (t.id === existing.id ? { ...t, timestamp: Date.now() } : t));
+      }
+      // If not in recents, do NOT automatically add it!
+      return prev;
+    });
+  }, [location.pathname]);
+
+  const showToast = useCallback((msg: string) => {
+    setActiveTaskToast(msg);
+    setTimeout(() => {
+      setActiveTaskToast(null);
+    }, 1800);
+  }, []);
+
+  // Check if current route is saved in recents
+  const isCurrentPageInRecents = tasks.some(t => t.path === location.pathname);
+
+  // Manual Add page to recents
+  const addPageToRecents = useCallback((customPath?: string) => {
+    const targetPath = customPath || location.pathname;
     if (
-      currentPath === "/" ||
-      currentPath === "/landing" ||
-      currentPath === "/login" ||
-      currentPath === "/signup" ||
-      currentPath.startsWith("/onboarding") ||
-      currentPath === "/verify-email"
+      targetPath === "/" ||
+      targetPath === "/landing" ||
+      targetPath === "/login" ||
+      targetPath === "/signup" ||
+      targetPath.startsWith("/onboarding") ||
+      targetPath === "/verify-email"
     ) {
       return;
     }
 
+    const meta = getTaskMeta(targetPath);
     setTasks(prev => {
-      const existing = prev.find(t => t.path === currentPath);
+      const existing = prev.find(t => t.path === targetPath);
       if (existing) {
         setActiveTaskId(existing.id);
-        return prev.map(t => t.id === existing.id ? { ...t, timestamp: Date.now() } : t);
+        showToast(`Already in Recents: ${existing.title}`);
+        return prev;
       }
 
-      const meta = getTaskMeta(currentPath);
       const newTask: AndroidAppTask = {
         id: `task-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        path: currentPath,
+        path: targetPath,
         title: meta.title,
         shortName: meta.shortName,
         icon: meta.icon,
@@ -413,20 +391,47 @@ export function MobileTabProvider({ children }: { children: ReactNode }) {
       };
 
       const updated = [...prev, newTask];
-      if (updated.length > 8) {
+      if (updated.length > 12) {
         updated.shift();
       }
       setActiveTaskId(newTask.id);
+      showToast(`✅ Added to Recent: ${meta.title}`);
       return updated;
     });
-  }, [location.pathname]);
+  }, [location.pathname, showToast]);
 
-  const showToast = useCallback((msg: string) => {
-    setActiveTaskToast(msg);
-    setTimeout(() => {
-      setActiveTaskToast(null);
-    }, 1400);
-  }, []);
+  // Manual Remove page from recents
+  const removePageFromRecents = useCallback((customPath?: string) => {
+    const targetPath = customPath || location.pathname;
+    setTasks(prev => {
+      const match = prev.find(t => t.path === targetPath);
+      if (!match) return prev;
+      showToast(`Removed from Recents: ${match.title}`);
+      const filtered = prev.filter(t => t.path !== targetPath);
+      if (activeTaskId === match.id) {
+        const next = filtered[filtered.length - 1];
+        if (next) {
+          setActiveTaskId(next.id);
+        } else {
+          setActiveTaskId("");
+        }
+      }
+      return filtered;
+    });
+  }, [location.pathname, activeTaskId, showToast]);
+
+  // Toggle page in recents
+  const togglePageInRecents = useCallback((customPath?: string): boolean => {
+    const targetPath = customPath || location.pathname;
+    const exists = tasks.some(t => t.path === targetPath);
+    if (exists) {
+      removePageFromRecents(targetPath);
+      return false;
+    } else {
+      addPageToRecents(targetPath);
+      return true;
+    }
+  }, [location.pathname, tasks, addPageToRecents, removePageFromRecents]);
 
   const switchTask = useCallback((taskId: string) => {
     const target = tasks.find(t => t.id === taskId);
@@ -445,56 +450,25 @@ export function MobileTabProvider({ children }: { children: ReactNode }) {
 
   const closeTask = useCallback((taskId: string) => {
     setTasks(prev => {
-      if (prev.length <= 1) {
-        const meta = getTaskMeta("/feed");
-        const defaultTask: AndroidAppTask = {
-          id: `task-feed-${Date.now()}`,
-          path: "/feed",
-          title: meta.title,
-          shortName: meta.shortName,
-          icon: meta.icon,
-          iconBg: meta.iconBg,
-          category: meta.category,
-          themeColor: meta.themeColor,
-          previewGradient: meta.previewGradient,
-          timestamp: Date.now(),
-        };
-        navigate("/feed");
-        setActiveTaskId(defaultTask.id);
-        return [defaultTask];
-      }
-
       const filtered = prev.filter(t => t.id !== taskId);
       if (activeTaskId === taskId) {
         const next = filtered[filtered.length - 1];
         if (next) {
           setActiveTaskId(next.id);
-          navigate(next.path);
+        } else {
+          setActiveTaskId("");
         }
       }
       return filtered;
     });
-  }, [activeTaskId, navigate]);
+  }, [activeTaskId]);
 
   const clearAllTasks = useCallback(() => {
-    const meta = getTaskMeta("/feed");
-    const defaultTask: AndroidAppTask = {
-      id: `task-feed-${Date.now()}`,
-      path: "/feed",
-      title: meta.title,
-      shortName: meta.shortName,
-      icon: meta.icon,
-      iconBg: meta.iconBg,
-      category: meta.category,
-      themeColor: meta.themeColor,
-      previewGradient: meta.previewGradient,
-      timestamp: Date.now(),
-    };
-    setTasks([defaultTask]);
-    setActiveTaskId(defaultTask.id);
+    setTasks([]);
+    setActiveTaskId("");
     setIsRecentsOpen(false);
-    navigate("/feed");
-  }, [navigate]);
+    showToast("Cleared all recent tabs");
+  }, [showToast]);
 
   // Swipe Left -> Next App
   const switchToNextTask = useCallback(() => {
@@ -536,6 +510,11 @@ export function MobileTabProvider({ children }: { children: ReactNode }) {
         switchToNextTask,
         switchToPrevTask,
         activeTaskToast,
+        isCurrentPageInRecents,
+        addPageToRecents,
+        removePageFromRecents,
+        togglePageInRecents,
+        showToast,
       }}
     >
       {children}

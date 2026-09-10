@@ -20,6 +20,8 @@ export function AndroidRecentAppsSwitcher() {
     switchTask,
     closeTask,
     clearAllTasks,
+    isCurrentPageInRecents,
+    addPageToRecents,
   } = useMobileTabs();
 
   const navigate = useNavigate();
@@ -610,11 +612,20 @@ export function AndroidRecentAppsSwitcher() {
           <span className="text-xs text-slate-800 font-bold bg-white/90 border border-slate-200/80 px-3 py-1 rounded-full shadow-xs tracking-tight">
             {tasks.length} active
           </span>
+          {!isCurrentPageInRecents && (
+            <button
+              onClick={() => addPageToRecents()}
+              className="text-xs text-[#8C3015] font-bold bg-white/95 hover:bg-orange-50 border border-orange-200/90 px-3 py-1 rounded-full shadow-xs active:scale-95 transition cursor-pointer flex items-center gap-1"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>Add Current Page</span>
+            </button>
+          )}
         </div>
 
         <button
           onClick={() => setIsRecentsOpen(false)}
-          className="text-xs text-slate-800 font-bold px-3 py-1 rounded-full bg-white/90 hover:bg-white border border-slate-200/80 shadow-xs active:scale-95 transition cursor-pointer"
+          className="text-xs text-slate-800 font-bold px-3.5 py-1 rounded-full bg-white/90 hover:bg-white border border-slate-200/80 shadow-xs active:scale-95 transition cursor-pointer"
         >
           Done
         </button>
@@ -622,93 +633,116 @@ export function AndroidRecentAppsSwitcher() {
 
       {/* ── Android 3D Horizontal Card Stack Carousel (Vivo Style) ── */}
       <div className="relative z-10 flex-1 flex items-center overflow-x-auto no-scrollbar snap-x snap-mandatory px-6 sm:px-10 gap-5 py-4 min-h-0">
-        {tasks.map((task) => {
-          const isActive = task.id === activeTaskId;
-          const isSwipedUp = swipedUpTaskId === task.id;
-          const isDraggingThis = dragOffset?.id === task.id;
-          const currentY = isDraggingThis ? dragOffset.y : 0;
-
-          return (
-            <div
-              key={task.id}
-              className={`flex-shrink-0 flex flex-col items-center snap-center transition-all duration-200 ${
-                isSwipedUp ? "opacity-0 -translate-y-48 scale-75" : ""
-              }`}
-              style={{
-                transform: isDraggingThis ? `translateY(${currentY}px)` : undefined,
-                transition: isDraggingThis ? "none" : "all 0.22s ease-out",
-              }}
-              onTouchStart={(e) => handleCardTouchStart(e, task.id)}
-              onTouchMove={(e) => handleCardTouchMove(e, task.id)}
-              onTouchEnd={() => handleCardTouchEnd(task.id)}
+        {tasks.length === 0 ? (
+          <div className="w-full flex flex-col items-center justify-center text-center py-16 px-6">
+            <div className="w-16 h-16 rounded-3xl bg-white/95 shadow-lg border border-slate-200 flex items-center justify-center text-3xl mb-3">
+              📑
+            </div>
+            <h3 className="text-sm font-bold text-slate-800">No Recent Tabs Saved</h3>
+            <p className="text-xs text-slate-500 max-w-xs mt-1 leading-relaxed">
+              Use the floating 📑 Recent bubble on any page to customize and save tabs for instant switching.
+            </p>
+            <button
+              onClick={() => addPageToRecents()}
+              className="mt-4 px-4 py-2 rounded-2xl bg-[#C04A22] hover:bg-[#8C3015] text-white font-bold text-xs shadow-md active:scale-95 transition flex items-center gap-1.5 cursor-pointer"
             >
-              {/* ── 1. App Header Title with Dropdown Chevron ── */}
-              <div
-                onClick={() => switchTask(task.id)}
-                className="flex items-center gap-1.5 mb-2 px-3 py-1 rounded-full bg-white/90 border border-slate-200/80 text-slate-800 shadow-xs cursor-pointer active:scale-95 transition"
-              >
-                {/* App Name + Down Chevron */}
-                <span className="text-xs font-bold text-slate-800 tracking-tight">
-                  {task.title}
-                </span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-600 stroke-[2.5]" />
-              </div>
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>Add Current Page to Recents</span>
+            </button>
+          </div>
+        ) : (
+          tasks.map((task) => {
+            const isActive = task.id === activeTaskId;
+            const isSwipedUp = swipedUpTaskId === task.id;
+            const isDraggingThis = dragOffset?.id === task.id;
+            const currentY = isDraggingThis ? dragOffset.y : 0;
 
-              {/* ── 2. App Preview Card (Vivo Rounded Rect Deck) ── */}
+            return (
               <div
-                onClick={() => switchTask(task.id)}
-                className={`w-[74vw] max-w-[295px] h-[56vh] max-h-[460px] rounded-[28px] overflow-hidden border transition-all cursor-pointer relative group active:scale-[0.98] bg-white ${
-                  isActive
-                    ? "border-[#C04A22] ring-4 ring-[#C04A22]/20 shadow-xl"
-                    : "border-slate-200/80 hover:border-slate-300 shadow-md"
+                key={task.id}
+                className={`flex-shrink-0 flex flex-col items-center snap-center transition-all duration-200 ${
+                  isSwipedUp ? "opacity-0 -translate-y-48 scale-75" : ""
                 }`}
+                style={{
+                  transform: isDraggingThis ? `translateY(${currentY}px)` : undefined,
+                  transition: isDraggingThis ? "none" : "all 0.22s ease-out",
+                }}
+                onTouchStart={(e) => handleCardTouchStart(e, task.id)}
+                onTouchMove={(e) => handleCardTouchMove(e, task.id)}
+                onTouchEnd={() => handleCardTouchEnd(task.id)}
               >
-                {/* 100% Exact Live Scaled Viewport / Iframe - Perfectly Centered */}
-                <div className="w-full h-full relative overflow-hidden bg-white rounded-[28px] pointer-events-none select-none flex items-start justify-center">
-                  <div
-                    className="origin-top flex-shrink-0 flex items-start justify-center"
-                    style={{
-                      transform: "scale(0.74)",
-                      transformOrigin: "top center",
-                      width: "390px",
-                      height: "620px",
-                    }}
-                  >
-                    <iframe
-                      src={task.path}
-                      title={task.title}
-                      className="w-[390px] h-[620px] border-0 pointer-events-none select-none bg-white"
-                      tabIndex={-1}
-                    />
-                  </div>
-                  {/* Transparent touch capture overlay to ensure swipe/tap gestures work smoothly */}
-                  <div className="absolute inset-0 z-20 bg-transparent" />
+                {/* ── 1. App Header Title with Dropdown Chevron ── */}
+                <div
+                  onClick={() => switchTask(task.id)}
+                  className="flex items-center gap-1.5 mb-2 px-3 py-1 rounded-full bg-white/90 border border-slate-200/80 text-slate-800 shadow-xs cursor-pointer active:scale-95 transition"
+                >
+                  {/* App Name + Down Chevron */}
+                  <span className="text-xs font-bold text-slate-800 tracking-tight">
+                    {task.title}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-600 stroke-[2.5]" />
                 </div>
 
-                {/* Dismiss Hint on Drag */}
-                {isDraggingThis && currentY < -30 && (
-                  <div className="absolute inset-0 z-30 bg-red-950/80 backdrop-blur-xs flex items-center justify-center text-white font-bold text-sm animate-in fade-in">
-                    <Trash2 className="w-6 h-6 mr-2 text-red-400" />
-                    <span>Swipe up to close</span>
+                {/* ── 2. App Preview Card (Vivo Rounded Rect Deck) ── */}
+                <div
+                  onClick={() => switchTask(task.id)}
+                  className={`w-[74vw] max-w-[295px] h-[56vh] max-h-[460px] rounded-[28px] overflow-hidden border transition-all cursor-pointer relative group active:scale-[0.98] bg-white ${
+                    isActive
+                      ? "border-[#C04A22] ring-4 ring-[#C04A22]/20 shadow-xl"
+                      : "border-slate-200/80 hover:border-slate-300 shadow-md"
+                  }`}
+                >
+                  {/* 100% Exact Live Scaled Viewport / Iframe - Perfectly Centered */}
+                  <div className="w-full h-full relative overflow-hidden bg-white rounded-[28px] pointer-events-none select-none flex items-start justify-center">
+                    <div
+                      className="origin-top flex-shrink-0 flex items-start justify-center"
+                      style={{
+                        transform: "scale(0.74)",
+                        transformOrigin: "top center",
+                        width: "390px",
+                        height: "620px",
+                      }}
+                    >
+                      <iframe
+                        src={task.path}
+                        title={task.title}
+                        className="w-[390px] h-[620px] border-0 pointer-events-none select-none bg-white"
+                        tabIndex={-1}
+                      />
+                    </div>
+                    {/* Transparent touch capture overlay to ensure swipe/tap gestures work smoothly */}
+                    <div className="absolute inset-0 z-20 bg-transparent" />
                   </div>
-                )}
+
+                  {/* Dismiss Hint on Drag */}
+                  {isDraggingThis && currentY < -30 && (
+                    <div className="absolute inset-0 z-30 bg-red-950/80 backdrop-blur-xs flex items-center justify-center text-white font-bold text-sm animate-in fade-in">
+                      <Trash2 className="w-6 h-6 mr-2 text-red-400" />
+                      <span>Swipe up to close</span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
 
-      {/* ── 3. Bottom Close All Circular Button ── */}
-      <div className="relative z-10 flex flex-col items-center justify-center pt-1 pb-6 flex-shrink-0 safe-area-pb">
-        <button
-          onClick={clearAllTasks}
-          className="w-14 h-14 rounded-full bg-white/90 hover:bg-white active:bg-slate-100 border border-slate-200/80 text-slate-800 shadow-lg flex items-center justify-center transition active:scale-90 cursor-pointer mb-2"
-          title="Clear All Background Apps"
-        >
-          <X className="w-6 h-6 stroke-[2.5]" />
-        </button>
-        <span className="text-[10px] text-slate-600 font-semibold bg-white/80 px-2.5 py-0.5 rounded-full shadow-2xs">Swipe up on card to dismiss</span>
-      </div>
+      {/* ── 3. Bottom Close All Circular Button (Shown if tasks exist) ── */}
+      {tasks.length > 0 && (
+        <div className="relative z-10 flex flex-col items-center justify-center pt-1 pb-6 flex-shrink-0 safe-area-pb">
+          <button
+            onClick={clearAllTasks}
+            className="w-14 h-14 rounded-full bg-white/90 hover:bg-white active:bg-slate-100 border border-slate-200/80 text-slate-800 shadow-lg flex items-center justify-center transition active:scale-90 cursor-pointer mb-2"
+            title="Clear All Background Apps"
+          >
+            <X className="w-6 h-6 stroke-[2.5]" />
+          </button>
+          <span className="text-[10px] text-slate-600 font-semibold bg-white/80 px-2.5 py-0.5 rounded-full shadow-2xs">
+            Swipe up on card to dismiss
+          </span>
+        </div>
+      )}
     </div>
   );
 }
