@@ -282,10 +282,11 @@ function BariKoiLiveHousingMap({
   // Init BariKoi GL SDK / Leaflet Fallback
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+    let isCancelled = false;
 
     loadBkoiGL()
       .then(bkoigl => {
-        if (!containerRef.current || mapRef.current) return;
+        if (isCancelled || !containerRef.current || mapRef.current) return;
         const key = BARIKOI_API_KEY;
         if (bkoigl) {
           bkoigl.accessToken = key;
@@ -329,14 +330,23 @@ function BariKoiLiveHousingMap({
 
         map.on("load", () => {
           mapRef.current = map;
+          if (map.resize) map.resize();
           syncMapMarkers();
         });
         mapRef.current = map;
+
+        const ro = new ResizeObserver(() => {
+          if (mapRef.current?.resize) {
+            mapRef.current.resize();
+          }
+        });
+        if (containerRef.current) ro.observe(containerRef.current);
       })
       .catch(() => {
         // Fallback to Leaflet
-        import("leaflet").then(L => {
-          if (!containerRef.current || mapRef.current) return;
+        import("leaflet").then(LModule => {
+          if (isCancelled || !containerRef.current || mapRef.current) return;
+          const L = LModule.default || LModule;
           try {
             delete (L.Icon.Default.prototype as any)._getIconUrl;
           } catch (_) {}
@@ -349,11 +359,20 @@ function BariKoiLiveHousingMap({
           });
 
           L.tileLayer(
-            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+            "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
             {
               maxZoom: 19,
+              attribution: '&copy; <a href="https://barikoi.com">BariKoi</a>',
             }
           ).addTo(map);
+
+          map.invalidateSize();
+          const ro = new ResizeObserver(() => {
+            if (mapRef.current?.invalidateSize) {
+              mapRef.current.invalidateSize();
+            }
+          });
+          if (containerRef.current) ro.observe(containerRef.current);
 
           mapRef.current = map;
           LRef.current = L;
@@ -362,6 +381,7 @@ function BariKoiLiveHousingMap({
       });
 
     return () => {
+      isCancelled = true;
       if (mapRef.current) {
         try {
           mapRef.current.remove();
@@ -1046,16 +1066,16 @@ export function Housing() {
   // Property Details Modal State
   const [showDetailsModal, setShowDetailsModal] = useState<LiveHousingListing | null>(null);
 
-  // Default initial coordinates for map view before permission (Dhaka center)
+  // Default initial coordinates for BariKoi map view (Dhaka, Bangladesh)
   const defaultCoords: [number, number] = [23.8103, 90.4125];
   const [userCoords, setUserCoords] = useState<[number, number]>(defaultCoords);
-  const [userLocationName, setUserLocationName] = useState<string>("Dhaka");
-  const [userArea, setUserArea] = useState<string>("Dhaka Area");
+  const [userLocationName, setUserLocationName] = useState<string>("Dhaka, Bangladesh");
+  const [userArea, setUserArea] = useState<string>("Gulshan / Banani");
   const [userCity, setUserCity] = useState<string>("Dhaka");
 
   // Dynamic Live Housing List
   const [liveHousing, setLiveHousing] = useState<LiveHousingListing[]>(() =>
-    generateLiveLocationHousing(defaultCoords[0], defaultCoords[1], "Dhaka Area", "Dhaka")
+    generateLiveLocationHousing(defaultCoords[0], defaultCoords[1], "Gulshan / Banani", "Dhaka")
   );
   const [selectedListing, setSelectedListing] = useState<LiveHousingListing | null>(null);
   const [directionListing, setDirectionListing] = useState<LiveHousingListing | null>(null);
@@ -1206,6 +1226,25 @@ export function Housing() {
     );
   }, []);
 
+  // Continuous Real-Time GPS Tracking for Housing
+  useEffect(() => {
+    if (!("geolocation" in navigator)) return;
+    const watchId = navigator.geolocation.watchPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setUserCoords([lat, lng]);
+        setIsLocationGranted(true);
+        setLocationPermissionStatus("granted");
+      },
+      err => {
+        console.warn("Housing GPS watch warning:", err);
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
+
   // Direction Handler
   const handleShowDirection = useCallback((listing: LiveHousingListing) => {
     setDirectionListing(listing);
@@ -1219,11 +1258,11 @@ export function Housing() {
       setLocationPermissionStatus("prompt");
       setShowPermissionPrompt(false);
       setUserCoords(defaultCoords);
-      setUserLocationName("Dhaka");
-      setUserArea("Dhaka Area");
-      setUserCity("Dhaka");
+      setUserLocationName("Jackson Heights, NY");
+      setUserArea("Queens / NYC");
+      setUserCity("New York");
       setDirectionListing(null);
-      setLiveHousing(generateLiveLocationHousing(defaultCoords[0], defaultCoords[1], "Dhaka Area", "Dhaka"));
+      setLiveHousing(generateLiveLocationHousing(defaultCoords[0], defaultCoords[1], "Queens / NYC", "New York"));
       try {
         localStorage.removeItem("bkoi_last_user_coords");
       } catch (_) {}
