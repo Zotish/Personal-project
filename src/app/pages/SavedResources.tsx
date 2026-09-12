@@ -4,7 +4,7 @@ import { AppLayout } from "../components/layout/AppLayout";
 import {
   Bookmark, MapPin, FileText, Users, Link, Trash2, Search,
   Globe, Scale, Briefcase, Home, GraduationCap, Heart, ChevronRight,
-  Sparkles, ExternalLink, Plus, FolderHeart, X, Check
+  Sparkles, ExternalLink, Plus, FolderHeart, X, Check, ArrowLeft
 } from "lucide-react";
 
 type SavedItem = {
@@ -87,6 +87,20 @@ export function SavedResources() {
       <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
         
 
+
+        {/* Top Header with Back Button */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex-shrink-0 cursor-pointer active:scale-95"
+            title="Back"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h1 className="text-lg font-bold text-slate-900" style={{ fontFamily: "var(--font-display)" }}>
+            Saved
+          </h1>
+        </div>
 
         {/* ── 2. Search & Category Filter Pills ── */}
         <div className="bg-white rounded-3xl p-3 sm:p-4 border border-slate-200 shadow-2xs space-y-3">

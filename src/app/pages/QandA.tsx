@@ -374,9 +374,13 @@ export function QandA() {
         {/* ── 1. Top Header Banner with Pathasathi Branding ── */}
         <div className="bg-gradient-to-br from-[#FFF7F4] via-white to-orange-50/40 rounded-3xl p-4 sm:p-6 border border-[#E05236]/20 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-[#E05236] text-white flex items-center justify-center shadow-md shadow-[#E05236]/25 flex-shrink-0">
-              <HelpCircle className="w-6 h-6" />
-            </div>
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 rounded-xl bg-white/80 hover:bg-white text-slate-700 transition flex-shrink-0 cursor-pointer active:scale-95 shadow-2xs border border-slate-200/60"
+              title="Back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
             <div>
               <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
                 Community Q&amp;A

@@ -22,6 +22,7 @@ export function AndroidRecentAppsSwitcher() {
     clearAllTasks,
     isCurrentPageInRecents,
     addPageToRecents,
+    activeTaskToast,
   } = useMobileTabs();
 
   const navigate = useNavigate();
@@ -605,6 +606,14 @@ export function AndroidRecentAppsSwitcher() {
     <div className="lg:hidden fixed inset-0 z-[999999] isolate flex flex-col justify-between overflow-hidden select-none animate-in fade-in duration-200">
       {/* ── Minimal soft overlay so the background has NO heavy shadow ── */}
       <div className="absolute inset-0 bg-black/5 backdrop-blur-[2px]" />
+
+      {/* ── Toast Alert inside Recents Switcher ── */}
+      {activeTaskToast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[1000000] bg-slate-900/95 backdrop-blur-md text-white text-xs font-bold px-4 py-2 rounded-full shadow-2xl border border-white/20 flex items-center gap-2 animate-in fade-in slide-in-from-top-2 pointer-events-none">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>{activeTaskToast}</span>
+        </div>
+      )}
 
       {/* ── Top Header Bar ── */}
       <div className="relative z-10 w-full px-5 pt-4 pb-2 flex items-center justify-between safe-area-pt">

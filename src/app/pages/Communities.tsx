@@ -998,6 +998,7 @@ function CreateCommunityModal({ onClose, onCreate }: {
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 export function Communities() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"discover" | "joined">("discover");
   const [selected, setSelected] = useState<typeof allCommunities[0] | null>(null);
@@ -1042,9 +1043,18 @@ export function Communities() {
         <div className="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-border">
           <div className="px-4 pt-4 pb-3">
             <div className="flex items-center justify-between mb-3">
-              <h1 className="text-lg font-bold text-foreground" style={{ fontFamily: "var(--font-display)" }}>
-                Communities
-              </h1>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => navigate(-1)}
+                  className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex-shrink-0 cursor-pointer active:scale-95"
+                  title="Back"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <h1 className="text-lg font-bold text-foreground" style={{ fontFamily: "var(--font-display)" }}>
+                  Communities
+                </h1>
+              </div>
               <button
                 onClick={() => setShowCreate(true)}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#C04A22]/15 text-[#8C3015] border border-[#C04A22]/30 hover:bg-[#C04A22]/25 text-xs font-semibold transition cursor-pointer active:scale-95 flex-shrink-0"

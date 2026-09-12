@@ -7,7 +7,7 @@ import {
   Check, AlertTriangle, Languages, Smartphone, Mail, Phone,
   Trash2, Download, RefreshCw, Plus, X, CheckCircle,
   Monitor, Tablet, Wifi, Key, Camera, Search, MessageSquare,
-  FileText, ExternalLink, ChevronDown, ToggleLeft
+  FileText, ExternalLink, ChevronDown, ToggleLeft, ArrowLeft
 } from "lucide-react";
 
 // ── Toggle ────────────────────────────────────────────────────────────────────
@@ -928,7 +928,14 @@ export function Settings() {
   return (
     <AppLayout>
       <div className="max-w-lg mx-auto">
-        <div className="p-4 bg-white border-b border-border">
+        <div className="p-4 bg-white border-b border-border flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex-shrink-0 cursor-pointer active:scale-95"
+            title="Back"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
           <h1 className="text-xl font-bold text-foreground">Settings</h1>
         </div>
 

@@ -6,11 +6,17 @@ import {
   Sparkles,
   MapPin,
   ArrowRight,
-  Compass,
   RotateCcw,
   ExternalLink,
+  Compass,
+  Navigation,
+  Building2,
+  CheckCircle2,
+  ChevronRight,
+  Briefcase,
 } from "lucide-react";
 import { places, Place } from "../../pages/MapDiscovery";
+import { useLanguage } from "../../context/LanguageContext";
 
 // ── App Navigation Targets (Every Page, Service & Feature) ────────────────────
 export interface NavigationTarget {
@@ -726,27 +732,39 @@ export const SPECIFIC_JOB_ROLES = [
   },
 ];
 
-// Quick Shortcut Chips
-const QUICK_CHIPS = [
-  { id: "map", label: "লাইভ ম্যাপ", emoji: "🗺️", targetId: "map" },
-  { id: "jobs", label: "চাকরি", emoji: "💼", targetId: "jobs" },
-  { id: "food", label: "খাবার", emoji: "🍽️", targetId: "halal_food" },
-  { id: "housing", label: "বাসা ভাড়া", emoji: "🏢", targetId: "housing" },
-  { id: "cart", label: "আমার কার্ট / অর্ডার", emoji: "📦", targetId: "cart" },
-  { id: "reels", label: "রিলস ভিডিও", emoji: "🎬", targetId: "reels" },
-  { id: "legal", label: "আইনি ও ভিসা", emoji: "⚖️", targetId: "legal" },
-  { id: "religion", label: "মসজিদ", emoji: "🕌", targetId: "religion" },
-  { id: "hospital", label: "হাসপাতাল", emoji: "🏥", targetId: "hospital" },
-  { id: "furniture", label: "ফার্নিচার", emoji: "🪑", targetId: "furniture" },
-  { id: "flights", label: "বিমান টিকিট", emoji: "✈️", targetId: "flights" },
-  { id: "transport", label: "সাবওয়ে ও বাস", emoji: "🚇", targetId: "transport" },
-];
+export interface ServiceTypeSuggestion {
+  id: string;
+  title: string;
+  bnTitle: string;
+  category: string;
+  searchQuery: string;
+  typeLabel?: string;
+  bnTypeLabel?: string;
+}
 
-interface ChatMessage {
+export interface LocationPinpoint {
+  id: string | number;
+  name: string;
+  category: string;
+  address: string;
+  distance?: string;
+  lat: number;
+  lng: number;
+  phone?: string;
+  rating?: number;
+  description?: string;
+  badge?: string;
+  highlight?: string;
+  bnHighlight?: string;
+}
+
+export interface ChatMessage {
   id: string;
   sender: "bot" | "user";
   text: string;
   time: string;
+  serviceTypes?: ServiceTypeSuggestion[];
+  pinpoints?: LocationPinpoint[];
   destination?: {
     name: string;
     route: string;
@@ -836,6 +854,22 @@ export function matchNavigationIntent(query: string): {
   const has = (k: string) => words.includes(k) || cleanWords.includes(k) || normQuery.includes(k);
 
   // ── High-Priority Matchers for Header & Tab Icons (Exact UI Screenshot) ──
+
+  // 0. Recents / Multitasking Switcher / Customize Recents
+  if (
+    /\b(recent|recents|recent tab|recent apps|multitasking|task switcher|switch app)\b/i.test(normQuery) ||
+    has("রিসেন্ট") || has("রিসেন্ট অ্যাপ") || has("রিসেন্ট ট্যাব") || has("রিসেন্ট পেজ")
+  ) {
+    const isAdd = /\b(add|rekhe dao|rakho|save|যুক্ত)\b/i.test(normQuery) || has("যোগ");
+    return {
+      target: null,
+      place: null,
+      destinationName: isAdd ? "রিসেন্টে যোগ করুন (Add to Recents)" : "রিসেন্ট অ্যাপস সুইচ (Recents)",
+      route: "/feed",
+      isAction: true,
+      actionEvent: isAdd ? "add-to-recent-apps" : "open-recent-apps",
+    };
+  }
 
   // 1. Weather / Thermometer (UI Screenshot Icon 3)
   if (
@@ -1247,6 +1281,973 @@ export function DollAssistantTrigger({
   );
 }
 
+// ── Verified Service Types & Categories (Types of Services & Jobs) ───────────
+export const VERIFIED_SERVICE_TYPES: Record<string, ServiceTypeSuggestion[]> = {
+  jobs: [
+    {
+      id: "job-warehouse",
+      title: "Warehouse & Logistics jobs",
+      bnTitle: "ওয়্যারহাউস ও লজিস্টিকস জব",
+      typeLabel: "Warehouse & Logistics",
+      bnTypeLabel: "ওয়্যারহাউস ও প্যাকেজিং",
+      category: "jobs",
+      searchQuery: "warehouse",
+    },
+    {
+      id: "job-delivery",
+      title: "Driver & Delivery jobs",
+      bnTitle: "ড্রাইভার ও ডেলিভারি জব",
+      typeLabel: "Delivery & Courier",
+      bnTypeLabel: "ড্রাইভিং ও ফুড ডেলিভারি",
+      category: "jobs",
+      searchQuery: "delivery driver",
+    },
+    {
+      id: "job-restaurant",
+      title: "Restaurant & Kitchen staff jobs",
+      bnTitle: "রেস্তোরাঁ ও কিচেন জব",
+      typeLabel: "Restaurant & Kitchen",
+      bnTypeLabel: "রেস্তোরাঁ ও ফুড সার্ভিস",
+      category: "jobs",
+      searchQuery: "restaurant cook kitchen",
+    },
+    {
+      id: "job-retail",
+      title: "Retail Store & Cashier jobs",
+      bnTitle: "রিটেইল স্টোর ও ক্যাশিয়ার জব",
+      typeLabel: "Retail & Sales",
+      bnTypeLabel: "গ্রোসারি ও রিটেইল সেলস",
+      category: "jobs",
+      searchQuery: "retail cashier sales",
+    },
+    {
+      id: "job-technician",
+      title: "Maintenance & Technician jobs",
+      bnTitle: "কনস্ট্রাকশন ও টেকনিশিয়ান জব",
+      typeLabel: "Technician & Labor",
+      bnTypeLabel: "টেকনিশিয়ান ও মেইনটেন্যান্স",
+      category: "jobs",
+      searchQuery: "technician maintenance",
+    },
+  ],
+  greencard_legal: [
+    {
+      id: "legal-family",
+      title: "Family Green Card & I-130 Petition services",
+      bnTitle: "পারিবারিক গ্রিন কার্ড ও আই-১৩০ আবেদন সেবা",
+      typeLabel: "Family Green Card",
+      bnTypeLabel: "পারিবারিক গ্রিন কার্ড",
+      category: "lawyer",
+      searchQuery: "green card lawyer",
+    },
+    {
+      id: "legal-asylum",
+      title: "Asylum & Work Permit (EAD) legal defense",
+      bnTitle: "রাজনৈতিক আশ্রয় ও ওয়ার্ক পারমিট (EAD) আইনি সেবা",
+      typeLabel: "Asylum & Work Permit",
+      bnTypeLabel: "অ্যাসাইলাম ও ওয়ার্ক পারমিট",
+      category: "lawyer",
+      searchQuery: "asylum legal aid",
+    },
+    {
+      id: "legal-probono",
+      title: "Free Pro-Bono Legal Aid & Court defense",
+      bnTitle: "ফ্রি লিগ্যাল এইড ও কোর্ট ডিফেন্স সেবা",
+      typeLabel: "Free Pro-Bono Aid",
+      bnTypeLabel: "ফ্রি লিগ্যাল এইড",
+      category: "lawyer",
+      searchQuery: "legal aid",
+    },
+    {
+      id: "legal-citizenship",
+      title: "Citizenship & Fee Waiver clinic services",
+      bnTitle: "সিটিজেনশিপ প্রসেসিং ও আবেদন ফি মওকুফ সেবা",
+      typeLabel: "Citizenship Clinic",
+      bnTypeLabel: "সিটিজেনশিপ ও ফি মওকুফ",
+      category: "lawyer",
+      searchQuery: "citizenship clinic",
+    },
+  ],
+  asylum_tps: [
+    {
+      id: "asylum-filing",
+      title: "Political Asylum (Form I-589) filing services",
+      bnTitle: "পলিটিক্যাল অ্যাসাইলাম (I-589) আবেদন সেবা",
+      typeLabel: "Asylum Application",
+      bnTypeLabel: "অ্যাসাইলাম আবেদন",
+      category: "lawyer",
+      searchQuery: "asylum defense",
+    },
+    {
+      id: "asylum-ead",
+      title: "Work Permit (Form I-765) renewal services",
+      bnTitle: "ওয়ার্ক পারমিট (EAD) নবায়ন ও ফি মওকুফ সেবা",
+      typeLabel: "Work Permit EAD",
+      bnTypeLabel: "ওয়ার্ক পারমিট নবায়ন",
+      category: "lawyer",
+      searchQuery: "work permit ead",
+    },
+    {
+      id: "asylum-court",
+      title: "Immigration Court & Deportation Defense",
+      bnTitle: "ইমিগ্রেশন কোর্ট ও ডিপোর্টেশন ডিফেন্স সেবা",
+      typeLabel: "Court Defense",
+      bnTypeLabel: "কোর্ট ডিফেন্স",
+      category: "lawyer",
+      searchQuery: "court defense lawyer",
+    },
+  ],
+  dmv_license: [
+    {
+      id: "dmv-greenlight",
+      title: "Green Light Driver License services (any status)",
+      bnTitle: "গ্রিন লাইট ড্রাইভিং লাইসেন্স সেবা (যেকোনো স্ট্যাটাস)",
+      typeLabel: "Green Light License",
+      bnTypeLabel: "গ্রিন লাইট লাইসেন্স",
+      category: "dmv",
+      searchQuery: "dmv green light license",
+    },
+    {
+      id: "dmv-permit",
+      title: "Learner Permit Written Exam testing services",
+      bnTitle: "লার্নার পারমিট ও লিখিত পরীক্ষা সেবা",
+      typeLabel: "Learner Permit",
+      bnTypeLabel: "লার্নার পারমিট টেস্ট",
+      category: "dmv",
+      searchQuery: "dmv permit test",
+    },
+    {
+      id: "dmv-stateid",
+      title: "Non-Driver NY State ID Card services",
+      bnTitle: "নিউইয়র্ক নন-ড্রাইভার স্টেট আইডি কার্ড সেবা",
+      typeLabel: "State ID Card",
+      bnTypeLabel: "স্টেট আইডি কার্ড",
+      category: "dmv",
+      searchQuery: "dmv state id",
+    },
+  ],
+  halal_food: [
+    {
+      id: "halal-meat",
+      title: "Fresh Zabiha Halal Meat markets",
+      bnTitle: "তাজা জবিহা হালাল মাংস ও দেশি গ্রোসারি",
+      typeLabel: "Halal Meat & Market",
+      bnTypeLabel: "হালাল মাংস ও গ্রোসারি",
+      category: "groceries",
+      searchQuery: "halal meat grocery",
+    },
+    {
+      id: "halal-fish",
+      title: "Bangladeshi Padma Ilish & imported grocery stores",
+      bnTitle: "পদ্মার ইলিশ ও আমদানিকৃত বাংলাদেশি গ্রোসারি",
+      typeLabel: "Bangladeshi Grocery",
+      bnTypeLabel: "দেশি মাছ ও নিত্যপণ্য",
+      category: "groceries",
+      searchQuery: "bangladeshi grocery",
+    },
+    {
+      id: "halal-dining",
+      title: "Authentic Halal Restaurants & Biryani spots",
+      bnTitle: "খাঁটি সাউথ এশিয়ান হালাল খাবার ও বিরিয়ানি",
+      typeLabel: "Halal Dining",
+      bnTypeLabel: "হালাল বিরিয়ানি ও রেস্তোরাঁ",
+      category: "restaurant",
+      searchQuery: "halal restaurant biryani",
+    },
+  ],
+  healthcare: [
+    {
+      id: "health-nyccare",
+      title: "NYC Care low-cost doctor & primary healthcare",
+      bnTitle: "NYC কেয়ার স্বল্পমূল্যে ডাক্তার ও প্রাথমিক চিকিৎসা সেবা",
+      typeLabel: "NYC Care Doctor",
+      bnTypeLabel: "NYC কেয়ার ডাক্তার",
+      category: "hospital",
+      searchQuery: "nyc care clinic",
+    },
+    {
+      id: "health-emergency",
+      title: "Emergency Room treatment without status check",
+      bnTitle: "স্ট্যাটাস যাচাই ছাড়াই জরুরি হাসপাতাল চিকিৎসা সেবা",
+      typeLabel: "Emergency Hospital",
+      bnTypeLabel: "জরুরি হাসপাতাল সেবা",
+      category: "hospital",
+      searchQuery: "emergency hospital",
+    },
+    {
+      id: "health-clinic",
+      title: "Community Free Clinics & prescription support",
+      bnTitle: "বিনামূল্যে হেলথ চেকআপ ও প্রেসক্রিপশন সেবা",
+      typeLabel: "Free Health Clinic",
+      bnTypeLabel: "ফ্রি হেলথ ক্লিনিক",
+      category: "hospital",
+      searchQuery: "free health clinic",
+    },
+  ],
+  housing: [
+    {
+      id: "housing-sublet",
+      title: "Room rentals & sublets without credit check",
+      bnTitle: "ক্রেডিট হিস্টোরি ছাড়া রুম ও সাবলেট আবাসন",
+      typeLabel: "Sublet & Rooms",
+      bnTypeLabel: "রুম ও সাবলেট ভাড়া",
+      category: "housing",
+      searchQuery: "sublet housing",
+    },
+    {
+      id: "housing-rights",
+      title: "Free Tenant Rights & Eviction Defense counseling",
+      bnTitle: "ভাড়াটিয়াদের আইনি অধিকার ও উচ্ছেদ প্রতিরোধ সেবা",
+      typeLabel: "Tenant Protections",
+      bnTypeLabel: "ভাড়াটিয়ার আইনি অধিকার",
+      category: "housing",
+      searchQuery: "tenant rights housing",
+    },
+  ],
+  mosque: [
+    {
+      id: "mosque-prayer",
+      title: "Daily 5x Prayer & Friday Jummah congregational services",
+      bnTitle: "দৈনিক ৫ ওয়াক্ত নামাজ ও জুম্মা জামাত",
+      typeLabel: "Daily Prayer & Jummah",
+      bnTypeLabel: "দৈনিক নামাজ ও জুম্মা",
+      category: "mosque",
+      searchQuery: "mosque prayer",
+    },
+    {
+      id: "mosque-community",
+      title: "Newcomer immigrant halal food pantry & social services",
+      bnTitle: "নতুন প্রবাসীদের সহায়তা ও হালাল ফুড প্যান্ট্রি",
+      typeLabel: "Community Services",
+      bnTypeLabel: "সোশ্যাল সার্ভিস ও প্যান্ট্রি",
+      category: "mosque",
+      searchQuery: "islamic community center",
+    },
+  ],
+};
+
+// ── Verified Service Location Pinpoints for Immigrant Support ──────────────────
+export const VERIFIED_SERVICE_PINPOINTS: Record<string, LocationPinpoint[]> = {
+  greencard_legal: [
+    {
+      id: "qls-imm",
+      name: "Queens Legal Services (Immigration Unit)",
+      category: "⚖️ Free Legal Aid",
+      address: "89-00 Sutphin Blvd, Jamaica, NY 11435",
+      distance: "0.8 mi",
+      lat: 40.7042,
+      lng: -73.8078,
+      phone: "+1 (718) 391-1332",
+      rating: 4.9,
+      description: "Free pro-bono immigration attorney counsel, Green Card & Adjustment of Status (Form I-485) assistance.",
+      badge: "PRO BONO",
+      highlight: "Bengali-speaking immigration lawyers & free legal aid",
+      bnHighlight: "বাংলাভাষী আইনজীবী ও ফ্রি লিগ্যাল এইড পেতে",
+    },
+    {
+      id: "uscis-nyc",
+      name: "USCIS New York District & Field Office",
+      category: "🏛️ Federal Immigration Center",
+      address: "26 Federal Plaza, New York, NY 10278",
+      distance: "1.5 mi",
+      lat: 40.7153,
+      lng: -74.0039,
+      phone: "+1 (800) 375-5283",
+      rating: 4.8,
+      description: "Official federal office for I-485 Adjustment of Status, biometric appointments, and Green Card interviews.",
+      badge: "OFFICIAL USCIS",
+      highlight: "Official Green Card interviews & biometrics center",
+      bnHighlight: "গ্রিন কার্ড ইন্টারভিউ ও বায়োমেট্রিক্স সার্ভিস দিতে",
+    },
+    {
+      id: "cuny-cit",
+      name: "CUNY Citizenship Now! Legal Center",
+      category: "⚖️ University Legal Clinic",
+      address: "31-10 Thomson Ave, Long Island City, NY 11101",
+      distance: "2.1 mi",
+      lat: 40.7441,
+      lng: -73.9351,
+      phone: "+1 (646) 664-9400",
+      rating: 4.9,
+      description: "Free high-quality immigration legal services, fee waiver assistance, and naturalization clinics.",
+      badge: "FREE AID",
+      highlight: "Free citizenship clinics & fee waiver legal assistance",
+      bnHighlight: "ফ্রি সিটিজেনশিপ ও আবেদন ফি মওকুফ ক্লিনিক পেতে",
+    },
+  ],
+  asylum_tps: [
+    {
+      id: "asylum-defense",
+      name: "Asylum & Free Legal Aid Defense",
+      category: "⚖️ Immigrant Defense",
+      address: "120-46 Queens Blvd, Kew Gardens, NY 11415",
+      distance: "1.2 mi",
+      lat: 40.7092,
+      lng: -73.8242,
+      phone: "+1 (718) 391-1332",
+      rating: 4.9,
+      description: "Pro-bono counsel for political asylum (Form I-589), credible fear interviews, and deportation defense.",
+      badge: "PRO BONO",
+      highlight: "Pro-bono political asylum & court defense lawyers",
+      bnHighlight: "পলিটিক্যাল অ্যাসাইলাম ও কোর্ট ডিফেন্স আইনজীবী পেতে",
+    },
+    {
+      id: "qls-imm",
+      name: "Queens Legal Services (Immigration Unit)",
+      category: "⚖️ Free Legal Aid",
+      address: "89-00 Sutphin Blvd, Jamaica, NY 11435",
+      distance: "0.8 mi",
+      lat: 40.7042,
+      lng: -73.8078,
+      phone: "+1 (718) 391-1332",
+      rating: 4.9,
+      description: "Free immigration court defense and EAD work permit renewals.",
+      badge: "FREE AID",
+      highlight: "Bengali-speaking asylum counsel & work permit renewals",
+      bnHighlight: "বাংলাভাষী অ্যাসাইলাম ও ওয়ার্ক পারমিট আইনজীবী পেতে",
+    },
+  ],
+  dmv_license: [
+    {
+      id: "dmv-jamaica",
+      name: "Jamaica DMV Office (NY State)",
+      category: "🚗 DMV Center",
+      address: "168-46 91st Ave, 2nd Fl, Jamaica, NY 11432",
+      distance: "0.6 mi",
+      lat: 40.7065,
+      lng: -73.7942,
+      phone: "+1 (718) 966-6155",
+      rating: 4.6,
+      description: "Official NY DMV issuing Green Light Law driver licenses regardless of immigration status.",
+      badge: "GREEN LIGHT",
+      highlight: "Green Light driver license & learner permit for all immigrants",
+      bnHighlight: "গ্রিন লাইট ড্রাইভিং লাইসেন্স ও লার্নার পারমিট পেতে",
+    },
+    {
+      id: "dmv-queens-west",
+      name: "Queens West DMV Office",
+      category: "🚗 DMV Center",
+      address: "30-56 Whitestone Expy, Flushing, NY 11354",
+      distance: "2.8 mi",
+      lat: 40.7712,
+      lng: -73.8341,
+      phone: "+1 (718) 966-6155",
+      rating: 4.5,
+      description: "Full service motor vehicle office for permit tests, licenses, and non-driver IDs.",
+      highlight: "Non-driver State ID card & road test appointments",
+      bnHighlight: "নিউইয়র্ক স্টেট আইডি ও ড্রাইভিং লাইসেন্স পেতে",
+    },
+  ],
+  halal_food: [
+    {
+      id: "halal-mart-jh",
+      name: "Little Bangladesh Grocery & Halal Mart",
+      category: "🛒 Halal Grocery",
+      address: "73-12 37th Ave, Jackson Heights, NY 11372",
+      distance: "0.5 mi",
+      lat: 40.7491,
+      lng: -73.8912,
+      phone: "+1 (718) 898-1122",
+      rating: 4.9,
+      description: "Fresh halal meat, imported Padma Ilish, Bangladeshi spices, and daily staples.",
+      badge: "ZABIHAH",
+      highlight: "Fresh Zabiha halal meat, Padma Ilish & Bangladeshi food",
+      bnHighlight: "তাজা হালাল মাংস, পদ্মার ইলিশ ও দেশি বাজার পেতে",
+    },
+    {
+      id: "kabab-king",
+      name: "Kabab King & Halal Diner",
+      category: "🍽️ Halal Restaurant",
+      address: "73-01 37th Ave, Jackson Heights, NY 11372",
+      distance: "0.5 mi",
+      lat: 40.7490,
+      lng: -73.8916,
+      phone: "+1 (718) 457-5855",
+      rating: 4.8,
+      description: "Famous authentic South Asian halal kababs, biryani, curries, and fresh naan.",
+      highlight: "Authentic halal kacchi biryani, tandoori kababs & dining",
+      bnHighlight: "খাঁটি হালাল কাচ্চি বিরিয়ানি ও কাবাব খেতে",
+    },
+  ],
+  healthcare: [
+    {
+      id: "hosp-elmhurst",
+      name: "NYC Health + Hospitals / Elmhurst",
+      category: "🏥 Public Hospital",
+      address: "79-01 Broadway, Elmhurst, NY 11373",
+      distance: "1.1 mi",
+      lat: 40.7447,
+      lng: -73.8856,
+      phone: "+1 (718) 334-4000",
+      rating: 4.8,
+      description: "NYC Care certified public hospital offering low-cost/free emergency care to all immigrants regardless of status.",
+      badge: "NYC CARE",
+      highlight: "NYC Care free/low-cost hospital treatment (no status check)",
+      bnHighlight: "NYC কেয়ার ফ্রি/স্বল্পমূল্যে জরুরি ডাক্তার ও চিকিৎসা পেতে",
+    },
+    {
+      id: "comm-health-clinic",
+      name: "Community Free Health Clinic",
+      category: "🏥 Community Clinic",
+      address: "97-04 Sutphin Blvd, Jamaica, NY 11435",
+      distance: "0.7 mi",
+      lat: 40.7011,
+      lng: -73.8075,
+      phone: "+1 (718) 657-7088",
+      rating: 4.7,
+      description: "Sliding-scale healthcare, free preventive checkups, and prescription assistance.",
+      highlight: "Free community doctor checkup & prescription assistance",
+      bnHighlight: "বিনামূল্যে হেলথ চেকআপ ও প্রেসক্রিপশন সেবা পেতে",
+    },
+  ],
+  jobs: [
+    {
+      id: "nys-dol-career",
+      name: "NYS Department of Labor Career Center",
+      category: "💼 Career Center",
+      address: "168-25 Jamaica Ave, 2nd Fl, Jamaica, NY 11432",
+      distance: "0.5 mi",
+      lat: 40.7061,
+      lng: -73.7951,
+      phone: "+1 (718) 557-6755",
+      rating: 4.7,
+      description: "Free job placement, resume review, career workshops, and vocational training for immigrants.",
+      badge: "FREE CAREER",
+      highlight: "Free job placement, resume review & career workshops",
+      bnHighlight: "বিনামূল্যে চাকরি খোঁজা, রেজুমে ও জব ট্রেইনিং পেতে",
+    },
+    {
+      id: "queens-job-hub",
+      name: "Queens Job Help & Placement Hub",
+      category: "💼 Employment Agency",
+      address: "90-04 161st St, Jamaica, NY 11432",
+      distance: "0.7 mi",
+      lat: 40.7055,
+      lng: -73.7995,
+      phone: "+1 (718) 523-2288",
+      rating: 4.8,
+      description: "Connecting immigrants to verified legal employment, warehouse, logistics, and hospitality positions.",
+      highlight: "Verified legal employment in warehouse, logistics & hospitality",
+      bnHighlight: "ইমিগ্র্যান্টদের জন্য ভেরিফায়েড কর্মসংস্থান ও জব প্লেসমেন্ট পেতে",
+    },
+  ],
+  mosque: [
+    {
+      id: "masjid-altaqwa",
+      name: "Masjid Al-Taqwa & Community Center",
+      category: "🕌 Mosque & Community",
+      address: "1266 Bedford Ave, Brooklyn, NY 11216",
+      distance: "1.8 mi",
+      lat: 40.6819,
+      lng: -73.9536,
+      phone: "+1 (718) 622-0800",
+      rating: 4.9,
+      description: "Vibrant community mosque offering Islamic education, Halal food distributions, and newcomer social services.",
+      badge: "COMMUNITY",
+      highlight: "Daily 5x prayer, Jummah & newcomer community support",
+      bnHighlight: "দৈনিক পাঁচ ওয়াক্ত জামাত, জুম্মা ও হালাল ফুড প্যান্ট্রি পেতে",
+    },
+    {
+      id: 1,
+      name: "Baitul Mukarram National Mosque",
+      category: "🕌 Mosque",
+      address: "Paltan, Dhaka",
+      distance: "0.3 km",
+      lat: 23.7315,
+      lng: 90.4075,
+      phone: "+880 2-9556000",
+      rating: 4.9,
+      description: "National mosque with daily 5 times prayer and community services.",
+      highlight: "National mosque daily prayers & Islamic gatherings",
+      bnHighlight: "দৈনিক জামাতে নামাজ ও ইসলামিক সোশ্যাল সার্ভিস পেতে",
+    },
+  ],
+  housing: [
+    {
+      id: "qch-housing",
+      name: "Queens Community House (Housing Assistance)",
+      category: "🏠 Housing Assistance",
+      address: "108-25 62nd Dr, Forest Hills, NY 11375",
+      distance: "1.9 mi",
+      lat: 40.7301,
+      lng: -73.8524,
+      phone: "+1 (718) 592-5757",
+      rating: 4.8,
+      description: "Free counseling for finding affordable apartments, lease protections, and tenant rights.",
+      badge: "TENANT RIGHTS",
+      highlight: "Tenant rights, emergency shelter & rental subsidy help",
+      bnHighlight: "ভাড়াটিয়াদের আইনি অধিকার ও জরুরি আবাসন সহায়তা পেতে",
+    },
+  ],
+};
+
+// Search places from MapDiscovery
+function findMapPlaces(query: string): LocationPinpoint[] {
+  const q = query.toLowerCase();
+  const matched = places.filter(
+    (p) =>
+      p.name.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q) ||
+      p.address.toLowerCase().includes(q)
+  );
+  return matched.slice(0, 2).map((p) => ({
+    id: p.id,
+    name: p.name,
+    category: p.category,
+    address: p.address,
+    distance: p.distance,
+    lat: p.lat,
+    lng: p.lng,
+    phone: p.phone,
+    rating: p.rating,
+    description: p.description,
+    highlight: p.description ? p.description.slice(0, 50) : `${p.category} services`,
+    bnHighlight: p.description ? p.description.slice(0, 50) : `${p.category} সেবা পেতে`,
+  }));
+}
+
+// ── ChatGPT-Style AI Query & Response Engine with Service Type Suggestions ────
+export function generateChatGPTAnswerAndPinpoints(
+  rawQuery: string,
+  userLang: string
+): {
+  text: string;
+  serviceTypes?: ServiceTypeSuggestion[];
+  pinpoints?: LocationPinpoint[];
+  destination?: { name: string; route: string; state?: any };
+} {
+  const query = rawQuery.toLowerCase().trim();
+  const isBangla =
+    /[\u0980-\u09FF]/.test(rawQuery) ||
+    userLang === "bn" ||
+    /\b(ami|tumi|apni|chai|kivabe|korbo|koro|pabo|lagbe|ache|achhe|ki|kothay|dekhao|bolo)\b/i.test(rawQuery);
+
+  // 1. Green Card / Permanent Residency (User's primary request)
+  if (
+    /green\s*card|greencard|permanent\s*resident|i-485|i-130|adjustment\s*of\s*status|গ্রিন\s*কার্ড|গ্রিনকার্ড|পিআর|স্থায়ী\s*বাসিন্দা/i.test(
+      query
+    )
+  ) {
+    if (isBangla) {
+      return {
+        text: `যুক্তরাষ্ট্রে **গ্রিন কার্ড (Permanent Resident Card)** পাওয়ার প্রধান নিয়ম ও ধাপসমূহ:
+
+**১. আবেদনের প্রধান মাধ্যমসমূহ:**
+• **পারিবারিক স্পন্সরশিপ (Family):** মার্কিন নাগরিকের স্পাউস (স্বামী/স্ত্রী), ২১ বছরের কম বয়সী অবিবাহিত সন্তান বা পিতা-মাতা (Immediate Relative)।
+• **চাকরিভিত্তিক (Employment):** EB-1 (এক্সট্রাঅর্ডিনারি অ্যাবিলিটি), EB-2 (National Interest Waiver / অ্যাডভান্সড ডিগ্রি), অথবা নিয়োগকর্তা কর্তৃক স্পন্সরকৃত EB-3।
+• **অ্যাসাইলাম বা শরণার্থী:** রাজনৈতিক আশ্রয় অনুমোদনের ঠিক ১ বছর পূর্ণ হলে গ্রিন কার্ডের আবেদন করা যায়।
+• **ডিভি লটারি (Diversity Visa):** যোগ্য দেশের নাগরিকদের জন্য বার্ষিক অনলাইন লটারি।
+
+**২. মূল আবেদন প্রক্রিয়া ও ধাপ:**
+১. **পিটিশন দাখিল:** স্পন্সর Form I-130 (পরিবার) বা Form I-140 (কর্মসংস্থান) ইউএসসিআইএসে দাখিল করবেন।
+২. **স্ট্যাটাস অ্যাডজাস্টমেন্ট (AOS):** আপনি বৈধভাবে যুক্তরাষ্ট্রে অবস্থান করলে **Form I-485** জমা দিন (দেশের বাইরে থাকলে কনস্যুলার প্রসেসিং DS-260)।
+৩. **ওয়ার্ক ও ট্রাভেল পারমিট:** একই সাথে কাজের জন্য **Form I-765 (EAD)** এবং দেশে যাওয়ার জন্য **Form I-131 (Advance Parole)** জমা দিন।
+৪. **বায়োমেট্রিক ও মেডিকেল:** সিভিল সার্জন কর্তৃক সিলগালা করা **Form I-693** মেডিকেল রিপোর্ট জমা দিন ও ফিঙ্গারপ্রিন্ট সম্পন্ন করুন।
+৫. **ইন্টারভিউ ও অনুমোদন:** লোকাল USCIS ফিল্ড অফিসে নির্ধারিত ইন্টারভিউ সফলভাবে সম্পন্ন হলে গ্রিন কার্ড ইস্যু হবে।
+
+💡 **পরামর্শ:** যে কোনো ফর্ম জমা দেওয়ার আগে অনুমোদিত ফ্রি লিগ্যাল এইড ক্লিনিক অথবা বিশ্বস্ত ইমিগ্রেশন অ্যাটর্নির পরামর্শ নিন। নিচে প্রয়োজনীয় সার্ভিসের ধরন ও সুযোগের লিংক দেওয়া হলো:`,
+        serviceTypes: VERIFIED_SERVICE_TYPES.greencard_legal,
+      };
+    }
+
+    return {
+      text: `Here is a complete guide on **how to get a U.S. Green Card (Permanent Residency)**:
+
+**1. Primary Eligibility Pathways:**
+• **Family-Sponsored:** Immediate relative of a U.S. citizen (spouse, unmarried children under 21, or parents) or Family Preference categories.
+• **Employment-Based:** EB-1 (extraordinary ability), EB-2 / NIW (advanced degrees or national interest), or EB-3 (skilled workers sponsored by a U.S. employer via PERM labor certification).
+• **Asylum & Refugee Status:** You can apply for a Green Card exactly 1 year after your asylum grant date.
+• **Diversity Visa (DV Lottery):** Free annual visa lottery program for qualifying countries.
+
+**2. Step-by-Step Application Process:**
+1. **Immigrant Petition:** Your sponsor files **Form I-130** (family) or **Form I-140** (employment) with USCIS.
+2. **Adjustment of Status (AOS):** If you are lawfully inside the U.S. and your priority date is current, file **Form I-485**. (If outside the U.S., apply via Consular Processing Form DS-260).
+3. **Work & Travel Authorization:** Concurrently submit **Form I-765 (EAD)** for work authorization and **Form I-131 (Advance Parole)** for emergency travel.
+4. **Biometrics & Medical Exam:** Complete fingerprinting and the sealed medical examination (**Form I-693**) signed by a designated Civil Surgeon.
+5. **Interview & Card Issuance:** Attend your in-person interview at the local USCIS Field Office, answer questions honestly, and receive your Green Card!
+
+⚠️ **Crucial Advice:** Never pay unauthorized "notarios". Verified pro-bono immigration clinics provide free help filing these forms. Explore the available service types below:`,
+      serviceTypes: VERIFIED_SERVICE_TYPES.greencard_legal,
+    };
+  }
+
+  // 2. Asylum & TPS (রাজনৈতিক আশ্রয়)
+  if (
+    /asylum|refugee|i-589|credible\s*fear|deportation|tps|অ্যাসাইলাম|আশ্রয়|শরণার্থী|কেস|ই-৫৮৯/i.test(
+      query
+    )
+  ) {
+    if (isBangla) {
+      return {
+        text: `যুক্তরাষ্ট্রে **অ্যাসাইলাম (রাজনৈতিক আশ্রয়)** আবেদনের জরুরি নিয়ম ও ধাপ:
+
+**১. এক বছরের সময়সীমা (1-Year Deadline):**
+• যুক্তরাষ্ট্রে পৌঁছানোর **১ বছরের মধ্যে Form I-589** দাখিল করা বাধ্যতামূলক (ব্যতিক্রম প্রমাণযোগ্য কারণ ছাড়া)।
+**২. অ্যাফারমেটিভ বনাম ডিফেন্সিভ অ্যাসাইলাম:**
+• আপনি কোনো ডিপোর্টেশন কেইসে না থাকলে সরাসরি USCIS-এ আবেদন করবেন। কোর্ট প্রসিডিংসে থাকলে ইমিগ্রেশন জজের কাছে শুনানি হবে।
+**৩. কাজের অনুমতি (EAD Work Permit):**
+• Form I-589 জমার ১৫০ দিন পর আপনি ক্যাটাগরি (c)(8)-এর আওতায় ওয়ার্ক পারমিটের (Form I-765) আবেদন করতে পারবেন এবং ১৮০ দিনের ঘড়িতে অনুমোদন পাবেন।
+**৪. আইনি সহায়তা:**
+• কোর্টে একা যাবেন না। লিগ্যাল এইড সংস্থাগুলি বিনামূল্যে পরামর্শ ও ডিফেন্স প্রদান করে। প্রয়োজনীয় সার্ভিসের সুযোগের লিংক নিচে দেওয়া হলো:`,
+        serviceTypes: VERIFIED_SERVICE_TYPES.asylum_tps,
+      };
+    }
+
+    return {
+      text: `Here is what you need to know about the **U.S. Political Asylum Process**:
+
+**1. One-Year Filing Deadline:**
+• You must submit **Form I-589** within **1 year** of your arrival in the United States, unless you prove extraordinary circumstances.
+**2. Affirmative vs. Defensive Asylum:**
+• **Affirmative:** Filed with USCIS if you are in lawful status or not facing immigration court removal proceedings.
+• **Defensive:** Presented in front of an Immigration Judge (EOIR) if you were issued a Notice to Appear (NTA).
+**3. Work Authorization (EAD Clock):**
+• 150 days after USCIS receives your complete I-589, you are eligible to file **Form I-765** under category (c)(8). It can be granted once 180 days have accrued on the asylum clock.
+**4. Free Legal Defense:**
+• Do not attend hearings alone. Nonprofit pro-bono legal teams provide free credible fear interview prep and court representation. Explore the service options below:`,
+      serviceTypes: VERIFIED_SERVICE_TYPES.asylum_tps,
+    };
+  }
+
+  // 3. Driver's License & DMV (গ্রিন লাইট ল)
+  if (
+    /driver|driving|license|dmv|permit|learner|green\s*light|ড্রাইভিং|লাইসেন্স|ডিএমভি|গাড়ি\s*চালানো/i.test(
+      query
+    )
+  ) {
+    if (isBangla) {
+      return {
+        text: `নিউইয়র্কে ইমিগ্রেশন স্ট্যাটাস বা SSN ছাড়াও **ড্রাইভিং লাইসেন্স** পাওয়ার নিয়ম:
+
+**১. গ্রিন লাইট ল (Green Light Law):**
+• ১৬ বছর বা তদূর্ধ্ব যেকোনো অভিবাসী সোশ্যাল সিকিউরিটি নম্বর (SSN) ছাড়াই বৈধ স্ট্যান্ডার্ড ড্রাইভার লাইসেন্স নিতে পারেন।
+**২. প্রয়োজনীয় ডকুমেন্টস (৬ পয়েন্ট আইডি):**
+• মূল বিদেশি পাসপোর্ট (Foreign Passport) অথবা কনস্যুলার আইডি কার্ড।
+• নিউইয়র্কের ঠিকানার প্রমাণ (লেটার, বিদ্যুৎ/গ্যাস বিল, বা ব্যাংক স্টেটমেন্ট)।
+• এসএসএন না থাকলে DMV Form NSS-1A নো-এসএসএন হলফনামা।
+**৩. ডিএমভিতে করণীয় ধাপ:**
+১. অনলাইনে ডিএমভিতে লার্নার পারমিট টেস্ট বুক করুন।
+২. লিখিত ও দৃষ্টি পরীক্ষায় পাস করে লার্নার পারমিট নিন।
+৩. ৫ ঘণ্টার প্রি-লাইসেন্সিং কোর্স করুন ও রোড টেস্ট পাস করে লাইসেন্স গ্রহণ করুন।
+
+লাইসেন্স ও আইডি সংক্রান্ত সার্ভিসের সুযোগের লিংক নিচে দেওয়া হলো:`,
+        serviceTypes: VERIFIED_SERVICE_TYPES.dmv_license,
+      };
+    }
+
+    return {
+      text: `How to get a **Driver's License in New York** regardless of immigration status:
+
+**1. NY Green Light Law (Driver's License Access & Privacy Act):**
+• All residents age 16+ can apply for a standard driver's license without needing a Social Security Number (SSN) or proof of lawful immigration status.
+**2. Required Identification (6 Points of ID):**
+• Valid Foreign Passport or Consular Identification Card.
+• Proof of NY State residency (lease agreement, utility bills, or bank statements).
+• Form NSS-1A (Affidavit stating you have never been issued an SSN).
+**3. Steps at the DMV:**
+1. Study the NY Driver's Manual and book an online permit appointment.
+2. Pass the written knowledge and vision test to get your Learner Permit.
+3. Complete the mandatory 5-Hour Pre-Licensing course.
+4. Schedule and pass your Road Test to receive your official driver's license!
+
+Relevant driver license and DMV service links are listed below:`,
+      serviceTypes: VERIFIED_SERVICE_TYPES.dmv_license,
+    };
+  }
+
+  // 4. Halal Food & Groceries (হালাল খাবার)
+  if (
+    /halal|food|grocery|meat|ilish|restaurant|eating|dining|haalal|হালাল|খাবার|ইলিশ|মাংস|রেস্টুরেন্ট|বাজার|গ্রোসারি/i.test(
+      query
+    )
+  ) {
+    if (isBangla) {
+      return {
+        text: `সেরা **হালাল খাবার ও দেশি গ্রোসারি** শপ এবং রেস্তোরাঁ:
+
+• **জ্যাকসন হাইটস ও ব্রঙ্কস:** তাজা জবিহা হালাল গরুর মাংস, খাসি এবং বাংলাদেশ থেকে আমদানিকৃত পদ্মা নদীর ইলিশ মাছ পাওয়া যায়।
+• **হোম ডেলিভারি ও প্যাকেজ:** বেশিরভাগ দেশি গ্রোসারি শপ একই দিনে ফ্রেশ কাটিং ও হোম ডেলিভারি দিয়ে থাকে।
+• **রেস্টুরেন্ট:** খাঁটি কাচ্চি বিরিয়ানি, চাপ, কাবাব ও তাজা নানের জন্য বিখ্যাত হালাল স্পটসমূহ।
+
+নিচে প্রয়োজনীয় হালাল খাদ্য ও গ্রোসারি সার্ভিসের সুযোগের লিংক দেওয়া হলো:`,
+        serviceTypes: VERIFIED_SERVICE_TYPES.halal_food,
+      };
+    }
+
+    return {
+      text: `Top **Halal Food & Bangladeshi Grocery** services:
+
+• **Fresh Halal Meat & Seafood:** Authentic Zabihah certified beef, goat, and fresh imported Padma Ilish (Hilsa fish) with daily custom cuts.
+• **Authentic Dining:** Traditional Kacchi Biryani, seekh kababs, bhorta platters, and clay oven naans.
+• Direct service category links are provided below:`,
+      serviceTypes: VERIFIED_SERVICE_TYPES.halal_food,
+    };
+  }
+
+  // 5. Hospital, Doctor & Healthcare (স্বাস্থ্যসেবা ও ডাক্তার)
+  if (
+    /hospital|doctor|medicine|clinic|health|sick|emergency|ill|treatment|হাসপাতাল|ডাক্তার|ওষুধ|ক্লিনিক|চিকিৎসা|জরুরী|অসুখ/i.test(
+      query
+    )
+  ) {
+    if (isBangla) {
+      return {
+        text: `অভিবাসীদের জন্য **বিনামূল্যে ও স্বল্পমূল্যে স্বাস্থ্যসেবা (NYC Care)**:
+
+• **NYC Care প্রকল্প:** আপনার কোনো ইন্স্যুরেন্স বা বৈধ স্ট্যাটাস না থাকলেও NYC হেলথ + হসপিটালে একজন স্থায়ী প্রাইমারি ডাক্তার এবং স্বল্পমূল্যে প্রেসক্রিপশনের ওষুধ পাবেন।
+• **ইমার্জেন্সি মেডিকেইড:** হাসপাতালে জরুরি বা প্রসবকালীন চিকিৎসায় সম্পূর্ণ বিনা খরচে ইমার্জেন্সি মেডিকেইড কভার করে। কোনো অভিবাসন তথ্য যাচাই করা হয় না।
+
+স্বাস্থ্যসেবা ও ক্লিনিক সার্ভিসের সুযোগের লিংক নিচে দেওয়া হলো:`,
+        serviceTypes: VERIFIED_SERVICE_TYPES.healthcare,
+      };
+    }
+
+    return {
+      text: `Essential **Healthcare & Hospital Access** for Immigrants:
+
+• **NYC Care Program:** Guaranteed low-cost or free healthcare through NYC Health + Hospitals regardless of your immigration status or ability to pay. Includes a dedicated doctor and affordable prescriptions.
+• **Emergency Medicaid:** Emergency Room care and maternal/labor delivery are 100% covered with zero immigration consequence under confidentiality protections.
+• Direct links to primary healthcare and clinic services are provided below:`,
+      serviceTypes: VERIFIED_SERVICE_TYPES.healthcare,
+    };
+  }
+
+  // 6. Work Permit / EAD (কাজের অনুমতি)
+  if (
+    /work\s*permit|ead|i-765|employment\s*authorization|কাজের\s*অনুমতি|ওয়ার্ক\s*পারমিট|ইএড/i.test(
+      query
+    )
+  ) {
+    if (isBangla) {
+      return {
+        text: `যুক্তরাষ্ট্রে **ওয়ার্ক পারমিট (Employment Authorization Document - EAD)** গাইড:
+
+**১. আবেদনের ফরম ও ক্যাটাগরি:**
+• আবেদন করতে হয় **Form I-765** দিয়ে।
+• অ্যাসাইলাম আবেদনকারীদের জন্য ক্যাটাগরি **(c)(8)** (আবেদনের ১৫০ দিন পর দাখিলযোগ্য)।
+• গ্রিন কার্ড অ্যাডজাস্টমেন্ট আবেদনকারীদের জন্য ক্যাটাগরি **(c)(9)**।
+• স্টুডেন্টদের OPT/CPT-এর জন্য ক্যাটাগরি **(c)(3)**।
+**২. ফি ও ফি ছাড় (Fee Waiver):**
+• যাদের আয় কম তারা **Form I-912** দাখিল করে ফি মওকুফ পেতে পারেন।
+**৩. প্রসেসিং ও অটোমেটিক এক্সটেনশন:**
+• নির্দিষ্ট কিছু ক্যাটাগরির জন্য মেয়াদোত্তীর্ণ হওয়ার পর ৫৪০ দিন পর্যন্ত স্বয়ংক্রিয় কাজের অনুমতি বলবৎ থাকে।
+
+ওয়ার্ক পারমিট ও আইনি সহায়তার সুযোগের লিংক নিচে দেওয়া হলো:`,
+        serviceTypes: VERIFIED_SERVICE_TYPES.asylum_tps,
+      };
+    }
+
+    return {
+      text: `Comprehensive Guide to the **U.S. Work Permit (Form I-765 EAD)**:
+
+**1. Eligibility Categories:**
+• **Asylum Pending (c)(8):** File 150 days after your complete I-589 is clocked by USCIS.
+• **Adjustment of Status (c)(9):** Concurrently filed with Form I-485 Green Card application.
+• **F-1 Student OPT (c)(3):** Applied within 90 days before graduation.
+**2. Filing Fees & Fee Waivers:**
+• If you meet low-income guidelines or receive public benefits, file **Form I-912** to waive the USCIS filing fee.
+**3. Automatic Extensions:**
+• USCIS provides up to a 540-day automatic work permit extension for timely filed renewals under eligible categories.
+
+Work authorization service links are listed below:`,
+      serviceTypes: VERIFIED_SERVICE_TYPES.asylum_tps,
+    };
+  }
+
+  // 7. Jobs & Employment (চাকরি ও কাজ - Types of Jobs Suggestion)
+  if (
+    /job|jobs|employment|hiring|career|chackri|chari|চাকরি|কাজ|কর্মসংস্থান|নিয়োগ/i.test(
+      query
+    )
+  ) {
+    if (isBangla) {
+      return {
+        text: `অভিবাসীদের জন্য **চাকরি খোঁজা ও কর্মসংস্থান সহায়তা**:
+
+• **ক্যারিয়ার সেন্টার ও ফ্রি ট্রেনিং:** স্টেট ডিপার্টমেন্ট অব লেবার ও কমিউনিটি সেন্টারগুলো বিনামূল্যে সিভি/রেজুমে তৈরি এবং ইন্টারভিউ প্রস্তুতিতে সাহায্য করে।
+• **জনপ্রিয় সেক্টর:** ওয়্যারহাউস, ডেলিভারি, রেস্তোরাঁ ও কিচেন, রিটেইল স্টোর এবং টেকনিশিয়ান ক্যাটাগরিতে প্রচুর কাজের সুযোগ রয়েছে।
+• বিভিন্ন ধরণের কাজের সরাসরি লিংক নিচে দেওয়া হলো:`,
+        serviceTypes: VERIFIED_SERVICE_TYPES.jobs,
+      };
+    }
+
+    return {
+      text: `Top **Immigrant Employment & Job Opportunities**:
+
+• **Free Job Matching & Training:** State Departments of Labor and nonprofit immigrant centers provide free resume translation, OSHA certifications, and direct employer placements.
+• **High Demand Fields:** Logistics, warehouse fulfillment, driving & delivery, food service, retail sales, and technician roles.
+• Direct links to explore available job types are provided below:`,
+      serviceTypes: VERIFIED_SERVICE_TYPES.jobs,
+    };
+  }
+
+  // 8. Mosque & Religious Places (মসজিদ)
+  if (
+    /mosque|namaz|prayer|jummah|church|temple|masjid|salat|মসজিদ|নামাজ|জুম্মা|প্রার্থনা/i.test(
+      query
+    )
+  ) {
+    if (isBangla) {
+      return {
+        text: `নিকটস্থ **মসজিদ ও ইসলামিক কমিউনিটি সেন্টার**:
+
+• প্রতিদিন ৫ ওয়াক্ত জামাত ও শুক্রবার জুম্মার নামাজের বিশেষ জামাত অনুষ্ঠিত হয়।
+• নতুন আগত প্রবাসীদের জন্য হালাল খাদ্য সহায়তা, ফ্যামিলি কাউন্সেলিং এবং ফ্রি ল্যাঙ্গুয়েজ ক্লাসের ব্যবস্থা রয়েছে।
+
+মসজিদ ও কমিউনিটি সার্ভিসের সুযোগের লিংক নিচে দেওয়া হলো:`,
+        serviceTypes: VERIFIED_SERVICE_TYPES.mosque,
+      };
+    }
+
+    return {
+      text: `Nearby **Mosques & Community Religious Centers**:
+
+• Offering daily 5-times congregational prayers, Friday Jummah prayers, and youth Quranic education.
+• Active community centers provide newcomer social support, halal food distributions, and family counseling.
+• Direct service category links are provided below:`,
+      serviceTypes: VERIFIED_SERVICE_TYPES.mosque,
+    };
+  }
+
+  // 9. Housing & Renting (বাসা ভাড়া)
+  if (
+    /house|rent|apartment|room|housing|tenant|landlord|বাসা|ভাড়া|রুম|আবাসন/i.test(
+      query
+    )
+  ) {
+    if (isBangla) {
+      return {
+        text: `যুক্তরাষ্ট্রে **বাসা ভাড়া ও আবাসন গাইড**:
+
+• **ক্রেডিট স্কোর ছাড়া ভাড়া:** নতুন প্রবাসীদের জন্য অনেকেই ৩ মাসের অ্যাডভান্স বা সাবলেট পদ্ধতিতে বাসা ভাড়া দেয়। কোনো দালালকে অগ্রিম ক্যাশ দেওয়ার আগে চাবি ও চুক্তি নিশ্চিত করুন।
+• **ভাড়াটিয়াদের আইনি অধিকার:** আপনার ইমিগ্রেশন স্ট্যাটাস যা-ই হোক, নোটিস ছাড়া কোনো বাড়িওয়ালা আপনাকে বের করে দিতে পারে না। হিটিং ও গরম পানি নিশ্চিত করা তাদের আইনি দায়িত্ব।
+
+আবাসন ও ভাড়াটিয়া সহায়তা সার্ভিসের সুযোগের লিংক নিচে দেওয়া হলো:`,
+        serviceTypes: VERIFIED_SERVICE_TYPES.housing,
+      };
+    }
+
+    return {
+      text: `Important Guide to **Housing & Tenant Rights for Immigrants**:
+
+• **Renting Without U.S. Credit History:** Look for community listings, lease guarantors, or sublets. Never transfer advance funds before inspecting the unit in person.
+• **Tenant Protections:** Landlords cannot legally evict you or threaten immigration authorities regardless of legal status. Heat and hot water are legally guaranteed.
+• Housing advocacy and rental assistance links are provided below:`,
+      serviceTypes: VERIFIED_SERVICE_TYPES.housing,
+    };
+  }
+
+  // 10. Check if this is an explicit direct navigation command (e.g., "open settings", "go to feed")
+  const matchedNav = matchNavigationIntent(rawQuery);
+  if (
+    matchedNav.target &&
+    !["How can I help you?", "how i can get"].some((s) => query.includes(s.toLowerCase())) &&
+    (query.startsWith("go") || query.startsWith("open") || query.includes("খোলো") || query.includes("যাব"))
+  ) {
+    return {
+      text: isBangla
+        ? `🧭 "${matchedNav.destinationName}" পেজে যাওয়ার লিংক নিচে দেওয়া হলো। সরাসরি ক্লিক করে চলে যেতে পারেন:`
+        : `🧭 Here is your direct shortcut to "${matchedNav.destinationName}":`,
+      destination: {
+        name: matchedNav.destinationName,
+        route: matchedNav.route,
+        state: matchedNav.state,
+      },
+      serviceTypes: VERIFIED_SERVICE_TYPES.jobs.slice(0, 2),
+    };
+  }
+
+  // 11. General / Natural Generative Fallback for all other immigrant questions
+  let matchedService = VERIFIED_SERVICE_TYPES.jobs;
+  if (/law|legal|court|আইন|কোর্ট|উকিল/i.test(query)) {
+    matchedService = VERIFIED_SERVICE_TYPES.greencard_legal;
+  } else if (/car|license|গাড়ি|লাইসেন্স/i.test(query)) {
+    matchedService = VERIFIED_SERVICE_TYPES.dmv_license;
+  } else if (/food|খাবার|মাংস|রেস্টুরেন্ট/i.test(query)) {
+    matchedService = VERIFIED_SERVICE_TYPES.halal_food;
+  } else if (/doctor|medical|চিকিৎসা|হাসপাতাল/i.test(query)) {
+    matchedService = VERIFIED_SERVICE_TYPES.healthcare;
+  } else if (/rent|home|বাসা|ভাড়া/i.test(query)) {
+    matchedService = VERIFIED_SERVICE_TYPES.housing;
+  }
+
+  if (isBangla) {
+    return {
+      text: `আপনার প্রশ্নের প্রেক্ষিতে **পথসাথী স্মার্ট গাইড**:
+
+• **প্রশ্ন বিশ্লেষণ:** "${rawQuery}" সম্পর্কিত যেকোনো তথ্য ও প্রাতিষ্ঠানিক সহায়তা পেতে আপনি সঠিক জায়গায় এসেছেন।
+• **প্রধান করণীয়:** যুক্তরাষ্ট্রের সরকারি ও সামাজিক সুবিধাগুলোতে নতুন অভিবাসীদের জন্য বিশেষ ফ্রি পরামর্শ কেন্দ্র রয়েছে।
+• **সরাসরি সহায়তা:** কোনো ফি ছাড়াই বিশেষজ্ঞ আইনি ও সোশ্যাল সার্ভিসেস কর্মীদের সাথে যোগাযোগ করতে পারেন।
+
+📍 আপনার সুবিধার জন্য প্রয়োজনীয় সার্ভিসের ধরন ও সুযোগের লিংক নিচে দেওয়া হলো:`,
+      serviceTypes: matchedService,
+    };
+  }
+
+  return {
+    text: `Here is helpful guidance for your inquiry on **"${rawQuery}"**:
+
+• **Overview:** ImmigrantConnect provides verified resources, pro-bono legal support, and civic guidance across New York and nationwide.
+• **Key Recommendation:** Always ensure you consult certified non-profit organizations or accredited Department of Justice (DOJ) legal representatives.
+• **Free Assistance:** You can access free community navigators who speak English, Bengali, Spanish, and other native languages.
+
+📍 Recommended service opportunity links are provided below:`,
+    serviceTypes: matchedService,
+  };
+}
+
+// ── Markdown-like Chat Formatter Component ─────────────────────────────────────
+function FormatChatContent({ text }: { text: string }) {
+  const lines = text.split("\n");
+  return (
+    <div className="space-y-1 text-xs leading-relaxed">
+      {lines.map((line, lIdx) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          return <div key={lIdx} className="h-1.5" />;
+        }
+
+        const isBullet = trimmed.startsWith("•") || trimmed.startsWith("-");
+        const isNumbered = /^\d+\./.test(trimmed);
+
+        const content = isBullet ? trimmed.replace(/^[•\-]\s*/, "") : trimmed;
+        const parts = content.split(/(\*\*.*?\*\*)/g);
+
+        const renderedContent = parts.map((part, pIdx) => {
+          if (part.startsWith("**") && part.endsWith("**")) {
+            return (
+              <strong key={pIdx} className="font-bold text-slate-900">
+                {part.slice(2, -2)}
+              </strong>
+            );
+          }
+          return <span key={pIdx}>{part}</span>;
+        });
+
+        if (isBullet) {
+          return (
+            <div key={lIdx} className="flex items-start gap-1.5 pl-1 my-0.5">
+              <span className="text-orange-500 font-bold leading-tight flex-shrink-0">•</span>
+              <div className="flex-1 min-w-0">{renderedContent}</div>
+            </div>
+          );
+        }
+
+        if (isNumbered) {
+          return (
+            <div key={lIdx} className="pl-1 my-0.5 font-medium text-slate-800">
+              {renderedContent}
+            </div>
+          );
+        }
+
+        return <p key={lIdx}>{renderedContent}</p>;
+      })}
+    </div>
+  );
+}
+
 // ── Doll Chatbox Window (Universal Intelligent App Navigator) ─────────────────
 export function DollChatboxWindow({
   isOpen,
@@ -1258,18 +2259,44 @@ export function DollChatboxWindow({
   isFeed?: boolean;
 }) {
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<ChatMessage[]>([
+  const { lang } = useLanguage();
+
+  const getInitialMessage = (currentLang: string) => {
+    if (currentLang === "bn") {
+      return "আসসালামু আলাইকুম! 👋 আমি কীভাবে সাহায্য করতে পারি?\nচাকরি, গ্রিন কার্ড, লাইসেন্স বা যেকোনো প্রশ্ন লিখুন — বিস্তারিত পরামর্শ ও সার্ভিসের লিংক দিয়ে দেব।";
+    }
+    return "How can I help you? Ask about jobs, green cards, licenses, or any newcomer service.";
+  };
+
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [
     {
       id: "init",
       sender: "bot",
-      text: "আসসালামু আলাইকুম! 👋 আপনি কোথায় যেতে চান?\nযে কোনো সার্ভিস, পেজ, চাকরি বা লোকেশন লিখুন—সরাসরি নিয়ে যাব!",
-      time: "এখন",
+      text: getInitialMessage(lang),
+      time: lang === "bn" ? "এখন" : "Now",
     },
   ]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Dynamic language synchronization for initial message
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].id === "init") {
+        return [
+          {
+            id: "init",
+            sender: "bot",
+            text: getInitialMessage(lang),
+            time: lang === "bn" ? "এখন" : "Now",
+          },
+        ];
+      }
+      return prev;
+    });
+  }, [lang]);
 
   // Auto-scroll messages to bottom
   useEffect(() => {
@@ -1281,53 +2308,7 @@ export function DollChatboxWindow({
 
   if (!isOpen) return null;
 
-  // Direct Match & Navigation to App Target
-  const handleSelectTarget = (target: NavigationTarget) => {
-    const userMsg: ChatMessage = {
-      id: `user-${Date.now()}`,
-      sender: "user",
-      text: `${target.emoji} ${target.name}`,
-      time: "এইমাত্র",
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
-    setIsTyping(true);
-
-    setTimeout(() => {
-      setIsTyping(false);
-      const botReply: ChatMessage = {
-        id: `bot-${Date.now()}`,
-        sender: "bot",
-        text: `🧭 "${target.name}"-এ নিয়ে যাচ্ছি...`,
-        time: "এইমাত্র",
-        destination: {
-          name: target.name,
-          route: target.route,
-        },
-      };
-      setMessages((prev) => [...prev, botReply]);
-
-      setTimeout(() => {
-        const actionEvt = target.actionEvent;
-        const actionPayload = target.actionPayload;
-
-        if (actionEvt) {
-          navigate(target.route);
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent(actionEvt, { detail: actionPayload }));
-            if (actionEvt === "open-post-composer") {
-              window.dispatchEvent(new CustomEvent("open-post-modal"));
-            }
-          }, 200);
-        } else {
-          navigate(target.route);
-        }
-        onClose();
-      }, 350);
-    }, 200);
-  };
-
-  // Smart Multilingual Query Engine (Bangla, English, Banglish) with Instant Auto-Navigation
+  // ChatGPT-style AI query processing with Service Type Suggestions
   const handleSendMessage = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const query = inputText.trim();
@@ -1337,53 +2318,70 @@ export function DollChatboxWindow({
       id: `user-${Date.now()}`,
       sender: "user",
       text: query,
-      time: "এইমাত্র",
+      time: lang === "bn" ? "এইমাত্র" : "Just now",
     };
 
     setMessages((prev) => [...prev, userMsg]);
     setInputText("");
     setIsTyping(true);
 
+    // Natural ChatGPT thinking delay
     setTimeout(() => {
       setIsTyping(false);
-      const matched = matchNavigationIntent(query);
+      const aiReply = generateChatGPTAnswerAndPinpoints(query, lang);
 
       const botReply: ChatMessage = {
         id: `bot-${Date.now()}`,
         sender: "bot",
-        text: `🧭 "${matched.destinationName}"-এ নিয়ে যাচ্ছি...`,
-        time: "এইমাত্র",
-        destination: {
-          name: matched.destinationName,
-          route: matched.route,
-          place: matched.place || undefined,
-          state: matched.state,
-        },
+        text: aiReply.text,
+        time: lang === "bn" ? "এইমাত্র" : "Just now",
+        serviceTypes: aiReply.serviceTypes,
+        pinpoints: aiReply.pinpoints,
+        destination: aiReply.destination,
       };
 
       setMessages((prev) => [...prev, botReply]);
+    }, 550);
+  };
 
-      // Snappy automatic navigation to the target
-      setTimeout(() => {
-        const actionEvt = matched.actionEvent || matched.target?.actionEvent;
-        const actionPayload = matched.actionPayload || matched.target?.actionPayload;
+  // Directly navigate to Map with specific Service / Job Type filter
+  const handleOpenServiceTypeOnMap = (item: ServiceTypeSuggestion) => {
+    const queryParams = new URLSearchParams({
+      q: item.searchQuery,
+      query: item.searchQuery,
+      category: item.category || "all",
+    });
 
-        if (actionEvt) {
-          navigate(matched.route, { state: matched.state });
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent(actionEvt, { detail: actionPayload }));
-            if (actionEvt === "open-post-composer") {
-              window.dispatchEvent(new CustomEvent("open-post-modal"));
-            }
-          }, 200);
-        } else if (matched.state) {
-          navigate(matched.route, { state: matched.state });
-        } else {
-          navigate(matched.route);
-        }
-        onClose();
-      }, 350);
-    }, 200);
+    navigate(`/map?${queryParams.toString()}`, {
+      state: {
+        searchQuery: item.searchQuery,
+        activeCategory: item.category || "all",
+      },
+    });
+    onClose();
+  };
+
+  // Directly navigate to exact pinpoint on Map (if any)
+  const handleOpenLocationOnMap = (pin: LocationPinpoint) => {
+    const queryParams = new URLSearchParams({
+      placeId: String(pin.id),
+      lat: String(pin.lat),
+      lng: String(pin.lng),
+      name: pin.name,
+      address: pin.address,
+      category: pin.category,
+      desc: pin.description || "",
+      phone: pin.phone || "",
+    });
+
+    navigate(`/map?${queryParams.toString()}`, {
+      state: {
+        selectedPlaceId: pin.id,
+        userLocation: [pin.lat, pin.lng],
+        searchQuery: pin.name,
+      },
+    });
+    onClose();
   };
 
   const handleResetChat = () => {
@@ -1391,23 +2389,23 @@ export function DollChatboxWindow({
       {
         id: "init",
         sender: "bot",
-        text: "আসসালামু আলাইকুম! 👋 আপনি কোথায় যেতে চান?\nযে কোনো সার্ভিস, পেজ, চাকরি বা লোকেশন লিখুন—সরাসরি নিয়ে যাব!",
-        time: "এখন",
+        text: getInitialMessage(lang),
+        time: lang === "bn" ? "এখন" : "Now",
       },
     ]);
   };
 
   return (
     <div
-      className={`fixed z-[9999] w-[310px] sm:w-[340px] max-w-[calc(100vw-24px)] h-[320px] sm:h-[350px] max-h-[350px] bg-white/98 backdrop-blur-md rounded-3xl shadow-2xl border border-orange-200/90 overflow-hidden flex flex-col transition-all duration-300 animate-in fade-in slide-in-from-bottom-5 ${
+      className={`fixed z-[9999] w-[calc(100vw-24px)] sm:w-[440px] md:w-[480px] max-w-[500px] h-[480px] sm:h-[530px] md:h-[570px] max-h-[calc(100vh-100px)] bg-white/98 backdrop-blur-md rounded-3xl shadow-2xl border border-orange-200/90 overflow-hidden flex flex-col transition-all duration-300 animate-in fade-in slide-in-from-bottom-5 ${
         isFeed
           ? "bottom-20 right-3 sm:right-6 xl:right-[340px]"
           : "bottom-[96px] sm:bottom-20 right-3 sm:right-6"
       }`}
     >
-      {/* ── Chat Header (Clean & Compact) ── */}
-      <div className="px-3.5 py-2 bg-gradient-to-r from-orange-500 via-[#E05236] to-[#C04A22] text-white flex items-center justify-between shadow-xs flex-shrink-0">
-        <div className="flex items-center gap-2">
+      {/* ── Chat Header (Expanded & Clean) ── */}
+      <div className="px-4 py-2.5 bg-gradient-to-r from-orange-500 via-[#E05236] to-[#C04A22] text-white flex items-center justify-between shadow-xs flex-shrink-0">
+        <div className="flex items-center gap-2.5">
           <div className="relative w-8 h-8 rounded-full bg-white/20 p-0.5 border border-white/60 overflow-hidden flex-shrink-0">
             <img
               src="/doll_assistant.jpg"
@@ -1416,20 +2414,29 @@ export function DollChatboxWindow({
             />
             <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-400 border border-white rounded-full" />
           </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-bold text-white tracking-tight leading-tight">
+              {lang === "bn" ? "পাঠসাথী অ্যাসিস্ট্যান্ট" : "Pathasathi Assistant"}
+            </span>
+            <span className="text-[10px] text-orange-100 flex items-center gap-1 font-medium leading-none mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+              {lang === "bn" ? "অনলাইন" : "Online"}
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-1">
           <button
             onClick={handleResetChat}
             className="p-1.5 text-orange-100 hover:text-white hover:bg-white/10 rounded-full transition cursor-pointer"
-            title="নতুন করে শুরু করুন"
+            title={lang === "bn" ? "নতুন করে শুরু করুন" : "Reset chat"}
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={onClose}
             className="p-1.5 text-orange-100 hover:text-white hover:bg-white/10 rounded-full transition cursor-pointer"
-            title="বন্ধ করুন"
+            title={lang === "bn" ? "বন্ধ করুন" : "Close"}
           >
             <X className="w-4 h-4" />
           </button>
@@ -1437,7 +2444,7 @@ export function DollChatboxWindow({
       </div>
 
       {/* ── Chat Messages Body ── */}
-      <div className="p-2.5 space-y-2 overflow-y-auto flex-1 bg-slate-50/70 text-xs">
+      <div className="p-3.5 space-y-3 overflow-y-auto flex-1 bg-slate-50/70 text-xs">
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -1445,7 +2452,7 @@ export function DollChatboxWindow({
               msg.sender === "user" ? "items-end" : "items-start"
             }`}
           >
-            <div className="flex items-end gap-1.5 max-w-[90%]">
+            <div className="flex items-end gap-1.5 max-w-[94%]">
               {msg.sender === "bot" && (
                 <div className="w-6 h-6 rounded-full overflow-hidden bg-orange-100 border border-orange-200 flex-shrink-0 mb-0.5">
                   <img
@@ -1457,32 +2464,106 @@ export function DollChatboxWindow({
               )}
 
               <div
-                className={`p-2 rounded-2xl shadow-2xs leading-relaxed whitespace-pre-line text-xs ${
+                className={`p-3 rounded-2xl shadow-2xs leading-relaxed text-xs ${
                   msg.sender === "user"
                     ? "bg-[#C04A22] text-white rounded-br-xs"
                     : "bg-white text-slate-800 border border-slate-200/90 rounded-bl-xs"
                 }`}
               >
-                {msg.text}
+                {msg.sender === "user" ? (
+                  <p className="whitespace-pre-line">{msg.text}</p>
+                ) : (
+                  <FormatChatContent text={msg.text} />
+                )}
+
+                {/* Service Types Suggestion Links (Format: Ei (link a click-red only) korle tumi ei type er job pabe) */}
+                {msg.serviceTypes && msg.serviceTypes.length > 0 && (
+                  <div className="mt-3 pt-2 border-t border-slate-100/80 space-y-2">
+                    <p className="font-semibold text-slate-800 text-[11.5px] flex items-center gap-1.5">
+                      <Briefcase className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
+                      <span>
+                        {lang === "bn" || /[\u0980-\u09FF]/.test(msg.text)
+                          ? "সার্ভিসের ধরন ও সুযোগের লিংক:"
+                          : "Available Service Types & Direct Links:"}
+                      </span>
+                    </p>
+
+                    <div className="space-y-1.5 pl-0.5">
+                      {msg.serviceTypes.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-start justify-between gap-2 text-[11.5px] leading-relaxed text-slate-700 py-0.5 group"
+                        >
+                          <div className="flex items-start gap-1.5 min-w-0 flex-1">
+                            <span className="text-red-500 font-bold leading-tight flex-shrink-0 mt-0.5">
+                              •
+                            </span>
+                            <div className="flex-1 whitespace-normal break-words text-slate-700">
+                              {lang === "bn" || /[\u0980-\u09FF]/.test(msg.text) ? (
+                                <span>
+                                  এই{" "}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenServiceTypeOnMap(item)}
+                                    className="inline font-bold text-red-600 hover:text-red-700 underline decoration-red-500/70 hover:decoration-red-700 decoration-1 underline-offset-2 transition-colors cursor-pointer"
+                                    title={`ম্যাপে ${item.bnTitle} খুঁজুন`}
+                                  >
+                                    লিংকে ক্লিক
+                                  </button>{" "}
+                                  করলে আপনি <strong>{item.bnTitle}</strong> পাবেন।
+                                </span>
+                              ) : (
+                                <span>
+                                  By{" "}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenServiceTypeOnMap(item)}
+                                    className="inline font-bold text-red-600 hover:text-red-700 underline decoration-red-500/70 hover:decoration-red-700 decoration-1 underline-offset-2 transition-colors cursor-pointer"
+                                    title={`Search ${item.title} on map`}
+                                  >
+                                    clicking this link
+                                  </button>
+                                  , you will find <strong>{item.title}</strong>.
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Right-side direct action icon */}
+                          <button
+                            type="button"
+                            onClick={() => handleOpenServiceTypeOnMap(item)}
+                            className="p-1 rounded text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors flex-shrink-0 cursor-pointer flex items-center justify-center mt-0.5"
+                            title={lang === "bn" ? "ম্যাপে দেখুন" : "Explore on map"}
+                          >
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Direct navigation jump button */}
                 {msg.destination && (
-                  <div className="mt-1.5 pt-1.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between gap-2">
                     <span className="text-[11px] font-semibold text-[#C04A22] truncate">
                       {msg.destination.name}
                     </span>
                     <button
                       onClick={() => {
                         if (msg.destination?.state) {
-                          navigate(msg.destination.route, { state: msg.destination.state });
+                          navigate(msg.destination.route, {
+                            state: msg.destination.state,
+                          });
                         } else if (msg.destination?.route) {
                           navigate(msg.destination.route);
                         }
                         onClose();
                       }}
-                      className="px-2 py-0.5 rounded-lg bg-orange-50 hover:bg-orange-100 text-[#C04A22] border border-orange-200 font-bold text-[10px] flex items-center gap-1 transition cursor-pointer flex-shrink-0"
+                      className="px-2.5 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-[#C04A22] border border-orange-200 font-bold text-[10px] flex items-center gap-1 transition cursor-pointer flex-shrink-0"
                     >
-                      <span>যান</span>
+                      <span>{lang === "bn" ? "যান" : "Go"}</span>
                       <ArrowRight className="w-2.5 h-2.5" />
                     </button>
                   </div>
@@ -1513,56 +2594,33 @@ export function DollChatboxWindow({
           </div>
         )}
 
-        {/* Quick Suggestion Chips (Available immediately) */}
-        {messages.length <= 2 && (
-          <div className="mt-1.5 pt-1.5 border-t border-slate-200/60">
-            <p className="text-[10px] font-semibold text-slate-500 mb-1.5 flex items-center gap-1">
-              <Compass className="w-3 h-3 text-[#C04A22]" />
-              <span>জনপ্রিয় অপশনগুলো বেছে নিন:</span>
-            </p>
-            <div className="grid grid-cols-2 gap-1.5">
-              {QUICK_CHIPS.map((chip) => {
-                const target = APP_NAVIGATION_TARGETS.find(t => t.id === chip.targetId);
-                return (
-                  <button
-                    key={chip.id}
-                    onClick={() => target && handleSelectTarget(target)}
-                    className="flex items-center gap-1.5 p-1.5 rounded-xl bg-white hover:bg-orange-50 text-slate-700 hover:text-[#C04A22] border border-slate-200/80 hover:border-orange-300 text-[11px] font-medium transition text-left cursor-pointer active:scale-95 shadow-2xs"
-                  >
-                    <span className="text-sm leading-none flex-shrink-0">
-                      {chip.emoji}
-                    </span>
-                    <span className="truncate">{chip.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         <div ref={messagesEndRef} />
       </div>
 
       {/* ── Input Box ── */}
       <form
         onSubmit={handleSendMessage}
-        className="p-2 bg-white border-t border-slate-200 flex items-center gap-1.5 flex-shrink-0"
+        className="p-2.5 bg-white border-t border-slate-200 flex items-center gap-2 flex-shrink-0"
       >
         <input
           ref={inputRef}
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="বাংলা, English বা Banglish-এ লিখুন..."
-          className="flex-1 text-xs px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-50 focus:bg-white border border-transparent focus:border-orange-400 focus:ring-1 focus:ring-orange-400 transition outline-none text-slate-800 placeholder:text-slate-400"
+          placeholder={
+            lang === "bn"
+              ? "যেকোনো প্রশ্ন বা জিজ্ঞাসা লিখুন..."
+              : "Ask anything (e.g. How to get Green Card?)..."
+          }
+          className="flex-1 text-xs px-3.5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-50 focus:bg-white border border-transparent focus:border-orange-400 focus:ring-1 focus:ring-orange-400 transition outline-none text-slate-800 placeholder:text-slate-400"
         />
         <button
           type="submit"
           disabled={!inputText.trim()}
-          className="w-8 h-8 rounded-xl bg-gradient-to-r from-orange-500 to-[#C04A22] hover:from-orange-600 hover:to-[#8C3015] disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center transition cursor-pointer flex-shrink-0 shadow-xs active:scale-95"
-          title="যান"
+          className="w-9 h-9 rounded-2xl bg-gradient-to-r from-orange-500 to-[#C04A22] hover:from-orange-600 hover:to-[#8C3015] disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center transition cursor-pointer flex-shrink-0 shadow-xs active:scale-95"
+          title={lang === "bn" ? "পাঠান" : "Send"}
         >
-          <Send className="w-3.5 h-3.5" />
+          <Send className="w-4 h-4" />
         </button>
       </form>
     </div>

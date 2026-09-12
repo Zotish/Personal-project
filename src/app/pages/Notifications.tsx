@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
   Bell, Heart, MessageCircle, Users, MapPin, Calendar,
-  AlertTriangle, Scale, CheckCircle, Repeat2, User, Sparkles
+  AlertTriangle, Scale, CheckCircle, Repeat2, User, Sparkles, ArrowLeft
 } from "lucide-react";
 
 interface NotificationItem {
@@ -197,16 +197,24 @@ export function Notifications() {
         {/* Header */}
         <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-border px-4 py-3">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Bell className="w-5 h-5 text-slate-800" />
-              <h1 className="text-lg font-extrabold text-slate-900" style={{ fontFamily: "var(--font-display)" }}>
-                Notifications
-              </h1>
-              {unreadCount > 0 && (
-                <span className="w-5.5 h-5.5 rounded-full bg-[#C04A22] text-white text-xs flex items-center justify-center font-bold shadow-xs">
-                  {unreadCount}
-                </span>
-              )}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate(-1)}
+                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex-shrink-0 cursor-pointer active:scale-95"
+                title="Back"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-extrabold text-slate-900" style={{ fontFamily: "var(--font-display)" }}>
+                  Notifications
+                </h1>
+                {unreadCount > 0 && (
+                  <span className="w-5.5 h-5.5 rounded-full bg-[#C04A22] text-white text-xs flex items-center justify-center font-bold shadow-xs">
+                    {unreadCount}
+                  </span>
+                )}
+              </div>
             </div>
             {unreadCount > 0 && (
               <button

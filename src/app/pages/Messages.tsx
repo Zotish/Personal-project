@@ -120,6 +120,7 @@ function InboxList({
   selected: number | null;
   pinnedIds: number[];
 }) {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
 
   const filteredConversations = conversations
@@ -129,7 +130,16 @@ function InboxList({
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-border">
-        <h2 className="text-lg font-bold text-foreground mb-3" style={{ fontFamily: "var(--font-display)" }}>Messages</h2>
+        <div className="flex items-center gap-3 mb-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex-shrink-0 cursor-pointer active:scale-95"
+            title="Back"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h2 className="text-lg font-bold text-foreground" style={{ fontFamily: "var(--font-display)" }}>Messages</h2>
+        </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input

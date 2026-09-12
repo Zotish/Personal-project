@@ -48,7 +48,6 @@ import { PWAInstallPrompt } from "./components/ui/PWAInstallPrompt";
 import { AccountModeProvider } from "./context/AccountModeContext";
 import { SellerMigrationModal } from "./components/seller/SellerMigrationModal";
 import { GlobalDollAssistant } from "./components/ai/PathaSathiDollAssistant";
-import { RecentTabBubble } from "./components/mobile-multitab/RecentTabBubble";
 
 export default function App() {
   return (
@@ -58,7 +57,6 @@ export default function App() {
           <MobileTabProvider>
             <PWAInstallPrompt />
             <SellerMigrationModal />
-            <RecentTabBubble />
             <GlobalDollAssistant />
             <Routes>
             {/* Public */}

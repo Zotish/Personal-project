@@ -5,7 +5,7 @@ import { GoldenBadge } from "../components/ui/GoldenBadge";
 import { 
   Search, ArrowLeft, Heart, MessageCircle, Repeat2, Share2, 
   Bookmark, CheckCircle, Users, Briefcase, Home, BookOpen, 
-  MapPin, Filter, Sparkles, Send, MessageSquare, MoreHorizontal, User
+  MapPin, Sparkles, Send, MessageSquare, MoreHorizontal, User
 } from "lucide-react";
 
 type Topic = {
@@ -402,20 +402,24 @@ export function Explore() {
         ) : (
           /* ─── MAIN EXPLORE TOPICS LIST VIEW ──────────────────────────────── */
           <div>
-            {/* Search bar */}
-            <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md p-4 border-b border-slate-200/80 shadow-2xs">
-              <div className="relative">
+            {/* Search bar with Back Arrow */}
+            <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md p-3 sm:p-4 border-b border-slate-200/80 shadow-2xs flex items-center gap-2.5">
+              <button
+                onClick={() => navigate(-1)}
+                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex-shrink-0 cursor-pointer active:scale-95"
+                title="Back"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div className="relative flex-1 min-w-0">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="text"
                   value={query}
                   onChange={e => setQuery(e.target.value)}
                   placeholder="Search topics, hashtags, people..."
-                  className="w-full pl-10 pr-4 py-3 bg-slate-100/90 rounded-2xl border border-slate-200/80 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C04A22]/30 focus:border-[#C04A22] transition shadow-2xs"
+                  className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-slate-100/90 rounded-2xl border border-slate-200/80 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C04A22]/30 focus:border-[#C04A22] transition shadow-2xs"
                 />
-                <button className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-lg hover:bg-slate-200 text-slate-500 cursor-pointer">
-                  <Filter className="w-4 h-4" />
-                </button>
               </div>
             </div>
 
