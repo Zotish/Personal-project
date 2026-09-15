@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router";
 import {
   Send,
@@ -19,6 +19,11 @@ import {
   Home,
   Car,
   Utensils,
+  Search,
+  Clock,
+  ArrowUpLeft,
+  Plus,
+  Music,
 } from "lucide-react";
 import { places, Place } from "../../pages/MapDiscovery";
 import { useLanguage } from "../../context/LanguageContext";
@@ -2134,6 +2139,333 @@ function renderSuggestionItemText(
   );
 }
 
+// ── Google Search Style Suggestion Types & Curated Queries ─────────────────────
+export interface DollSearchSuggestion {
+  id: string;
+  query: string;
+  type: "history" | "suggestion" | "media";
+  badge?: string; // e.g. "AI Mode"
+  subtitle?: string; // e.g. "Song by Anupam Roy"
+  category?: string;
+}
+
+export const INITIAL_SEARCH_HISTORY: string[] = [
+  "ami ki amar blockchain er a* er conference research paper ieee transaction a submit korte pari?",
+  "ami ki eth jasmy coin solana jasmy coin a bridge korte parbo emon kon bridge ache?",
+  "ami ki green card er jonno apply korte parbo?",
+  "kivabe New York-e driver license banabo?",
+];
+
+export const DEFAULT_GOOGLE_SUGGESTIONS: DollSearchSuggestion[] = [
+  // ── Exact Matches from User Screenshot ──
+  {
+    id: "g-hist-1",
+    query: "ami ki amar blockchain er a* er conference research paper ieee transaction a submit korte pari?",
+    type: "history",
+  },
+  {
+    id: "g-hist-2",
+    query: "ami ki eth jasmy coin solana jasmy coin a bridge korte parbo emon kon bridge ache?",
+    type: "history",
+    badge: "AI Mode",
+  },
+  {
+    id: "g-sug-1",
+    query: "ami ki tomay khub birokto korchi lyrics",
+    type: "suggestion",
+  },
+  {
+    id: "g-sug-2",
+    query: "ami ki tomar moto eto valobaste pari lyrics in bengali",
+    type: "suggestion",
+  },
+  {
+    id: "g-sug-3",
+    query: "ami ki bolibo ar biccheder agune lyrics",
+    type: "suggestion",
+  },
+  {
+    id: "g-sug-4",
+    query: "ami ki tomar sathe kotha bolte pari",
+    type: "suggestion",
+  },
+  {
+    id: "g-sug-5",
+    query: "ami ki apnar sathe kotha bolte pari",
+    type: "suggestion",
+  },
+  {
+    id: "g-media-1",
+    query: "Ami Ki Tomay Khub Birokto Korchi",
+    type: "media",
+    subtitle: "Song by Anupam Roy",
+  },
+  {
+    id: "g-sug-6",
+    query: "ami ki koribo re o prano nath lyrics",
+    type: "suggestion",
+  },
+
+  // ── High-Demand Immigrant, Legal & Newcomer Queries ──
+  {
+    id: "g-im-1",
+    query: "ami ki green card er jonno apply korte parbo?",
+    type: "suggestion",
+    badge: "AI Mode",
+    category: "legal",
+  },
+  {
+    id: "g-im-2",
+    query: "ami ki asylum thakakalin kajer permit (EAD) pabo?",
+    type: "suggestion",
+    badge: "AI Mode",
+    category: "legal",
+  },
+  {
+    id: "g-im-3",
+    query: "ami ki SSN chara bank account khulte parbo?",
+    type: "suggestion",
+    category: "finance",
+  },
+  {
+    id: "g-im-4",
+    query: "ami ki New York-e bina kagojpotre driver license nite parbo?",
+    type: "suggestion",
+    category: "license",
+  },
+  {
+    id: "g-im-5",
+    query: "ami ki free te food pantry theke khabar pabo?",
+    type: "suggestion",
+    category: "food",
+  },
+  {
+    id: "g-im-6",
+    query: "ami ki NYC subway te student ba Fair Fares discount pabo?",
+    type: "suggestion",
+    category: "transport",
+  },
+  {
+    id: "g-im-7",
+    query: "ami ki Jackson Heights ba Jamaica te Bangladeshi food pabo?",
+    type: "suggestion",
+    category: "food",
+  },
+
+  // ── "kivabe" (How to) Queries ──
+  {
+    id: "g-kiv-1",
+    query: "kivabe green card apply korbo?",
+    type: "suggestion",
+    badge: "AI Mode",
+  },
+  {
+    id: "g-kiv-2",
+    query: "kivabe New York driver license banabo?",
+    type: "suggestion",
+  },
+  {
+    id: "g-kiv-3",
+    query: "kivabe warehouse ba delivery job khujbo?",
+    type: "suggestion",
+  },
+  {
+    id: "g-kiv-4",
+    query: "kivabe SSN card er jonno apply korbo?",
+    type: "suggestion",
+  },
+  {
+    id: "g-kiv-5",
+    query: "kivabe basha ba sublet room khujbo?",
+    type: "suggestion",
+  },
+  {
+    id: "g-kiv-6",
+    query: "kivabe NYC MTA subway OMNY use korbo?",
+    type: "suggestion",
+  },
+  {
+    id: "g-kiv-7",
+    query: "kivabe deshe bKash-e taka pathabo?",
+    type: "suggestion",
+  },
+
+  // ── "how to" English Queries ──
+  {
+    id: "g-how-1",
+    query: "how to apply for US Green Card as newcomer",
+    type: "suggestion",
+    badge: "AI Mode",
+  },
+  {
+    id: "g-how-2",
+    query: "how to get NY driving license without SSN",
+    type: "suggestion",
+  },
+  {
+    id: "g-how-3",
+    query: "how to find beginner jobs in NYC",
+    type: "suggestion",
+  },
+  {
+    id: "g-how-4",
+    query: "how to open a bank account in USA",
+    type: "suggestion",
+  },
+  {
+    id: "g-how-5",
+    query: "how to rent cheap apartment in Jackson Heights",
+    type: "suggestion",
+  },
+
+  // ── Keyword Queries ──
+  {
+    id: "g-kw-1",
+    query: "job warehouse and delivery positions in Queens",
+    type: "suggestion",
+  },
+  {
+    id: "g-kw-2",
+    query: "basha vara Queens Jackson Heights and Jamaica",
+    type: "suggestion",
+  },
+  {
+    id: "g-kw-3",
+    query: "subway train map and schedule MTA",
+    type: "suggestion",
+  },
+  {
+    id: "g-kw-4",
+    query: "halal restaurant deshi biryani near me",
+    type: "suggestion",
+  },
+  {
+    id: "g-kw-5",
+    query: "doctor free clinic NYC Health and Hospitals",
+    type: "suggestion",
+  },
+];
+
+export function getGoogleStyleSuggestions(
+  rawInput: string,
+  history: string[],
+  lang: string
+): DollSearchSuggestion[] {
+  const query = rawInput.trim().toLowerCase();
+
+  // If input is empty, return empty list (initially nothing is shown until typing)
+  if (!query) {
+    return [];
+  }
+
+  const results: DollSearchSuggestion[] = [];
+  const seen = new Set<string>();
+
+  // 1. History matches first
+  for (const h of history) {
+    const lowerH = h.toLowerCase();
+    if (lowerH.includes(query)) {
+      const found = DEFAULT_GOOGLE_SUGGESTIONS.find(
+        (d) => d.query.toLowerCase() === lowerH
+      );
+      results.push({
+        id: `h-match-${lowerH}`,
+        query: h,
+        type: "history",
+        badge: found?.badge,
+        subtitle: found?.subtitle,
+      });
+      seen.add(lowerH);
+    }
+  }
+
+  // 2. Curated suggestions (prioritize startsWith over contains)
+  const startsWithMatches: DollSearchSuggestion[] = [];
+  const containsMatches: DollSearchSuggestion[] = [];
+
+  for (const item of DEFAULT_GOOGLE_SUGGESTIONS) {
+    const lowerQ = item.query.toLowerCase();
+    if (seen.has(lowerQ)) continue;
+
+    if (lowerQ.startsWith(query)) {
+      startsWithMatches.push(item);
+      seen.add(lowerQ);
+    } else if (lowerQ.includes(query)) {
+      containsMatches.push(item);
+      seen.add(lowerQ);
+    }
+  }
+
+  results.push(...startsWithMatches, ...containsMatches);
+
+  // 3. Dynamic completions if user typed novel phrase
+  if (query.length >= 2 && results.length < 5) {
+    const trimmed = rawInput.trim();
+    const dynamicCandidates = [
+      `${trimmed} kivabe shuru korbo?`,
+      `${trimmed} somporke bistarito jante chai`,
+      `${trimmed} er legal rules and process`,
+      `${trimmed} New York-e kothay pabo?`,
+      `${trimmed} AI assistant guide`,
+    ];
+
+    for (let i = 0; i < dynamicCandidates.length; i++) {
+      const cand = dynamicCandidates[i];
+      const lowerCand = cand.toLowerCase();
+      if (!seen.has(lowerCand) && results.length < 8) {
+        results.push({
+          id: `dyn-${i}-${lowerCand}`,
+          query: cand,
+          type: "suggestion",
+          badge: i === 4 ? "AI Mode" : undefined,
+        });
+        seen.add(lowerCand);
+      }
+    }
+  }
+
+  return results.slice(0, 10);
+}
+
+export function renderGoogleHighlightedText(fullText: string, userQuery: string) {
+  const trimmed = userQuery.trim();
+  if (!trimmed) {
+    return <span className="font-normal text-slate-800">{fullText}</span>;
+  }
+
+  const lowerFull = fullText.toLowerCase();
+  const lowerQuery = trimmed.toLowerCase();
+
+  // If full text starts with the query: query prefix is normal, completion is bold
+  if (lowerFull.startsWith(lowerQuery)) {
+    const matchPart = fullText.slice(0, trimmed.length);
+    const restPart = fullText.slice(trimmed.length);
+    return (
+      <span className="text-slate-800 leading-snug break-words">
+        <span className="font-normal text-slate-600">{matchPart}</span>
+        <strong className="font-bold text-slate-900">{restPart}</strong>
+      </span>
+    );
+  }
+
+  // If query appears inside full text:
+  const idx = lowerFull.indexOf(lowerQuery);
+  if (idx !== -1) {
+    const before = fullText.slice(0, idx);
+    const matchPart = fullText.slice(idx, idx + trimmed.length);
+    const after = fullText.slice(idx + trimmed.length);
+    return (
+      <span className="text-slate-800 leading-snug break-words">
+        <strong className="font-bold text-slate-900">{before}</strong>
+        <span className="font-normal text-slate-600">{matchPart}</span>
+        <strong className="font-bold text-slate-900">{after}</strong>
+      </span>
+    );
+  }
+
+  return <span className="font-normal text-slate-800">{fullText}</span>;
+}
+
 export function DollChatboxWindow({
   isOpen,
   onClose,
@@ -2146,11 +2478,32 @@ export function DollChatboxWindow({
   const navigate = useNavigate();
   const { lang } = useLanguage();
 
-  const getInitialMessage = (currentLang: string) => {
-    if (currentLang === "bn") {
-      return "আসসালামু আলাইকুম! 👋 আমি কীভাবে সাহায্য করতে পারি?\nচাকরি, গ্রিন কার্ড, লাইসেন্স বা যেকোনো প্রশ্ন লিখুন — বিস্তারিত পরামর্শ ও সার্ভিসের লিংক দিয়ে দেব।";
+  const getUserName = () => {
+    try {
+      const stored =
+        localStorage.getItem("user_profile_name") ||
+        localStorage.getItem("userName") ||
+        localStorage.getItem("user_name") ||
+        localStorage.getItem("auth_user");
+      if (stored) {
+        if (stored.startsWith("{")) {
+          const parsed = JSON.parse(stored);
+          if (parsed.name) return parsed.name.split(" ")[0];
+        }
+        return stored.split(" ")[0];
+      }
+    } catch {
+      // ignore
     }
-    return "How can I help you? Ask about jobs, green cards, licenses, or any newcomer service.";
+    return "Rahim";
+  };
+
+  const getInitialMessage = (currentLang: string) => {
+    const userName = getUserName();
+    if (currentLang === "bn") {
+      return `হেই ${userName}, কি জানতে চান?`;
+    }
+    return `Hey ${userName}, what you want to know?`;
   };
 
   const [messages, setMessages] = useState<ChatMessage[]>(() => [
@@ -2163,8 +2516,106 @@ export function DollChatboxWindow({
   ]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+
+  // Search history persistent in localStorage
+  const [searchHistory, setSearchHistory] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("pathasathi_doll_search_history");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      // ignore
+    }
+    return INITIAL_SEARCH_HISTORY;
+  });
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const suggestionsListRef = useRef<HTMLDivElement>(null);
+
+  // Compute Google-style suggestions (only when typing)
+  const suggestions = useMemo(() => {
+    if (!inputText.trim()) return [];
+    return getGoogleStyleSuggestions(inputText, searchHistory, lang);
+  }, [inputText, searchHistory, lang]);
+
+  // Click outside to close suggestions
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const addToHistory = (queryText: string) => {
+    const trimmed = queryText.trim();
+    if (!trimmed) return;
+    setSearchHistory((prev) => {
+      const filtered = prev.filter((item) => item.toLowerCase() !== trimmed.toLowerCase());
+      const next = [trimmed, ...filtered].slice(0, 15);
+      try {
+        localStorage.setItem("pathasathi_doll_search_history", JSON.stringify(next));
+      } catch (e) {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  const deleteFromHistory = (queryText: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSearchHistory((prev) => {
+      const next = prev.filter((item) => item !== queryText);
+      try {
+        localStorage.setItem("pathasathi_doll_search_history", JSON.stringify(next));
+      } catch (e) {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  // Keyboard navigation for suggestions
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || suggestions.length === 0) {
+      if (e.key === "ArrowDown") {
+        setShowSuggestions(true);
+      }
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveSuggestionIndex((prev) =>
+        prev < suggestions.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveSuggestionIndex((prev) =>
+        prev > 0 ? prev - 1 : suggestions.length - 1
+      );
+    } else if (e.key === "Enter") {
+      if (activeSuggestionIndex >= 0 && activeSuggestionIndex < suggestions.length) {
+        e.preventDefault();
+        const selected = suggestions[activeSuggestionIndex];
+        handleSendMessage(undefined, selected.query);
+      }
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+      setActiveSuggestionIndex(-1);
+    }
+  };
 
   // Dynamic language synchronization for initial message
   useEffect(() => {
@@ -2194,10 +2645,14 @@ export function DollChatboxWindow({
   if (!isOpen) return null;
 
   // Live OpenRouter AI Agent query processing with Service Type Suggestions
-  const handleSendMessage = async (e?: React.FormEvent) => {
+  const handleSendMessage = async (e?: React.FormEvent, directQuery?: string) => {
     if (e) e.preventDefault();
-    const query = inputText.trim();
+    const query = (directQuery ?? inputText).trim();
     if (!query) return;
+
+    addToHistory(query);
+    setShowSuggestions(false);
+    setActiveSuggestionIndex(-1);
 
     const userMsg: ChatMessage = {
       id: `user-${Date.now()}`,
@@ -2305,23 +2760,23 @@ export function DollChatboxWindow({
           : "bottom-[96px] sm:bottom-20 right-3 sm:right-6"
       }`}
     >
-      {/* ── Chat Header (Expanded & Clean) ── */}
-      <div className="px-4 py-2.5 bg-gradient-to-r from-orange-500 via-[#E05236] to-[#C04A22] text-white flex items-center justify-between shadow-xs flex-shrink-0">
+      {/* ── Chat Header (Clean White like Sidebar with subtle Shadow & Border) ── */}
+      <div className="relative px-4 py-3 bg-white text-slate-900 flex items-center justify-between shadow-sm border-b border-slate-200/80 flex-shrink-0 z-10">
         <div className="flex items-center gap-2.5">
-          <div className="relative w-8 h-8 rounded-full bg-white/20 p-0.5 border border-white/60 overflow-hidden flex-shrink-0">
+          <div className="relative w-8 h-8 rounded-full bg-orange-100 p-0.5 border border-orange-200 overflow-hidden flex-shrink-0">
             <img
               src="/doll_assistant.jpg"
               alt="Doll"
               className="w-full h-full object-cover rounded-full"
             />
-            <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-400 border border-white rounded-full" />
+            <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 border border-white rounded-full" />
           </div>
           <div className="flex flex-col">
-            <span className="text-xs font-bold text-white tracking-tight leading-tight">
+            <span className="text-xs font-bold text-slate-900 tracking-tight leading-tight">
               {lang === "bn" ? "পাঠসাথী অ্যাসিস্ট্যান্ট" : "Pathasathi Assistant"}
             </span>
-            <span className="text-[10px] text-orange-100 flex items-center gap-1 font-medium leading-none mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+            <span className="text-[10px] text-slate-500 flex items-center gap-1 font-medium leading-none mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               {lang === "bn" ? "অনলাইন" : "Online"}
             </span>
           </div>
@@ -2330,14 +2785,14 @@ export function DollChatboxWindow({
         <div className="flex items-center gap-1">
           <button
             onClick={handleResetChat}
-            className="p-1.5 text-orange-100 hover:text-white hover:bg-white/10 rounded-full transition cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition cursor-pointer"
             title={lang === "bn" ? "নতুন করে শুরু করুন" : "Reset chat"}
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={onClose}
-            className="p-1.5 text-orange-100 hover:text-white hover:bg-white/10 rounded-full transition cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition cursor-pointer"
             title={lang === "bn" ? "বন্ধ করুন" : "Close"}
           >
             <X className="w-4 h-4" />
@@ -2366,10 +2821,10 @@ export function DollChatboxWindow({
               )}
 
               <div
-                className={`p-3 rounded-2xl shadow-2xs leading-relaxed text-xs ${
+                className={`p-3 rounded-2xl leading-relaxed text-xs transition-all ${
                   msg.sender === "user"
-                    ? "bg-[#C04A22] text-white rounded-br-xs"
-                    : "bg-white text-slate-800 border border-slate-200/90 rounded-bl-xs"
+                    ? "bg-white text-slate-900 border border-slate-200/90 rounded-br-xs shadow-sm font-medium"
+                    : "bg-white text-slate-800 border border-slate-200/90 rounded-bl-xs shadow-xs"
                 }`}
               >
                 {msg.sender === "user" ? (
@@ -2480,32 +2935,176 @@ export function DollChatboxWindow({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ── Input Box ── */}
-      <form
-        onSubmit={handleSendMessage}
-        className="p-2.5 bg-white border-t border-slate-200 flex items-center gap-2 flex-shrink-0"
-      >
-        <input
-          ref={inputRef}
-          type="text"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder={
-            lang === "bn"
-              ? "যেকোনো প্রশ্ন বা জিজ্ঞাসা লিখুন..."
-              : "Ask anything (e.g. How to get Green Card?)..."
-          }
-          className="flex-1 text-xs px-3.5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-50 focus:bg-white border border-transparent focus:border-orange-400 focus:ring-1 focus:ring-orange-400 transition outline-none text-slate-800 placeholder:text-slate-400"
-        />
-        <button
-          type="submit"
-          disabled={!inputText.trim()}
-          className="w-9 h-9 rounded-2xl bg-gradient-to-r from-orange-500 to-[#C04A22] hover:from-orange-600 hover:to-[#8C3015] disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center transition cursor-pointer flex-shrink-0 shadow-xs active:scale-95"
-          title={lang === "bn" ? "পাঠান" : "Send"}
+      {/* ── Input Box & Google Search Style Autocomplete Suggestions ── */}
+      <div ref={containerRef} className="relative bg-white border-t border-slate-200 flex-shrink-0">
+        {/* ── Google Style Autocomplete Dropdown Popover ── */}
+        {showSuggestions && inputText.trim().length > 0 && suggestions.length > 0 && (
+          <div
+            ref={suggestionsListRef}
+            className="absolute bottom-full left-2 right-2 mb-1.5 max-h-[320px] bg-white border border-slate-200/90 rounded-2xl shadow-2xl overflow-y-auto z-50 flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-150 py-1"
+            style={{
+              boxShadow: "0 12px 36px -4px rgba(0, 0, 0, 0.16), 0 4px 12px -2px rgba(0, 0, 0, 0.08)",
+            }}
+          >
+            {/* Suggestion list rows (clean without top search header) */}
+            <div className="divide-y divide-slate-100">
+              {suggestions.map((item, idx) => {
+                const isActive = activeSuggestionIndex === idx;
+
+                return (
+                  <div
+                    key={item.id || idx}
+                    onMouseEnter={() => setActiveSuggestionIndex(idx)}
+                    onClick={() => handleSendMessage(undefined, item.query)}
+                    className={`group px-3 py-2 flex items-center justify-between gap-2.5 transition-colors cursor-pointer ${
+                      isActive ? "bg-slate-100/90" : "hover:bg-slate-50"
+                    }`}
+                  >
+                    {/* Left Icon + Text */}
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {/* Left Icon */}
+                      {item.type === "history" ? (
+                        <Clock className="w-4 h-4 text-slate-400 group-hover:text-slate-600 flex-shrink-0" />
+                      ) : item.type === "media" ? (
+                        <div className="w-7 h-7 rounded-md bg-gradient-to-br from-slate-900 to-indigo-950 text-white flex items-center justify-center flex-shrink-0 shadow-2xs border border-slate-700/50">
+                          <Music className="w-3.5 h-3.5 text-amber-300" />
+                        </div>
+                      ) : (
+                        <Search className="w-4 h-4 text-slate-400 group-hover:text-slate-600 flex-shrink-0" />
+                      )}
+
+                      {/* Text + Subtitle / Badge */}
+                      <div className="min-w-0 flex-1 text-xs">
+                        <div className="truncate">
+                          {renderGoogleHighlightedText(item.query, inputText)}
+                        </div>
+
+                        {/* Subtitle (e.g. Song by Anupam Roy) */}
+                        {item.subtitle && (
+                          <div className="text-[11px] text-slate-500 font-normal truncate mt-0.5">
+                            {item.subtitle}
+                          </div>
+                        )}
+
+                        {/* AI Mode badge (matches screenshot) */}
+                        {item.badge === "AI Mode" && (
+                          <div className="flex items-center gap-1 text-[10px] font-medium text-slate-400 mt-0.5">
+                            <Sparkles className="w-2.5 h-2.5 text-orange-500" />
+                            <span>AI Mode</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right side actions */}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {/* Delete button for history items */}
+                      {item.type === "history" && (
+                        <button
+                          type="button"
+                          onClick={(e) => deleteFromHistory(item.query, e)}
+                          className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 rounded transition-opacity"
+                          title={lang === "bn" ? "হিস্টোরি মুছুন" : "Remove from history"}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+
+                      {/* Insert into search bar button (Google ↖ ArrowUpLeft icon) */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setInputText(item.query);
+                          inputRef.current?.focus();
+                        }}
+                        className="p-1 text-slate-300 hover:text-slate-600 hover:bg-slate-200/70 rounded transition-colors"
+                        title={lang === "bn" ? "ইনপুটে রাখুন" : "Insert into box"}
+                      >
+                        <ArrowUpLeft className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Google Search Styled Input Form ── */}
+        <form
+          onSubmit={(e) => handleSendMessage(e)}
+          className="p-2.5 flex items-center gap-2"
         >
-          <Send className="w-4 h-4" />
-        </button>
-      </form>
+          {/* Input container with + icon and clear button */}
+          <div className="relative flex-1 flex items-center">
+            {/* Google-style + icon on left (as seen in screenshot) */}
+            <button
+              type="button"
+              onClick={() => {
+                if (inputText.trim().length > 0) {
+                  setShowSuggestions((prev) => !prev);
+                }
+                inputRef.current?.focus();
+              }}
+              className="absolute left-2.5 text-slate-400 hover:text-orange-500 p-0.5 transition-colors cursor-pointer"
+              title={lang === "bn" ? "লিখুন" : "Type to search"}
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+
+            {/* Text Input */}
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputText}
+              onChange={(e) => {
+                const val = e.target.value;
+                setInputText(val);
+                setShowSuggestions(val.trim().length > 0);
+                setActiveSuggestionIndex(-1);
+              }}
+              onFocus={() => {
+                if (inputText.trim().length > 0) {
+                  setShowSuggestions(true);
+                }
+              }}
+              onKeyDown={handleInputKeyDown}
+              placeholder={
+                lang === "bn"
+                  ? "যেকোনো প্রশ্ন লিখুন (যেমন: ami ki, green card)..."
+                  : "Search or ask anything (e.g. ami ki, green card)..."
+              }
+              className="w-full text-xs pl-8 pr-7 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-50 focus:bg-white border border-transparent focus:border-orange-400 focus:ring-1 focus:ring-orange-400 transition outline-none text-slate-800 placeholder:text-slate-400"
+            />
+
+            {/* Clear button if text exists */}
+            {inputText && (
+              <button
+                type="button"
+                onClick={() => {
+                  setInputText("");
+                  inputRef.current?.focus();
+                }}
+                className="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
+                title={lang === "bn" ? "মুছুন" : "Clear"}
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Send Button */}
+          <button
+            type="submit"
+            disabled={!inputText.trim()}
+            className="w-9 h-9 rounded-2xl bg-gradient-to-r from-orange-500 to-[#C04A22] hover:from-orange-600 hover:to-[#8C3015] disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center transition cursor-pointer flex-shrink-0 shadow-xs active:scale-95"
+            title={lang === "bn" ? "পাঠান" : "Send"}
+          >
+            <Send className="w-4 h-4" />
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
