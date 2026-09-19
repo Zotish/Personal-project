@@ -34,10 +34,11 @@ export const LANG_PAIR_METAS: Record<Lang, LangPairItem> = {
 export function useCountryLanguagePair() {
   const { currentCountry } = useCountryPlatform();
 
-  const motherLangCode = (currentCountry?.primaryLanguage?.code?.toLowerCase() || "bn") as Lang;
+  const rawMotherLang = (currentCountry?.primaryLanguage?.code?.toLowerCase() || "bn");
+  const motherLangCode = (rawMotherLang === "ja" ? "en" : rawMotherLang) as Lang;
   const isEnglishCountry = motherLangCode === "en";
 
-  // If country's primary is already English (US, CA, GB, AU), use Bengali as secondary
+  // If country's primary is already English (US, CA, GB, AU) or disabled, use Bengali as secondary
   const secondaryCode: Lang = isEnglishCountry ? "bn" : motherLangCode;
 
   const primaryLang = LANG_PAIR_METAS.en;

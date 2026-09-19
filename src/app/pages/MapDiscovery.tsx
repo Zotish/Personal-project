@@ -23,6 +23,11 @@ import {
   getCuratedFallbackPlaces,
   CURATED_BANGLADESH_PLACES,
   type BariKoiAddressInfo,
+  getMapStyleForLocation,
+  getMapboxRasterStyle,
+  getLeafletTileConfig,
+  fetchGlobalRoute,
+  attachMapboxFallbackOnError,
 } from "../services/barikoiService";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -160,7 +165,7 @@ async function fetchRoutes(
   to: [number, number],
   mode: TravelMode
 ): Promise<RouteOption[]> {
-  if (isBariKoiAvailable()) {
+  if (isBariKoiAvailable(from[0], from[1])) {
     const barikoiUrl = `https://barikoi.xyz/v2/api/route/${from[1]},${from[0]};${to[1]},${to[0]}?api_key=${BARIKOI_API_KEY}&geometries=polyline`;
     try {
       const res = await fetch(barikoiUrl, { signal: AbortSignal.timeout(6000) });
@@ -202,7 +207,23 @@ async function fetchRoutes(
     } catch (_) {}
   }
 
-  // Fallback to OSRM if BariKoi route fails
+  // Fallback to Mapbox / Global routing
+  const globalRoute = await fetchGlobalRoute(from, to, mode);
+  if (globalRoute && globalRoute.coordinates.length >= 2) {
+    const traffic = simulateTraffic(0, to[0] * 10 | 0);
+    return [{
+      id: 0,
+      label: "Mapbox Optimal Route",
+      coords: globalRoute.coordinates,
+      distance: globalRoute.distanceMeters,
+      duration: globalRoute.durationSeconds,
+      traffic,
+      trafficSegments: splitSegments(globalRoute.coordinates, traffic, (to[1] * 10 | 0)),
+      cost: estimateCost(mode, globalRoute.distanceMeters),
+    }];
+  }
+
+  // Fallback to OSRM if BariKoi & Mapbox routes fail
   const profile = OSRM_PROFILES[mode];
   const url = `https://router.project-osrm.org/route/v1/${profile}/${from[1]},${from[0]};${to[1]},${to[0]}?overview=full&geometries=geojson&alternatives=true`;
   try {
@@ -419,6 +440,7 @@ export function getBariKoiCategoryImage(type?: string): string {
 }
 
 const nearbyPlacesCache = new Map<string, Place[]>();
+const inFlightNearbyRequests = new Map<string, Promise<Place[]>>();
 
 export async function fetchBariKoiNearbyPlaces(
   lat: number,
@@ -430,8 +452,12 @@ export async function fetchBariKoiNearbyPlaces(
     return nearbyPlacesCache.get(cacheKey)!;
   }
 
-  // If in cooldown or API unavailable, immediately use rich curated fallback places
-  if (!isBariKoiAvailable()) {
+  if (inFlightNearbyRequests.has(cacheKey)) {
+    return inFlightNearbyRequests.get(cacheKey)!;
+  }
+
+  // If in cooldown, outside Bangladesh, or API unavailable, immediately use rich curated fallback places
+  if (!isBariKoiAvailable(lat, lng)) {
     const fallback = getCuratedFallbackPlaces(lat, lng, category);
     nearbyPlacesCache.set(cacheKey, fallback);
     return fallback;
@@ -454,66 +480,75 @@ export async function fetchBariKoiNearbyPlaces(
   const results: Place[] = [];
   const seenIds = new Set<string | number>();
 
-  // Fetch sequentially to prevent burst 429 rate limit errors
-  const targetPtypes = ptypes.slice(0, 2);
-  for (const ptype of targetPtypes) {
-    if (!isBariKoiAvailable()) break;
+  const requestPromise = (async () => {
     try {
-      const url = `https://barikoi.xyz/v2/api/search/nearby/category/${BARIKOI_API_KEY}/1.5/12?longitude=${lng}&latitude=${lat}&ptype=${encodeURIComponent(ptype)}`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
-      if (res.status === 429) {
-        triggerBariKoiCooldown(180_000);
-        break; // Stop immediately on 429 rate limit
-      }
-      if (!res.ok) continue;
-      const data = await res.json();
-      if (data?.places && Array.isArray(data.places)) {
-        data.places.forEach((p: any) => {
-          if (seenIds.has(p.id)) return;
-          seenIds.add(p.id);
-          const pLat = parseFloat(p.latitude);
-          const pLng = parseFloat(p.longitude);
-          if (isNaN(pLat) || isNaN(pLng) || pLat === 0 || pLng === 0) return;
+      // Fetch sequentially for rich Business Tier place discovery
+      const targetPtypes = ptypes.slice(0, 3);
+      for (const ptype of targetPtypes) {
+        if (!isBariKoiAvailable()) break;
+        try {
+          const url = `https://barikoi.xyz/v2/api/search/nearby/category/${BARIKOI_API_KEY}/1.5/12?longitude=${lng}&latitude=${lat}&ptype=${encodeURIComponent(ptype)}`;
+          const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+          if (res.status === 429) {
+            triggerBariKoiCooldown(30_000);
+            break; // Stop immediately on 429 rate limit
+          }
+          if (!res.ok) continue;
+          const data = await res.json();
+          if (data?.places && Array.isArray(data.places)) {
+            data.places.forEach((p: any) => {
+              if (seenIds.has(p.id)) return;
+              seenIds.add(p.id);
+              const pLat = parseFloat(p.latitude);
+              const pLng = parseFloat(p.longitude);
+              if (isNaN(pLat) || isNaN(pLng) || pLat === 0 || pLng === 0) return;
 
-          const distMeters = p.distance_in_meters;
-          const distStr = distMeters
-            ? (distMeters < 1000 ? `${Math.round(distMeters)} m` : `${(distMeters / 1000).toFixed(1)} km`)
-            : "Nearby";
+              const distMeters = p.distance_in_meters;
+              const distStr = distMeters
+                ? (distMeters < 1000 ? `${Math.round(distMeters)} m` : `${(distMeters / 1000).toFixed(1)} km`)
+                : "Nearby";
 
-          results.push({
-            id: p.id,
-            name: p.name || p.address?.split(",")[0] || p.sub_type || p.type || "BariKoi Verified Place",
-            category: mapBariKoiToAppCategory(p.type, p.sub_type, category),
-            lat: pLat,
-            lng: pLng,
-            distance: distStr,
-            rating: 4.8,
-            reviews: 24 + ((Number(p.id) % 50) || 0),
-            open: true,
-            openUntil: "9:00 PM",
-            address: p.address || `${p.area || ""}, ${p.city || ""}`,
-            phone: "+880 1700-000000",
-            languages: ["Bengali", "English"],
-            immigrantFriendly: true,
-            description: p.address ? `BariKoi verified: ${p.address}` : "Real-time location from BariKoi database.",
-            image: getBariKoiCategoryImage(p.type || category),
-          });
-        });
+              results.push({
+                id: p.id,
+                name: p.name || p.address?.split(",")[0] || p.sub_type || p.type || "BariKoi Verified Place",
+                category: mapBariKoiToAppCategory(p.type, p.sub_type, category),
+                lat: pLat,
+                lng: pLng,
+                distance: distStr,
+                rating: 4.8,
+                reviews: 24 + ((Number(p.id) % 50) || 0),
+                open: true,
+                openUntil: "9:00 PM",
+                address: p.address || `${p.area || ""}, ${p.city || ""}`,
+                phone: "+880 1700-000000",
+                languages: ["Bengali", "English"],
+                immigrantFriendly: true,
+                description: p.address ? `BariKoi verified: ${p.address}` : "Real-time location from BariKoi database.",
+                image: getBariKoiCategoryImage(p.type || category),
+              });
+            });
+          }
+        } catch (_) {
+          break;
+        }
       }
-    } catch (_) {
-      break;
+
+      if (results.length > 0) {
+        nearbyPlacesCache.set(cacheKey, results);
+        return results;
+      }
+
+      // Graceful fallback to verified curated landmarks
+      const fallback = getCuratedFallbackPlaces(lat, lng, category);
+      nearbyPlacesCache.set(cacheKey, fallback);
+      return fallback;
+    } finally {
+      inFlightNearbyRequests.delete(cacheKey);
     }
-  }
+  })();
 
-  if (results.length > 0) {
-    nearbyPlacesCache.set(cacheKey, results);
-    return results;
-  }
-
-  // Graceful fallback to verified curated landmarks
-  const fallback = getCuratedFallbackPlaces(lat, lng, category);
-  nearbyPlacesCache.set(cacheKey, fallback);
-  return fallback;
+  inFlightNearbyRequests.set(cacheKey, requestPromise);
+  return requestPromise;
 }
 
 // Initial BariKoi Verified Landmarks across all categories
@@ -907,13 +942,15 @@ function LeafletMap({
           bkoigl.apiKey = key;
         }
 
+        const mapStyle = getMapStyleForLocation(userLocation?.[0], userLocation?.[1]);
+
         const map = new bkoigl.Map({
           container: containerRef.current!,
           center: defaultCenter,
           zoom: defaultZoom,
           accessToken: key,
           apiKey: key,
-          style: `https://map.barikoi.com/styles/osm_barikoi_v1/style.json?key=${key}`,
+          style: mapStyle,
         });
 
         // Handle missing sprite images cleanly
@@ -931,15 +968,7 @@ function LeafletMap({
           }
         });
 
-        map.on("error", (e: any) => {
-          if (
-            e?.error?.message?.includes("Source layer") ||
-            e?.error?.message?.includes("does not exist") ||
-            e?.error?.message?.includes("office_11")
-          ) {
-            return;
-          }
-        });
+        attachMapboxFallbackOnError(map);
 
         map.on("click", () => onMapClick());
         map.on("load", () => {
@@ -978,9 +1007,10 @@ function LeafletMap({
             attributionControl: false,
           });
 
-          L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            maxZoom: 19,
-            attribution: '&copy; <a href="https://barikoi.com">BariKoi</a>',
+          const tileCfg = getLeafletTileConfig(userLocation?.[0], userLocation?.[1]);
+          L.tileLayer(tileCfg.url, {
+            maxZoom: tileCfg.maxZoom,
+            attribution: tileCfg.attribution,
           }).addTo(map);
 
           map.on("click", () => onMapClick());
@@ -2345,13 +2375,35 @@ export function MapDiscoveryContent({
   const inputRef = useRef<HTMLInputElement>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
-  // ── Continuous Real-Time GPS Tracking with watchPosition ──
+  // ── Continuous Real-Time GPS Tracking with watchPosition (Throttled) ──
+  const lastGpsCoordsRef = useRef<[number, number] | null>(null);
+  const lastGpsTimeRef = useRef<number>(0);
+
   useEffect(() => {
     if (!("geolocation" in navigator)) return;
 
     const watchId = navigator.geolocation.watchPosition(
       pos => {
-        const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const now = Date.now();
+
+        // Prevent rapid micro-updates caused by GPS jitter (only update if moved > 35m or > 15s elapsed)
+        if (lastGpsCoordsRef.current) {
+          const [prevLat, prevLng] = lastGpsCoordsRef.current;
+          const distMeters = Math.hypot(
+            (lat - prevLat) * 111000,
+            (lng - prevLng) * 111000 * Math.cos((lat * Math.PI) / 180)
+          );
+          if (distMeters < 35 && now - lastGpsTimeRef.current < 15000) {
+            return;
+          }
+        }
+
+        lastGpsCoordsRef.current = [lat, lng];
+        lastGpsTimeRef.current = now;
+
+        const coords: [number, number] = [lat, lng];
         setUserLocation(coords);
         setIsGPSActive(true);
         try {
@@ -2363,8 +2415,8 @@ export function MapDiscoveryContent({
       },
       {
         enableHighAccuracy: true,
-        maximumAge: 5000,
-        timeout: 10000,
+        maximumAge: 10000,
+        timeout: 15000,
       }
     );
 
@@ -2430,7 +2482,7 @@ export function MapDiscoveryContent({
     detectExactLocation();
   }, [routeState]);
 
-  // ── Real-Time Address via BariKoi Reverse Geocode API ──
+  // ── Real-Time Address via BariKoi Reverse Geocode API (Debounced) ──
   const [liveAddressInfo, setLiveAddressInfo] = useState<{
     address?: string;
     area?: string;
@@ -2441,35 +2493,49 @@ export function MapDiscoveryContent({
   useEffect(() => {
     if (!userLocation) return;
     let isCancelled = false;
-    fetchBariKoiReverseGeocode(userLocation[0], userLocation[1]).then(info => {
-      if (!isCancelled && info) {
-        setLiveAddressInfo(info);
-      }
-    });
-    return () => { isCancelled = true; };
+
+    // Debounce reverse geocoding to prevent rapid fire API calls
+    const timer = setTimeout(() => {
+      fetchBariKoiReverseGeocode(userLocation[0], userLocation[1]).then(info => {
+        if (!isCancelled && info) {
+          setLiveAddressInfo(info);
+        }
+      });
+    }, 600);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
   }, [userLocation]);
 
-  // ── Real-Time Live Places from BariKoi Nearby Category API (No Static Data) ──
+  // ── Real-Time Live Places from BariKoi Nearby Category API (Debounced) ──
   const [realtimePlaces, setRealtimePlaces] = useState<Place[]>([]);
   const [isLoadingNearby, setIsLoadingNearby] = useState(false);
 
   useEffect(() => {
     if (!userLocation) return;
     let isCancelled = false;
-    setIsLoadingNearby(true);
 
-    fetchBariKoiNearbyPlaces(userLocation[0], userLocation[1], activeCategory)
-      .then(places => {
-        if (!isCancelled) {
-          setRealtimePlaces(places);
-          setIsLoadingNearby(false);
-        }
-      })
-      .catch(() => {
-        if (!isCancelled) setIsLoadingNearby(false);
-      });
+    // Debounce nearby search to prevent rate limits
+    const timer = setTimeout(() => {
+      setIsLoadingNearby(true);
+      fetchBariKoiNearbyPlaces(userLocation[0], userLocation[1], activeCategory)
+        .then(places => {
+          if (!isCancelled) {
+            setRealtimePlaces(places);
+            setIsLoadingNearby(false);
+          }
+        })
+        .catch(() => {
+          if (!isCancelled) setIsLoadingNearby(false);
+        });
+    }, 500);
 
-    return () => { isCancelled = true; };
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
   }, [userLocation, activeCategory]);
 
   // Live Location Jobs generated dynamically around the user's real-time location

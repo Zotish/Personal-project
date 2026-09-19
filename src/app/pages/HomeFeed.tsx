@@ -257,7 +257,7 @@ const forYouPosts: Post[] = [
     likes: 567, comments: 43, reposts: 123,
     location: "Houston, TX",
     tags: ["Asylum", "Legal Help"],
-    image: "https://images.unsplash.com/photo-1575517111839-3a3843ee7f5d?w=600&h=340&fit=crop&auto=format",
+    image: "https://images.unsplash.com/photo-1450133064473-71024230f91b?w=600&h=340&fit=crop&auto=format",
   },
   {
     id: 6, type: "tip",

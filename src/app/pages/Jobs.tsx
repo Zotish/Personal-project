@@ -12,7 +12,13 @@ import {
 import { LiveJobListing, generateLiveLocationJobs, formatDistance, getDistanceKm, matchJobQuery } from "../data/jobsData";
 import { JobDetailsModal } from "../components/jobs/JobDetailsModal";
 import type { Map as LeafletMapType } from "leaflet";
-import { safeBariKoiReverseGeocode } from "../services/barikoiService";
+import {
+  safeBariKoiReverseGeocode,
+  getMapStyleForLocation,
+  getMapboxRasterStyle,
+  getLeafletTileConfig,
+  attachMapboxFallbackOnError,
+} from "../services/barikoiService";
 
 // ─── BariKoi API Key & Loader ───────────────────────────────────────────────
 
@@ -325,6 +331,7 @@ function BariKoiLiveJobsMap({
           bkoigl.apiKey = key;
         }
 
+        const mapStyle = getMapStyleForLocation(userCoords[0], userCoords[1]);
         const map = new bkoigl.Map({
           container: containerRef.current!,
           center: [userCoords[1], userCoords[0]], // [lng, lat]
@@ -332,7 +339,7 @@ function BariKoiLiveJobsMap({
           accessToken: key,
           apiKey: key,
           attributionControl: false,
-          style: `https://map.barikoi.com/styles/osm_barikoi_v1/style.json?key=${key}`,
+          style: mapStyle,
         });
 
         // Gracefully handle missing sprite icons/layers from Barikoi style
@@ -350,15 +357,7 @@ function BariKoiLiveJobsMap({
           }
         });
 
-        map.on("error", (e: any) => {
-          if (
-            e?.error?.message?.includes("Source layer") ||
-            e?.error?.message?.includes("does not exist") ||
-            e?.error?.message?.includes("office_11")
-          ) {
-            return;
-          }
-        });
+        attachMapboxFallbackOnError(map);
 
         map.on("load", () => {
           mapRef.current = map;
@@ -402,12 +401,11 @@ function BariKoiLiveJobsMap({
             attributionControl: false
           });
 
-          L.tileLayer(
-            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
-            {
-              maxZoom: 19,
-            }
-          ).addTo(map);
+          const tileCfg = getLeafletTileConfig(userCoords[0], userCoords[1]);
+          L.tileLayer(tileCfg.url, {
+            maxZoom: tileCfg.maxZoom,
+            attribution: tileCfg.attribution,
+          }).addTo(map);
 
           map.on("dragend", () => {
             try {

@@ -17,7 +17,13 @@ import {
 } from "../data/housingData";
 import { HousingDetailsModal } from "../components/housing/HousingDetailsModal";
 import type { Map as LeafletMapType } from "leaflet";
-import { safeBariKoiReverseGeocode } from "../services/barikoiService";
+import {
+  safeBariKoiReverseGeocode,
+  getMapStyleForLocation,
+  getMapboxRasterStyle,
+  getLeafletTileConfig,
+  attachMapboxFallbackOnError,
+} from "../services/barikoiService";
 
 // ─── BariKoi API Key & Loader ───────────────────────────────────────────────
 
@@ -278,6 +284,7 @@ function BariKoiLiveHousingMap({
           bkoigl.apiKey = key;
         }
 
+        const mapStyle = getMapStyleForLocation(userCoords[0], userCoords[1]);
         const map = new bkoigl.Map({
           container: containerRef.current!,
           center: [userCoords[1], userCoords[0]], // [lng, lat]
@@ -285,7 +292,7 @@ function BariKoiLiveHousingMap({
           accessToken: key,
           apiKey: key,
           attributionControl: false,
-          style: `https://map.barikoi.com/styles/osm_barikoi_v1/style.json?key=${key}`,
+          style: mapStyle,
         });
 
         // Gracefully handle missing sprite icons/layers from Barikoi style
@@ -303,15 +310,7 @@ function BariKoiLiveHousingMap({
           }
         });
 
-        map.on("error", (e: any) => {
-          if (
-            e?.error?.message?.includes("Source layer") ||
-            e?.error?.message?.includes("does not exist") ||
-            e?.error?.message?.includes("office_11")
-          ) {
-            return;
-          }
-        });
+        attachMapboxFallbackOnError(map);
 
         map.on("load", () => {
           mapRef.current = map;
@@ -343,13 +342,11 @@ function BariKoiLiveHousingMap({
             attributionControl: false
           });
 
-          L.tileLayer(
-            "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-            {
-              maxZoom: 19,
-              attribution: '&copy; <a href="https://barikoi.com">BariKoi</a>',
-            }
-          ).addTo(map);
+          const tileCfg = getLeafletTileConfig(userCoords[0], userCoords[1]);
+          L.tileLayer(tileCfg.url, {
+            maxZoom: tileCfg.maxZoom,
+            attribution: tileCfg.attribution,
+          }).addTo(map);
 
           map.invalidateSize();
           const ro = new ResizeObserver(() => {

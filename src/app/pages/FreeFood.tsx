@@ -15,7 +15,13 @@ import {
   matchFreeFoodQuery
 } from "../data/freeFoodData";
 import { FoodDetailsModal } from "../components/food/FoodDetailsModal";
-import { safeBariKoiReverseGeocode } from "../services/barikoiService";
+import {
+  safeBariKoiReverseGeocode,
+  getMapStyleForLocation,
+  getMapboxRasterStyle,
+  getLeafletTileConfig,
+  attachMapboxFallbackOnError,
+} from "../services/barikoiService";
 
 // ─── BariKoi API Key & Loader ───────────────────────────────────────────────
 const BARIKOI_API_KEY =
@@ -279,14 +285,17 @@ function BariKoiLiveFoodMap({
           bkoigl.apiKey = key;
         }
 
+        const mapStyle = getMapStyleForLocation(userCoords[0], userCoords[1]);
         const map = new bkoigl.Map({
           container: containerRef.current,
           center: [userCoords[1], userCoords[0]],
           zoom: 14.5,
           accessToken: key,
           apiKey: key,
-          style: `https://map.barikoi.com/styles/osm_barikoi_v1/style.json?key=${key}`
+          style: mapStyle
         });
+
+        attachMapboxFallbackOnError(map);
 
         map.on("load", () => {
           mapRef.current = map;
@@ -310,9 +319,10 @@ function BariKoiLiveFoodMap({
             zoomControl: false
           });
 
-          L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
-            attribution: '&copy; <a href="https://barikoi.com">BariKoi</a>',
-            maxZoom: 19
+          const tileCfg = getLeafletTileConfig(userCoords[0], userCoords[1]);
+          L.tileLayer(tileCfg.url, {
+            attribution: tileCfg.attribution,
+            maxZoom: tileCfg.maxZoom
           }).addTo(map);
 
           map.on("click", () => {

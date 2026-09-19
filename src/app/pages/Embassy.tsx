@@ -20,6 +20,12 @@ import {
   CONSULAR_OUTREACH_CAMPS,
   matchConsularQuery
 } from "../data/embassyData";
+import {
+  getMapStyleForLocation,
+  getMapboxRasterStyle,
+  getLeafletTileConfig,
+  attachMapboxFallbackOnError,
+} from "../services/barikoiService";
 
 // Icon mapping helper
 const SERVICE_ICONS: Record<string, any> = {
@@ -227,14 +233,17 @@ function BariKoiMissionMap({
           bkoigl.apiKey = key;
         }
 
+        const mapStyle = getMapStyleForLocation(36.5, -88.5, "US");
         const map = new bkoigl.Map({
           container: containerRef.current,
           center: [-88.5, 36.5], // USA Center
           zoom: 3.5,
           accessToken: key,
           apiKey: key,
-          style: `https://map.barikoi.com/styles/osm_barikoi_v1/style.json?key=${key}`
+          style: mapStyle
         });
+
+        attachMapboxFallbackOnError(map);
 
         map.on("load", () => {
           mapRef.current = map;
@@ -257,9 +266,10 @@ function BariKoiMissionMap({
             zoomControl: false
           });
 
-          L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
-            attribution: '&copy; <a href="https://barikoi.com">BariKoi</a>',
-            maxZoom: 19
+          const tileCfg = getLeafletTileConfig(36.5, -88.5, "US");
+          L.tileLayer(tileCfg.url, {
+            attribution: tileCfg.attribution,
+            maxZoom: tileCfg.maxZoom
           }).addTo(map);
 
           map.on("click", () => {

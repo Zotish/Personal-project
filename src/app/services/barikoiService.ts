@@ -9,16 +9,56 @@ export const BARIKOI_API_KEY =
 let isCooldownActive = false;
 let cooldownExpiresAt = 0;
 
-// Check sessionStorage on initialization (persists across soft reloads)
+// Clear any stale cooldown on initialization so the upgraded Business Tier key is immediately active!
 try {
-  const saved = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("bkoi_cooldown_until") : null;
-  if (saved && Number(saved) > Date.now()) {
-    isCooldownActive = true;
-    cooldownExpiresAt = Number(saved);
+  if (typeof sessionStorage !== "undefined") {
+    sessionStorage.removeItem("bkoi_cooldown_until");
   }
 } catch (_) {}
 
-export function isBariKoiAvailable(): boolean {
+import {
+  isLocationInBangladesh,
+  isBangladeshCountry,
+  getMapStyleForLocation,
+  getMapboxRasterStyle,
+  getOsmRasterStyle,
+  getLeafletTileConfig,
+  reverseGeocodeWithMapboxFallback,
+  getUnifiedCuratedPlaces,
+  fetchGlobalRoute,
+  attachMapboxFallbackOnError,
+  setupMapWatermark,
+  markBariKoiTileServerBroken,
+  MAPBOX_TOKEN,
+  type MapWatermarkProvider,
+} from "./mapboxService";
+
+export {
+  isLocationInBangladesh,
+  isBangladeshCountry,
+  getMapStyleForLocation,
+  getMapboxRasterStyle,
+  getOsmRasterStyle,
+  getLeafletTileConfig,
+  reverseGeocodeWithMapboxFallback,
+  getUnifiedCuratedPlaces,
+  fetchGlobalRoute,
+  attachMapboxFallbackOnError,
+  setupMapWatermark,
+  markBariKoiTileServerBroken,
+  MAPBOX_TOKEN,
+  type MapWatermarkProvider,
+};
+
+export function isBariKoiAvailable(lat?: number, lng?: number, countryCode?: string): boolean {
+  // If location or country is specified and outside Bangladesh, BariKoi is not available
+  if (lat !== undefined && lng !== undefined && !isLocationInBangladesh(lat, lng)) {
+    return false;
+  }
+  if (countryCode && !isBangladeshCountry(countryCode)) {
+    return false;
+  }
+
   if (isCooldownActive) {
     if (Date.now() < cooldownExpiresAt) {
       return false; // Still in cooldown, reject network call
@@ -33,7 +73,7 @@ export function isBariKoiAvailable(): boolean {
   return true;
 }
 
-export function triggerBariKoiCooldown(durationMs = 180_000) {
+export function triggerBariKoiCooldown(durationMs = 30_000) {
   isCooldownActive = true;
   cooldownExpiresAt = Date.now() + durationMs;
   try {
@@ -122,63 +162,13 @@ export function getFallbackAddress(lat: number, lng: number): BariKoiAddressInfo
   };
 }
 
-// ─── Reverse Geocode with Caching & Circuit Breaker ────────────────────────────
-export async function safeBariKoiReverseGeocode(lat: number, lng: number): Promise<BariKoiAddressInfo> {
-  // 1. Grid Cache (approx 100m radius)
-  const cacheKey = `${lat.toFixed(3)},${lng.toFixed(3)}`;
-  if (geocodeCache.has(cacheKey)) {
-    return geocodeCache.get(cacheKey)!;
-  }
-
-  // 2. Check Circuit Breaker
-  if (!isBariKoiAvailable()) {
-    const fb = getFallbackAddress(lat, lng);
-    geocodeCache.set(cacheKey, fb);
-    return fb;
-  }
-
-  const url = `https://barikoi.xyz/v2/api/search/reverse/geocode?api_key=${BARIKOI_API_KEY}&longitude=${lng}&latitude=${lat}&district=true&post_code=true&country=true&sub_district=true&union=true&pauroshova=true&location_type=true&division=true&address=true&area=true&bangla=true`;
-
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
-
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeout);
-
-    if (res.status === 429) {
-      triggerBariKoiCooldown(180_000); // 3 minutes cooldown
-      const fb = getFallbackAddress(lat, lng);
-      geocodeCache.set(cacheKey, fb);
-      return fb;
-    }
-
-    if (!res.ok) {
-      const fb = getFallbackAddress(lat, lng);
-      geocodeCache.set(cacheKey, fb);
-      return fb;
-    }
-
-    const data = await res.json();
-    if (data?.place) {
-      const info: BariKoiAddressInfo = {
-        address: data.place.address || data.place.area || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
-        area: data.place.area || "",
-        district: data.place.district || "",
-        postCode: data.place.postCode || "",
-        city: data.place.city || data.place.division || "",
-        sub_district: data.place.sub_district || "",
-      };
-      geocodeCache.set(cacheKey, info);
-      return info;
-    }
-  } catch (_) {
-    // Network / abort error - gracefully return fallback without console noise
-  }
-
-  const fb = getFallbackAddress(lat, lng);
-  geocodeCache.set(cacheKey, fb);
-  return fb;
+// ─── Reverse Geocode with Caching & Circuit Breaker (Mapbox + BariKoi fallback) ──
+export async function safeBariKoiReverseGeocode(
+  lat: number,
+  lng: number,
+  countryCode?: string
+): Promise<BariKoiAddressInfo> {
+  return reverseGeocodeWithMapboxFallback(lat, lng, countryCode);
 }
 
 // ─── Curated Fallback Places across All Essential Categories ───────────────────
@@ -706,8 +696,14 @@ export const CURATED_BANGLADESH_PLACES: CuratedPlace[] = [
 export function getCuratedFallbackPlaces(
   userLat: number,
   userLng: number,
-  category = "all"
+  category = "all",
+  countryCode?: string
 ): any[] {
+  const isBD = isLocationInBangladesh(userLat, userLng) || isBangladeshCountry(countryCode);
+  if (!isBD) {
+    return getUnifiedCuratedPlaces(userLat, userLng, category, countryCode);
+  }
+
   const cat = category.toLowerCase();
 
   const filtered = CURATED_BANGLADESH_PLACES.filter((p) => {

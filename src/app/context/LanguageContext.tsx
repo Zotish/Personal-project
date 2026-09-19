@@ -17,7 +17,6 @@ export const SUPPORTED_LANGUAGES: LanguageMeta[] = [
   { code: "fr", name: "French", nativeName: "Français", flag: "🇫🇷", direction: "ltr" },
   { code: "es", name: "Spanish", nativeName: "Español", flag: "🇪🇸", direction: "ltr" },
   { code: "ar", name: "Arabic", nativeName: "العربية", flag: "🇸🇦", direction: "rtl" },
-  { code: "ja", name: "Japanese", nativeName: "日本語", flag: "🇯🇵", direction: "ltr" },
   { code: "it", name: "Italian", nativeName: "Italiano", flag: "🇮🇹", direction: "ltr" },
   { code: "ms", name: "Malay", nativeName: "Bahasa Melayu", flag: "🇲🇾", direction: "ltr" },
 ];
@@ -30,7 +29,7 @@ export const COUNTRY_CODE_TO_LANG: Record<string, Lang> = {
   DE: "de",
   AU: "en",
   AE: "ar",
-  JP: "ja",
+  JP: "en", // Japanese is disabled, fallback to English
   FR: "fr",
   IT: "it",
   SA: "ar",
@@ -57,7 +56,7 @@ function detectLanguageFromUrlOrStorage(): Lang {
       const params = new URLSearchParams(window.location.search);
       // 1. Direct ?lang=...
       const qLang = params.get("lang")?.toLowerCase();
-      if (qLang && (qLang in translations)) {
+      if (qLang && qLang !== "ja" && (qLang in translations)) {
         return qLang as Lang;
       }
       // 2. Country launch param ?country=... (e.g. ?country=bd -> bn, ?country=de -> de)
@@ -67,7 +66,11 @@ function detectLanguageFromUrlOrStorage(): Lang {
       }
       // 3. Stored preference
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored && (stored in translations)) {
+      if (stored === "ja") {
+        localStorage.removeItem(STORAGE_KEY);
+        return "en";
+      }
+      if (stored && stored !== "ja" && (stored in translations)) {
         return stored as Lang;
       }
     } catch {
@@ -81,6 +84,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => detectLanguageFromUrlOrStorage());
 
   const setLang = (l: Lang) => {
+    if ((l as string) === "ja") l = "en";
     setLangState(l);
     try {
       localStorage.setItem(STORAGE_KEY, l);
@@ -88,6 +92,19 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       // ignore
     }
   };
+
+  // Immediate cleanup of residual Japanese language or Japan country in localStorage
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(STORAGE_KEY) === "ja") {
+        localStorage.removeItem(STORAGE_KEY);
+        setLangState("en");
+      }
+      if (localStorage.getItem("ic_active_country") === "JP") {
+        localStorage.setItem("ic_active_country", "US");
+      }
+    } catch (_) {}
+  }, []);
 
   // Sync with browser URL changes / popstate
   useEffect(() => {

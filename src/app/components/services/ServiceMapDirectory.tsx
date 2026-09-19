@@ -12,7 +12,13 @@ import {
 } from "lucide-react";
 import { ServiceListing, formatDistance, getDistanceKm } from "../../data/serviceDirectoryData";
 import type { Map as LeafletMapType } from "leaflet";
-import { safeBariKoiReverseGeocode } from "../../services/barikoiService";
+import {
+  safeBariKoiReverseGeocode,
+  getMapStyleForLocation,
+  getMapboxRasterStyle,
+  getLeafletTileConfig,
+  attachMapboxFallbackOnError,
+} from "../../services/barikoiService";
 
 // ─── BariKoi API Key & Loader ───────────────────────────────────────────────
 const BARIKOI_API_KEY =
@@ -195,16 +201,19 @@ function InteractiveServiceMap({
       if (!isMounted || !mapContainerRef.current) return;
 
       try {
+        const mapStyle = getMapStyleForLocation(userCoords[0], userCoords[1]);
         const map = new bkoigl.Map({
           container: mapContainerRef.current,
           center: [userCoords[1], userCoords[0]],
           zoom: 13.5,
           maxZoom: 18,
           minZoom: 4,
-          style: "osm-liberty",
+          style: mapStyle,
           doubleClickZoom: true,
           attributionControl: false
         });
+
+        attachMapboxFallbackOnError(map);
 
         map.on("load", () => {
           if (!isMounted) return;

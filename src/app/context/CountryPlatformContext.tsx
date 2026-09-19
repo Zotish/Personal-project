@@ -312,15 +312,32 @@ export function CountryPlatformProvider({ children }: { children: ReactNode }) {
       if (typeof window !== "undefined") {
         const params = new URLSearchParams(window.location.search);
         const qCountry = params.get("country");
-        if (qCountry) return qCountry.toUpperCase();
+        if (qCountry && qCountry.toUpperCase() !== "JP") return qCountry.toUpperCase();
       }
       const stored = localStorage.getItem(STORAGE_ACTIVE_COUNTRY_KEY);
-      if (stored) return stored;
+      if (stored) {
+        if (stored.toUpperCase() === "JP") {
+          localStorage.setItem(STORAGE_ACTIVE_COUNTRY_KEY, "US");
+          return "US";
+        }
+        return stored;
+      }
     } catch (e) {
       console.warn("Failed to read active country from localStorage", e);
     }
     return "US";
   });
+
+  // Guard against residual "JP" or unlaunched country stored in localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_ACTIVE_COUNTRY_KEY);
+      if (stored && stored.toUpperCase() === "JP") {
+        localStorage.setItem(STORAGE_ACTIVE_COUNTRY_KEY, "US");
+        setCurrentCountryCode("US");
+      }
+    } catch (_) {}
+  }, []);
 
   useEffect(() => {
     try {
@@ -343,14 +360,14 @@ export function CountryPlatformProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(location.search || window.location.search);
       const qCountry = params.get("country");
-      if (qCountry) {
+      if (qCountry && qCountry.toUpperCase() !== "JP") {
         const match = countries.find(c => c.code.toLowerCase() === qCountry.toLowerCase());
         if (match) {
           if (match.code !== currentCountryCode) {
             setCurrentCountryCode(match.code);
           }
           const targetLang = match.primaryLanguage.code.toLowerCase() as Lang;
-          if (targetLang && targetLang !== lang) {
+          if (targetLang && (targetLang as string) !== "ja" && targetLang !== lang) {
             setLang(targetLang);
           }
         }
@@ -360,8 +377,8 @@ export function CountryPlatformProvider({ children }: { children: ReactNode }) {
 
   // When active country changes, ensure system language switches to country primary language
   useEffect(() => {
-    const match = countries.find(c => c.code.toUpperCase() === currentCountryCode.toUpperCase());
-    if (match && match.primaryLanguage?.code) {
+    const match = countries.find(c => c.code.toUpperCase() === currentCountryCode.toUpperCase() && c.isLaunched);
+    if (match && match.primaryLanguage?.code && match.primaryLanguage.code.toLowerCase() !== "ja") {
       const targetLang = match.primaryLanguage.code.toLowerCase() as Lang;
       if (targetLang && targetLang !== lang) {
         setLang(targetLang);
@@ -374,11 +391,12 @@ export function CountryPlatformProvider({ children }: { children: ReactNode }) {
   const currentCountry = countries.find(c => c.code === currentCountryCode) || countries[0];
 
   const setCurrentCountry = (code: string) => {
+    if (code.toUpperCase() === "JP") code = "US";
     const exists = countries.find(c => c.code.toUpperCase() === code.toUpperCase());
     if (exists) {
       setCurrentCountryCode(exists.code);
       const targetLang = exists.primaryLanguage.code.toLowerCase() as Lang;
-      if (targetLang && targetLang !== lang) {
+      if (targetLang && (targetLang as string) !== "ja" && targetLang !== lang) {
         setLang(targetLang);
       }
     }
