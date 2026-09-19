@@ -5,6 +5,7 @@ import { AppLayout } from "../components/layout/AppLayout";
 import { Logo } from "../components/ui/Logo";
 import { GoldenBadge } from "../components/ui/GoldenBadge";
 import { useLanguage } from "../context/LanguageContext";
+import { useCountryPlatform } from "../context/CountryPlatformContext";
 import { getFavourites, removeFavourite, type MyBoxFavourite } from "../utils/myBox";
 import { MapDiscoveryContent } from "./MapDiscovery";
 import {
@@ -17,6 +18,7 @@ import {
   Cloud, CloudRain, CloudSnow, Sun, CloudLightning, ShoppingBag, Shield, Menu, SquarePen, Camera, ArrowLeft, Music
 } from "lucide-react";
 import { EventRegistrationModal } from "../components/events/EventRegistrationModal";
+import { SponsoredFeedAd } from "../components/ads/SponsoredAdCard";
 
 // ─── Weather Widget ───────────────────────────────────────────────────────────
 type WeatherData = {
@@ -1632,48 +1634,20 @@ const TAB_CONFIG = [
 
 // ─── Home Feed ────────────────────────────────────────────────────────────────
 
-// ─── Quick Access Box ─────────────────────────────────────────────────────────
-const ALL_QUICK_FEATURES = [
-  { id: "search",        label: "Search",       icon: "🔍", path: "/search"        },
-  { id: "map",           label: "Map",           icon: "🗺️", path: "/map"           },
-  { id: "reels",         label: "Reels",         icon: "🎬", path: "/reels"         },
-  { id: "messages",      label: "Messages",      icon: "💬", path: "/messages"      },
-  { id: "notifications", label: "Notifs",        icon: "🔔", path: "/notifications" },
-  { id: "profile",       label: "Profile",       icon: "👤", path: "/profile"       },
-  { id: "services",      label: "Services",      icon: "🛠️", path: "/services"      },
-  { id: "communities",   label: "Communities",   icon: "👥", path: "/communities"   },
-  { id: "saved",         label: "Saved",         icon: "🔖", path: "/saved"         },
-  { id: "qa",            label: "Q&A",           icon: "❓", path: "/qa"            },
-  { id: "settings",      label: "Settings",      icon: "⚙️", path: "/settings"      },
-  { id: "admin",         label: "Admin",         icon: "📊", path: "/admin"         },
-];
-
-const QA_STORAGE_KEY = "ic_quick_pinned";
-const QA_USAGE_KEY   = "ic_feature_usage";
-const AUTO_PIN_THRESHOLD = 3;
-
-function getUsage(): Record<string, number> {
-  try { return JSON.parse(localStorage.getItem(QA_USAGE_KEY) || "{}"); } catch { return {}; }
-}
-function getPinned(): string[] {
-  try { return JSON.parse(localStorage.getItem(QA_STORAGE_KEY) || "[]"); } catch { return []; }
-}
-function setPinned(ids: string[]) {
-  localStorage.setItem(QA_STORAGE_KEY, JSON.stringify(ids));
-}
-
+// ─── Quick Access / MyBox Favourites ───────────────────────────────────────────
 // variant="mobile" = icon button in quick-bar, variant="desktop" = tab-style trigger in tab bar
 function QuickAccessBox({ navigate, variant = "mobile" }: { navigate: (p: string) => void; variant?: "mobile" | "desktop" }) {
-  const { t } = useLanguage();
-  const [pinned, setPinnedState]  = useState<string[]>(() => getPinned());
-  const [usage]                   = useState<Record<string, number>>(() => getUsage());
   const [open, setOpen]           = useState(false);
-  const [boxTab, setBoxTab]       = useState<"shortcuts" | "favourites">("shortcuts");
   const [favs, setFavs]           = useState<MyBoxFavourite[]>(() => getFavourites());
   const popupRef                  = useRef<HTMLDivElement>(null);
 
-  // Refresh favourites whenever popup opens
-  useEffect(() => { if (open) setFavs(getFavourites()); }, [open]);
+  // Refresh favourites whenever popup opens or when auto-favourites update
+  useEffect(() => {
+    const refresh = () => setFavs(getFavourites());
+    if (open) refresh();
+    window.addEventListener("favourites-updated", refresh);
+    return () => window.removeEventListener("favourites-updated", refresh);
+  }, [open]);
 
   // Listen to open-mybox-drawer event or open=box url param
   useEffect(() => {
@@ -1685,45 +1659,24 @@ function QuickAccessBox({ navigate, variant = "mobile" }: { navigate: (p: string
     return () => window.removeEventListener("open-mybox-drawer", handleOpen);
   }, []);
 
-  // Auto-pin heavily used features
-  useEffect(() => {
-    const current = getPinned();
-    let changed = false;
-    Object.entries(usage).forEach(([id, count]) => {
-      if ((count as number) >= AUTO_PIN_THRESHOLD && !current.includes(id)) { current.push(id); changed = true; }
-    });
-    if (changed) { setPinned(current); setPinnedState([...current]); }
-  }, [usage]);
-
-  // Close on outside click
-  useEffect(() => {
-    if (!open) return;
-    function handle(e: MouseEvent) {
-      if (popupRef.current && !popupRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handle);
-    return () => document.removeEventListener("mousedown", handle);
-  }, [open]);
-
-  const togglePin = (id: string) => {
-    const next = pinned.includes(id) ? pinned.filter(p => p !== id) : [...pinned, id];
-    setPinned(next); setPinnedState(next);
-  };
-
-  const trackAndGo = (id: string, path: string) => {
-    const u = getUsage();
-    u[id] = (u[id] || 0) + 1;
-    localStorage.setItem(QA_USAGE_KEY, JSON.stringify(u));
-    setOpen(false); navigate(path);
-  };
+  const directNavigate = useNavigate();
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const removeFav = (id: string) => {
     const next = removeFavourite(id);
     setFavs([...next]);
   };
 
-  const pinnedFeatures = ALL_QUICK_FEATURES.filter(f => pinned.includes(f.id));
-  const unpinned       = ALL_QUICK_FEATURES.filter(f => !pinned.includes(f.id));
+  const handleFavClick = (e: React.MouseEvent, fav: MyBoxFavourite) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setOpen(false);
+    if (!fav.path) return;
+    directNavigate(fav.path);
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 60);
+  };
 
   const trigger = variant === "desktop" ? (
     <button
@@ -1731,7 +1684,7 @@ function QuickAccessBox({ navigate, variant = "mobile" }: { navigate: (p: string
       className={`w-full h-full flex-1 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 px-3 text-xs font-medium transition-all group cursor-pointer ${
         open ? "text-[#8C3015] border-b-2 border-[#C04A22] font-bold" : "text-slate-600 hover:text-[#8C3015] hover:bg-slate-50"
       }`}
-      title="MyBox"
+      title="MyBox Favourites"
     >
       <Box className={`w-5 h-5 sm:w-3.5 sm:h-3.5 flex-shrink-0 transition-colors ${open ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
       <span className="hidden sm:block">MyBox</span>
@@ -1742,7 +1695,7 @@ function QuickAccessBox({ navigate, variant = "mobile" }: { navigate: (p: string
       className={`w-full h-11 rounded-2xl flex items-center justify-center border transition-all shadow-sm ${
         open ? "bg-[#C04A22]/10 border-[#C04A22]/30 shadow-md" : "bg-white border-border hover:shadow-md hover:bg-slate-50"
       }`}
-      title="MyBox"
+      title="MyBox Favourites"
     >
       <Box className={`w-5 h-5 transition-colors ${open ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} />
     </button>
@@ -1752,168 +1705,96 @@ function QuickAccessBox({ navigate, variant = "mobile" }: { navigate: (p: string
     <div ref={popupRef} className={variant === "mobile" ? "relative flex-1 w-full" : "relative w-full h-full flex-1 flex flex-col justify-center"}>
       {trigger}
 
-
       {open && typeof document !== "undefined" && createPortal(
         <>
-          {/* Fully Transparent Backdrop - No dark background shadows */}
+          {/* Fully Transparent Backdrop - Closes popup on outside click */}
           <div
             className="fixed inset-0 z-[99998] bg-transparent"
             onClick={() => setOpen(false)}
           />
           {/* Dropdown right beneath MyBox top bar button */}
           <div
+            ref={modalRef}
             className="z-[99999] bg-white rounded-3xl shadow-2xl border border-border overflow-hidden animate-in slide-in-from-top-2 fade-in duration-150 fixed left-1/2 -translate-x-1/2 top-[102px] sm:top-[110px] lg:top-[56px] w-[min(350px,calc(100vw-1.5rem))] max-w-sm"
           >
-
-            {/* Header */}
-            <div className="px-4 pt-4 pb-0">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Box className="w-4 h-4 text-[#C04A22]" />
-                  <span className="text-sm font-semibold text-foreground">{t("qa_box_title")}</span>
-                </div>
-                <button onClick={() => setOpen(false)} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-secondary transition-colors cursor-pointer">
-                  <X className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
+            {/* Header - No left icon, clean Favourites title and count */}
+            <div className="px-4 py-3.5 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-bold text-foreground">Favourites</span>
+                {favs.length > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
+                    {favs.length}
+                  </span>
+                )}
               </div>
-
-              {/* Tab switcher */}
-              <div className="flex items-center bg-secondary rounded-xl p-0.5 mb-3">
-                <button
-                  onClick={() => setBoxTab("shortcuts")}
-                  className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    boxTab === "shortcuts" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  ⚡ Shortcuts
-                </button>
-                <button
-                  onClick={() => setBoxTab("favourites")}
-                  className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1 ${
-                    boxTab === "favourites" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  ⭐ Favourites
-                  {favs.length > 0 && (
-                    <span className="w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center">
-                      {favs.length}
-                    </span>
-                  )}
-                </button>
-              </div>
+              <button
+                onClick={() => setOpen(false)}
+                className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-secondary transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
+                title="Close"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
 
-            {/* ── SHORTCUTS TAB ── */}
-            {boxTab === "shortcuts" && (
-              <div className="max-h-72 overflow-y-auto">
-                {pinnedFeatures.length > 0 && (
-                  <div className="px-4 pb-2">
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t("qa_box_pinned")}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {pinnedFeatures.map(f => (
-                        <div key={f.id} className="relative">
-                          <button
-                            onClick={() => trackAndGo(f.id, f.path)}
-                            className="flex flex-col items-center gap-1 w-14 p-2 rounded-xl bg-secondary ring-1 ring-border hover:bg-secondary/80 transition-all"
-                          >
-                            <span className="text-xl leading-none">{f.icon}</span>
-                            <span className="text-[9px] font-medium text-foreground leading-tight text-center">{f.label}</span>
-                          </button>
-                          <button onClick={() => togglePin(f.id)} className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center shadow">
-                            <X className="w-2.5 h-2.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div className="px-4 pt-1 pb-4">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                    {pinnedFeatures.length > 0 ? t("qa_box_all") : t("qa_box_add")}
+            {/* Favourites Content - Clean without any left icons */}
+            <div className="max-h-80 overflow-y-auto pb-3">
+              {favs.length === 0 ? (
+                <div className="px-4 py-8 text-center">
+                  <p className="text-sm font-semibold text-foreground mb-1">No favourites yet</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Visit Services or search topics to add categories here for quick access.
                   </p>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {unpinned.map(f => {
-                      const useCount = usage[f.id] || 0;
-                      return (
-                        <div key={f.id} className="relative group">
-                          <button onClick={() => trackAndGo(f.id, f.path)} className="flex flex-col items-center gap-1 w-full p-2 rounded-xl hover:bg-secondary transition-all">
-                            <span className="text-xl leading-none">{f.icon}</span>
-                            <span className="text-[9px] font-medium text-foreground leading-tight text-center">{f.label}</span>
-                            {useCount >= 2 && <span className="text-[8px] text-amber-500 font-bold leading-none">Hot</span>}
-                          </button>
-                          <button
-                            onClick={e => { e.stopPropagation(); togglePin(f.id); }}
-                            className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow opacity-0 group-hover:opacity-100 transition-opacity"
-                            title="Pin"
-                          >
-                            <Plus className="w-2.5 h-2.5" />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {unpinned.length === 0 && <p className="text-[11px] text-muted-foreground text-center py-2">{t("qa_box_all_pinned")}</p>}
+                  <button
+                    onClick={() => { setOpen(false); directNavigate("/services"); }}
+                    className="mt-3 px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition cursor-pointer"
+                  >
+                    Browse Services →
+                  </button>
                 </div>
-              </div>
-            )}
-
-            {/* ── FAVOURITES TAB ── */}
-            {boxTab === "favourites" && (
-              <div className="max-h-72 overflow-y-auto">
-                {favs.length === 0 ? (
-                  <div className="px-4 py-8 text-center">
-                    <div className="text-3xl mb-2">⭐</div>
-                    <p className="text-sm font-semibold text-foreground mb-1">No favourites yet</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Visit Services to add categories and providers here for quick access.
-                    </p>
-                    <button
-                      onClick={() => { setOpen(false); navigate("/services"); }}
-                      className="mt-3 px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition"
-                    >
-                      Browse Services →
-                    </button>
-                  </div>
-                ) : (
-                  <div className="px-4 py-3 space-y-1.5 pb-4">
-                    {/* Group by type */}
-                    {(["service", "provider"] as const).map(type => {
-                      const group = favs.filter(f => f.type === type);
-                      if (group.length === 0) return null;
-                      return (
-                        <div key={type}>
-                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                            {type === "service" ? "📂 Service Categories" : "🏢 Providers & Profiles"}
-                          </p>
-                          <div className="space-y-1">
-                            {group.map(fav => (
-                              <div key={fav.id} className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-secondary transition-colors group">
-                                <button
-                                  onClick={() => { setOpen(false); navigate(fav.path); }}
-                                  className="flex items-center gap-2.5 flex-1 min-w-0 text-left"
-                                >
-                                  <span className="text-xl leading-none flex-shrink-0">{fav.emoji}</span>
-                                  <div className="min-w-0 flex-1">
-                                    <div className="text-xs font-semibold text-foreground truncate">{fav.name}</div>
-                                    {fav.subtitle && <div className="text-[10px] text-muted-foreground truncate">{fav.subtitle}</div>}
-                                  </div>
-                                </button>
-                                <button
-                                  onClick={() => removeFav(fav.id)}
-                                  className="w-5 h-5 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:bg-red-100 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0"
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
+              ) : (
+                <div className="px-4 py-3 space-y-2.5">
+                  {(["service", "provider", "search", "page"] as const).map(type => {
+                    const group = favs.filter(f => f.type === type);
+                    if (group.length === 0) return null;
+                    const groupTitle =
+                      type === "service" ? "Service Categories" :
+                      type === "provider" ? "Providers & Profiles" :
+                      type === "search" ? "Saved Searches" : "Quick Pages";
+                    return (
+                      <div key={type}>
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+                          {groupTitle}
+                        </p>
+                        <div className="space-y-1">
+                          {group.map(fav => (
+                            <div
+                              key={fav.id}
+                              onClick={(e) => handleFavClick(e, fav)}
+                              className="flex items-center justify-between p-2.5 rounded-xl hover:bg-secondary transition-colors group cursor-pointer active:scale-[0.99]"
+                            >
+                              <div className="flex-1 min-w-0 text-left">
+                                <div className="text-xs font-semibold text-foreground truncate group-hover:text-[#C04A22] transition-colors">{fav.name}</div>
                               </div>
-                            ))}
-                          </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeFav(fav.id);
+                                }}
+                                className="w-5 h-5 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:bg-red-100 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0 cursor-pointer ml-2"
+                                title="Remove from favourites"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </>,
         document.body
@@ -1926,7 +1807,8 @@ export function HomeFeed() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { t } = useLanguage();
+  const { t, lang, setLang } = useLanguage();
+  const { setCurrentCountry } = useCountryPlatform();
   const [activeTab, setActiveTab] = useState(() => searchParams.get("tab") || location.state?.tab || "for-you");
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [mobileCalOpen, setMobileCalOpen] = useState(() => searchParams.get("open") === "calendar" || location.state?.open === "calendar");
@@ -1941,6 +1823,18 @@ export function HomeFeed() {
   });
   const [mobileFollowedUsers, setMobileFollowedUsers] = useState<string[]>([]);
   const [isPostBoxOpen, setIsPostBoxOpen] = useState(() => searchParams.get("open") === "post" || location.state?.open === "post");
+
+  // Sync country & lang from URL search params whenever present
+  useEffect(() => {
+    const countryParam = searchParams.get("country");
+    const langParam = searchParams.get("lang");
+    if (countryParam) {
+      setCurrentCountry(countryParam);
+    }
+    if (langParam) {
+      setLang(langParam as any);
+    }
+  }, [searchParams]);
 
   // Sync with URL params or navigation state
   useEffect(() => {
@@ -2302,6 +2196,13 @@ export function HomeFeed() {
               {displayPosts.map((post, idx) => (
                 <Fragment key={post.id}>
                   <PostCard post={post} />
+
+                  {/* Auto-injected Sponsored Ad after every 2-3 posts */}
+                  {(idx + 1) % 3 === 0 && (
+                    <div className="my-1 animate-in fade-in duration-200">
+                      <SponsoredFeedAd slotIndex={Math.floor(idx / 3)} placement="feed" />
+                    </div>
+                  )}
 
                   {/* Who to Follow — injected after 2nd post, mobile only */}
                   {idx === 1 && (

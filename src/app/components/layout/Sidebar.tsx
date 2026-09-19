@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAccountMode } from "../../context/AccountModeContext";
-import { LanguageToggle } from "../ui/LanguageToggle";
 import { Logo } from "../ui/Logo";
 import { TwitterPostModal } from "../post/TwitterPostModal";
 
@@ -230,11 +229,6 @@ export function Sidebar() {
           )}
         </div>
       </nav>
-
-      {/* Language Toggle */}
-      <div className="px-3 pb-2">
-        <LanguageToggle />
-      </div>
 
       {/* User Footer with Popover Menu */}
       <div className="p-3 border-t border-slate-100 bg-slate-50/80 relative">

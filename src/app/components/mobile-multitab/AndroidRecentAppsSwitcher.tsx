@@ -81,7 +81,7 @@ export function AndroidRecentAppsSwitcher() {
         <div className="w-3.5 h-3.5 rounded border border-current flex items-center justify-center text-[7px] font-black">
           {tasks.length}
         </div>
-        <span>Recents</span>
+        <span>Tab</span>
       </div>
       <div className={`flex flex-col items-center gap-0.5 ${activeTab === "reels" ? "text-[#C04A22] font-black" : ""}`}>
         <Clapperboard className="w-3.5 h-3.5" />
@@ -621,15 +621,6 @@ export function AndroidRecentAppsSwitcher() {
           <span className="text-xs text-slate-800 font-bold bg-white/90 border border-slate-200/80 px-3 py-1 rounded-full shadow-xs tracking-tight">
             {tasks.length} active
           </span>
-          {!isCurrentPageInRecents && (
-            <button
-              onClick={() => addPageToRecents()}
-              className="text-xs text-[#8C3015] font-bold bg-white/95 hover:bg-orange-50 border border-orange-200/90 px-3 py-1 rounded-full shadow-xs active:scale-95 transition cursor-pointer flex items-center gap-1"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Add Current Page</span>
-            </button>
-          )}
         </div>
 
         <button
@@ -649,15 +640,8 @@ export function AndroidRecentAppsSwitcher() {
             </div>
             <h3 className="text-sm font-bold text-slate-800">No Recent Tabs Saved</h3>
             <p className="text-xs text-slate-500 max-w-xs mt-1 leading-relaxed">
-              Use the floating 📑 Recent bubble on any page to customize and save tabs for instant switching.
+              Tap the floating animated Tab button on any page corner to add and save it here.
             </p>
-            <button
-              onClick={() => addPageToRecents()}
-              className="mt-4 px-4 py-2 rounded-2xl bg-[#C04A22] hover:bg-[#8C3015] text-white font-bold text-xs shadow-md active:scale-95 transition flex items-center gap-1.5 cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Add Current Page to Recents</span>
-            </button>
           </div>
         ) : (
           tasks.map((task) => {

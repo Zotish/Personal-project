@@ -48,18 +48,47 @@ import { PWAInstallPrompt } from "./components/ui/PWAInstallPrompt";
 import { AccountModeProvider } from "./context/AccountModeContext";
 import { SellerMigrationModal } from "./components/seller/SellerMigrationModal";
 import { GlobalDollAssistant } from "./components/ai/PathaSathiDollAssistant";
+import { AutoFavouriteTracker } from "./components/tracker/AutoFavouriteTracker";
+
+// Admin OS RBAC System Imports
+import { CountryPlatformProvider } from "./context/CountryPlatformContext";
+import { AdminRoleProvider } from "./context/AdminRoleContext";
+import { AdminLayout } from "./pages/admin/AdminLayout";
+import { AdminRoleGuard } from "./pages/admin/AdminRoleGuard";
+import { AdminDashboard } from "./pages/admin/AdminDashboard";
+import { AdminCountryLaunchpad } from "./pages/admin/roles/super-admin/AdminCountryLaunchpad";
+import { SuperAdminOverview } from "./pages/admin/roles/super-admin/SuperAdminOverview";
+import { AdminRoleManagement } from "./pages/admin/roles/super-admin/AdminRoleManagement";
+import { AdminFeatureFlags } from "./pages/admin/roles/super-admin/AdminFeatureFlags";
+import { AdminAuditLogs } from "./pages/admin/roles/super-admin/AdminAuditLogs";
+import { ModerationQueue } from "./pages/admin/roles/moderator/ModerationQueue";
+import { AiFlaggedContent } from "./pages/admin/roles/moderator/AiFlaggedContent";
+import { VerificationQueue } from "./pages/admin/roles/verifier/VerificationQueue";
+import { BadgeManagement } from "./pages/admin/roles/verifier/BadgeManagement";
+import { SellerApprovals } from "./pages/admin/roles/marketplace/SellerApprovals";
+import { ProductModeration } from "./pages/admin/roles/marketplace/ProductModeration";
+import { DirectoryManagement } from "./pages/admin/roles/resources/DirectoryManagement";
+import { EmergencyBroadcasts } from "./pages/admin/roles/resources/EmergencyBroadcasts";
+import { SupportTickets } from "./pages/admin/roles/support/SupportTickets";
+import { UserLookup } from "./pages/admin/roles/support/UserLookup";
+import { AdsProvider } from "./context/AdsContext";
+import { AdminAdsManager } from "./pages/admin/roles/marketplace/AdminAdsManager";
 
 export default function App() {
   return (
     <LanguageProvider>
       <BrowserRouter>
+        <AutoFavouriteTracker />
         <AccountModeProvider>
-          <MobileTabProvider>
-            <PWAInstallPrompt />
-            <SellerMigrationModal />
-            <GlobalDollAssistant />
-            <Routes>
-            {/* Public */}
+          <CountryPlatformProvider>
+            <AdminRoleProvider>
+              <AdsProvider>
+                <MobileTabProvider>
+                <PWAInstallPrompt />
+                <SellerMigrationModal />
+                <GlobalDollAssistant />
+                <Routes>
+              {/* Public */}
             <Route path="/" element={<AppSplash />} />
             <Route path="/landing" element={<Landing />} />
             <Route path="/login" element={<Login />} />
@@ -126,14 +155,50 @@ export default function App() {
             {/* Reels */}
             <Route path="/reels" element={<Reels />} />
 
-            {/* Settings & Admin */}
+            {/* Settings */}
             <Route path="/settings" element={<Settings />} />
-            <Route path="/admin" element={<Admin />} />
+
+            {/* PathaSathi Admin OS (Role-Based Access Control) */}
+            <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
+            
+            {/* Super Admin Routes */}
+            <Route path="/admin/countries" element={<AdminLayout><AdminRoleGuard requiredPermission="manage_countries"><AdminCountryLaunchpad /></AdminRoleGuard></AdminLayout>} />
+            <Route path="/admin/system-health" element={<AdminLayout><AdminRoleGuard requiredPermission="manage_system"><SuperAdminOverview /></AdminRoleGuard></AdminLayout>} />
+            <Route path="/admin/staff-roles" element={<AdminLayout><AdminRoleGuard requiredPermission="manage_roles"><AdminRoleManagement /></AdminRoleGuard></AdminLayout>} />
+            <Route path="/admin/feature-flags" element={<AdminLayout><AdminRoleGuard requiredPermission="manage_flags"><AdminFeatureFlags /></AdminRoleGuard></AdminLayout>} />
+            <Route path="/admin/audit-logs" element={<AdminLayout><AdminRoleGuard requiredPermission="view_audit_logs"><AdminAuditLogs /></AdminRoleGuard></AdminLayout>} />
+
+            {/* Trust & Safety Moderator Routes */}
+            <Route path="/admin/moderation" element={<AdminLayout><AdminRoleGuard requiredPermission="moderate_content"><ModerationQueue /></AdminRoleGuard></AdminLayout>} />
+            <Route path="/admin/ai-flags" element={<AdminLayout><AdminRoleGuard requiredPermission="manage_ai_flags"><AiFlaggedContent /></AdminRoleGuard></AdminLayout>} />
+
+            {/* Verification Officer Routes */}
+            <Route path="/admin/verifications" element={<AdminLayout><AdminRoleGuard requiredPermission="verify_credentials"><VerificationQueue /></AdminRoleGuard></AdminLayout>} />
+            <Route path="/admin/badges" element={<AdminLayout><AdminRoleGuard requiredPermission="grant_badges"><BadgeManagement /></AdminRoleGuard></AdminLayout>} />
+
+            {/* Marketplace Admin Routes */}
+            <Route path="/admin/sellers" element={<AdminLayout><AdminRoleGuard requiredPermission="manage_sellers"><SellerApprovals /></AdminRoleGuard></AdminLayout>} />
+            <Route path="/admin/products" element={<AdminLayout><AdminRoleGuard requiredPermission="moderate_products"><ProductModeration /></AdminRoleGuard></AdminLayout>} />
+            <Route path="/admin/ads" element={<AdminLayout><AdminRoleGuard requiredPermission="manage_ads"><AdminAdsManager /></AdminRoleGuard></AdminLayout>} />
+
+            {/* Resource & Map Directory Editor Routes */}
+            <Route path="/admin/directory" element={<AdminLayout><AdminRoleGuard requiredPermission="edit_directory"><DirectoryManagement /></AdminRoleGuard></AdminLayout>} />
+            <Route path="/admin/broadcasts" element={<AdminLayout><AdminRoleGuard requiredPermission="send_broadcasts"><EmergencyBroadcasts /></AdminRoleGuard></AdminLayout>} />
+
+            {/* Support Agent Routes */}
+            <Route path="/admin/tickets" element={<AdminLayout><AdminRoleGuard requiredPermission="handle_tickets"><SupportTickets /></AdminRoleGuard></AdminLayout>} />
+            <Route path="/admin/user-lookup" element={<AdminLayout><AdminRoleGuard requiredPermission="lookup_users"><UserLookup /></AdminRoleGuard></AdminLayout>} />
+
+            {/* Legacy Admin Prototype (Preserved) */}
+            <Route path="/admin/legacy" element={<Admin />} />
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-          </MobileTabProvider>
+                </MobileTabProvider>
+              </AdsProvider>
+            </AdminRoleProvider>
+          </CountryPlatformProvider>
         </AccountModeProvider>
       </BrowserRouter>
     </LanguageProvider>

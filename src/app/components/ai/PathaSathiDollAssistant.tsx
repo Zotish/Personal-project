@@ -34,6 +34,7 @@ import {
   generateDynamicTailoredSuggestions,
   ServiceTypeSuggestion,
 } from "../../services/openRouterService";
+import { trackSearch } from "../../utils/myBox";
 
 // ── App Navigation Targets (Every Page, Service & Feature) ────────────────────
 export interface NavigationTarget {
@@ -2650,6 +2651,7 @@ export function DollChatboxWindow({
     const query = (directQuery ?? inputText).trim();
     if (!query) return;
 
+    trackSearch(query);
     addToHistory(query);
     setShowSuggestions(false);
     setActiveSuggestionIndex(-1);

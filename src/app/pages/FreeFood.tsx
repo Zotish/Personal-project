@@ -15,6 +15,7 @@ import {
   matchFreeFoodQuery
 } from "../data/freeFoodData";
 import { FoodDetailsModal } from "../components/food/FoodDetailsModal";
+import { safeBariKoiReverseGeocode } from "../services/barikoiService";
 
 // ─── BariKoi API Key & Loader ───────────────────────────────────────────────
 const BARIKOI_API_KEY =
@@ -45,23 +46,7 @@ function loadBkoiGL(): Promise<any> {
 
 // ─── BariKoi Reverse Geocoding & Road Routing APIs ──────────────────────────
 async function fetchBariKoiReverseGeocode(lat: number, lng: number) {
-  try {
-    const url = `https://barikoi.xyz/v2/api/search/reverse/geocode?api_key=${BARIKOI_API_KEY}&longitude=${lng}&latitude=${lat}&district=true&post_code=true&country=true&sub_district=true&union=true&pauroshova=true&location_type=true&division=true&address=true&area=true&bangla=true`;
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (data && data.place) {
-      return {
-        address: data.place.address || "",
-        area: data.place.area || "",
-        city: data.place.city || data.place.district || "Dhaka",
-        sub_district: data.place.sub_district || ""
-      };
-    }
-  } catch (err) {
-    console.warn("BariKoi reverse geocode error:", err);
-  }
-  return null;
+  return await safeBariKoiReverseGeocode(lat, lng);
 }
 
 // Real road route calculation using OSRM / BariKoi profiles

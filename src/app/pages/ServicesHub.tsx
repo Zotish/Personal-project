@@ -1,5 +1,5 @@
 import React, { useState, useEffect, type ElementType } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
   Scale, Briefcase, Home, Heart, BarChart2, Plane, ShoppingCart, GraduationCap,
@@ -9,6 +9,8 @@ import {
   Tag, TrendingUp, ChevronUp, Landmark, Trophy, Ticket, X, ChevronRight
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
+import { trackSearch, trackVisit } from "../utils/myBox";
+import { SponsoredFeedAd } from "../components/ads/SponsoredAdCard";
 
 // ─── MASTER SERVICES DATA (ALL 42+ IMMIGRANT & COMMUNITY SERVICES) ─────────
 
@@ -331,14 +333,28 @@ const featuredProducts: FeaturedProduct[] = [
 
 export function ServicesHub() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t } = useLanguage();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get("search") || searchParams.get("q") || "");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [featuredTab, setFeaturedTab] = useState<"discounted" | "new" | "popular">("discounted");
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isStickyServices, setIsStickyServices] = useState(false);
   const servicesContainerRef = React.useRef<HTMLDivElement>(null);
   const stickyBarScrollRef = React.useRef<HTMLDivElement>(null);
+
+  // Sync with searchParams if navigated from MyBox or external search
+  useEffect(() => {
+    const q = searchParams.get("search") || searchParams.get("q");
+    if (q) {
+      setSearchQuery(q);
+      setTimeout(() => {
+        if (servicesContainerRef.current) {
+          servicesContainerRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -422,7 +438,18 @@ export function ServicesHub() {
             <input
               type="text"
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={e => {
+                const val = e.target.value;
+                setSearchQuery(val);
+                if (val.trim().length >= 2) {
+                  trackSearch(val.trim());
+                }
+              }}
+              onKeyDown={e => {
+                if (e.key === "Enter" && searchQuery.trim()) {
+                  trackSearch(searchQuery.trim());
+                }
+              }}
               placeholder="Search services"
               className="w-full pl-11 pr-4 py-3.5 bg-white text-slate-900 placeholder:text-slate-400 rounded-2xl text-xs sm:text-sm font-semibold border border-slate-200/90 shadow-2xs focus:outline-none focus:border-[#C04A22] transition"
             />
@@ -457,7 +484,10 @@ export function ServicesHub() {
                   return (
                     <button
                       key={service.id}
-                      onClick={() => navigate(service.link)}
+                      onClick={() => {
+                        trackVisit({ id: service.id, name: service.name, path: service.link, type: "service" });
+                        navigate(service.link);
+                      }}
                       className="group flex flex-col items-center text-center p-2 rounded-2xl hover:bg-[#C04A22]/10 transition-all duration-200 cursor-pointer active:scale-95"
                     >
                       {/* Clean Coral Vector Icon */}
@@ -503,7 +533,10 @@ export function ServicesHub() {
                 return (
                   <button
                     key={service.id}
-                    onClick={() => navigate(service.link)}
+                    onClick={() => {
+                      trackVisit({ id: service.id, name: service.name, path: service.link, type: "service" });
+                      navigate(service.link);
+                    }}
                     className="group flex flex-col items-center text-center px-1.5 py-0.5 rounded-xl hover:bg-[#C04A22]/10 transition-all duration-200 cursor-pointer active:scale-95 flex-shrink-0 min-w-[58px] sm:min-w-[68px]"
                   >
                     {/* Clean Coral Vector Icon */}
@@ -556,10 +589,10 @@ export function ServicesHub() {
           {/* PRODUCT CARDS: MOBILE = 1 CARD PER ROW (VERTICAL LIST, NO HORIZONTAL SCROLL), DESKTOP = SWIPE CAROUSEL */}
           {isMobile ? (
             <div className="space-y-3.5 pt-1">
-              {activeTabProducts.map(prod => (
-                <div
-                  key={prod.id}
-                  onClick={() => setSelectedProduct(prod)}
+              {activeTabProducts.map((prod, idx) => (
+                <React.Fragment key={prod.id}>
+                  <div
+                    onClick={() => setSelectedProduct(prod)}
                   className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-2xs hover:shadow-md hover:border-[#C04A22]/40 transition-all cursor-pointer flex flex-col justify-between"
                 >
                   <div>
@@ -602,6 +635,13 @@ export function ServicesHub() {
                     </button>
                   </div>
                 </div>
+
+                  {(idx + 1) % 3 === 0 && (
+                    <div className="my-2 animate-in fade-in">
+                      <SponsoredFeedAd slotIndex={Math.floor(idx / 3)} placement="services" variant="card" />
+                    </div>
+                  )}
+                </React.Fragment>
               ))}
             </div>
           ) : (

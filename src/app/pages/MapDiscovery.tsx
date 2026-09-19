@@ -15,6 +15,15 @@ import { JobDetailsModal } from "../components/jobs/JobDetailsModal";
 import { useMobileTabs } from "../context/MobileTabContext";
 import { buildMapShareUrl, shareOrCopy } from "../utils/shareUtils";
 import type { Map as LeafletMapType } from "leaflet";
+import {
+  BARIKOI_API_KEY,
+  safeBariKoiReverseGeocode,
+  isBariKoiAvailable,
+  triggerBariKoiCooldown,
+  getCuratedFallbackPlaces,
+  CURATED_BANGLADESH_PLACES,
+  type BariKoiAddressInfo,
+} from "../services/barikoiService";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type TravelMode = "car" | "bike" | "walk";
@@ -29,9 +38,6 @@ type RouteOption = {
   trafficSegments: { coords: [number, number][]; level: TrafficLevel }[];
   cost: string;
 };
-
-// ── BariKoi Map API Key ────────────────────────────────────────────────────────
-const BARIKOI_API_KEY = import.meta.env.VITE_BARIKOI_API_KEY || "bkoi_e25928917c9e7b36a3286d75f446427fa3433bf87361b2fd8c8d6c942300a38f";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 export function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -143,25 +149,9 @@ function decodePolyline(str: string, precision = 5): [number, number][] {
   return coordinates;
 }
 
-// BariKoi Reverse Geocode API
+// BariKoi Reverse Geocode API (Cached & Circuit Protected)
 export async function fetchBariKoiReverseGeocode(lat: number, lng: number) {
-  const url = `https://barikoi.xyz/v2/api/search/reverse/geocode?api_key=${BARIKOI_API_KEY}&longitude=${lng}&latitude=${lat}&district=true&post_code=true&country=true&sub_district=true&union=true&pauroshova=true&location_type=true&division=true&address=true&area=true&bangla=true`;
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data?.place) {
-      return {
-        address: data.place.address || data.place.area || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
-        area: data.place.area || "",
-        district: data.place.district || "",
-        postCode: data.place.postCode || "",
-        city: data.place.city || data.place.division || "",
-      };
-    }
-  } catch (err) {
-    console.error("BariKoi Reverse Geocode error:", err);
-  }
-  return null;
+  return await safeBariKoiReverseGeocode(lat, lng);
 }
 
 // Fetch real routes using BariKoi Route API
@@ -170,42 +160,46 @@ async function fetchRoutes(
   to: [number, number],
   mode: TravelMode
 ): Promise<RouteOption[]> {
-  const barikoiUrl = `https://barikoi.xyz/v2/api/route/${from[1]},${from[0]};${to[1]},${to[0]}?api_key=${BARIKOI_API_KEY}&geometries=polyline`;
-  try {
-    const res = await fetch(barikoiUrl, { signal: AbortSignal.timeout(8000) });
-    const data = await res.json();
-    let coords: [number, number][] = [];
+  if (isBariKoiAvailable()) {
+    const barikoiUrl = `https://barikoi.xyz/v2/api/route/${from[1]},${from[0]};${to[1]},${to[0]}?api_key=${BARIKOI_API_KEY}&geometries=polyline`;
+    try {
+      const res = await fetch(barikoiUrl, { signal: AbortSignal.timeout(6000) });
+      if (res.status === 429) {
+        triggerBariKoiCooldown(180_000);
+      } else if (res.ok) {
+        const data = await res.json();
+        let coords: [number, number][] = [];
 
-    if (data?.routes?.length) {
-      const r = data.routes[0];
-      if (Array.isArray(r.geometry?.coordinates)) {
-        coords = r.geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng]);
-      } else if (typeof r.geometry === "string") {
-        coords = decodePolyline(r.geometry);
-      }
-    } else if (data?.route) {
-      if (typeof data.route === "string") {
-        coords = decodePolyline(data.route);
-      } else if (Array.isArray(data.route)) {
-        coords = data.route.map((c: any) => [c.latitude || c[1], c.longitude || c[0]]);
-      }
-    }
+        if (data?.routes?.length) {
+          const r = data.routes[0];
+          if (Array.isArray(r.geometry?.coordinates)) {
+            coords = r.geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng]);
+          } else if (typeof r.geometry === "string") {
+            coords = decodePolyline(r.geometry);
+          }
+        } else if (data?.route) {
+          if (typeof data.route === "string") {
+            coords = decodePolyline(data.route);
+          } else if (Array.isArray(data.route)) {
+            coords = data.route.map((c: any) => [c.latitude || c[1], c.longitude || c[0]]);
+          }
+        }
 
-    if (coords.length >= 2) {
-      const traffic = simulateTraffic(0, to[0] * 10 | 0);
-      return [{
-        id: 0,
-        label: "BariKoi Route",
-        coords,
-        distance: 3500,
-        duration: 720,
-        traffic,
-        trafficSegments: splitSegments(coords, traffic, (to[1] * 10 | 0)),
-        cost: estimateCost(mode, 3500),
-      }];
-    }
-  } catch (err) {
-    console.warn("BariKoi route API fallback:", err);
+        if (coords.length >= 2) {
+          const traffic = simulateTraffic(0, to[0] * 10 | 0);
+          return [{
+            id: 0,
+            label: "BariKoi Route",
+            coords,
+            distance: 3500,
+            duration: 720,
+            traffic,
+            trafficSegments: splitSegments(coords, traffic, (to[1] * 10 | 0)),
+            cost: estimateCost(mode, 3500),
+          }];
+        }
+      }
+    } catch (_) {}
   }
 
   // Fallback to OSRM if BariKoi route fails
@@ -424,19 +418,33 @@ export function getBariKoiCategoryImage(type?: string): string {
   return "https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=500&h=300&fit=crop";
 }
 
+const nearbyPlacesCache = new Map<string, Place[]>();
+
 export async function fetchBariKoiNearbyPlaces(
   lat: number,
   lng: number,
   category: string = "all"
 ): Promise<Place[]> {
+  const cacheKey = `${lat.toFixed(2)},${lng.toFixed(2)},${category}`;
+  if (nearbyPlacesCache.has(cacheKey)) {
+    return nearbyPlacesCache.get(cacheKey)!;
+  }
+
+  // If in cooldown or API unavailable, immediately use rich curated fallback places
+  if (!isBariKoiAvailable()) {
+    const fallback = getCuratedFallbackPlaces(lat, lng, category);
+    nearbyPlacesCache.set(cacheKey, fallback);
+    return fallback;
+  }
+
   const ptypesForCategory: Record<string, string[]> = {
-    all: ["Bank", "Restaurant", "Hospital", "Office", "Shop", "Residential", "Pharmacy", "ATM"],
-    housing: ["Residential", "Hotel", "Commercial"],
-    jobs: ["Office", "Bank", "Commercial", "Government"],
+    all: ["Restaurant", "Hospital", "Bank"],
+    housing: ["Residential", "Hotel"],
+    jobs: ["Office", "Commercial"],
     furniture: ["Shop", "Commercial"],
     religious: ["Religious", "Mosque"],
     schools: ["Education"],
-    grocery: ["Shop", "Food", "Supermarket"],
+    grocery: ["Shop", "Supermarket"],
     health: ["Hospital", "Pharmacy", "Clinic"],
     food: ["Restaurant", "Food"],
     bank: ["Bank", "ATM"],
@@ -446,63 +454,73 @@ export async function fetchBariKoiNearbyPlaces(
   const results: Place[] = [];
   const seenIds = new Set<string | number>();
 
-  const targetPtypes = ptypes.slice(0, 3);
-  await Promise.all(
-    targetPtypes.map(async (ptype) => {
-      try {
-        const url = `https://barikoi.xyz/v2/api/search/nearby/category/${BARIKOI_API_KEY}/1.5/12?longitude=${lng}&latitude=${lat}&ptype=${encodeURIComponent(ptype)}`;
-        const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data?.places && Array.isArray(data.places)) {
-          data.places.forEach((p: any) => {
-            if (seenIds.has(p.id)) return;
-            seenIds.add(p.id);
-            const pLat = parseFloat(p.latitude);
-            const pLng = parseFloat(p.longitude);
-            if (isNaN(pLat) || isNaN(pLng) || pLat === 0 || pLng === 0) return;
-
-            const distMeters = p.distance_in_meters;
-            const distStr = distMeters
-              ? (distMeters < 1000 ? `${Math.round(distMeters)} m` : `${(distMeters / 1000).toFixed(1)} km`)
-              : "Nearby";
-
-            results.push({
-              id: p.id,
-              name: p.name || p.address?.split(",")[0] || p.sub_type || p.type || "BariKoi Verified Place",
-              category: mapBariKoiToAppCategory(p.type, p.sub_type, category),
-              lat: pLat,
-              lng: pLng,
-              distance: distStr,
-              rating: 4.8,
-              reviews: 24 + ((Number(p.id) % 50) || 0),
-              open: true,
-              openUntil: "9:00 PM",
-              address: p.address || `${p.area || ""}, ${p.city || ""}`,
-              phone: "+880 1700-000000",
-              languages: ["Bengali", "English"],
-              immigrantFriendly: true,
-              description: p.address ? `BariKoi verified: ${p.address}` : "Real-time location from BariKoi database.",
-              image: getBariKoiCategoryImage(p.type || category),
-            });
-          });
-        }
-      } catch (e) {
-        console.warn(`BariKoi nearby ${ptype} fetch error:`, e);
+  // Fetch sequentially to prevent burst 429 rate limit errors
+  const targetPtypes = ptypes.slice(0, 2);
+  for (const ptype of targetPtypes) {
+    if (!isBariKoiAvailable()) break;
+    try {
+      const url = `https://barikoi.xyz/v2/api/search/nearby/category/${BARIKOI_API_KEY}/1.5/12?longitude=${lng}&latitude=${lat}&ptype=${encodeURIComponent(ptype)}`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+      if (res.status === 429) {
+        triggerBariKoiCooldown(180_000);
+        break; // Stop immediately on 429 rate limit
       }
-    })
-  );
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data?.places && Array.isArray(data.places)) {
+        data.places.forEach((p: any) => {
+          if (seenIds.has(p.id)) return;
+          seenIds.add(p.id);
+          const pLat = parseFloat(p.latitude);
+          const pLng = parseFloat(p.longitude);
+          if (isNaN(pLat) || isNaN(pLng) || pLat === 0 || pLng === 0) return;
 
-  return results;
+          const distMeters = p.distance_in_meters;
+          const distStr = distMeters
+            ? (distMeters < 1000 ? `${Math.round(distMeters)} m` : `${(distMeters / 1000).toFixed(1)} km`)
+            : "Nearby";
+
+          results.push({
+            id: p.id,
+            name: p.name || p.address?.split(",")[0] || p.sub_type || p.type || "BariKoi Verified Place",
+            category: mapBariKoiToAppCategory(p.type, p.sub_type, category),
+            lat: pLat,
+            lng: pLng,
+            distance: distStr,
+            rating: 4.8,
+            reviews: 24 + ((Number(p.id) % 50) || 0),
+            open: true,
+            openUntil: "9:00 PM",
+            address: p.address || `${p.area || ""}, ${p.city || ""}`,
+            phone: "+880 1700-000000",
+            languages: ["Bengali", "English"],
+            immigrantFriendly: true,
+            description: p.address ? `BariKoi verified: ${p.address}` : "Real-time location from BariKoi database.",
+            image: getBariKoiCategoryImage(p.type || category),
+          });
+        });
+      }
+    } catch (_) {
+      break;
+    }
+  }
+
+  if (results.length > 0) {
+    nearbyPlacesCache.set(cacheKey, results);
+    return results;
+  }
+
+  // Graceful fallback to verified curated landmarks
+  const fallback = getCuratedFallbackPlaces(lat, lng, category);
+  nearbyPlacesCache.set(cacheKey, fallback);
+  return fallback;
 }
 
-// Minimal Initial BariKoi Verified Landmarks (Real live places are fetched dynamically from BariKoi API)
-export const places: Place[] = [
-  { id: 1, lat: 23.7315, lng: 90.4075, name: "Baitul Mukarram National Mosque", category: "🕌 Mosque", distance: "0.3 km", rating: 4.9, reviews: 1242, open: true, openUntil: "9:00 PM", address: "Paltan, Dhaka", phone: "+880 2-9556000", languages: ["Bengali", "Arabic", "English"], immigrantFriendly: true, description: "National mosque of Bangladesh.", image: "https://images.unsplash.com/photo-1564769625905-50e93615e769?w=400&h=200&fit=crop" },
-  { id: 7, lat: 23.7930, lng: 90.4050, name: "Unimart Superstore", category: "🛒 Grocery", distance: "0.8 km", rating: 4.9, reviews: 967, open: true, openUntil: "10:00 PM", address: "Gulshan Centre Point, Gulshan-2, Dhaka", phone: "+880 9612-555555", languages: ["Bengali", "English"], immigrantFriendly: true, description: "Premium hypermarket with international & local groceries.", image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=200&fit=crop" },
-  { id: 8, lat: 23.7780, lng: 90.4170, name: "Square Hospital", category: "🏥 Hospital", distance: "1.4 km", rating: 4.7, reviews: 1204, open: true, openUntil: "24h", address: "18/F West Panthapath, Dhaka", phone: "+880 2-8159457", languages: ["Bengali", "English"], immigrantFriendly: true, description: "Tertiary care hospital with international standards.", image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400&h=200&fit=crop" },
-  { id: 28, lat: 23.7925, lng: 90.4078, name: "Gulshan Used Furniture & Resale", category: "🪑 Used Furniture", distance: "0.5 km", rating: 4.8, reviews: 312, open: true, openUntil: "8:00 PM", address: "Road 11, Gulshan-1, Dhaka", phone: "+880 1711-424998", languages: ["Bengali", "English"], immigrantFriendly: true, description: "Affordable pre-owned sofas, dining tables, beds, and household furniture.", image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=200&fit=crop" },
-];
+// Initial BariKoi Verified Landmarks across all categories
+export const places: Place[] = CURATED_BANGLADESH_PLACES.map(p => ({
+  ...p,
+  distance: "Nearby",
+}));
 
 
 // ── Hover tooltip card (desktop only) ────────────────────────────────────────
@@ -2258,6 +2276,7 @@ export function MapDiscoveryContent({
     isGPSActive?: boolean;
     selectedPlaceId?: number | string;
     activeCategory?: string;
+    searchQuery?: string;
   } | null;
 
   const [query, setQuery] = useState(searchParams.get("q") || searchParams.get("query") || routeState?.searchQuery || "");
@@ -2492,12 +2511,35 @@ export function MapDiscoveryContent({
       setBkoiPlaces([]);
       return;
     }
-    const controller = new AbortController();
-    const url = `https://barikoi.xyz/v2/api/search/autocomplete/place?api_key=${BARIKOI_API_KEY}&q=${encodeURIComponent(q)}&sub_area=true&sub_district=true`;
-    
-    fetch(url, { signal: controller.signal })
-      .then(res => res.json())
-      .then(data => {
+
+    const timer = setTimeout(async () => {
+      // If BariKoi is in cooldown or unavailable, search local curated places
+      if (!isBariKoiAvailable()) {
+        const qLower = q.toLowerCase();
+        const localMatches: Place[] = CURATED_BANGLADESH_PLACES.filter(p =>
+          p.name.toLowerCase().includes(qLower) ||
+          p.address.toLowerCase().includes(qLower) ||
+          p.category.toLowerCase().includes(qLower)
+        ).map((p, idx) => ({
+          ...p,
+          id: `local-${p.id}-${idx}`,
+          distance: userLocation ? `${(Math.hypot(p.lat - userLocation[0], p.lng - userLocation[1]) * 111).toFixed(1)} km` : "Nearby",
+        }));
+        setBkoiPlaces(localMatches);
+        return;
+      }
+
+      const controller = new AbortController();
+      const url = `https://barikoi.xyz/v2/api/search/autocomplete/place?api_key=${BARIKOI_API_KEY}&q=${encodeURIComponent(q)}&sub_area=true&sub_district=true`;
+
+      try {
+        const res = await fetch(url, { signal: controller.signal });
+        if (res.status === 429) {
+          triggerBariKoiCooldown(180_000);
+          return;
+        }
+        if (!res.ok) return;
+        const data = await res.json();
         if (data?.places && Array.isArray(data.places)) {
           const mapped: Place[] = data.places.map((b: any, idx: number) => {
             const lat = parseFloat(b.latitude || "0");
@@ -2525,10 +2567,10 @@ export function MapDiscoveryContent({
 
           setBkoiPlaces(mapped);
         }
-      })
-      .catch(() => {});
+      } catch (_) {}
+    }, 350);
 
-    return () => controller.abort();
+    return () => clearTimeout(timer);
   }, [query, userLocation]);
 
   // Dynamic shared place created from URL query parameters (Google Maps style)

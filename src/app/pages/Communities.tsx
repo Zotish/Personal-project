@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import React, { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
@@ -9,6 +9,7 @@ import {
   Crown, BadgeCheck, Sparkles
 } from "lucide-react";
 import { EventRegistrationModal } from "../components/events/EventRegistrationModal";
+import { SponsoredFeedAd } from "../components/ads/SponsoredAdCard";
 
 const allCommunities = [
   { id: 1, name: "Bangladeshi New Yorkers", image: "🇧🇩", members: 14200, tags: ["Community", "Culture", "Bengali"], desc: "The largest Bangladeshi community network in New York. Events, help, and connections for Bangladeshis in NYC and surrounding areas.", joined: true, city: "New York, NY", moderators: 8 },
@@ -178,8 +179,9 @@ function CommunityDetail({ community, onBack }: { community: typeof allCommuniti
             <button className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-semibold hover:opacity-90 transition">Post</button>
           </div>
 
-          {communityPostsData.map(post => (
-            <div key={post.id} className={`rounded-2xl border p-4 ${typeBg[post.type]}`}>
+          {communityPostsData.map((post, idx) => (
+            <React.Fragment key={post.id}>
+              <div className={`rounded-2xl border p-4 ${typeBg[post.type]}`}>
               {post.pinned && (
                 <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-2 uppercase tracking-wide">
                   <Pin className="w-3 h-3" /> Pinned post
@@ -231,6 +233,13 @@ function CommunityDetail({ community, onBack }: { community: typeof allCommuniti
                 </div>
               </div>
             </div>
+
+              {(idx + 1) % 3 === 0 && (
+                <div className="my-2 animate-in fade-in">
+                  <SponsoredFeedAd slotIndex={Math.floor(idx / 3)} placement="all" />
+                </div>
+              )}
+            </React.Fragment>
           ))}
         </div>
       )}
@@ -1138,14 +1147,20 @@ export function Communities() {
                   <p className="text-sm text-muted-foreground">Try a different search term</p>
                 </div>
               ) : (
-                visibleDiscover.map(c => (
-                  <DiscoverCard
-                    key={c.id}
-                    community={c}
-                    onOpen={() => setSelected(c)}
-                    onJoin={() => join(c.id)}
-                    reason={discoverReasons[c.id] ?? "Suggested for you"}
-                  />
+                visibleDiscover.map((c, idx) => (
+                  <React.Fragment key={c.id}>
+                    <DiscoverCard
+                      community={c}
+                      onOpen={() => setSelected(c)}
+                      onJoin={() => join(c.id)}
+                      reason={discoverReasons[c.id] ?? "Suggested for you"}
+                    />
+                    {(idx + 1) % 3 === 0 && (
+                      <div className="my-2 animate-in fade-in">
+                        <SponsoredFeedAd slotIndex={Math.floor(idx / 3)} placement="all" />
+                      </div>
+                    )}
+                  </React.Fragment>
                 ))
               )}
             </>

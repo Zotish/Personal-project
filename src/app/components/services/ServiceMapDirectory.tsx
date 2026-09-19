@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { ServiceListing, formatDistance, getDistanceKm } from "../../data/serviceDirectoryData";
 import type { Map as LeafletMapType } from "leaflet";
+import { safeBariKoiReverseGeocode } from "../../services/barikoiService";
 
 // ─── BariKoi API Key & Loader ───────────────────────────────────────────────
 const BARIKOI_API_KEY =
@@ -91,23 +92,7 @@ async function fetchRealRoadRoute(
 
 // ─── BariKoi Reverse Geocode ────────────────────────────────────────────────
 async function fetchBariKoiReverseGeocode(lat: number, lng: number) {
-  try {
-    const url = `https://barikoi.xyz/v2/api/search/reverse/geocode?api_key=${BARIKOI_API_KEY}&longitude=${lng}&latitude=${lat}&district=true&post_code=true&country=true&sub_district=true&union=true&pauroshova=true&location_type=true&division=true&address=true&area=true&bangla=true`;
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (data && data.place) {
-      return {
-        address: data.place.address || "",
-        area: data.place.area || "",
-        city: data.place.city || data.place.district || "Queens",
-        sub_district: data.place.sub_district || ""
-      };
-    }
-  } catch (err) {
-    console.warn("BariKoi reverse geocode error:", err);
-  }
-  return null;
+  return await safeBariKoiReverseGeocode(lat, lng);
 }
 
 // ─── PROPS FOR UNIVERSAL SERVICE MAP DIRECTORY ──────────────────────────────

@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
+import { useLanguage } from "../context/LanguageContext";
+import { LanguageToggle, useCountryLanguagePair } from "../components/ui/LanguageToggle";
 import {
   User, Lock, Globe, MapPin, Bell, Link, Shield, Ban, Database,
   HelpCircle, LogOut, ChevronRight, ChevronLeft, Eye, EyeOff,
@@ -270,36 +272,75 @@ function DevicesSection({ onBack }: { onBack: () => void }) {
 // LANGUAGE
 // ══════════════════════════════════════════════════════════════════════════════
 function LanguageSection({ onBack }: { onBack: () => void }) {
-  const [selected, setSelected] = useState("Bengali");
-  const langs = [
-    { code: "en", name: "English", native: "English", flag: "🇺🇸" },
-    { code: "es", name: "Spanish", native: "Español", flag: "🇲🇽" },
-    { code: "bn", name: "Bengali", native: "বাংলা", flag: "🇧🇩" },
-    { code: "hi", name: "Hindi", native: "हिंदी", flag: "🇮🇳" },
-    { code: "ar", name: "Arabic", native: "العربية", flag: "🇸🇦" },
-    { code: "zh", name: "Chinese", native: "中文", flag: "🇨🇳" },
-    { code: "pt", name: "Portuguese", native: "Português", flag: "🇧🇷" },
-    { code: "fr", name: "French", native: "Français", flag: "🇫🇷" },
-    { code: "ko", name: "Korean", native: "한국어", flag: "🇰🇷" },
-  ];
+  const { lang, setLang } = useLanguage();
+  const { primaryLang, secondaryLang, currentCountry } = useCountryLanguagePair();
+  const options = [primaryLang, secondaryLang];
+
   return (
     <AppLayout>
       <BackHeader title="Language" onBack={onBack} />
-      <div className="max-w-lg mx-auto p-4">
-        <p className="text-sm text-muted-foreground mb-4">Choose the language for the app interface.</p>
+      <div className="max-w-lg mx-auto p-4 space-y-4">
+        <div>
+          <h3 className="text-sm font-bold text-foreground">App Language</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Switch between English and the official mother language for {currentCountry?.name || "your region"}.
+          </p>
+        </div>
+
+        {/* 2-Button Segmented Switcher */}
+        <div className="flex justify-center py-1">
+          <LanguageToggle />
+        </div>
+
+        {/* 2 Language Cards */}
         <SectionCard>
-          {langs.map((l, i) => (
-            <button key={l.code} onClick={() => setSelected(l.name)}
-              className={`w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-secondary transition cursor-pointer ${i > 0 ? "border-t border-border" : ""}`}>
-              <span className="text-2xl">{l.flag}</span>
-              <div className="flex-1">
-                <div className="text-sm font-medium text-foreground">{l.name}</div>
-                <div className="text-xs text-muted-foreground">{l.native}</div>
-              </div>
-              {selected === l.name && <div className="w-5 h-5 rounded-full bg-[#E05236] flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div>}
-            </button>
-          ))}
+          {options.map((l, i) => {
+            const isSelected = lang === l.code;
+            return (
+              <button
+                key={l.code}
+                type="button"
+                onClick={() => setLang(l.code)}
+                className={`w-full flex items-center gap-3.5 px-4 py-4 text-left hover:bg-slate-50 transition cursor-pointer ${
+                  i > 0 ? "border-t border-border" : ""
+                } ${isSelected ? "bg-orange-50/40" : ""}`}
+              >
+                <span className="text-3xl flex-shrink-0">{l.flag}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <span>{l.nativeName}</span>
+                    {l.code === "en" ? (
+                      <span className="text-[10px] font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">Global</span>
+                    ) : (
+                      <span className="text-[10px] font-mono bg-orange-100 text-[#8C3015] px-1.5 py-0.5 rounded font-bold">
+                        {currentCountry?.name} Native
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {l.name} · {l.fullLabel}
+                  </div>
+                </div>
+                {isSelected ? (
+                  <div className="w-6 h-6 rounded-full bg-[#E05236] flex items-center justify-center flex-shrink-0 shadow-xs">
+                    <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
+                  </div>
+                ) : (
+                  <div className="w-6 h-6 rounded-full border-2 border-slate-300 flex-shrink-0" />
+                )}
+              </button>
+            );
+          })}
         </SectionCard>
+
+        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 text-xs text-slate-600 space-y-1">
+          <div className="font-bold text-slate-800 flex items-center gap-1.5">
+            <span>🌐 Automatic Regional Language</span>
+          </div>
+          <p className="leading-relaxed">
+            When you access ImmigrantConnect in {currentCountry?.flag} {currentCountry?.name}, the platform automatically loads in <strong>{secondaryLang.nativeName}</strong>. You can switch to <strong>English</strong> or back to <strong>{secondaryLang.nativeName}</strong> anytime here.
+          </p>
+        </div>
       </div>
     </AppLayout>
   );
@@ -865,7 +906,7 @@ const settingsSections = [
   {
     title: "Personalization",
     items: [
-      { icon: Languages, label: "Language", desc: "English, Español, বাংলা, हिंदी, العربية", path: "language" },
+      { icon: Languages, label: "Language", desc: "English & Own Country Language", path: "language" },
       { icon: Globe, label: "Content Preferences", desc: "Feed, topics, communities", path: "content" },
       { icon: MapPin, label: "Location Settings", desc: "Manage location permissions", path: "location" },
     ],

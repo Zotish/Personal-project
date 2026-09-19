@@ -7,6 +7,7 @@ import {
   Share2, Send, Bookmark, ThumbsUp, ArrowLeft, X, Check,
   Award, Clock, Building, Landmark, Scale, Briefcase, GraduationCap
 } from "lucide-react";
+import { SponsoredFeedAd } from "../components/ads/SponsoredAdCard";
 
 interface AnswerItem {
   id: number;
@@ -459,15 +460,15 @@ export function QandA() {
               </button>
             </div>
           ) : (
-            filteredQuestions.map(q => {
+            filteredQuestions.map((q, idx) => {
               const myVote = userVotedMap[q.id] || 0;
               const isExpanded = expandedQuestionIds.includes(q.id);
               const isShort = q.body.length <= 60;
 
               return (
-                <div
-                  key={q.id}
-                  onClick={() => setSelectedQuestion(q)}
+                <React.Fragment key={q.id}>
+                  <div
+                    onClick={() => setSelectedQuestion(q)}
                   className="bg-white rounded-3xl border border-slate-200/90 hover:border-[#E05236]/40 p-4 sm:p-5 shadow-2xs hover:shadow-md transition-all cursor-pointer group space-y-3"
                 >
                   <div className="flex items-start gap-3 sm:gap-4">
@@ -573,8 +574,15 @@ export function QandA() {
                     </div>
                   </div>
                 </div>
-              );
-            })
+
+                {(idx + 1) % 3 === 0 && (
+                  <div className="my-2 animate-in fade-in">
+                    <SponsoredFeedAd slotIndex={Math.floor(idx / 3)} placement="qna" />
+                  </div>
+                )}
+              </React.Fragment>
+            );
+          })
           )}
         </div>
       </div>

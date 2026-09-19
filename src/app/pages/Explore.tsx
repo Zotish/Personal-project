@@ -1,12 +1,13 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import { GoldenBadge } from "../components/ui/GoldenBadge";
-import { 
-  Search, ArrowLeft, Heart, MessageCircle, Repeat2, Share2, 
-  Bookmark, CheckCircle, Users, Briefcase, Home, BookOpen, 
+import {
+  Search, ArrowLeft, Heart, MessageCircle, Repeat2, Share2,
+  Bookmark, CheckCircle, Users, Briefcase, Home, BookOpen,
   MapPin, Sparkles, Send, MessageSquare, MoreHorizontal, User
 } from "lucide-react";
+import { SponsoredFeedAd } from "../components/ads/SponsoredAdCard";
 
 type Topic = {
   rank: number;
@@ -64,7 +65,7 @@ type PostItem = {
 // Generate realistic posts for a topic (Twitter style)
 function getPostsForTopic(topic: Topic): PostItem[] {
   const tagStr = `#${topic.tag}`;
-  
+
   if (topic.tag.toLowerCase().includes("uscis")) {
     return [
       {
@@ -211,7 +212,7 @@ export function Explore() {
     setLikedPosts(prev => {
       const isCurrentlyLiked = !!prev[postId];
       const newLikedState = !isCurrentlyLiked;
-      
+
       setLikeCounts(cPrev => ({
         ...cPrev,
         [postId]: (cPrev[postId] ?? initialLikes) + (newLikedState ? 1 : -1)
@@ -222,7 +223,7 @@ export function Explore() {
   };
 
   // Filter topics based on search query
-  const filteredTopics = trendingTopics.filter(t => 
+  const filteredTopics = trendingTopics.filter(t =>
     t.tag.toLowerCase().includes(query.toLowerCase()) ||
     t.category.toLowerCase().includes(query.toLowerCase()) ||
     t.description.toLowerCase().includes(query.toLowerCase())
@@ -231,7 +232,7 @@ export function Explore() {
   return (
     <AppLayout>
       <div className="max-w-2xl mx-auto min-h-screen bg-white border-x border-slate-200/80">
-        
+
         {/* ─── HASHTAG DETAIL FEED VIEW (TWITTER STYLE) ───────────────────────── */}
         {selectedTopic ? (
           <div>
@@ -262,11 +263,10 @@ export function Explore() {
                 <button
                   key={tab}
                   onClick={() => setFeedTab(tab)}
-                  className={`flex-1 py-3 text-xs font-bold capitalize transition-all border-b-2 cursor-pointer ${
-                    feedTab === tab
+                  className={`flex-1 py-3 text-xs font-bold capitalize transition-all border-b-2 cursor-pointer ${feedTab === tab
                       ? "border-[#C04A22] text-[#8C3015]"
                       : "border-transparent text-slate-500 hover:text-slate-900"
-                  }`}
+                    }`}
                 >
                   {tab}
                 </button>
@@ -307,103 +307,109 @@ export function Explore() {
                   </div>
                 ))
               ) : (
-                getPostsForTopic(selectedTopic).map(post => {
+                getPostsForTopic(selectedTopic).map((post, idx) => {
                   const isLiked = !!likedPosts[post.id];
                   const currentLikes = likeCounts[post.id] ?? post.likes;
 
                   return (
-                    <article 
-                      key={post.id} 
-                      className="bg-white rounded-2xl border border-slate-200/90 p-3.5 sm:p-4 transition-all hover:shadow-sm cursor-pointer"
-                    >
-                      {/* Top Row: Author Avatar + Name & Info (Vertically Centered) */}
-                      <div className="flex items-center justify-between">
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const handleClean = (post.handle || post.author).replace('@', '').toLowerCase().replace(/\s+/g, '_');
-                            navigate(`/profile/${handleClean}`);
-                          }}
-                          className="flex items-center gap-3 min-w-0 cursor-pointer group"
-                          title={`View ${post.author}'s Profile`}
-                        >
-                          <div className="w-10 h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs group-hover:opacity-85 transition">
-                            <User className="w-5 h-5 text-slate-500" />
+                    <React.Fragment key={post.id}>
+                      <article
+                        className="bg-white rounded-2xl border border-slate-200/90 p-3.5 sm:p-4 transition-all hover:shadow-sm cursor-pointer"
+                      >
+                        {/* Top Row: Author Avatar + Name & Info (Vertically Centered) */}
+                        <div className="flex items-center justify-between">
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const handleClean = (post.handle || post.author).replace('@', '').toLowerCase().replace(/\s+/g, '_');
+                              navigate(`/profile/${handleClean}`);
+                            }}
+                            className="flex items-center gap-3 min-w-0 cursor-pointer group"
+                            title={`View ${post.author}'s Profile`}
+                          >
+                            <div className="w-10 h-10 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs group-hover:opacity-85 transition">
+                              <User className="w-5 h-5 text-slate-500" />
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                              <span className="text-sm font-bold text-slate-900 truncate group-hover:underline">{post.author}</span>
+                              {post.verified && (
+                                <GoldenBadge size={16} title="Verified Account" />
+                              )}
+                              <span className="text-xs text-slate-400">· {post.time}</span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-                            <span className="text-sm font-bold text-slate-900 truncate group-hover:underline">{post.author}</span>
-                            {post.verified && (
-                              <GoldenBadge size={16} title="Verified Account" />
-                            )}
-                            <span className="text-xs text-slate-400">· {post.time}</span>
-                          </div>
+
+                          <button className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
                         </div>
 
-                        <button className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
-                      </div>
+                        {/* Content text: Starts full-width below the logo with clean left alignment */}
+                        <p className="text-sm text-slate-900 leading-relaxed whitespace-pre-line text-left mt-3 font-normal">
+                          {post.content}
+                        </p>
 
-                      {/* Content text: Starts full-width below the logo with clean left alignment */}
-                      <p className="text-sm text-slate-900 leading-relaxed whitespace-pre-line text-left mt-3 font-normal">
-                        {post.content}
-                      </p>
+                        {/* Post Image Attachment */}
+                        {post.image && (
+                          <div className="mt-3 rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-100">
+                            <img
+                              src={post.image}
+                              alt="Post attachment"
+                              className="w-full max-h-64 sm:max-h-72 object-cover hover:scale-[1.01] transition-transform duration-300"
+                            />
+                          </div>
+                        )}
 
-                      {/* Post Image Attachment */}
-                      {post.image && (
-                        <div className="mt-3 rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-100">
-                          <img
-                            src={post.image}
-                            alt="Post attachment"
-                            className="w-full max-h-64 sm:max-h-72 object-cover hover:scale-[1.01] transition-transform duration-300"
-                          />
+                        {/* Action Bar */}
+                        <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 text-slate-500 max-w-md">
+                          <button
+                            onClick={() => toggleLike(post.id, post.likes)}
+                            className={`flex items-center gap-1.5 text-xs transition-colors cursor-pointer ${isLiked ? "text-red-600 font-bold" : "hover:text-red-600"
+                              }`}
+                          >
+                            <Heart className={`w-4 h-4 ${isLiked ? "fill-red-600 text-red-600" : ""}`} />
+                            <span>{currentLikes}</span>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/post/${post.id || 1}?focus=comment`);
+                            }}
+                            className="flex items-center gap-1.5 text-xs hover:text-[#C04A22] transition-colors cursor-pointer"
+                            title="Comment on post"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                            <span>{post.comments}</span>
+                          </button>
+                          <button className="flex items-center gap-1.5 text-xs hover:text-emerald-600 transition-colors cursor-pointer">
+                            <Repeat2 className="w-4 h-4" />
+                            <span>{post.reposts}</span>
+                          </button>
+                          <button className="flex items-center gap-1.5 text-xs hover:text-[#C04A22] transition-colors cursor-pointer">
+                            <Share2 className="w-4 h-4" />
+                          </button>
+                          <button className="flex items-center gap-1.5 text-xs hover:text-[#C04A22] transition-colors cursor-pointer">
+                            <Bookmark className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </article>
+
+                      {(idx + 1) % 3 === 0 && (
+                        <div className="my-2 animate-in fade-in">
+                          <SponsoredFeedAd slotIndex={Math.floor(idx / 3)} placement="explore" />
                         </div>
                       )}
-
-                      {/* Action Bar */}
-                      <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 text-slate-500 max-w-md">
-                        <button 
-                          onClick={() => toggleLike(post.id, post.likes)} 
-                          className={`flex items-center gap-1.5 text-xs transition-colors cursor-pointer ${
-                            isLiked ? "text-red-600 font-bold" : "hover:text-red-600"
-                          }`}
-                        >
-                          <Heart className={`w-4 h-4 ${isLiked ? "fill-red-600 text-red-600" : ""}`} />
-                              <span>{currentLikes}</span>
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/post/${post.id || 1}?focus=comment`);
-                              }}
-                              className="flex items-center gap-1.5 text-xs hover:text-[#C04A22] transition-colors cursor-pointer"
-                              title="Comment on post"
-                            >
-                              <MessageCircle className="w-4 h-4" />
-                              <span>{post.comments}</span>
-                            </button>
-                            <button className="flex items-center gap-1.5 text-xs hover:text-emerald-600 transition-colors cursor-pointer">
-                              <Repeat2 className="w-4 h-4" />
-                              <span>{post.reposts}</span>
-                            </button>
-                            <button className="flex items-center gap-1.5 text-xs hover:text-[#C04A22] transition-colors cursor-pointer">
-                              <Share2 className="w-4 h-4" />
-                            </button>
-                            <button className="flex items-center gap-1.5 text-xs hover:text-[#C04A22] transition-colors cursor-pointer">
-                              <Bookmark className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </article>
-                      );
-                    })
-                  )}
+                    </React.Fragment>
+                  );
+                })
+              )}
             </div>
           </div>
         ) : (
           /* ─── MAIN EXPLORE TOPICS LIST VIEW ──────────────────────────────── */
           <div>
             {/* Search bar with Back Arrow */}
-            <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md p-3 sm:p-4 border-b border-slate-200/80 shadow-2xs flex items-center gap-2.5">
+            <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md p-3 sm:p-4 border-b border-slate-200/80 shadow-2xs flex items-center gap-2.5 pr-12 sm:pr-4">
               <button
                 onClick={() => navigate(-1)}
                 className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex-shrink-0 cursor-pointer active:scale-95"
@@ -430,11 +436,10 @@ export function Explore() {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`flex-1 py-2 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer ${
-                      activeTab === tab 
-                        ? "bg-white text-[#8C3015] shadow-2xs border border-slate-200/60" 
+                    className={`flex-1 py-2 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer ${activeTab === tab
+                        ? "bg-white text-[#8C3015] shadow-2xs border border-slate-200/60"
                         : "text-slate-600 hover:text-slate-900"
-                    }`}
+                      }`}
                   >
                     {tab}
                   </button>
@@ -444,35 +449,42 @@ export function Explore() {
               {/* Trending Topics List */}
               {activeTab === "trending" && (
                 <div className="space-y-3">
-                  {filteredTopics.map(topic => (
-                    <div 
-                      key={topic.tag} 
-                      onClick={() => setSelectedTopic(topic)}
-                      className="bg-white rounded-2xl border border-slate-200/90 p-4 hover:border-[#C04A22]/40 hover:shadow-sm transition-all cursor-pointer group"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs text-slate-500 font-medium">#{topic.rank} · {topic.category}</span>
-                          </div>
-                          
-                          {/* Hashtag Title with Brand Coral Hover */}
-                          <div className="text-base font-bold text-slate-900 group-hover:text-[#C04A22] transition-colors truncate">
-                            #{topic.tag}
-                          </div>
-                          
-                          <div className="text-sm text-slate-600 mt-0.5 line-clamp-1">
-                            {topic.description}
-                          </div>
-                          
-                          {/* Clicking post count opens topic feed as well */}
-                          <div className="text-xs font-semibold text-slate-500 group-hover:text-[#C04A22] transition-colors mt-1.5 flex items-center gap-1">
-                            <span>{topic.posts} posts</span>
-                            <span className="text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">→ View Feed</span>
+                  {filteredTopics.map((topic, idx) => (
+                    <React.Fragment key={topic.tag}>
+                      <div
+                        onClick={() => setSelectedTopic(topic)}
+                        className="bg-white rounded-2xl border border-slate-200/90 p-4 hover:border-[#C04A22]/40 hover:shadow-sm transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs text-slate-500 font-medium">#{topic.rank} · {topic.category}</span>
+                            </div>
+
+                            {/* Hashtag Title with Brand Coral Hover */}
+                            <div className="text-base font-bold text-slate-900 group-hover:text-[#C04A22] transition-colors truncate">
+                              #{topic.tag}
+                            </div>
+
+                            <div className="text-sm text-slate-600 mt-0.5 line-clamp-1">
+                              {topic.description}
+                            </div>
+
+                            {/* Clicking post count opens topic feed as well */}
+                            <div className="text-xs font-semibold text-slate-500 group-hover:text-[#C04A22] transition-colors mt-1.5 flex items-center gap-1">
+                              <span>{topic.posts} posts</span>
+                              <span className="text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">→ View Feed</span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+
+                      {(idx + 1) % 3 === 0 && (
+                        <div className="my-2 animate-in fade-in">
+                          <SponsoredFeedAd slotIndex={Math.floor(idx / 3)} placement="explore" />
+                        </div>
+                      )}
+                    </React.Fragment>
                   ))}
 
                   {filteredTopics.length === 0 && (

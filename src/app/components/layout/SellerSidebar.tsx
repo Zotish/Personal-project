@@ -5,7 +5,6 @@ import {
   Globe, ArrowLeftRight, ExternalLink, ShieldCheck, ChevronRight, User, ArrowLeft, Check, LogOut, ChevronUp,
   PlusCircle, ArrowRight
 } from "lucide-react";
-import { LanguageToggle } from "../ui/LanguageToggle";
 import { Logo } from "../ui/Logo";
 import { GoldenBadge } from "../ui/GoldenBadge";
 import { useAccountMode } from "../../context/AccountModeContext";

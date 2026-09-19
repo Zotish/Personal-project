@@ -12,6 +12,7 @@ import {
 import { LiveJobListing, generateLiveLocationJobs, formatDistance, getDistanceKm, matchJobQuery } from "../data/jobsData";
 import { JobDetailsModal } from "../components/jobs/JobDetailsModal";
 import type { Map as LeafletMapType } from "leaflet";
+import { safeBariKoiReverseGeocode } from "../services/barikoiService";
 
 // ─── BariKoi API Key & Loader ───────────────────────────────────────────────
 
@@ -51,24 +52,15 @@ export interface BariKoiGeoResult {
 // ─── BariKoi Reverse Geocode API ────────────────────────────────────────────
 
 async function fetchBariKoiReverseGeocode(lat: number, lng: number): Promise<BariKoiGeoResult | null> {
-  const url = `https://barikoi.xyz/v2/api/search/reverse/geocode?api_key=${BARIKOI_API_KEY}&longitude=${lng}&latitude=${lat}&district=true&post_code=true&country=true&sub_district=true&union=true&pauroshova=true&location_type=true&division=true&address=true&area=true&bangla=true`;
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data?.place) {
-      return {
-        address: data.place.address || data.place.area || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
-        area: data.place.area || data.place.sub_district || data.place.district || "Your Area",
-        district: data.place.district || "",
-        sub_district: data.place.sub_district || "",
-        postCode: data.place.postCode || "",
-        city: data.place.city || data.place.division || "Dhaka",
-      };
-    }
-  } catch (err) {
-    console.warn("BariKoi Reverse Geocode error:", err);
-  }
-  return null;
+  const res = await safeBariKoiReverseGeocode(lat, lng);
+  return {
+    address: res.address,
+    area: res.area || "Your Area",
+    district: res.district || "",
+    sub_district: res.sub_district || res.area || "",
+    postCode: res.postCode || "",
+    city: res.city || "Dhaka",
+  };
 }
 
 
