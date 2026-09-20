@@ -128,7 +128,8 @@ function InteractiveServiceMap({
   onToggleSave,
   isScrolled,
   searchQuery,
-  themeColor = "#C04A22"
+  themeColor = "#C04A22",
+  serviceName
 }: {
   userCoords: [number, number];
   isLocationGranted: boolean;
@@ -144,6 +145,7 @@ function InteractiveServiceMap({
   isScrolled: boolean;
   searchQuery: string;
   themeColor?: string;
+  serviceName: string;
 }) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -194,6 +196,71 @@ function InteractiveServiceMap({
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [directionItem, isNavCardMinimized, isScrolled]);
 
+  // ─── Service Specific Icons for Map Markers (Job-Style Pin) ───────────────────
+  const getServiceSvgIcon = (svcName: string, category?: string, type?: string): string => {
+    const s = (svcName || "").toLowerCase();
+    const c = (category || "").toLowerCase();
+    const t = (type || "").toLowerCase();
+
+    // 1. Legal Aid
+    if (s.includes("legal") || c.includes("legal") || t.includes("law") || t.includes("asylum") || t.includes("clinic") || t.includes("court")) {
+      return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>`;
+    }
+
+    // 2. Halal Food
+    if (s.includes("food") || s.includes("halal") || c.includes("food") || t.includes("food") || t.includes("restaurant") || t.includes("meat") || t.includes("tiffin") || t.includes("bakery")) {
+      return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2v6a3 3 0 0 1-3 3 3 3 0 0 1-3-3V2"/><path d="M15 2v19"/><path d="M5 2v6a3 3 0 0 0 2.2 2.89L7 21"/><path d="M2 2h6"/></svg>`;
+    }
+
+    // 3. Free Medicine
+    if (s.includes("medicine") || c.includes("medicine") || t.includes("insulin") || t.includes("dispensary")) {
+      return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>`;
+    }
+
+    // 4. Pharmacy
+    if (s.includes("pharmacy") || c.includes("pharmacy") || t.includes("pharmacy") || t.includes("rx") || t.includes("drug")) {
+      return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><path d="M12 11v6"/><path d="M9 14h6"/><path d="M19 8H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2Z"/></svg>`;
+    }
+
+    // 5. Hospital
+    if (s.includes("hospital") || c.includes("hospital") || t.includes("emergency") || t.includes("clinic") || t.includes("health")) {
+      return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v4"/><path d="M14 8h-4"/><path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/></svg>`;
+    }
+
+    // 6. Gas & EV
+    if (s.includes("gas") || s.includes("ev") || c.includes("gas") || c.includes("ev") || t.includes("gas") || t.includes("ev") || t.includes("charging") || t.includes("station")) {
+      return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h12"/><path d="M4 9h10"/><path d="M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"/><path d="M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 5"/></svg>`;
+    }
+
+    // 7. Social Aid
+    if (s.includes("social") || c.includes("social") || t.includes("benefit") || t.includes("snap") || t.includes("family") || t.includes("rent")) {
+      return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
+    }
+
+    // 8. Sports
+    if (s.includes("sport") || c.includes("sport") || t.includes("cricket") || t.includes("soccer") || t.includes("fitness") || t.includes("stadium")) {
+      return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>`;
+    }
+
+    // Default fallback
+    return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`;
+  };
+
+  const createServiceMarkerHtml = (item: ServiceListing, isSelected: boolean) => {
+    const bg = isSelected ? "#8C3015" : themeColor || "#C04A22";
+    const size = isSelected ? 38 : 32;
+    const svgIcon = getServiceSvgIcon(serviceName, item.category, item.type);
+
+    return `
+      <div style="position:relative;display:inline-flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.2s ease;">
+        <div style="background:${bg};color:white;width:${size}px;height:${size}px;border-radius:50%;border:${isSelected ? '3px' : '2px'} solid white;box-shadow:${isSelected ? '0 8px 20px rgba(192,74,34,0.5)' : '0 3px 10px rgba(0,0,0,0.25)'};display:flex;align-items:center;justify-content:center;transform:${isSelected ? 'scale(1.1)' : 'scale(1)'};">
+          ${svgIcon}
+        </div>
+        <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:5px solid ${bg};margin-top:-1px;"></div>
+      </div>
+    `;
+  };
+
   // Initialize Map
   useEffect(() => {
     let isMounted = true;
@@ -201,16 +268,39 @@ function InteractiveServiceMap({
       if (!isMounted || !mapContainerRef.current) return;
 
       try {
+        const key = BARIKOI_API_KEY;
+        if (bkoigl) {
+          bkoigl.accessToken = key;
+          bkoigl.apiKey = key;
+        }
+
         const mapStyle = getMapStyleForLocation(userCoords[0], userCoords[1]);
         const map = new bkoigl.Map({
           container: mapContainerRef.current,
           center: [userCoords[1], userCoords[0]],
-          zoom: 13.5,
+          zoom: 14.2,
           maxZoom: 18,
           minZoom: 4,
           style: mapStyle,
+          accessToken: key,
+          apiKey: key,
           doubleClickZoom: true,
           attributionControl: false
+        });
+
+        // Gracefully handle missing sprite icons/layers from Barikoi style
+        map.on("styleimagemissing", (e: any) => {
+          const id = e.id;
+          if (!map.hasImage(id)) {
+            const canvas = document.createElement("canvas");
+            canvas.width = 1;
+            canvas.height = 1;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              const imgData = ctx.createImageData(1, 1);
+              map.addImage(id, imgData);
+            }
+          }
         });
 
         attachMapboxFallbackOnError(map);
@@ -235,7 +325,7 @@ function InteractiveServiceMap({
     };
   }, []);
 
-  // Update User Marker
+  // Update User Marker (Pulsing Live GPS Dot like Jobs)
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !mapLoaded) return;
@@ -243,10 +333,13 @@ function InteractiveServiceMap({
     if (userMarkerRef.current) userMarkerRef.current.remove();
 
     const el = document.createElement("div");
-    el.className = "relative flex items-center justify-center";
+    el.className = "bkoi-user-marker";
     el.innerHTML = `
-      <div class="w-6 h-6 rounded-full bg-[#C04A22]/20 animate-ping absolute"></div>
-      <div class="w-4 h-4 rounded-full bg-[#C04A22] border-2 border-white shadow-md relative z-10"></div>
+      <div style="position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:9999;">
+        <div style="position:absolute;width:48px;height:48px;border-radius:50%;background:rgba(37,99,235,0.25);animation:ping 2s cubic-bezier(0,0,0.2,1) infinite;"></div>
+        <div style="position:absolute;width:28px;height:28px;border-radius:50%;background:rgba(37,99,235,0.35);border:2px solid #ffffff;box-shadow:0 0 12px rgba(37,99,235,0.4);"></div>
+        <div style="width:16px;height:16px;border-radius:50%;background:#1d4ed8;border:3px solid #ffffff;box-shadow:0 3px 10px rgba(0,0,0,0.35);"></div>
+      </div>
     `;
 
     const bkoigl = (window as any).bkoigl;
@@ -257,7 +350,7 @@ function InteractiveServiceMap({
     }
   }, [userCoords, mapLoaded]);
 
-  // Update Item Markers
+  // Update Item Markers (Job-Style Service-Specific Pins)
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !mapLoaded) return;
@@ -271,20 +364,8 @@ function InteractiveServiceMap({
     items.forEach(item => {
       const isSelected = selectedItem?.id === item.id;
       const el = document.createElement("div");
-      el.className = `cursor-pointer transition-transform duration-200 ${
-        isSelected ? "scale-125 z-30" : "scale-100 hover:scale-110 z-20"
-      }`;
-
-      el.innerHTML = `
-        <div class="px-2.5 py-1 rounded-full text-xs font-bold shadow-md border flex items-center gap-1.5 transition-all ${
-          isSelected
-            ? "bg-[#C04A22] text-white border-[#C04A22] ring-2 ring-[#C04A22]/30"
-            : "bg-white text-slate-800 border-slate-200 hover:border-[#C04A22]"
-        }">
-          <span>📍</span>
-          <span class="max-w-[100px] truncate">${item.title}</span>
-        </div>
-      `;
+      el.className = "bkoi-service-marker";
+      el.innerHTML = createServiceMarkerHtml(item, isSelected);
 
       el.addEventListener("click", () => handleMarkerClick(item));
 
@@ -294,7 +375,7 @@ function InteractiveServiceMap({
 
       markersRef.current.push(marker);
     });
-  }, [items, selectedItem, mapLoaded, handleMarkerClick]);
+  }, [items, selectedItem, mapLoaded, handleMarkerClick, serviceName, themeColor]);
 
   // Fit bounds when search query entered
   useEffect(() => {
@@ -747,7 +828,6 @@ export function ServiceMapDirectory({
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<string>("all");
-  const [catalogTab, setCatalogTab] = useState<"discounted" | "new" | "popular" | "all">("discounted");
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [selectedItem, setSelectedItem] = useState<ServiceListing | null>(null);
   const [directionItem, setDirectionItem] = useState<ServiceListing | null>(null);
@@ -813,18 +893,9 @@ export function ServiceMapDirectory({
         item.subtitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      const matchCategory =
-        activeFilter === "all" ||
-        item.category === activeFilter ||
-        item.type.toLowerCase().includes(activeFilter.toLowerCase());
-
-      const matchCatalog =
-        catalogTab === "all" ||
-        item.tag === catalogTab;
-
-      return matchSearch && matchCategory && matchCatalog;
+      return matchSearch;
     });
-  }, [liveItems, searchQuery, activeFilter, catalogTab]);
+  }, [liveItems, searchQuery]);
 
   const nearbyItems = useMemo(() => {
     return filteredItems.filter(i => i.distanceKm <= 3.0);
@@ -935,14 +1006,15 @@ export function ServiceMapDirectory({
               isScrolled={isScrolled}
               searchQuery={searchQuery}
               themeColor={themeColor}
+              serviceName={serviceName}
             />
           </div>
         </div>
 
         {/* ── MAIN DIRECTORY LISTINGS (3-COLUMN RESPONSIVE GRID) ─────────── */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 relative z-0">
+        <div className="max-w-7xl mx-auto px-0 sm:px-6 pt-3 sm:pt-4 relative z-0">
           {/* Nearby Filter Count */}
-          <div className="grid grid-cols-2 gap-2.5 mb-4 max-w-md">
+          <div className="grid grid-cols-2 gap-2.5 mb-4 max-w-md px-4 sm:px-0">
             <div
               onClick={() => setActiveFilter(activeFilter === "nearby" ? "all" : "nearby")}
               className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
@@ -970,38 +1042,11 @@ export function ServiceMapDirectory({
             </div>
           </div>
 
-          {/* 🌟 CATALOG TABS & VIEW MODE SWITCHER (Horizontal ↔ vs Vertical ↕) */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 mb-4">
-            <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar">
-              {[
-                { id: "discounted", label: "Discounted" },
-                { id: "new", label: "New Arrival" },
-                { id: "popular", label: "Popular" },
-                { id: "all", label: "All Items" },
-              ].map(tab => {
-                const active = catalogTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setCatalogTab(tab.id as any)}
-                    className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all text-center cursor-pointer whitespace-nowrap ${
-                      active
-                        ? "bg-[#C04A22]/15 text-[#8C3015] border border-[#C04A22]/40 shadow-2xs shadow-[#C04A22]/20"
-                        : "bg-slate-100/90 text-slate-700 hover:bg-[#C04A22]/10 hover:text-[#8C3015] border border-transparent"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-
-          </div>
-
           {/* Card Container: Equal Grid across all devices */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 sm:gap-5 items-stretch">
             {(activeFilter === "nearby" ? nearbyItems : filteredItems).map(item => {
               const isSelected = selectedItem?.id === item.id;
+              const isSaved = savedIds.includes(item.id);
 
               return (
                 <div
@@ -1009,54 +1054,117 @@ export function ServiceMapDirectory({
                   data-item-id={item.id}
                   onClick={() => {
                     setSelectedItem(item);
-                    setModalItem(item);
                   }}
-                  className={`group bg-white rounded-2xl border overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between shadow-2xs hover:shadow-md h-full ${
+                  className={`group bg-white rounded-none sm:rounded-3xl border-0 sm:border border-b sm:border-b-slate-200/90 border-slate-100/90 overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between h-full shadow-none sm:shadow-2xs ${
                     isSelected
-                      ? "border-[#C04A22] ring-2 ring-[#C04A22]/20"
-                      : "border-slate-200/90 hover:border-[#C04A22]/40"
+                      ? "sm:border-[#C04A22] sm:ring-2 sm:ring-[#C04A22]/20 sm:shadow-md"
+                      : "sm:border-slate-200/90 sm:hover:border-slate-300 sm:hover:shadow-xs"
                   }`}
                 >
+                  {/* Banner Image with Type & Distance Floating Badges */}
                   <div>
-                    {/* Photo Header with Floating Top-Right Badge (Exact Screenshot Style) */}
-                    <div className="relative w-full h-44 sm:h-48 overflow-hidden bg-slate-100">
+                    <div className="relative w-full h-36 sm:h-40 overflow-hidden bg-slate-100">
                       <img
                         src={item.image}
                         alt={item.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
                       />
-                      <span className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 text-[10px] sm:text-[11px] font-extrabold text-[#8C3015] bg-white/95 backdrop-blur-xs px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-2xs border border-[#C04A22]/20 whitespace-nowrap">
-                        {item.badge || item.primaryHighlight || "FEATURED"}
-                      </span>
+                      <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-white/95 backdrop-blur-md text-slate-800 text-xs font-bold shadow-xs border border-slate-200/60">
+                        {item.badge || item.type || item.primaryHighlight || "Available"}
+                      </div>
+                      <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-medium flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                        {item.distance}
+                      </div>
+                      {/* Top Left: Share & Bookmark Save Buttons */}
+                      <div className="absolute top-3 left-3 flex items-center gap-1.5 z-[2]">
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const url = buildMapShareUrl({
+                              id: item.id,
+                              title: item.title,
+                              lat: item.lat,
+                              lng: item.lng,
+                              category: `${serviceName} (${item.type})`,
+                              address: item.address,
+                              image: item.image,
+                              phone: item.contactPhone,
+                              description: `${item.title} • ${item.primaryHighlight || item.subtitle}`,
+                            });
+                            await shareOrCopy({
+                              title: item.title,
+                              text: `Check out ${item.title} on Pathasathi Map!`,
+                              url,
+                            });
+                          }}
+                          className="w-8 h-8 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-500 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
+                          title="Share on Map"
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            toggleSave(item.id);
+                          }}
+                          className="w-8 h-8 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-500 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
+                          title={isSaved ? "Saved" : "Save"}
+                        >
+                          {isSaved ? (
+                            <BookmarkCheck className="w-4 h-4 text-[#C04A22]" />
+                          ) : (
+                            <Bookmark className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
                     </div>
 
-                    {/* Card Body: Title & 2-line Description */}
-                    <div className="p-3.5 sm:p-4 space-y-1.5">
-                      <h4 className="font-bold text-slate-900 text-sm sm:text-base group-hover:text-[#8C3015] transition-colors leading-snug line-clamp-1">
+                    {/* Card Body Header */}
+                    <div className="p-4 sm:p-5 pb-0">
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug line-clamp-1 group-hover:text-[#C04A22] transition-colors">
                         {item.title}
-                      </h4>
-                      <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                        {item.subtitle || item.overview}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+                        {item.subtitle} • {item.location || item.address}
                       </p>
+
+                      {/* Highlight / Price Pill */}
+                      <div className="mt-3">
+                        <span className="inline-block px-3 py-1.5 rounded-full bg-orange-50/80 text-[#C04A22] text-xs sm:text-sm font-bold border border-orange-100/60">
+                          {item.price || item.primaryHighlight || "Free Aid"}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Card Footer: Price Pill on Left, Explore → on Right */}
-                  <div className="px-3.5 sm:px-4 pb-3.5 sm:pb-4 pt-2.5 border-t border-slate-100 flex items-center justify-between mt-auto">
-                    <span className="text-xs font-extrabold text-[#8C3015] bg-[#C04A22]/10 px-2.5 sm:px-3 py-1 rounded-lg whitespace-nowrap">
-                      {item.price || item.primaryHighlight || "Free Aid"}
-                    </span>
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        setSelectedItem(item);
-                        setModalItem(item);
-                      }}
-                      className="text-xs sm:text-sm font-bold text-[#C04A22] group-hover:text-[#8C3015] flex items-center transition-all cursor-pointer"
-                    >
-                      Explore
-                    </button>
+                  {/* Card Body Footer: Direction & Details Buttons Aligned Equally */}
+                  <div className="p-4 sm:p-5 pt-3">
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleShowDirection(item);
+                        }}
+                        className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                        title="Show direction route from your location"
+                      >
+                        <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
+                        <span>Direction</span>
+                      </button>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          setSelectedItem(item);
+                          setModalItem(item);
+                        }}
+                        className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                      >
+                        <span>Details</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-[#C04A22]" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -1065,13 +1173,12 @@ export function ServiceMapDirectory({
 
           {/* Empty state fallback */}
           {(activeFilter === "nearby" ? nearbyItems : filteredItems).length === 0 && (
-            <div className="text-center py-12 bg-white rounded-2xl border border-slate-200/80 p-6 my-4">
+            <div className="text-center py-12 bg-white rounded-2xl border border-slate-200/80 p-6 my-4 mx-4 sm:mx-0">
               <p className="text-sm font-semibold text-slate-700">
                 No items found for the current selection.
               </p>
               <button
                 onClick={() => {
-                  setCatalogTab("all");
                   setActiveFilter("all");
                   setSearchQuery("");
                 }}

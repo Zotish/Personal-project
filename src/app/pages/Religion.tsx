@@ -170,7 +170,6 @@ function BariKoiLiveReligionMap({
 
     return `
       <div style="position:relative;display:inline-flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.2s ease;">
-        ${isSelected ? '<div style="position:absolute;top:-4px;left:-4px;width:' + (size + 8) + 'px;height:' + (size + 8) + 'px;border-radius:50%;background:rgba(192,74,34,0.3);animation:ping 1.5s cubic-bezier(0,0,0.2,1) infinite;"></div>' : ''}
         <div style="background:${bg};color:white;width:${size}px;height:${size}px;border-radius:50%;border:${isSelected ? '3px' : '2px'} solid #ffffff;box-shadow:${isSelected ? '0 8px 20px rgba(192,74,34,0.55)' : '0 3px 8px rgba(0,0,0,0.25)'};display:flex;align-items:center;justify-content:center;transform:${isSelected ? 'scale(1.1)' : 'scale(1)'};">
           <span style="font-size:${isSelected ? '16px' : '13px'};line-height:1;">${listing.emoji}</span>
         </div>
@@ -851,42 +850,7 @@ export function ReligiousFinder() {
     }
   }, [sharedId, livePlaces]);
 
-  // IntersectionObserver to auto-move map to currently visible religious card (ONLY for Mobile view < 768px)
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth >= 768) {
-      return; // Disable scroll animation on Desktop & Pad/Tablet view!
-    }
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.filter(e => e.isIntersecting);
-        if (visible.length > 0) {
-          const topEntry = visible.reduce((prev, curr) =>
-            curr.boundingClientRect.top < prev.boundingClientRect.top ? curr : prev
-          );
-          const listingId = topEntry.target.getAttribute("data-listing-id");
-          if (listingId && listingId !== selectedPlace?.id) {
-            const target = (activeFilter === "nearby" ? nearbyPlaces : livePlaces).find(j => j.id === listingId) ||
-                           filteredPlaces.find(j => j.id === listingId);
-            if (target) {
-              setSelectedPlace(target);
-            }
-          }
-        }
-      },
-      {
-        root: null,
-        rootMargin: "-15% 0px -45% 0px",
-        threshold: [0.2, 0.5]
-      }
-    );
-
-    cardRefs.current.forEach(el => {
-      if (el) observer.observe(el);
-    });
-
-    return () => observer.disconnect();
-  }, [livePlaces, nearbyPlaces, filteredPlaces, activeFilter, selectedPlace]);
 
   const handleShowDirection = useCallback((listing: LiveReligionListing) => {
     setDirectionPlace(listing);
@@ -1012,9 +976,9 @@ export function ReligiousFinder() {
         </div>
 
         {/* ── MAIN DIRECTORY CONTENT (1-COL MOBILE, 2-COL PAD, 3-COL DESKTOP) ── */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-3 sm:pt-4 relative z-0">
+        <div className="max-w-7xl mx-auto px-0 sm:px-6 pt-3 sm:pt-4 relative z-0">
           {/* Counter Toggle Boxes */}
-          <div className="grid grid-cols-2 gap-2.5 mb-4 max-w-md">
+          <div className="grid grid-cols-2 gap-2.5 mb-4 max-w-md px-4 sm:px-0">
             <div
               onClick={() => setActiveFilter("nearby")}
               className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border text-center transition-all cursor-pointer ${
@@ -1043,7 +1007,7 @@ export function ReligiousFinder() {
           </div>
 
           {/* Equal Grid of Religious Places (1 on mobile, 2 on pad, 3 on desktop) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 sm:gap-5 items-stretch mb-6">
             {(activeFilter === "nearby" ? nearbyPlaces : filteredPlaces).map(place => {
               const isSaved = savedIds.includes(place.id);
               const isSelected = selectedPlace?.id === place.id;
@@ -1057,10 +1021,10 @@ export function ReligiousFinder() {
                     else cardRefs.current.delete(place.id);
                   }}
                   onClick={() => setActiveModalPlace(place)}
-                  className={`group bg-white rounded-3xl border overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between h-full ${
+                  className={`group bg-white rounded-none sm:rounded-3xl border-0 sm:border border-b sm:border-b-slate-200/90 border-slate-100/90 overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between h-full shadow-none sm:shadow-2xs ${
                     isSelected
-                      ? "border-[#C04A22] shadow-md ring-2 ring-[#C04A22]/20"
-                      : "border-slate-200/90 hover:border-[#C04A22]/40 hover:shadow-xs"
+                      ? "sm:border-[#C04A22] sm:shadow-md sm:ring-2 sm:ring-[#C04A22]/20"
+                      : "sm:border-slate-200/90 sm:hover:border-[#C04A22]/40 sm:hover:shadow-xs"
                   }`}
                 >
                   {/* Top: Image & Header Info */}

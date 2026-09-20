@@ -140,7 +140,7 @@ export function ProductCard({
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
+    <div className="bg-white rounded-none sm:rounded-3xl border-0 sm:border border-b sm:border-b-slate-200/80 border-slate-100 shadow-none sm:shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
       
       {/* Top Image Section with Badges */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">

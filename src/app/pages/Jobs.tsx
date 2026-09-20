@@ -220,7 +220,6 @@ function BariKoiLiveJobsMap({
     const size = isSelected ? 38 : 32;
     return `
       <div style="position:relative;display:inline-flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.2s ease;">
-        ${isSelected ? '<div style="position:absolute;top:-4px;left:-4px;width:' + (size + 8) + 'px;height:' + (size + 8) + 'px;border-radius:50%;background:rgba(192,74,34,0.3);animation:ping 1.5s cubic-bezier(0,0,0.2,1) infinite;"></div>' : ''}
         <div style="background:${bg};color:white;width:${size}px;height:${size}px;border-radius:50%;border:${isSelected ? '3px' : '2px'} solid white;box-shadow:${isSelected ? '0 8px 20px rgba(192,74,34,0.5)' : '0 3px 10px rgba(0,0,0,0.25)'};display:flex;align-items:center;justify-content:center;transform:${isSelected ? 'scale(1.1)' : 'scale(1)'};">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
         </div>
@@ -1144,42 +1143,7 @@ export function Jobs() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // IntersectionObserver to auto-sync map with currently visible job card during scroll
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.filter(e => e.isIntersecting);
-        if (visible.length > 0) {
-          // Find card closest to viewport center
-          const viewportMid = window.innerHeight / 2;
-          const centerEntry = visible.reduce((prev, curr) => {
-            const prevMid = prev.boundingClientRect.top + prev.boundingClientRect.height / 2;
-            const currMid = curr.boundingClientRect.top + curr.boundingClientRect.height / 2;
-            return Math.abs(currMid - viewportMid) < Math.abs(prevMid - viewportMid) ? curr : prev;
-          });
-          const jobId = centerEntry.target.getAttribute("data-job-id");
-          if (jobId && jobId !== selectedJob?.id) {
-            const targetJob = (activeFilter === "nearby" ? nearbyJobs : liveJobs).find(j => j.id === jobId) ||
-              filteredJobs.find(j => j.id === jobId);
-            if (targetJob) {
-              setSelectedJob(targetJob);
-            }
-          }
-        }
-      },
-      {
-        root: null,
-        rootMargin: "-10% 0px -25% 0px",
-        threshold: [0.2, 0.5]
-      }
-    );
-
-    cardRefs.current.forEach(el => {
-      if (el) observer.observe(el);
-    });
-
-    return () => observer.disconnect();
-  }, [liveJobs, nearbyJobs, filteredJobs, activeFilter, selectedJob]);  // Request Live GPS Location strictly from device GPS when navigation button is clicked
+  // Request Live GPS Location strictly from device GPS when navigation button is clicked
   const executeGeolocation = useCallback((highAccuracy: boolean = true) => {
     setIsLocating(true);
     if (!("geolocation" in navigator)) {
@@ -1404,9 +1368,9 @@ export function Jobs() {
         </div>
 
         {/* ── MAIN JOB DIRECTORY CONTENT (EQUAL GRID ON ALL DEVICES) ── */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-3 sm:pt-4 relative z-0">
+        <div className="max-w-7xl mx-auto px-0 sm:px-6 pt-3 sm:pt-4 relative z-0">
           {/* Controls Bar: Filter Options */}
-          <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex items-center justify-between gap-3 mb-4 px-4 sm:px-0">
             {/* Filter Option Buttons */}
             <div className="grid grid-cols-2 gap-2.5 max-w-md w-full">
               {/* Left Option: Nearby Me Jobs */}
@@ -1440,7 +1404,7 @@ export function Jobs() {
           </div>
 
           {/* Equal Grid of Job Cards (Consistent positioning & equal heights on both sides) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 sm:gap-5 items-stretch">
             {(activeFilter === "nearby" ? nearbyJobs : filteredJobs).map(job => {
               const isSelected = selectedJob?.id === job.id;
               const isSaved = savedJobIds.includes(job.id);
@@ -1453,10 +1417,10 @@ export function Jobs() {
                     else cardRefs.current.delete(job.id);
                   }}
                   onClick={() => handleSelectJob(job)}
-                  className={`group bg-white rounded-3xl border overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between h-full ${
+                  className={`group bg-white rounded-none sm:rounded-3xl border-0 sm:border border-b sm:border-b-slate-200/90 border-slate-100/90 overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between h-full shadow-none sm:shadow-2xs ${
                     isSelected
-                      ? "border-[#C04A22] ring-2 ring-[#C04A22]/20 shadow-md"
-                      : "border-slate-200/90 hover:border-slate-300 hover:shadow-xs"
+                      ? "sm:border-[#C04A22] sm:ring-2 sm:ring-[#C04A22]/20 sm:shadow-md"
+                      : "sm:border-slate-200/90 sm:hover:border-slate-300 sm:hover:shadow-xs"
                   }`}
                 >
                   {/* Banner Image with Type & Distance Floating Badges */}

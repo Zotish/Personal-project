@@ -593,8 +593,8 @@ export function ServicesHub() {
                 <React.Fragment key={prod.id}>
                   <div
                     onClick={() => setSelectedProduct(prod)}
-                  className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-2xs hover:shadow-md hover:border-[#C04A22]/40 transition-all cursor-pointer flex flex-col justify-between"
-                >
+                    className="group bg-white rounded-none sm:rounded-2xl border-0 sm:border border-b sm:border-b-slate-200/80 border-slate-100/90 overflow-hidden shadow-none sm:shadow-2xs hover:shadow-md hover:border-[#C04A22]/40 transition-all cursor-pointer flex flex-col justify-between"
+                  >
                   <div>
                     {/* Photo Header with Badge Overlay */}
                     <div className="relative w-full h-36 overflow-hidden bg-slate-100">

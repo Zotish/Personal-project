@@ -161,7 +161,6 @@ function BariKoiMissionMap({
     const size = isSelected ? 40 : 34;
     return `
       <div style="position:relative;display:inline-flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.2s ease;">
-        ${isSelected ? '<div style="position:absolute;top:-4px;left:-4px;width:' + (size + 8) + 'px;height:' + (size + 8) + 'px;border-radius:50%;background:rgba(4,120,87,0.3);animation:ping 1.5s cubic-bezier(0,0,0.2,1) infinite;"></div>' : ''}
         <div style="background:${bg};color:white;width:${size}px;height:${size}px;border-radius:50%;border:${isSelected ? '3px' : '2px'} solid #FCD34D;box-shadow:${isSelected ? '0 8px 20px rgba(4,120,87,0.5)' : '0 3px 10px rgba(0,0,0,0.25)'};display:flex;align-items:center;justify-content:center;transform:${isSelected ? 'scale(1.1)' : 'scale(1)'};">
           <span style="font-size:${isSelected ? '18px' : '15px'};line-height:1;">🏛️</span>
         </div>

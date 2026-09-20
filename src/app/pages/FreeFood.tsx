@@ -168,7 +168,6 @@ function BariKoiLiveFoodMap({
     const size = isSelected ? 38 : 32;
     return `
       <div style="position:relative;display:inline-flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.2s ease;">
-        ${isSelected ? '<div style="position:absolute;top:-4px;left:-4px;width:' + (size + 8) + 'px;height:' + (size + 8) + 'px;border-radius:50%;background:rgba(192,74,34,0.3);animation:ping 1.5s cubic-bezier(0,0,0.2,1) infinite;"></div>' : ''}
         <div style="background:${bg};color:white;width:${size}px;height:${size}px;border-radius:50%;border:${isSelected ? '3px' : '2px'} solid white;box-shadow:${isSelected ? '0 8px 20px rgba(192,74,34,0.5)' : '0 3px 10px rgba(0,0,0,0.25)'};display:flex;align-items:center;justify-content:center;transform:${isSelected ? 'scale(1.1)' : 'scale(1)'};">
           <span style="font-size:${isSelected ? '18px' : '15px'};line-height:1;">🍲</span>
         </div>
@@ -1044,9 +1043,9 @@ export function FreeFood() {
         </div>
 
         {/* ── MAIN FOOD DIRECTORY CONTENT (1-COL MOBILE, 2-COL PAD, 3-COL DESKTOP) ── */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-3 sm:pt-4 relative z-0">
+        <div className="max-w-7xl mx-auto px-0 sm:px-6 pt-3 sm:pt-4 relative z-0">
           {/* Toggle Button Header */}
-          <div className="grid grid-cols-2 gap-2.5 mb-4 max-w-md">
+          <div className="grid grid-cols-2 gap-2.5 mb-4 max-w-md px-4 sm:px-0">
             <div
               onClick={() => setActiveFilter("nearby")}
               className={`flex-1 py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border text-center transition-all cursor-pointer active:scale-99 ${
@@ -1075,7 +1074,7 @@ export function FreeFood() {
           </div>
 
           {/* Equal Grid of Food Cards (1 on mobile, 2 on pad, 3 on desktop) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 sm:gap-5 items-stretch">
             {(activeFilter === "nearby" ? nearbyFood : filteredFood).map(listing => {
               const isSelected = selectedListing?.id === listing.id;
               const isSaved = savedIds.includes(listing.id);
@@ -1089,10 +1088,10 @@ export function FreeFood() {
                     else cardRefs.current.delete(listing.id);
                   }}
                   onClick={() => setSelectedListing(listing)}
-                  className={`group bg-white rounded-3xl border overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between h-full ${
+                  className={`group bg-white rounded-none sm:rounded-3xl border-0 sm:border border-b sm:border-b-slate-200/90 border-slate-100/90 overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between h-full shadow-none sm:shadow-2xs ${
                     isSelected
-                      ? "border-[#C04A22] ring-2 ring-[#C04A22]/20 shadow-md"
-                      : "border-slate-200/90 hover:border-slate-300 hover:shadow-xs"
+                      ? "sm:border-[#C04A22] sm:ring-2 sm:ring-[#C04A22]/20 sm:shadow-md"
+                      : "sm:border-slate-200/90 sm:hover:border-slate-300 sm:hover:shadow-xs"
                   }`}
                 >
                   {/* Top: Image & Header Content */}
