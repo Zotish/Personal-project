@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronUp, ChevronDown, Plus, Minus,
   ArrowLeft, ArrowRight, Car, Bike, Footprints,
   ShieldCheck, Loader2, X, Clock, Calendar, Star, Heart,
-  Phone, Globe, CheckCircle2, UserCheck, Utensils
+  Phone, Globe, CheckCircle2, UserCheck, Utensils, Info
 } from "lucide-react";
 import { ServiceListing, formatDistance, getDistanceKm } from "../../data/serviceDirectoryData";
 import type { Map as LeafletMapType } from "leaflet";
@@ -528,20 +528,22 @@ function InteractiveServiceMap({
                     setMarkerClickedItem(null);
                     onShowDirection(markerClickedItem);
                   }}
-                  className="flex-1 px-3 py-2 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                  className="flex-1 py-2.5 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                  title="Direction"
+                  aria-label="Direction"
                 >
-                  <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
-                  <span>Direction</span>
+                  <Navigation className="w-4 h-4 text-[#C04A22]" />
                 </button>
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     onOpenDetails(markerClickedItem);
                   }}
-                  className="flex-1 px-3 py-2 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs font-bold transition flex items-center justify-center gap-1 shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                  className="flex-1 py-2.5 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                  title="Details"
+                  aria-label="Details"
                 >
-                  <span>Details</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-[#C04A22]" />
+                  <Info className="w-4 h-4 text-[#C04A22]" />
                 </button>
               </div>
             </div>
@@ -1160,7 +1162,7 @@ export function ServiceMapDirectory({
                     </div>
                   </div>
 
-                  {/* Card Body Footer: Direction & Details Buttons Aligned Equally */}
+                  {/* Card Body Footer: Direction & Details Buttons (Icon Only) */}
                   <div className="p-4 sm:p-5 pt-3">
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
                       <button
@@ -1168,11 +1170,11 @@ export function ServiceMapDirectory({
                           e.stopPropagation();
                           handleShowDirection(item);
                         }}
-                        className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
-                        title="Show direction route from your location"
+                        className="flex-1 py-2.5 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                        title="Direction"
+                        aria-label="Direction"
                       >
-                        <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
-                        <span>Direction</span>
+                        <Navigation className="w-4 h-4 text-[#C04A22]" />
                       </button>
                       <button
                         onClick={e => {
@@ -1180,10 +1182,11 @@ export function ServiceMapDirectory({
                           setSelectedItem(item);
                           setModalItem(item);
                         }}
-                        className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                        className="flex-1 py-2.5 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                        title="Details"
+                        aria-label="Details"
                       >
-                        <span>Details</span>
-                        <ArrowRight className="w-3.5 h-3.5 text-[#C04A22]" />
+                        <Info className="w-4 h-4 text-[#C04A22]" />
                       </button>
                     </div>
                   </div>

@@ -7,7 +7,7 @@ import {
   Building2, ExternalLink, Sparkles, Filter, ChevronRight,
   ChevronLeft, ChevronUp, ChevronDown, Plus, Minus,
   ArrowLeft, ArrowRight, Car, Bike, Footprints, Briefcase,
-  ShieldCheck, Loader2, X
+  ShieldCheck, Loader2, X, Info
 } from "lucide-react";
 import { LiveJobListing, generateLiveLocationJobs, formatDistance, getDistanceKm, matchJobQuery } from "../data/jobsData";
 import { JobDetailsModal } from "../components/jobs/JobDetailsModal";
@@ -792,7 +792,7 @@ function BariKoiLiveJobsMap({
                 </span>
               </div>
 
-              {/* Action Buttons: Direction & Details */}
+              {/* Action Buttons: Direction & Details (Icon Only) */}
               <div className="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
                 <button
                   onClick={e => {
@@ -800,21 +800,22 @@ function BariKoiLiveJobsMap({
                     setMarkerClickedJob(null);
                     onShowDirection(markerClickedJob);
                   }}
-                  className="flex-1 px-3 py-2 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
-                  title="Show direction route from your location"
+                  className="flex-1 py-2.5 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                  title="Direction"
+                  aria-label="Direction"
                 >
-                  <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
-                  <span>Direction</span>
+                  <Navigation className="w-4 h-4 text-[#C04A22]" />
                 </button>
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     onApplyJob?.(markerClickedJob);
                   }}
-                  className="flex-1 px-3 py-2 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs font-bold transition flex items-center justify-center gap-1 shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                  className="flex-1 py-2.5 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                  title="Details"
+                  aria-label="Details"
                 >
-                  <span>Details</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-[#C04A22]" />
+                  <Info className="w-4 h-4 text-[#C04A22]" />
                 </button>
               </div>
             </div>
@@ -1522,7 +1523,7 @@ export function Jobs() {
                     </div>
                   </div>
 
-                  {/* Card Body Footer: Direction & Details Buttons Aligned Equally */}
+                  {/* Card Body Footer: Direction & Details Buttons (Icon Only) */}
                   <div className="p-4 sm:p-5 pt-3">
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
                       <button
@@ -1530,21 +1531,22 @@ export function Jobs() {
                           e.stopPropagation();
                           handleShowDirection(job);
                         }}
-                        className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
-                        title="Show direction route from your location"
+                        className="flex-1 py-2.5 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                        title="Direction"
+                        aria-label="Direction"
                       >
-                        <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
-                        <span>Direction</span>
+                        <Navigation className="w-4 h-4 text-[#C04A22]" />
                       </button>
                       <button
                         onClick={e => {
                           e.stopPropagation();
                           setShowApplyModal(job);
                         }}
-                        className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                        className="flex-1 py-2.5 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                        title="Details"
+                        aria-label="Details"
                       >
-                        <span>Details</span>
-                        <ArrowRight className="w-3.5 h-3.5 text-[#C04A22]" />
+                        <Info className="w-4 h-4 text-[#C04A22]" />
                       </button>
                     </div>
                   </div>

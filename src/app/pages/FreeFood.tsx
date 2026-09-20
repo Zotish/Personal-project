@@ -7,7 +7,7 @@ import {
   Utensils, ExternalLink, Sparkles, Filter, ChevronRight,
   ChevronLeft, ChevronUp, ChevronDown, Plus, Minus,
   ArrowLeft, ArrowRight, Car, Bike, Footprints,
-  ShieldCheck, Loader2, X, Clock, Calendar, Heart, Phone
+  ShieldCheck, Loader2, X, Clock, Calendar, Heart, Phone, Info
 } from "lucide-react";
 import {
   LiveFoodListing,
@@ -562,7 +562,7 @@ function BariKoiLiveFoodMap({
                 {markerClickedListing.location}
               </p>
 
-              {/* Action Buttons: Direction & Details (Side by Side) */}
+              {/* Action Buttons: Direction & Details (Icon Only) */}
               <div className="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
                 <button
                   onClick={e => {
@@ -570,21 +570,22 @@ function BariKoiLiveFoodMap({
                     setMarkerClickedListing(null);
                     onShowDirection(markerClickedListing);
                   }}
-                  className="flex-1 px-3 py-2 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
-                  title="Show road route from your location"
+                  className="flex-1 py-2.5 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                  title="Direction"
+                  aria-label="Direction"
                 >
-                  <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
-                  <span>Direction</span>
+                  <Navigation className="w-4 h-4 text-[#C04A22]" />
                 </button>
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     onViewDetails?.(markerClickedListing);
                   }}
-                  className="flex-1 px-3 py-2 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs font-bold transition flex items-center justify-center gap-1 shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                  className="flex-1 py-2.5 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                  title="Details"
+                  aria-label="Details"
                 >
-                  <span>Details</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-[#C04A22]" />
+                  <Info className="w-4 h-4 text-[#C04A22]" />
                 </button>
               </div>
             </div>
@@ -1204,7 +1205,7 @@ export function FreeFood() {
                     </div>
                   </div>
 
-                  {/* Bottom: Action Buttons Aligned Equally */}
+                  {/* Bottom: Action Buttons (Icon Only) */}
                   <div className="p-4 sm:p-5 pt-3">
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
                       <button
@@ -1212,11 +1213,11 @@ export function FreeFood() {
                           e.stopPropagation();
                           handleShowDirection(listing);
                         }}
-                        className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
-                        title="Show Road Route to Food Point"
+                        className="flex-1 py-2.5 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                        title="Direction"
+                        aria-label="Direction"
                       >
                         <Navigation className="w-4 h-4 text-[#C04A22]" />
-                        <span>Direction</span>
                       </button>
 
                       <button
@@ -1224,10 +1225,11 @@ export function FreeFood() {
                           e.stopPropagation();
                           setShowDetailsModal(listing);
                         }}
-                        className="flex-1 px-3.5 py-2 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                        className="flex-1 py-2.5 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                        title="Details"
+                        aria-label="Details"
                       >
-                        <span>Details</span>
-                        <ChevronRight className="w-4 h-4 text-[#C04A22]" />
+                        <Info className="w-4 h-4 text-[#C04A22]" />
                       </button>
                     </div>
                   </div>
