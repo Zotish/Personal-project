@@ -1129,18 +1129,39 @@ export function Jobs() {
 
   const nearbyJobs = filteredJobs.filter(j => j.isNearby);
 
-  // Scroll detection for collapsing map height with smooth hysteresis (prevents vibration)
+  // Scroll detection for collapsing map height with transition lock to eliminate jitter
   useEffect(() => {
+    let timeoutId: any = null;
+    let isTransitioning = false;
+
     const handleScroll = () => {
+      if (isTransitioning) return;
       const y = window.scrollY;
       setIsScrolled(prev => {
-        if (!prev && y > 100) return true;
-        if (prev && y < 40) return false;
+        if (!prev && y > 100) {
+          isTransitioning = true;
+          clearTimeout(timeoutId);
+          timeoutId = setTimeout(() => {
+            isTransitioning = false;
+          }, 350);
+          return true;
+        }
+        if (prev && y < 30) {
+          isTransitioning = true;
+          clearTimeout(timeoutId);
+          timeoutId = setTimeout(() => {
+            isTransitioning = false;
+          }, 350);
+          return false;
+        }
         return prev;
       });
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   // Request Live GPS Location strictly from device GPS when navigation button is clicked
@@ -1337,8 +1358,8 @@ export function Jobs() {
         </div>
 
         {/* ── BARIKOI LIVE MAP (EXPANDED / COMPACT STICKY HEIGHT) ────── */}
-        <div id="jobs-map-section" className={`w-full max-w-7xl mx-auto px-2 sm:px-4 transition-all duration-300 relative z-20 ${
-          isScrolled ? "sticky top-[86px] sm:top-[90px] md:top-[90px] lg:top-[90px] pt-0 bg-[#FAFAFA]" : "pt-2 sm:pt-3"
+        <div id="jobs-map-section" className={`w-full max-w-7xl mx-auto px-2 sm:px-4 sticky top-[86px] sm:top-[90px] md:top-[90px] lg:top-[90px] z-20 transition-all duration-300 ${
+          isScrolled ? "pt-0 pb-3.5 sm:pb-4 bg-[#FAFAFA]" : "pt-2 sm:pt-3 pb-0 bg-[#FAFAFA]"
         }`}>
           <div className="rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm bg-white">
             <BariKoiLiveJobsMap

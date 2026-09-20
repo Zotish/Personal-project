@@ -1,3 +1,7 @@
+html, body {
+  overflow-anchor: none;
+}
+
 :root {
   --font-size: 16px;
   --background: #f0f4ff;
