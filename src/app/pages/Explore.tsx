@@ -314,7 +314,7 @@ export function Explore() {
                   return (
                     <React.Fragment key={post.id}>
                       <article
-                        className="bg-white rounded-2xl border border-slate-200/90 p-3.5 sm:p-4 transition-all hover:shadow-sm cursor-pointer"
+                        className="bg-white rounded-none sm:rounded-2xl border-0 sm:border border-b border-slate-100/90 sm:border-slate-200/90 px-4 py-3.5 sm:p-4 transition-all hover:shadow-sm cursor-pointer"
                       >
                         {/* Top Row: Author Avatar + Name & Info (Vertically Centered) */}
                         <div className="flex items-center justify-between">
@@ -351,11 +351,11 @@ export function Explore() {
 
                         {/* Post Image Attachment */}
                         {post.image && (
-                          <div className="mt-3 rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-100">
+                          <div className="mt-3 -mx-4 sm:mx-0 rounded-none sm:rounded-2xl overflow-hidden border-y sm:border border-slate-200/80 bg-slate-100">
                             <img
                               src={post.image}
                               alt="Post attachment"
-                              className="w-full max-h-64 sm:max-h-72 object-cover hover:scale-[1.01] transition-transform duration-300"
+                              className="w-full max-h-72 sm:max-h-80 object-cover hover:scale-[1.01] transition-transform duration-300"
                             />
                           </div>
                         )}

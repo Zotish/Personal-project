@@ -31,7 +31,7 @@ export function SponsoredAdCard({ ad, variant = "feed" }: SponsoredAdCardProps) 
     return (
       <div
         onClick={() => handleAction()}
-        className="bg-white rounded-2xl border border-amber-200/70 hover:border-amber-300 shadow-2xs hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col cursor-pointer group relative"
+        className="bg-white rounded-none sm:rounded-2xl border-0 sm:border border-b border-amber-200/70 hover:border-amber-300 shadow-none sm:shadow-2xs hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col cursor-pointer group relative"
       >
         {/* Top Tag */}
         <div className="absolute top-2.5 left-2.5 z-10">
@@ -93,7 +93,7 @@ export function SponsoredAdCard({ ad, variant = "feed" }: SponsoredAdCardProps) 
 
   // ── Default Feed Variant (Native Post Style) ──
   return (
-    <article className="bg-gradient-to-b from-amber-50/20 via-white to-white rounded-2xl border border-amber-200/80 hover:border-amber-300 shadow-2xs hover:shadow-sm transition-all duration-200 overflow-hidden relative group">
+    <article className="bg-gradient-to-b from-amber-50/20 via-white to-white rounded-none sm:rounded-2xl border-0 sm:border border-b border-amber-200/80 hover:border-amber-300 shadow-none sm:shadow-2xs hover:shadow-sm transition-all duration-200 overflow-hidden relative group">
       {/* Top Sponsored Identifier Bar */}
       <div className="px-4 pt-3 pb-1 flex items-center justify-between border-b border-amber-100/60 bg-amber-50/40">
         <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-800">
@@ -175,7 +175,7 @@ export function SponsoredAdCard({ ad, variant = "feed" }: SponsoredAdCardProps) 
         {ad.mediaUrl && (
           <div
             onClick={handleAction}
-            className="rounded-2xl overflow-hidden border border-slate-200 cursor-pointer relative group/img max-h-72 bg-slate-100"
+            className="-mx-4 sm:mx-0 rounded-none sm:rounded-2xl overflow-hidden border-y sm:border border-slate-200 cursor-pointer relative group/img max-h-72 bg-slate-100"
           >
             <img
               src={ad.mediaUrl}

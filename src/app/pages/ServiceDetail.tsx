@@ -361,7 +361,7 @@ function PostCard({ post }: { post: Post; key?: string | number }) {
 
   return (
     <div
-      className={`border rounded-2xl p-4 ${typeBg[post.type] ?? "bg-white border-border"} cursor-pointer hover:shadow-sm transition-all`}
+      className={`border-0 sm:border border-b border-slate-100/90 sm:border-border rounded-none sm:rounded-2xl px-4 py-3.5 sm:p-4 ${typeBg[post.type] ?? "bg-white"} cursor-pointer hover:shadow-sm transition-all`}
       onClick={() => navigate("/post/1")}
     >
       {typeLabel[post.type]}

@@ -770,7 +770,7 @@ function PostCard({ post }: { post: Post; key?: string | number }) {
 
   return (
     <div
-      className={`border rounded-2xl p-3.5 sm:p-4 ${typeColors[post.type] ?? "bg-white border-border"} transition-all hover:shadow-sm cursor-pointer`}
+      className={`border-0 sm:border border-b border-slate-100/90 sm:border-border rounded-none sm:rounded-2xl px-4 py-3.5 sm:p-4 ${typeColors[post.type] ?? "bg-white"} transition-all hover:shadow-sm cursor-pointer`}
       onClick={() => navigate("/post/1")}
     >
       {/* Pinned badge */}
@@ -828,22 +828,22 @@ function PostCard({ post }: { post: Post; key?: string | number }) {
 
       {/* Attached image */}
       {post.image && (
-        <div className="mt-3 rounded-2xl overflow-hidden border border-border/50 bg-muted">
+        <div className="mt-3 -mx-4 sm:mx-0 rounded-none sm:rounded-2xl overflow-hidden border-y sm:border border-border/50 bg-muted">
           <img
             src={post.image}
             alt="Post attachment"
-            className="w-full object-cover max-h-64 sm:max-h-72 hover:scale-[1.02] transition-transform duration-300"
+            className="w-full object-cover max-h-72 sm:max-h-80 hover:scale-[1.02] transition-transform duration-300"
           />
         </div>
       )}
 
       {/* Attached video */}
       {post.video && (
-        <div className="mt-3 rounded-2xl overflow-hidden border border-border/50 bg-slate-950">
+        <div className="mt-3 -mx-4 sm:mx-0 rounded-none sm:rounded-2xl overflow-hidden border-y sm:border border-border/50 bg-slate-950">
           <video
             src={post.video}
             controls
-            className="w-full object-cover max-h-64 sm:max-h-80"
+            className="w-full object-cover max-h-72 sm:max-h-80"
           />
         </div>
       )}
@@ -2083,11 +2083,11 @@ export function HomeFeed() {
           </div>
         )}
 
-        <div className="px-3 sm:px-3 md:px-4 py-3 sm:py-4 space-y-3 sm:space-y-4 w-full">
+        <div className="px-0 sm:px-3 md:px-4 py-0 sm:py-4 space-y-2 sm:space-y-4 w-full">
           {selectedDate ? (
             <>
               {/* Date filter header */}
-              <div className="flex items-center justify-between bg-white rounded-2xl border border-border px-3 sm:px-4 py-3 shadow-2xs">
+              <div className="flex items-center justify-between bg-white rounded-2xl border border-border px-3 sm:px-4 py-3 shadow-2xs mx-3 sm:mx-0 mt-3 sm:mt-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -2124,7 +2124,7 @@ export function HomeFeed() {
               {hasEvents ? (
                 selectedEvents.map(event => <EventCard key={event.id} event={event} />)
               ) : (
-                <div className="bg-white rounded-2xl border border-border p-8 sm:p-10 text-center shadow-2xs">
+                <div className="bg-white rounded-2xl border border-border p-8 sm:p-10 text-center shadow-2xs mx-3 sm:mx-0">
                   <div className="text-4xl mb-3">📅</div>
                   <div className="text-base font-bold text-foreground mb-1">{t("cal_no_events")}</div>
                   <div className="text-sm text-muted-foreground mb-4">{t("cal_no_events_hint")}</div>
@@ -2145,7 +2145,9 @@ export function HomeFeed() {
           ) : (
             <>
               {/* ── Compact Live Map (Between Top Bar & Post Box) ── */}
-              <MapDiscoveryContent compact={true} height="h-[230px] sm:h-[250px]" />
+              <div className="px-3 sm:px-0 pt-2.5 sm:pt-0">
+                <MapDiscoveryContent compact={true} height="h-[230px] sm:h-[250px]" />
+              </div>
 
               {/* ── Post Creation Box ── */}
               {isPostBoxOpen && (
@@ -2186,7 +2188,7 @@ export function HomeFeed() {
 
               {/* Local: location note */}
               {activeTab === "local" && feedContent.length === 0 && (
-                <div className="bg-white rounded-2xl border border-border p-8 sm:p-10 text-center">
+                <div className="bg-white rounded-2xl border border-border p-8 sm:p-10 text-center mx-3 sm:mx-0">
                   <Globe className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-30" />
                   <p className="font-semibold text-foreground mb-1">{t("empty_local")}</p>
                   <p className="text-sm text-muted-foreground">{t("empty_local_sub")}</p>
@@ -2206,7 +2208,7 @@ export function HomeFeed() {
 
                   {/* Who to Follow — injected after 2nd post, mobile only */}
                   {idx === 1 && (
-                    <div className="xl:hidden bg-white rounded-2xl border border-border p-4">
+                    <div className="xl:hidden bg-white rounded-none sm:rounded-2xl border-0 sm:border border-b border-slate-100/90 sm:border-border p-4 shadow-none sm:shadow-2xs">
                       <div className="flex items-center gap-2 mb-3">
                         <Users className="w-4 h-4 text-slate-600" />
                         <h3 className="font-semibold text-sm text-foreground">{t("widget_who_to_follow")}</h3>
@@ -2253,7 +2255,7 @@ export function HomeFeed() {
 
                   {/* Near You — injected after 4th post, mobile only */}
                   {idx === 3 && (
-                    <div className="xl:hidden bg-white rounded-2xl border border-border p-4 group cursor-pointer">
+                    <div className="xl:hidden bg-white rounded-none sm:rounded-2xl border-0 sm:border border-b border-slate-100/90 sm:border-border p-4 group cursor-pointer shadow-none sm:shadow-2xs">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4 text-slate-600 group-hover:text-[#8C3015] transition-colors" />

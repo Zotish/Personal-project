@@ -429,10 +429,10 @@ export function ServicesHub() {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto space-y-4 pb-12 pt-2 sm:pt-5 px-3 sm:px-0">
+      <div className="max-w-4xl mx-auto space-y-4 pb-12 pt-2 sm:pt-5 px-0 sm:px-0">
 
         {/* QUICK SEARCH BAR + MAP LAUNCHER BUTTON */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 px-3 sm:px-0">
           <div className="relative flex-1">
             <Search className="w-4.5 h-4.5 text-slate-400 absolute left-4 top-4" />
             <input
@@ -466,7 +466,7 @@ export function ServicesHub() {
         </div>
 
         {/* 🌟 MASTER SERVICES SWIPE CAROUSEL (8 ITEMS ON MOBILE, 10 ON DESKTOP) */}
-        <div ref={servicesContainerRef} className="bg-white rounded-3xl border border-border p-4 sm:p-6 shadow-2xs">
+        <div ref={servicesContainerRef} className="bg-white rounded-none sm:rounded-3xl border-0 sm:border border-b border-slate-100/90 sm:border-border p-4 sm:p-6 shadow-none sm:shadow-2xs">
 
           <div
             ref={servicesScrollRef}
@@ -559,11 +559,11 @@ export function ServicesHub() {
 
 
         {/* 🌟 FEATURED SERVICES & PRODUCTS CATALOG WITH INTERACTIVE FILTER TABS */}
-        <div className="bg-white rounded-3xl border border-border p-4 sm:p-6 shadow-2xs space-y-4">
+        <div className="bg-white rounded-none sm:rounded-3xl border-0 sm:border border-b border-slate-100/90 sm:border-border p-0 sm:p-6 shadow-none sm:shadow-2xs space-y-4">
 
           
           {/* FILTER TABS HEADER (EQUAL DISTANCE 3 BUTTONS - NO ICONS) */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full pb-3 border-b border-slate-100">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full pb-3 border-b border-slate-100 px-3.5 sm:px-0 pt-3.5 sm:pt-0">
             {[
               { id: "discounted", label: "Discounted" },
               { id: "new", label: "New Arrival" },
@@ -588,7 +588,7 @@ export function ServicesHub() {
 
           {/* PRODUCT CARDS: MOBILE = 1 CARD PER ROW (VERTICAL LIST, NO HORIZONTAL SCROLL), DESKTOP = SWIPE CAROUSEL */}
           {isMobile ? (
-            <div className="space-y-3.5 pt-1">
+            <div className="space-y-3 sm:space-y-3.5 pt-0 sm:pt-1">
               {activeTabProducts.map((prod, idx) => (
                 <React.Fragment key={prod.id}>
                   <div
@@ -597,7 +597,7 @@ export function ServicesHub() {
                   >
                   <div>
                     {/* Photo Header with Badge Overlay */}
-                    <div className="relative w-full h-36 overflow-hidden bg-slate-100">
+                    <div className="relative w-full h-44 sm:h-36 overflow-hidden bg-slate-100">
                       <img
                         src={prod.image}
                         alt={prod.title}
@@ -620,7 +620,7 @@ export function ServicesHub() {
                   </div>
 
                   {/* Card Footer */}
-                  <div className="px-3.5 pb-3.5 pt-2 border-t border-slate-100 flex items-center justify-between mt-1">
+                  <div className="px-4 sm:px-3.5 pb-4 sm:pb-3.5 pt-2 border-t border-slate-100 flex items-center justify-between mt-1">
                     <span className="text-xs font-extrabold text-[#8C3015] bg-[#C04A22]/10 px-2.5 py-0.5 rounded-lg whitespace-nowrap">
                       {prod.price}
                     </span>
@@ -637,7 +637,7 @@ export function ServicesHub() {
                 </div>
 
                   {(idx + 1) % 3 === 0 && (
-                    <div className="my-2 animate-in fade-in">
+                    <div className="my-0 sm:my-2 animate-in fade-in">
                       <SponsoredFeedAd slotIndex={Math.floor(idx / 3)} placement="services" variant="card" />
                     </div>
                   )}

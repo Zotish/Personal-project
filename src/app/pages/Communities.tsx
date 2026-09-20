@@ -181,7 +181,7 @@ function CommunityDetail({ community, onBack }: { community: typeof allCommuniti
 
           {communityPostsData.map((post, idx) => (
             <React.Fragment key={post.id}>
-              <div className={`rounded-2xl border p-4 ${typeBg[post.type]}`}>
+              <div className={`rounded-none sm:rounded-2xl border-0 sm:border border-b border-slate-100/90 sm:border-border px-4 py-3.5 sm:p-4 ${typeBg[post.type]}`}>
               {post.pinned && (
                 <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-2 uppercase tracking-wide">
                   <Pin className="w-3 h-3" /> Pinned post
