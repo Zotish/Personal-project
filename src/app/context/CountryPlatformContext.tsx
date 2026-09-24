@@ -336,7 +336,7 @@ export function CountryPlatformProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(STORAGE_ACTIVE_COUNTRY_KEY, "US");
         setCurrentCountryCode("US");
       }
-    } catch (_) {}
+    } catch (_) { }
   }, []);
 
   useEffect(() => {
@@ -435,7 +435,7 @@ export function CountryPlatformProvider({ children }: { children: ReactNode }) {
   };
 
   const getCountryLaunchUrl = (code: string) => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:5173";
+    const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:5174";
     const country = countries.find(c => c.code.toLowerCase() === code.toLowerCase());
     const langCode = country?.primaryLanguage?.code ? country.primaryLanguage.code.toLowerCase() : "en";
     return `${origin}/feed?country=${code.toLowerCase()}&lang=${langCode}`;

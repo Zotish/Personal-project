@@ -277,6 +277,9 @@ interface MobileTabContextType {
   removePageFromRecents: (path?: string) => void;
   togglePageInRecents: (path?: string) => boolean;
   showToast: (msg: string) => void;
+  isTabMenuOpen: boolean;
+  setIsTabMenuOpen: (open: boolean) => void;
+  toggleTabMenu: () => void;
 }
 
 const MobileTabContext = createContext<MobileTabContextType | null>(null);
@@ -321,7 +324,12 @@ export function MobileTabProvider({ children }: { children: ReactNode }) {
   });
 
   const [isRecentsOpen, setIsRecentsOpen] = useState(false);
+  const [isTabMenuOpen, setIsTabMenuOpen] = useState(false);
   const [activeTaskToast, setActiveTaskToast] = useState<string | null>(null);
+
+  const toggleTabMenu = useCallback(() => {
+    setIsTabMenuOpen(prev => !prev);
+  }, []);
 
   // Sync tasks to localStorage
   useEffect(() => {
@@ -330,8 +338,7 @@ export function MobileTabProvider({ children }: { children: ReactNode }) {
     } catch (_) {}
   }, [tasks]);
 
-  // Track location changes: only update activeTaskId if route ALREADY exists in tasks.
-  // NEVER auto-add routes (user manually customizes recents via bubble)
+  // Track location changes: update activeTaskId if route ALREADY exists
   useEffect(() => {
     setTasks(prev => {
       const existing = prev.find(t => t.path === location.pathname);
@@ -395,7 +402,7 @@ export function MobileTabProvider({ children }: { children: ReactNode }) {
         updated.shift();
       }
       setActiveTaskId(newTask.id);
-      showToast(`✅ Added to Recent: ${meta.title}`);
+      showToast(`✅ Added to Tab: ${meta.title}`);
       return updated;
     });
   }, [location.pathname, showToast]);
@@ -406,7 +413,7 @@ export function MobileTabProvider({ children }: { children: ReactNode }) {
     setTasks(prev => {
       const match = prev.find(t => t.path === targetPath);
       if (!match) return prev;
-      showToast(`Removed from Recents: ${match.title}`);
+      showToast(`🗑️ Removed from Tab: ${match.title}`);
       const filtered = prev.filter(t => t.path !== targetPath);
       if (activeTaskId === match.id) {
         const next = filtered[filtered.length - 1];
@@ -515,6 +522,9 @@ export function MobileTabProvider({ children }: { children: ReactNode }) {
         removePageFromRecents,
         togglePageInRecents,
         showToast,
+        isTabMenuOpen,
+        setIsTabMenuOpen,
+        toggleTabMenu,
       }}
     >
       {children}

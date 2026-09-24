@@ -1,18 +1,19 @@
 import React, { useState } from "react";
 import { useLocation } from "react-router";
 import { useMobileTabs } from "../../context/MobileTabContext";
-import { Plus, Check, Layers, Sparkles } from "lucide-react";
+import { Plus, Minus } from "lucide-react";
 
 export function FloatingTabPinButton() {
   const location = useLocation();
-  const { isRecentsOpen, isCurrentPageInRecents, addPageToRecents, togglePageInRecents } = useMobileTabs();
+  const { isRecentsOpen, isTabMenuOpen, isCurrentPageInRecents, togglePageInRecents } = useMobileTabs();
   const [clickedEffect, setClickedEffect] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
 
-  // Exclude pages that shouldn't be added to tabs
+  // Hide button when Tab menu is open (user clicked Tab) or Recents is open, or on auth pages
   const path = location.pathname;
   if (
     isRecentsOpen ||
+    isTabMenuOpen ||
     path === "/" ||
     path === "/landing" ||
     path === "/login" ||
@@ -26,7 +27,7 @@ export function FloatingTabPinButton() {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setClickedEffect(true);
-    setTimeout(() => setClickedEffect(false), 600);
+    setTimeout(() => setClickedEffect(false), 300);
     togglePageInRecents();
   };
 
@@ -38,41 +39,40 @@ export function FloatingTabPinButton() {
     >
       {/* ── Hover / Tap Tooltip ── */}
       <div
-        className={`absolute right-full mr-2 top-3 px-2 py-0.5 rounded-lg bg-slate-900/90 text-white text-[10px] font-semibold backdrop-blur-md shadow-lg border border-white/15 whitespace-nowrap transition-all duration-200 pointer-events-none flex items-center gap-1 ${
+        className={`absolute right-full mr-2 top-3 px-2 py-0.5 rounded-lg bg-slate-900/90 text-white text-[10px] font-semibold backdrop-blur-md shadow-lg border border-white/15 whitespace-nowrap transition-all duration-200 pointer-events-none flex items-center gap-1.5 ${
           showTooltip ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2"
         }`}
       >
         {isCurrentPageInRecents ? (
           <>
-            <Check className="w-2.5 h-2.5 text-emerald-400" />
-            <span>Saved in Tab</span>
+            <Minus className="w-2.5 h-2.5 text-red-400 stroke-[3]" />
+            <span>Remove from Tab (-)</span>
           </>
         ) : (
           <>
-            <Sparkles className="w-2.5 h-2.5 text-amber-400 animate-spin" />
-            <span>Add to Tab</span>
+            <Plus className="w-2.5 h-2.5 text-[#C04A22] stroke-[3]" />
+            <span>Add to Tab (+)</span>
           </>
         )}
       </div>
 
-      {/* ── Corner Notch Button (+ icon with color on left and bottom half, no animation) ── */}
+      {/* ── Corner Notch Button: (-) if in tablist, (+) if not in tablist ── */}
       <button
         onClick={handleClick}
-        aria-label={isCurrentPageInRecents ? "Page saved in Tab" : "Add current page to Tab"}
-        className={`relative w-5 h-5 sm:w-5.5 sm:h-5.5 rounded-bl-xl rounded-tl-none rounded-tr-none rounded-br-none flex items-center justify-center pl-0.5 pb-0.5 transition-all duration-300 cursor-pointer active:scale-90 border-b border-l ${
-          clickedEffect ? "scale-115" : "hover:scale-110"
+        aria-label={isCurrentPageInRecents ? "Remove current page from Tab" : "Add current page to Tab"}
+        className={`relative w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-bl-xl rounded-tl-none rounded-tr-none rounded-br-none flex items-center justify-center pl-0.5 pb-0.5 transition-all duration-200 cursor-pointer active:scale-90 border-b border-l ${
+          clickedEffect ? "scale-115" : "hover:scale-105"
         } ${
           isCurrentPageInRecents
-            ? "border-emerald-500/60 bg-gradient-to-tr from-emerald-500/25 via-emerald-500/10 to-transparent"
+            ? "border-red-500/60 bg-gradient-to-tr from-red-500/25 via-red-500/10 to-transparent"
             : "border-[#C04A22]/60 bg-gradient-to-tr from-[#C04A22]/30 via-[#C04A22]/10 to-transparent"
         }`}
       >
-        {/* Crisp + Icon / Checkmark */}
         <div className="relative flex items-center justify-center z-10">
           {isCurrentPageInRecents ? (
-            <Check className="w-3 h-3 stroke-[3] text-emerald-600 animate-in zoom-in-75 duration-200" />
+            <Minus className="w-3 h-3 stroke-[3] text-red-600 animate-in zoom-in-75 duration-200" />
           ) : (
-            <Plus className="w-3 h-3 stroke-[3] text-[#C04A22]" />
+            <Plus className="w-3 h-3 stroke-[3] text-[#C04A22] animate-in zoom-in-75 duration-200" />
           )}
         </div>
       </button>

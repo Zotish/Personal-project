@@ -4,7 +4,7 @@ import {
   Home, Search, Map, Briefcase, Clapperboard, MoreHorizontal,
   Users, MessageCircle, Bell, User, Settings, Bookmark,
   HelpCircle, Shield, X, ShoppingBag, Store, ArrowLeftRight,
-  PlusCircle, Check
+  PlusCircle, Check, Plus, Minus, ArrowRight
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useMobileTabs } from "../../context/MobileTabContext";
@@ -34,7 +34,15 @@ export function MobileNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
-  const { tasks, setIsRecentsOpen } = useMobileTabs();
+  const {
+    tasks,
+    setIsRecentsOpen,
+    isTabMenuOpen,
+    setIsTabMenuOpen,
+    toggleTabMenu,
+    isCurrentPageInRecents,
+    togglePageInRecents,
+  } = useMobileTabs();
   const {
     hasSellerAccount,
     sellerProfile,
@@ -70,8 +78,8 @@ export function MobileNav() {
 
           const diff = currentY - lastScrollY.current;
 
-          // If scrolled down by more than 5px, instantly hide bottom bar
-          if (diff > 5) {
+          // If scrolled down by more than 5px, hide bottom bar only if tab menu is not open
+          if (diff > 5 && !isTabMenuOpen) {
             setIsVisible(false);
             setShowMore(false);
           } else if (diff < -5) {
@@ -235,6 +243,8 @@ export function MobileNav() {
         </div>
       )}
 
+
+
       {/* Bottom nav bar */}
       <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-border safe-area-pb shadow-sm transition-all duration-250 ease-out ${
         isVisible ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
@@ -255,22 +265,74 @@ export function MobileNav() {
             );
           })}
 
-          {/* Android Multi-Task Switcher Button (In place of Reels) */}
-          <button
-            onClick={() => setIsRecentsOpen(true)}
-            className="flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-xl transition-all min-w-0 relative group text-slate-600 hover:text-[#8C3015]"
-            title="Android Recent Apps Switcher"
-          >
-            <div className="p-1.5 rounded-xl transition-all relative">
-              <div className="w-5 h-5 rounded-[5px] border-2 border-slate-700 group-hover:border-[#8C3015] flex items-center justify-center font-black text-[10px] text-slate-800 group-hover:text-[#8C3015] transition">
-                {tasks.length}
+          {/* Android Multi-Task Switcher Button with Dual-Action Popup (+/- and Go) */}
+          <div className="relative">
+            {/* ── Two Popups on Two Sides: [ +/- ] on Left, [ Go ] on Right (per user sketch) ── */}
+            {isTabMenuOpen && (
+              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-[65] flex flex-col items-center select-none animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-150 pointer-events-auto">
+                {/* Two Action Buttons Side-by-Side: Both styled in Tab button's soft tint/shadow color */}
+                <div className="flex items-center gap-3">
+                  {/* Left Popup: [ + ] or [ - ] */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      togglePageInRecents();
+                    }}
+                    className="flex items-center justify-center w-11 h-10 rounded-2xl shadow-md font-black transition-all active:scale-90 cursor-pointer border-2 bg-[#C04A22]/15 hover:bg-[#C04A22]/25 text-[#8C3015] border-[#C04A22]/30 shadow-[#C04A22]/15"
+                    title={isCurrentPageInRecents ? "Remove current page from Tab (-)" : "Add current page to Tab (+)"}
+                  >
+                    {isCurrentPageInRecents ? (
+                      <Minus className="w-5 h-5 stroke-[3] text-[#8C3015]" />
+                    ) : (
+                      <Plus className="w-5 h-5 stroke-[3] text-[#8C3015]" />
+                    )}
+                  </button>
+
+                  {/* Right Popup: Just Arrow, exact same tab tint/shadow color */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsTabMenuOpen(false);
+                      setIsRecentsOpen(true);
+                    }}
+                    className="flex items-center justify-center w-11 h-10 rounded-2xl shadow-md font-black transition-all active:scale-90 cursor-pointer border-2 bg-[#C04A22]/15 hover:bg-[#C04A22]/25 text-[#8C3015] border-[#C04A22]/30 shadow-[#C04A22]/15"
+                    title="Open Tabs"
+                  >
+                    <ArrowRight className="w-5 h-5 stroke-[3] text-[#8C3015]" />
+                  </button>
+                </div>
+
+                {/* Stems connecting to the Tab button below */}
+                <svg className="w-16 h-3 text-[#C04A22]/40 -mt-0.5 overflow-visible pointer-events-none" viewBox="0 0 64 12" fill="none">
+                  <path d="M 18 0 Q 24 8 32 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M 46 0 Q 40 8 32 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
               </div>
-              {tasks.length > 1 && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              )}
-            </div>
-            <span className="text-[10px] font-medium leading-none">Tab</span>
-          </button>
+            )}
+
+            {/* Tab Trigger Button */}
+            <button
+              onClick={toggleTabMenu}
+              className={`flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-xl transition-all min-w-0 relative group ${
+                isTabMenuOpen ? "text-[#8C3015] font-semibold bg-[#C04A22]/15 shadow-inner" : "text-slate-600 hover:text-[#8C3015]"
+              }`}
+              title="Tab Manager"
+            >
+              <div className="p-1.5 rounded-xl transition-all relative">
+                <div className={`w-5 h-5 rounded-[5px] border-2 ${
+                  isTabMenuOpen ? "border-[#8C3015] bg-[#C04A22]/10" : "border-slate-700 group-hover:border-[#8C3015]"
+                } flex items-center justify-center font-black text-[10px] text-slate-800 group-hover:text-[#8C3015] transition`}>
+                  {tasks.length}
+                </div>
+                {tasks.length > 1 && (
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                )}
+              </div>
+              <span className="text-[10px] font-medium leading-none">Tab</span>
+            </button>
+          </div>
 
           {/* Reels Button (In place of Recents) */}
           <button

@@ -3,7 +3,7 @@ import { useMobileTabs, AndroidAppTask } from "../../context/MobileTabContext";
 import {
   X, ChevronDown, Trash2, Navigation, Briefcase, Home,
   Utensils, Scale, MessageCircle, ShoppingBag, Clapperboard,
-  MapPin, Check, Plus, Shield, Search, ArrowLeft, Building2,
+  MapPin, Check, Plus, Minus, Shield, Search, ArrowLeft, Building2,
   HeartHandshake, GraduationCap, Heart, Star, Users, HelpCircle,
   Bookmark, Settings, Lock, Package, Truck, Play, Flame, CheckCircle2,
   Sparkles, UserCheck, Bell, User, MessageSquare, Repeat2, Share2,
@@ -20,8 +20,6 @@ export function AndroidRecentAppsSwitcher() {
     switchTask,
     closeTask,
     clearAllTasks,
-    isCurrentPageInRecents,
-    addPageToRecents,
     activeTaskToast,
   } = useMobileTabs();
 
@@ -604,8 +602,8 @@ export function AndroidRecentAppsSwitcher() {
 
   return (
     <div className="lg:hidden fixed inset-0 z-[999999] isolate flex flex-col justify-between overflow-hidden select-none animate-in fade-in duration-200">
-      {/* ── Minimal soft overlay so the background has NO heavy shadow ── */}
-      <div className="absolute inset-0 bg-black/5 backdrop-blur-[2px]" />
+      {/* ── Soft clean overlay without blur ── */}
+      <div className="absolute inset-0 bg-black/10" />
 
       {/* ── Toast Alert inside Recents Switcher ── */}
       {activeTaskToast && (
@@ -616,10 +614,10 @@ export function AndroidRecentAppsSwitcher() {
       )}
 
       {/* ── Top Header Bar ── */}
-      <div className="relative z-10 w-full px-5 pt-4 pb-2 flex items-center justify-between safe-area-pt">
+      <div className="relative z-10 w-full px-5 pt-4 pb-1 flex items-center justify-between safe-area-pt">
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-800 font-bold bg-white/90 border border-slate-200/80 px-3 py-1 rounded-full shadow-xs tracking-tight">
-            {tasks.length} active
+            {tasks.length} active tab{tasks.length !== 1 ? "s" : ""}
           </span>
         </div>
 
@@ -631,7 +629,7 @@ export function AndroidRecentAppsSwitcher() {
         </button>
       </div>
 
-      {/* ── Android 3D Horizontal Card Stack Carousel (Vivo Style) ── */}
+      {/* ── Android 3D Horizontal Card Stack Carousel (Vivo Style) - tab list ── */}
       <div className="relative z-10 flex-1 flex items-center overflow-x-auto no-scrollbar snap-x snap-mandatory px-6 sm:px-10 gap-5 py-4 min-h-0">
         {tasks.length === 0 ? (
           <div className="w-full flex flex-col items-center justify-center text-center py-16 px-6">
@@ -640,7 +638,7 @@ export function AndroidRecentAppsSwitcher() {
             </div>
             <h3 className="text-sm font-bold text-slate-800">No Recent Tabs Saved</h3>
             <p className="text-xs text-slate-500 max-w-xs mt-1 leading-relaxed">
-              Tap the floating animated Tab button on any page corner to add and save it here.
+              Tap the Tab button on the bottom bar to open the (+) / (-) menu and add tabs here.
             </p>
           </div>
         ) : (

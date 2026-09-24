@@ -5,7 +5,6 @@ import { SellerSidebar } from "./SellerSidebar";
 import { SellerMobileNav } from "./SellerMobileNav";
 import { SmartEdgeSidebar } from "../smart-sidebar/SmartEdgeSidebar";
 import { AndroidRecentAppsSwitcher } from "../mobile-multitab/AndroidRecentAppsSwitcher";
-import { FloatingTabPinButton } from "../mobile-multitab/FloatingTabPinButton";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -63,9 +62,6 @@ export function AppLayout({
 
       {/* Floating Smart Edge Sidebar & Freeform Window */}
       {!isInsideIframe && <SmartEdgeSidebar />}
-
-      {/* Small Animated Floating Tab Pin Button on Every Page Corner */}
-      {!isInsideIframe && <FloatingTabPinButton />}
     </div>
   );
 }
