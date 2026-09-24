@@ -50,15 +50,10 @@ export {
   type MapWatermarkProvider,
 };
 
-export function isBariKoiAvailable(lat?: number, lng?: number, countryCode?: string): boolean {
-  // If location or country is specified and outside Bangladesh, BariKoi is not available
-  if (lat !== undefined && lng !== undefined && !isLocationInBangladesh(lat, lng)) {
-    return false;
-  }
-  if (countryCode && !isBangladeshCountry(countryCode)) {
-    return false;
-  }
+// ─── 1. Map Rendering Style URL (Official Global Style from BariKoi) ─────────
+export const BARIKOI_MAP_STYLE_URL = `https://map.barikoi.com/styles/barkoi_green_pl/style.json?key=${BARIKOI_API_KEY}`;
 
+export function isBariKoiAvailable(lat?: number, lng?: number, countryCode?: string): boolean {
   if (isCooldownActive) {
     if (Date.now() < cooldownExpiresAt) {
       return false; // Still in cooldown, reject network call
@@ -70,7 +65,7 @@ export function isBariKoiAvailable(lat?: number, lng?: number, countryCode?: str
       sessionStorage.removeItem("bkoi_cooldown_until");
     } catch (_) {}
   }
-  return true;
+  return !!BARIKOI_API_KEY;
 }
 
 export function triggerBariKoiCooldown(durationMs = 30_000) {
@@ -734,3 +729,251 @@ export function getCuratedFallbackPlaces(
     };
   });
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── FULL 10 BARIKOI API INTEGRATED SUITE (USA & GLOBAL READY) ────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ─── 2. Autocomplete API ──────────────────────────────────────────────────────
+export interface BariKoiAutocompletePlace {
+  id: string | number;
+  name: string;
+  address: string;
+  city: string;
+  area: string;
+  latitude: number;
+  longitude: number;
+}
+
+export async function fetchBariKoiAutocomplete(
+  query: string,
+  options?: { isUSA?: boolean; countryCode?: string }
+): Promise<BariKoiAutocompletePlace[]> {
+  if (!query || query.trim().length === 0) return [];
+  const q = query.trim();
+  const isUSA = options?.isUSA !== false;
+  const cacheKey = `ac_${q.toLowerCase()}_${isUSA ? "usa" : "global"}`;
+  if (autocompleteCache.has(cacheKey)) {
+    return autocompleteCache.get(cacheKey)!;
+  }
+
+  if (!isBariKoiAvailable()) return [];
+
+  try {
+    const url = isUSA
+      ? `https://barikoi.xyz/v2/api/search/autocomplete/place?api_key=${BARIKOI_API_KEY}&q=${encodeURIComponent(q)}&country=true&country_code=usa`
+      : `https://barikoi.xyz/v2/api/search/autocomplete/place?api_key=${BARIKOI_API_KEY}&q=${encodeURIComponent(q)}&sub_area=true&sub_district=true`;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (res.status === 429) {
+      triggerBariKoiCooldown(30_000);
+      return [];
+    }
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    if (data?.places && Array.isArray(data.places)) {
+      const mapped: BariKoiAutocompletePlace[] = data.places.map((b: any, idx: number) => ({
+        id: b.id || idx,
+        name: b.name || b.address?.split(",")[0] || "Location",
+        address: b.address || b.area || "",
+        city: b.city || "",
+        area: b.area || "",
+        latitude: parseFloat(b.latitude || "0"),
+        longitude: parseFloat(b.longitude || "0"),
+      }));
+      autocompleteCache.set(cacheKey, mapped);
+      return mapped;
+    }
+  } catch (_) {}
+  return [];
+}
+
+// ─── 3. Place Search API ──────────────────────────────────────────────────────
+export async function searchBariKoiPlace(query: string, isUSA = true): Promise<any[]> {
+  if (!query || !isBariKoiAvailable()) return [];
+  try {
+    const url = isUSA
+      ? `https://barikoi.xyz/v2/api/search/search/place?api_key=${BARIKOI_API_KEY}&q=${encodeURIComponent(query)}&country=true&country_code=usa`
+      : `https://barikoi.xyz/v2/api/search/search/place?api_key=${BARIKOI_API_KEY}&q=${encodeURIComponent(query)}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+    if (res.ok) {
+      const data = await res.json();
+      return data?.places || [];
+    }
+  } catch (_) {}
+  return [];
+}
+
+// ─── 4. Place Details API ─────────────────────────────────────────────────────
+export async function getBariKoiPlaceDetails(placeId: string | number): Promise<any | null> {
+  if (!placeId || !isBariKoiAvailable()) return null;
+  try {
+    const url = `https://barikoi.xyz/v2/api/search/get/place/details?api_key=${BARIKOI_API_KEY}&place_id=${placeId}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+    if (res.ok) {
+      const data = await res.json();
+      return data?.place || null;
+    }
+  } catch (_) {}
+  return null;
+}
+
+// ─── 5. Forward Geocoding (Address to Coordinates) ────────────────────────────
+export async function forwardGeocodeAddress(
+  address: string,
+  countryCode = "US"
+): Promise<{ lat: number; lng: number; address: string } | null> {
+  if (!address || !isBariKoiAvailable()) return null;
+  const isBD = isBangladeshCountry(countryCode);
+
+  // 1. Bangladesh: Use BariKoi Rupantor Geocoder
+  if (isBD) {
+    try {
+      const res = await fetch(`https://barikoi.xyz/v2/api/search/rupantor/geocode`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ api_key: BARIKOI_API_KEY, address }),
+        signal: AbortSignal.timeout(4000)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.geocoded_address?.latitude && data?.geocoded_address?.longitude) {
+          return {
+            lat: parseFloat(data.geocoded_address.latitude),
+            lng: parseFloat(data.geocoded_address.longitude),
+            address: data.geocoded_address.address || address
+          };
+        }
+      }
+    } catch (_) {}
+  }
+
+  // 2. USA / Global: Use BariKoi Autocomplete with country_code=usa
+  try {
+    const places = await fetchBariKoiAutocomplete(address, { isUSA: !isBD });
+    if (places.length > 0 && places[0].latitude && places[0].longitude) {
+      return {
+        lat: places[0].latitude,
+        lng: places[0].longitude,
+        address: places[0].address || address
+      };
+    }
+  } catch (_) {}
+
+  return null;
+}
+
+// ─── 7. Nearby Search API ─────────────────────────────────────────────────────
+export async function fetchBariKoiNearby(
+  lat: number,
+  lng: number,
+  radius = 1.5,
+  limit = 10,
+  isUSA = true
+): Promise<any[]> {
+  if (!isBariKoiAvailable()) return [];
+  const cacheKey = `nearby_${lat.toFixed(3)}_${lng.toFixed(3)}_${radius}_${limit}`;
+  if (nearbyCache.has(cacheKey)) return nearbyCache.get(cacheKey)!;
+
+  try {
+    const url = isUSA
+      ? `https://barikoi.xyz/v2/api/search/nearby/${radius}/${limit}?api_key=${BARIKOI_API_KEY}&latitude=${lat}&longitude=${lng}&country=true&country_code=usa`
+      : `https://barikoi.xyz/v2/api/search/nearby/${radius}/${limit}?api_key=${BARIKOI_API_KEY}&latitude=${lat}&longitude=${lng}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+    if (res.ok) {
+      const data = await res.json();
+      const places = data?.places || [];
+      nearbyCache.set(cacheKey, places);
+      return places;
+    }
+  } catch (_) {}
+  return [];
+}
+
+// ─── 8. Category Nearby API ───────────────────────────────────────────────────
+export async function fetchBariKoiCategoryNearby(
+  lat: number,
+  lng: number,
+  category: string,
+  radius = 1.5,
+  limit = 12,
+  isUSA = true
+): Promise<any[]> {
+  if (!isBariKoiAvailable()) return [];
+  const cacheKey = `cat_${lat.toFixed(3)}_${lng.toFixed(3)}_${category}_${radius}_${limit}`;
+  if (nearbyCache.has(cacheKey)) return nearbyCache.get(cacheKey)!;
+
+  try {
+    const url = isUSA
+      ? `https://barikoi.xyz/v2/api/search/nearby/category/${BARIKOI_API_KEY}/${radius}/${limit}?latitude=${lat}&longitude=${lng}&ptype=${encodeURIComponent(category)}&country=true&country_code=usa`
+      : `https://barikoi.xyz/v2/api/search/nearby/category/${BARIKOI_API_KEY}/${radius}/${limit}?latitude=${lat}&longitude=${lng}&ptype=${encodeURIComponent(category)}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+    if (res.ok) {
+      const data = await res.json();
+      const places = data?.places || [];
+      nearbyCache.set(cacheKey, places);
+      return places;
+    }
+  } catch (_) {}
+  return [];
+}
+
+// ─── 9 & 10. Route Overview & Detailed Routing ────────────────────────────────
+export async function fetchBariKoiRoute(
+  from: [number, number],
+  to: [number, number],
+  mode: "car" | "bike" | "walk" = "car"
+): Promise<{ coordinates: [number, number][]; distanceMeters: number; durationSeconds: number } | null> {
+  const cacheKey = `route_${from.join(",")}_${to.join(",")}_${mode}`;
+  if (routeCache.has(cacheKey)) return routeCache.get(cacheKey)!;
+
+  // 1. Try BariKoi Route API
+  if (isBariKoiAvailable()) {
+    try {
+      const url = `https://barikoi.xyz/v2/api/route/${from[1]},${from[0]};${to[1]},${to[0]}?api_key=${BARIKOI_API_KEY}&geometries=geojson&mode=${mode}`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+      if (res.ok) {
+        const data = await res.json();
+        const r = data?.routes?.[0] || data?.route;
+        if (r) {
+          let coords: [number, number][] = [];
+          if (Array.isArray(r.geometry?.coordinates)) {
+            coords = r.geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng]);
+          }
+          if (coords.length >= 2) {
+            const result = {
+              coordinates: coords,
+              distanceMeters: r.distance || 0,
+              durationSeconds: r.duration || 0,
+            };
+            routeCache.set(cacheKey, result);
+            return result;
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  // 2. Global Fallback: Mapbox Directions API / OSRM
+  const fallbackRoute = await fetchGlobalRoute(from, to, mode);
+  if (fallbackRoute) {
+    routeCache.set(cacheKey, fallbackRoute);
+    return fallbackRoute;
+  }
+
+  return null;
+}
+
+export async function fetchDetailedRouting(
+  from: [number, number],
+  to: [number, number],
+  mode: "car" | "bike" | "walk" = "car"
+): Promise<{ coordinates: [number, number][]; distanceMeters: number; durationSeconds: number } | null> {
+  return fetchBariKoiRoute(from, to, mode);
+}
+

@@ -333,29 +333,20 @@ export function attachMapboxFallbackOnError(map: any): () => void {
 
 // Returns the optimal style for MapLibre / bkoi-gl based on location & provider availability
 export function getMapStyleForLocation(lat?: number, lng?: number, countryCode?: string): any {
-  // Check if location or country is explicitly outside Bangladesh
-  const isExplicitlyOutsideBD =
-    (lat !== undefined && lng !== undefined && !isLocationInBangladesh(lat, lng)) ||
-    (countryCode && !isBangladeshCountry(countryCode));
-
-  // 1. If explicitly outside Bangladesh, or if BariKoi tile server is known to be down, use Mapbox
-  if (isExplicitlyOutsideBD || isBariKoiTileServerBroken) {
+  // 1. If BariKoi tile server is known to be down, fallback to Mapbox
+  if (isBariKoiTileServerBroken) {
     return getMapboxRasterStyle();
   }
 
-  // 2. Default: ALWAYS use BariKoi vector style as primary default
-  return `https://map.barikoi.com/styles/osm_barikoi_v1/style.json?key=${BARIKOI_API_KEY}`;
+  // 2. Default: ALWAYS use BariKoi official green vector style (supporting global/USA)
+  return `https://map.barikoi.com/styles/barkoi_green_pl/style.json?key=${BARIKOI_API_KEY}`;
 }
 
 // Returns Leaflet TileLayer configuration with Mapbox -> OpenStreetMap fallback
 export function getLeafletTileConfig(lat?: number, lng?: number, countryCode?: string) {
-  const isExplicitlyOutsideBD =
-    (lat !== undefined && lng !== undefined && !isLocationInBangladesh(lat, lng)) ||
-    (countryCode && !isBangladeshCountry(countryCode));
-
-  if (!isExplicitlyOutsideBD) {
+  if (!isBariKoiTileServerBroken) {
     return {
-      url: `https://map.barikoi.com/styles/osm_barikoi_v1/style.json?key=${BARIKOI_API_KEY}`,
+      url: `https://map.barikoi.com/styles/barkoi_green_pl/style.json?key=${BARIKOI_API_KEY}`,
       attribution: '&copy; <a href="https://barikoi.com">BariKoi</a>',
       maxZoom: 19,
       isVector: true,
@@ -472,10 +463,12 @@ export async function reverseGeocodeWithMapboxFallback(
     try {
       const isBD = isLocationInBangladesh(lat, lng) || isBangladeshCountry(countryCode);
 
-      // 1. If in Bangladesh, try BariKoi first
-      if (isBD && isBariKoiAvailable()) {
+      // 1. Try BariKoi first (Supports both Bangladesh and USA/International)
+      if (isBariKoiAvailable()) {
         try {
-          const bkoiUrl = `https://barikoi.xyz/v2/api/search/reverse/geocode?api_key=${BARIKOI_API_KEY}&longitude=${lng}&latitude=${lat}&district=true&post_code=true&country=true&sub_district=true&union=true&pauroshova=true&location_type=true&division=true&address=true&area=true&bangla=true`;
+          const bkoiUrl = isBD
+            ? `https://barikoi.xyz/v2/api/search/reverse/geocode?api_key=${BARIKOI_API_KEY}&longitude=${lng}&latitude=${lat}&district=true&post_code=true&country=true&sub_district=true&union=true&pauroshova=true&location_type=true&division=true&address=true&area=true&bangla=true`
+            : `https://barikoi.xyz/v2/api/search/reverse/geocode?api_key=${BARIKOI_API_KEY}&latitude=${lat}&longitude=${lng}&country=true&country_code=usa`;
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 3500);
 
@@ -490,9 +483,9 @@ export async function reverseGeocodeWithMapboxFallback(
               const info: BariKoiAddressInfo = {
                 address: data.place.address || data.place.area || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
                 area: data.place.area || "",
-                district: data.place.district || "",
+                district: data.place.district || data.place.city || "",
                 postCode: data.place.postCode || "",
-                city: data.place.city || data.place.division || "",
+                city: data.place.city || data.place.division || data.place.country || "",
                 sub_district: data.place.sub_district || "",
               };
               globalGeocodeCache.set(cacheKey, info);

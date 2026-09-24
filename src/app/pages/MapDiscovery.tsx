@@ -487,7 +487,10 @@ export async function fetchBariKoiNearbyPlaces(
       for (const ptype of targetPtypes) {
         if (!isBariKoiAvailable()) break;
         try {
-          const url = `https://barikoi.xyz/v2/api/search/nearby/category/${BARIKOI_API_KEY}/1.5/12?longitude=${lng}&latitude=${lat}&ptype=${encodeURIComponent(ptype)}`;
+          const isBD = isLocationInBangladesh(lat, lng);
+          const url = isBD
+            ? `https://barikoi.xyz/v2/api/search/nearby/category/${BARIKOI_API_KEY}/1.5/12?longitude=${lng}&latitude=${lat}&ptype=${encodeURIComponent(ptype)}`
+            : `https://barikoi.xyz/v2/api/search/nearby/category/${BARIKOI_API_KEY}/1.5/12?longitude=${lng}&latitude=${lat}&ptype=${encodeURIComponent(ptype)}&country=true&country_code=usa`;
           const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
           if (res.status === 429) {
             triggerBariKoiCooldown(30_000);
@@ -2596,7 +2599,10 @@ export function MapDiscoveryContent({
       }
 
       const controller = new AbortController();
-      const url = `https://barikoi.xyz/v2/api/search/autocomplete/place?api_key=${BARIKOI_API_KEY}&q=${encodeURIComponent(q)}&sub_area=true&sub_district=true`;
+      const isBD = userLocation ? isLocationInBangladesh(userLocation[0], userLocation[1]) : false;
+      const url = isBD
+        ? `https://barikoi.xyz/v2/api/search/autocomplete/place?api_key=${BARIKOI_API_KEY}&q=${encodeURIComponent(q)}&sub_area=true&sub_district=true`
+        : `https://barikoi.xyz/v2/api/search/autocomplete/place?api_key=${BARIKOI_API_KEY}&q=${encodeURIComponent(q)}&country=true&country_code=usa`;
 
       try {
         const res = await fetch(url, { signal: controller.signal });
