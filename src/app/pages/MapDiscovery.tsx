@@ -733,7 +733,7 @@ function loadBkoiGL(): Promise<any> {
 // ── Booking.com Style Leaflet map component ──────────────────────────────────
 function LeafletMap({
   visiblePlaces, activePlaceId, routes, selectedRouteId, userLocation, isGPSActive,
-  isLiveNavigating, navUserCoord, navHeading,
+  isLiveNavigating, navUserCoord, navHeading, recenterTrigger,
   onMarkerClick, onMapClick, onRouteClick, onMarkerHover,
 }: {
   visiblePlaces: Place[];
@@ -745,6 +745,7 @@ function LeafletMap({
   isLiveNavigating?: boolean;
   navUserCoord?: [number, number] | null;
   navHeading?: number;
+  recenterTrigger?: number;
   onMarkerClick: (p: Place, px: { x: number; y: number }) => void;
   onMapClick: () => void;
   onRouteClick: (id: number) => void;
@@ -753,8 +754,9 @@ function LeafletMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<Map<number | string, any>>(new Map());
-  const routeLinesRef = useRef<any[]>([]);
   const userMarkerRef = useRef<any>(null);
+  const hasInitialCenteredRef = useRef(false);
+  const routeLinesRef = useRef<any[]>([]);
   const navPuckRef = useRef<any>(null);
   const LRef = useRef<any>(null);
 
@@ -1094,61 +1096,81 @@ function LeafletMap({
     }
   }, [visiblePlaces, routes.length, activePlaceId]);
 
-  // ── Sync User Location Marker & Center Map (Works on both bkoi-gl & Leaflet) ──
+  // ── Sync User Location Marker Without Overriding User's Zoom ───────────────
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
     const bkoigl = (window as any).bkoigl;
     const L = LRef.current;
 
-    // Remove existing user marker if present
-    if (userMarkerRef.current) {
-      if (userMarkerRef.current.remove) userMarkerRef.current.remove();
-      userMarkerRef.current = null;
-    }
-
     if (!isGPSActive || !userLocation) {
-      // If GPS turned off, fly back to default center
-      if (map.flyTo) {
-        if (L) {
-          map.flyTo([23.8103, 90.4125], 13, { duration: 1.2 });
-        } else {
-          map.flyTo({ center: [90.4125, 23.8103], zoom: 13, speed: 1.2 });
-        }
+      if (userMarkerRef.current) {
+        if (userMarkerRef.current.remove) userMarkerRef.current.remove();
+        userMarkerRef.current = null;
       }
       return;
     }
 
     const [lat, lng] = userLocation;
 
-    // Create pulsing user pin element
-    const el = document.createElement("div");
-    el.className = "user-location-pulse-pin";
-    el.style.cssText = "position:relative;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;";
-    el.innerHTML = `
-      <div style="position:absolute;inset:-8px;border-radius:50%;background:rgba(216,90,48,0.35);animation:ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-      <div style="width:16px;height:16px;border-radius:50%;background:#D85A30;border:3px solid white;box-shadow:0 4px 12px rgba(216,90,48,0.5);position:relative;z-index:2;"></div>
-    `;
+    // Smoothly update marker coordinates without destroying or jerking map
+    if (userMarkerRef.current) {
+      if (userMarkerRef.current.setLngLat) {
+        userMarkerRef.current.setLngLat([lng, lat]);
+      } else if (userMarkerRef.current.setLatLng) {
+        userMarkerRef.current.setLatLng([lat, lng]);
+      }
+    } else {
+      // Create pulsing user pin element
+      const el = document.createElement("div");
+      el.className = "user-location-pulse-pin";
+      el.style.cssText = "position:relative;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;";
+      el.innerHTML = `
+        <div style="position:absolute;inset:-8px;border-radius:50%;background:rgba(216,90,48,0.35);animation:ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+        <div style="width:16px;height:16px;border-radius:50%;background:#D85A30;border:3px solid white;box-shadow:0 4px 12px rgba(216,90,48,0.5);position:relative;z-index:2;"></div>
+      `;
 
-    if (L && map.addLayer) {
-      const icon = L.divIcon({
-        className: "custom-user-location-pin",
-        html: el.outerHTML,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
-      });
-      userMarkerRef.current = L.marker([lat, lng], { icon, zIndexOffset: 1000 }).addTo(map);
-      map.flyTo([lat, lng], 15.5, { duration: 1.5 });
-    } else if (bkoigl || map.addSource) {
-      const MarkerClass = bkoigl?.Marker || (window as any).maplibregl?.Marker;
-      if (MarkerClass) {
-        userMarkerRef.current = new MarkerClass({ element: el })
-          .setLngLat([lng, lat])
-          .addTo(map);
-        map.flyTo({ center: [lng, lat], zoom: 15.5, speed: 1.5 });
+      if (L && map.addLayer) {
+        const icon = L.divIcon({
+          className: "custom-user-location-pin",
+          html: el.outerHTML,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12],
+        });
+        userMarkerRef.current = L.marker([lat, lng], { icon, zIndexOffset: 1000 }).addTo(map);
+      } else if (bkoigl || map.addSource) {
+        const MarkerClass = bkoigl?.Marker || (window as any).maplibregl?.Marker;
+        if (MarkerClass) {
+          userMarkerRef.current = new MarkerClass({ element: el })
+            .setLngLat([lng, lat])
+            .addTo(map);
+        }
+      }
+    }
+
+    // ONLY center/zoom on initial map mount, NEVER override user's manual zoom out!
+    if (!hasInitialCenteredRef.current) {
+      hasInitialCenteredRef.current = true;
+      if (L && map.flyTo) {
+        map.flyTo([lat, lng], 14.8, { duration: 1.2 });
+      } else if (map.flyTo) {
+        map.flyTo({ center: [lng, lat], zoom: 14.8, speed: 1.2 });
       }
     }
   }, [userLocation, isGPSActive]);
+
+  // ── Explicit Recenter ONLY when user clicks Floating GPS Button ──────────────
+  useEffect(() => {
+    if (!recenterTrigger || !mapRef.current || !userLocation) return;
+    const map = mapRef.current;
+    const L = LRef.current;
+    const [lat, lng] = userLocation;
+    if (L && map.flyTo) {
+      map.flyTo([lat, lng], 15.5, { duration: 1.2 });
+    } else if (map.flyTo) {
+      map.flyTo({ center: [lng, lat], zoom: 15.5, speed: 1.5 });
+    }
+  }, [recenterTrigger]);
 
   // ── Live Navigation Vehicle Marker Sync & Camera Follow ───────────────────
   useEffect(() => {
@@ -2375,6 +2397,7 @@ export function MapDiscoveryContent({
   });
 
   const [isLocating, setIsLocating] = useState(false);
+  const [recenterCount, setRecenterCount] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
@@ -2852,6 +2875,7 @@ export function MapDiscoveryContent({
               selectedRouteId={null}
               userLocation={userLocation}
               isGPSActive={isGPSActive}
+              recenterTrigger={recenterCount}
               onMarkerClick={(p) => {
                 handleCompactMapClick(p.id);
               }}
@@ -2878,6 +2902,7 @@ export function MapDiscoveryContent({
                     setUserLocation(coords);
                     setIsGPSActive(true);
                     setIsLocating(false);
+                    setRecenterCount((c) => c + 1);
                     try {
                       localStorage.setItem("bkoi_last_user_coords", JSON.stringify(coords));
                     } catch (_) {}
@@ -3035,6 +3060,7 @@ export function MapDiscoveryContent({
                   isLiveNavigating={isLiveNavigating}
                   navUserCoord={navUserCoord}
                   navHeading={navHeading}
+                  recenterTrigger={recenterCount}
                   onMarkerClick={(p, px) => {
                     if (!directionsFor && !isLiveNavigating) {
                       setMapActiveId(p.id);
@@ -3100,6 +3126,7 @@ export function MapDiscoveryContent({
                           setUserLocation(coords);
                           setIsGPSActive(true);
                           setIsLocating(false);
+                          setRecenterCount((c) => c + 1);
                           try {
                             localStorage.setItem("bkoi_last_user_coords", JSON.stringify(coords));
                           } catch (_) {}
