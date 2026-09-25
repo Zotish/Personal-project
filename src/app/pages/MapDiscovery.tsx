@@ -624,7 +624,7 @@ function HoverTooltipCard({
         </div>
 
         <div className="flex flex-wrap items-center gap-1 my-2">
-          <span className="px-2 py-0.5 rounded-lg bg-orange-50 text-[#8C3015] border border-orange-100 text-[11px] font-bold">
+          <span className="text-[11px] font-bold text-[#C04A22]">
             {job.salary}
           </span>
           <span className="px-1.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-[11px]">
@@ -2041,7 +2041,7 @@ function MapPlaceCard({
       <div className="flex flex-wrap items-center gap-1.5 my-2.5">
         {isJob ? (
           <>
-            <span className="px-2.5 py-1 rounded-xl bg-orange-50 text-[#8C3015] border border-orange-100 text-xs font-bold">
+            <span className="text-xs font-bold text-[#C04A22]">
               {job?.salary}
             </span>
             <span className="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 text-xs font-medium">
@@ -2276,7 +2276,7 @@ function PlaceCard({
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5 my-2">
-          <span className="px-2 py-0.5 rounded-lg bg-orange-50 text-[#8C3015] border border-orange-100 text-xs font-bold">
+          <span className="text-xs font-bold text-[#C04A22]">
             {job.salary}
           </span>
           <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium">
