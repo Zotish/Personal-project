@@ -621,7 +621,7 @@ export function ServicesHub() {
 
                   {/* Card Footer */}
                   <div className="px-4 sm:px-3.5 pb-4 sm:pb-3.5 pt-2 border-t border-slate-100 flex items-center justify-between mt-1">
-                    <span className="text-xs font-extrabold text-[#8C3015] bg-[#C04A22]/10 px-2.5 py-0.5 rounded-lg whitespace-nowrap">
+                    <span className="text-xs sm:text-sm font-bold text-[#C04A22] whitespace-nowrap">
                       {prod.price}
                     </span>
                     <button
@@ -683,7 +683,7 @@ export function ServicesHub() {
 
                       {/* Card Footer */}
                       <div className="px-3.5 pb-3.5 pt-2 border-t border-slate-100 flex items-center justify-between mt-1">
-                        <span className="text-[11px] font-extrabold text-[#8C3015] bg-[#C04A22]/10 px-2 py-0.5 rounded-lg whitespace-nowrap">
+                        <span className="text-xs font-bold text-[#C04A22] whitespace-nowrap">
                           {prod.price}
                         </span>
                         <button

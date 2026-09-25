@@ -731,8 +731,8 @@ function BariKoiLiveHousingMap({
               </p>
 
               {/* Price Pill */}
-              <div className="mt-2">
-                <span className="px-3 py-1 rounded-full bg-orange-50/80 text-[#C04A22] text-xs font-bold border border-orange-100/60 inline-block">
+              <div className="mt-1.5">
+                <span className="text-xs font-bold text-[#C04A22] inline-block">
                   {markerClickedListing.price}
                 </span>
               </div>
@@ -1550,9 +1550,9 @@ export function Housing() {
                         </span>
                       </div>
 
-                      {/* Price Pill */}
-                      <div className="mt-3">
-                        <span className="inline-block px-3.5 py-1.5 rounded-full bg-orange-50/80 text-[#C04A22] text-xs sm:text-sm font-bold border border-orange-100/60 shadow-2xs">
+                      {/* Price */}
+                      <div className="mt-2.5">
+                        <span className="text-xs sm:text-sm font-bold text-[#C04A22] inline-block">
                           {listing.price}
                         </span>
                       </div>

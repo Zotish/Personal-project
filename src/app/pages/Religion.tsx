@@ -510,10 +510,9 @@ function BariKoiLiveReligionMap({
                 {markerClickedListing.address}
               </p>
 
-              {/* Feature Tags */}
-              <div className="mt-2 flex items-center gap-1.5 overflow-hidden">
+              <div className="mt-1.5 flex items-center gap-2 overflow-hidden">
                 {markerClickedListing.features.slice(0, 2).map(f => (
-                  <span key={f} className="px-2 py-0.5 rounded-full bg-orange-50/90 text-[#8C3015] text-[10px] font-semibold truncate border border-orange-200/60">
+                  <span key={f} className="text-[#C04A22] text-[10px] font-bold truncate">
                     {f}
                   </span>
                 ))}
@@ -1189,9 +1188,9 @@ export function ReligiousFinder() {
                       </p>
 
                       {/* Feature Tags */}
-                      <div className="mt-2.5 flex flex-wrap gap-1.5">
+                      <div className="mt-2 flex flex-wrap gap-2">
                         {place.features.slice(0, 3).map(f => (
-                          <span key={f} className="px-2.5 py-0.5 rounded-full bg-orange-50/80 text-[#8C3015] text-[11px] font-medium border border-orange-200/50">
+                          <span key={f} className="text-[#C04A22] text-[11px] font-bold">
                             {f}
                           </span>
                         ))}

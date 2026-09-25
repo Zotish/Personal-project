@@ -547,8 +547,8 @@ function InteractiveServiceMap({
             <div className="p-3 sm:p-3.5">
               <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-snug line-clamp-1">{markerClickedItem.title}</h3>
               <p className="text-xs text-slate-500 font-medium mt-0.5 truncate">{markerClickedItem.subtitle} • {markerClickedItem.location}</p>
-              <div className="mt-2">
-                <span className="px-3 py-1 rounded-full bg-orange-50/80 text-[#C04A22] text-xs font-bold border border-orange-100/60 inline-block">
+              <div className="mt-1.5">
+                <span className="text-[#C04A22] text-xs font-bold inline-block">
                   {markerClickedItem.primaryHighlight}
                 </span>
               </div>
@@ -1258,9 +1258,9 @@ export function ServiceMapDirectory({
                         {item.subtitle} • {item.location || item.address}
                       </p>
 
-                      {/* Highlight / Price Pill */}
-                      <div className="mt-3">
-                        <span className="inline-block px-3 py-1.5 rounded-full bg-orange-50/80 text-[#C04A22] text-xs sm:text-sm font-bold border border-orange-100/60">
+                      {/* Highlight / Price */}
+                      <div className="mt-2.5">
+                        <span className="text-[#C04A22] text-xs sm:text-sm font-bold inline-block">
                           {item.price || item.primaryHighlight || "Free Aid"}
                         </span>
                       </div>

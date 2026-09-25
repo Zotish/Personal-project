@@ -777,8 +777,8 @@ function BariKoiLiveJobsMap({
               </p>
 
               {/* Salary Pill */}
-              <div className="mt-2">
-                <span className="px-3 py-1 rounded-full bg-orange-50/80 text-[#C04A22] text-xs font-bold border border-orange-100/60 inline-block">
+              <div className="mt-1.5">
+                <span className="text-xs font-bold text-[#C04A22] inline-block">
                   {markerClickedJob.salary}
                 </span>
               </div>
@@ -1578,9 +1578,9 @@ export function Jobs() {
                         {job.company} • {job.location}
                       </p>
 
-                      {/* Salary Pill */}
-                      <div className="mt-3">
-                        <span className="inline-block px-3 py-1.5 rounded-full bg-orange-50/80 text-[#C04A22] text-xs sm:text-sm font-bold border border-orange-100/60">
+                      {/* Salary */}
+                      <div className="mt-2.5">
+                        <span className="text-xs sm:text-sm font-bold text-[#C04A22] inline-block">
                           {job.salary}
                         </span>
                       </div>

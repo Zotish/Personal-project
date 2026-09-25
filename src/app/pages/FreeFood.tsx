@@ -1234,8 +1234,8 @@ export function FreeFood() {
                       </div>
 
                       {/* Schedule / Hours summary */}
-                      <div className="mt-3">
-                        <span className="inline-block px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200/60">
+                      <div className="mt-2.5">
+                        <span className="text-[#C04A22] text-xs sm:text-sm font-bold inline-block">
                           {listing.timeText || "Free Distribution Today"}
                         </span>
                       </div>
