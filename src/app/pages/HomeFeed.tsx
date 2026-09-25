@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { EventRegistrationModal } from "../components/events/EventRegistrationModal";
 import { SponsoredFeedAd } from "../components/ads/SponsoredAdCard";
+import { ExpandablePostText } from "../components/post/ExpandablePostText";
 
 // ─── Weather Widget ───────────────────────────────────────────────────────────
 type WeatherData = {
@@ -822,9 +823,7 @@ function PostCard({ post }: { post: Post; key?: string | number }) {
       </div>
 
       {/* Content text: Starts full-width from below the logo with clean left alignment */}
-      <p className="text-sm text-foreground leading-relaxed whitespace-pre-line text-left mt-3 font-normal">
-        {post.content}
-      </p>
+      <ExpandablePostText text={post.content} />
 
       {/* Attached image */}
       {post.image && (

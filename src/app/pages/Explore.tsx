@@ -8,6 +8,7 @@ import {
   MapPin, Sparkles, Send, MessageSquare, MoreHorizontal, User
 } from "lucide-react";
 import { SponsoredFeedAd } from "../components/ads/SponsoredAdCard";
+import { ExpandablePostText } from "../components/post/ExpandablePostText";
 
 type Topic = {
   rank: number;
@@ -345,9 +346,10 @@ export function Explore() {
                         </div>
 
                         {/* Content text: Starts full-width below the logo with clean left alignment */}
-                        <p className="text-sm text-slate-900 leading-relaxed whitespace-pre-line text-left mt-3 font-normal">
-                          {post.content}
-                        </p>
+                        <ExpandablePostText
+                          text={post.content}
+                          className="text-sm text-slate-900 leading-relaxed whitespace-pre-line text-left mt-3 font-normal"
+                        />
 
                         {/* Post Image Attachment */}
                         {post.image && (

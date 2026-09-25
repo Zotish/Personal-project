@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { EventRegistrationModal } from "../components/events/EventRegistrationModal";
 import { SponsoredFeedAd } from "../components/ads/SponsoredAdCard";
+import { ExpandablePostText } from "../components/post/ExpandablePostText";
 
 const allCommunities = [
   { id: 1, name: "Bangladeshi New Yorkers", image: "🇧🇩", members: 14200, tags: ["Community", "Culture", "Bengali"], desc: "The largest Bangladeshi community network in New York. Events, help, and connections for Bangladeshis in NYC and surrounding areas.", joined: true, city: "New York, NY", moderators: 8 },
@@ -205,7 +206,7 @@ function CommunityDetail({ community, onBack }: { community: typeof allCommuniti
                       <MoreHorizontal className="w-4 h-4" />
                     </button>
                   </div>
-                  <p className="text-sm text-foreground leading-relaxed">{post.content}</p>
+                  <ExpandablePostText text={post.content} className="text-sm text-foreground leading-relaxed mt-2" />
                   <div className="flex items-center gap-4 mt-3 pt-2 border-t border-white/40">
                     <button
                       onClick={() => setLikedPosts(s => s.includes(post.id) ? s.filter(x => x !== post.id) : [...s, post.id])}

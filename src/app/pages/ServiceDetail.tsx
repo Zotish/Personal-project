@@ -9,6 +9,7 @@ import {
   Navigation, Map, Layers, RefreshCw
 } from "lucide-react";
 import { addFavourite, removeFavourite, isFavourited } from "../utils/myBox";
+import { ExpandablePostText } from "../components/post/ExpandablePostText";
 import { useCountryPlatform } from "../context/CountryPlatformContext";
 import {
   loadBkoiGL,
@@ -529,7 +530,7 @@ export function ServiceDetail() {
                       <span className="text-xs text-muted-foreground">{post.handle}</span>
                       <span className="text-xs text-muted-foreground">· {post.time}</span>
                     </div>
-                    <p className="text-sm text-foreground leading-relaxed">{post.content}</p>
+                    <ExpandablePostText text={post.content} className="text-sm text-foreground leading-relaxed mt-1" />
                   </div>
                 </div>
               </div>

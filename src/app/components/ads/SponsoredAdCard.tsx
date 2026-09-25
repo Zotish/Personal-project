@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { ExternalLink, Sparkles, Info, CheckCircle2, ChevronRight, X } from "lucide-react";
 import { useAds, SponsoredAd } from "../../context/AdsContext";
+import { ExpandablePostText } from "../post/ExpandablePostText";
 
 interface SponsoredAdCardProps {
   ad: SponsoredAd;
@@ -151,13 +152,15 @@ export function SponsoredAdCard({ ad, variant = "feed" }: SponsoredAdCardProps) 
         </div>
 
         {/* Content Headline & Copy */}
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <h3 className="text-sm sm:text-base font-extrabold text-slate-900 leading-snug">
             {ad.title}
           </h3>
-          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
-            {ad.description}
-          </p>
+          <ExpandablePostText
+            text={ad.description}
+            className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal"
+            buttonClassName="text-xs font-semibold text-slate-500 hover:text-[#C04A22] transition-colors cursor-pointer inline-flex items-center gap-0.5"
+          />
         </div>
 
         {/* Image Banner */}

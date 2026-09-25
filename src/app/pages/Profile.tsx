@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useAccountMode } from "../context/AccountModeContext";
 import { InvoiceModal, InvoiceData } from "../components/InvoiceModal";
+import { ExpandablePostText } from "../components/post/ExpandablePostText";
 
 export interface UserProfileData {
   id: string | number;
@@ -1359,9 +1360,10 @@ export function Profile() {
                       </div>
 
                       {/* Tweet Content: Starts full-width from below the logo with clean left alignment */}
-                      <p className="text-sm text-slate-900 leading-relaxed whitespace-pre-line text-left mt-3 font-normal">
-                        {tweet.content}
-                      </p>
+                      <ExpandablePostText
+                        text={tweet.content}
+                        className="text-sm text-slate-900 leading-relaxed whitespace-pre-line text-left mt-3 font-normal"
+                      />
 
                       {/* Attached Image / Media */}
                       {tweet.image && (
