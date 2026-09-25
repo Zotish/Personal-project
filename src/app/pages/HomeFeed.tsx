@@ -2083,7 +2083,7 @@ export function HomeFeed() {
           </div>
         )}
 
-        <div className="px-0 sm:px-3 md:px-4 py-0 sm:py-4 space-y-2 sm:space-y-4 w-full">
+        <div className="px-0 sm:px-3 md:px-4 py-0 sm:py-4 space-y-0 sm:space-y-4 w-full">
           {selectedDate ? (
             <>
               {/* Date filter header */}

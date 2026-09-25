@@ -1171,7 +1171,7 @@ export function ServiceMapDirectory({
           </div>
 
           {/* Card Container: Equal Grid across all devices */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 sm:gap-5 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-0 sm:gap-5 items-stretch">
             {(activeFilter === "nearby" ? nearbyItems : filteredItems).map(item => {
               const isSelected = selectedItem?.id === item.id;
               const isSaved = savedIds.includes(item.id);

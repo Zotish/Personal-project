@@ -274,7 +274,7 @@ export function Explore() {
             </div>
 
             {/* Posts Feed matching HomeFeed style */}
-            <div className="p-3 sm:p-4 space-y-3">
+            <div className="px-0 sm:px-4 py-0 sm:py-4 space-y-0 sm:space-y-3">
               {feedTab === "people" ? (
                 people.map(p => (
                   <div

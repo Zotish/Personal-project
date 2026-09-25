@@ -169,9 +169,9 @@ function CommunityDetail({ community, onBack }: { community: typeof allCommuniti
 
       {/* ── POSTS tab ── */}
       {activeTab === "posts" && (
-        <div className="p-4 space-y-3">
+        <div className="px-0 sm:px-4 py-0 sm:py-4 space-y-0 sm:space-y-3">
           {/* Composer */}
-          <div className="bg-white rounded-2xl border border-border p-3 flex gap-2.5 items-center">
+          <div className="bg-white rounded-2xl border border-border p-3 flex gap-2.5 items-center mx-4 sm:mx-0 my-3 sm:my-0">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">RA</div>
             <button className="flex-1 text-left px-3 py-2.5 bg-secondary rounded-xl text-sm text-muted-foreground hover:bg-border/60 transition-colors">
               Share something with the community...

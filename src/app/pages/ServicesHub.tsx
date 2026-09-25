@@ -588,7 +588,7 @@ export function ServicesHub() {
 
           {/* PRODUCT CARDS: MOBILE = 1 CARD PER ROW (VERTICAL LIST, NO HORIZONTAL SCROLL), DESKTOP = SWIPE CAROUSEL */}
           {isMobile ? (
-            <div className="space-y-3 sm:space-y-3.5 pt-0 sm:pt-1">
+            <div className="space-y-0 sm:space-y-3.5 pt-0 sm:pt-1">
               {activeTabProducts.map((prod, idx) => (
                 <React.Fragment key={prod.id}>
                   <div

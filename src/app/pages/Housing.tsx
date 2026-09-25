@@ -1425,7 +1425,7 @@ export function Housing() {
           </div>
 
           {/* Equal Grid of Housing Cards (1 on mobile, 2 on pad, 3 on desktop) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 sm:gap-5 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-0 sm:gap-5 items-stretch">
             {(activeFilter === "nearby" ? nearbyHousing : filteredHousing).map(listing => {
               const isSelected = selectedListing?.id === listing.id;
               const isSaved = savedIds.includes(listing.id);

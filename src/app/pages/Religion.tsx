@@ -1099,7 +1099,7 @@ export function ReligiousFinder() {
           </div>
 
           {/* Equal Grid of Religious Places (1 on mobile, 2 on pad, 3 on desktop) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 sm:gap-5 items-stretch mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-0 sm:gap-5 items-stretch mb-6">
             {(activeFilter === "nearby" ? nearbyPlaces : filteredPlaces).map(place => {
               const isSaved = savedIds.includes(place.id);
               const isSelected = selectedPlace?.id === place.id;

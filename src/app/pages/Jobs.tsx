@@ -1490,7 +1490,7 @@ export function Jobs() {
           </div>
 
           {/* Equal Grid of Job Cards (Consistent positioning & equal heights on both sides) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 sm:gap-5 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-0 sm:gap-5 items-stretch">
             {(activeFilter === "nearby" ? nearbyJobs : filteredJobs).map(job => {
               const isSelected = selectedJob?.id === job.id;
               const isSaved = savedJobIds.includes(job.id);
