@@ -23,6 +23,41 @@
   <meta name="format-detection" content="telephone=no" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
+  <!-- Intercept & silence rogue browser extension / VPN script crashes (e.g. 200.js reading 'M_ID') -->
+  <script>
+    (function() {
+      function shouldIgnoreError(msg, src) {
+        var str = (String(msg || '') + ' ' + String(src || '')).toLowerCase();
+        return (
+          str.indexOf('m_id') !== -1 ||
+          str.indexOf('200.js') !== -1 ||
+          str.indexOf('chrome-extension://') !== -1 ||
+          str.indexOf('moz-extension://') !== -1
+        );
+      }
+
+      window.addEventListener('unhandledrejection', function(event) {
+        var reason = event.reason;
+        var msg = (reason && (reason.message || reason.stack)) || reason;
+        var stack = (reason && reason.stack) || '';
+        if (shouldIgnoreError(msg, stack)) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+      }, true);
+
+      window.addEventListener('error', function(event) {
+        var msg = event.message;
+        var src = (event.filename || '') + ' ' + (event.error && event.error.stack ? event.error.stack : '');
+        if (shouldIgnoreError(msg, src)) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          return true;
+        }
+      }, true);
+    })();
+  </script>
+
   <meta name="robots" content="noindex, nofollow" />
   <style>
     html,

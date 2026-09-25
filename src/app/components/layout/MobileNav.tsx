@@ -237,8 +237,11 @@ export function MobileNav() {
           </div>
 
           {/* Language Toggle */}
-          <div className="px-4 py-3 border-t border-border">
-            <LanguageToggle />
+          <div className="px-4 py-3 border-t border-border flex flex-col gap-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Language</span>
+              <LanguageToggle compact />
+            </div>
           </div>
         </div>
       )}
@@ -267,29 +270,11 @@ export function MobileNav() {
 
           {/* Android Multi-Task Switcher Button with Dual-Action Popup (+/- and Go) */}
           <div className="relative">
-            {/* ── Two Popups on Two Sides: [ +/- ] on Left, [ Go ] on Right (per user sketch) ── */}
+            {/* ── Vertical Popups: [ -> ] on Top, [ +/- ] Below (closer to Tab) ── */}
             {isTabMenuOpen && (
-              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-[65] flex flex-col items-center select-none animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-150 pointer-events-auto">
-                {/* Two Action Buttons Side-by-Side: Both styled in Tab button's soft tint/shadow color */}
-                <div className="flex items-center gap-3">
-                  {/* Left Popup: [ + ] or [ - ] */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      togglePageInRecents();
-                    }}
-                    className="flex items-center justify-center w-11 h-10 rounded-2xl shadow-md font-black transition-all active:scale-90 cursor-pointer border-2 bg-[#C04A22]/15 hover:bg-[#C04A22]/25 text-[#8C3015] border-[#C04A22]/30 shadow-[#C04A22]/15"
-                    title={isCurrentPageInRecents ? "Remove current page from Tab (-)" : "Add current page to Tab (+)"}
-                  >
-                    {isCurrentPageInRecents ? (
-                      <Minus className="w-5 h-5 stroke-[3] text-[#8C3015]" />
-                    ) : (
-                      <Plus className="w-5 h-5 stroke-[3] text-[#8C3015]" />
-                    )}
-                  </button>
-
-                  {/* Right Popup: Just Arrow, exact same tab tint/shadow color */}
+              <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 z-[65] flex flex-col items-center select-none animate-in fade-in zoom-in-95 slide-in-from-bottom-1 duration-150 pointer-events-auto">
+                <div className="flex flex-col items-center gap-1.5">
+                  {/* Top Popup: [ -> ] Arrow to open Tabs */}
                   <button
                     type="button"
                     onClick={(e) => {
@@ -297,38 +282,51 @@ export function MobileNav() {
                       setIsTabMenuOpen(false);
                       setIsRecentsOpen(true);
                     }}
-                    className="flex items-center justify-center w-11 h-10 rounded-2xl shadow-md font-black transition-all active:scale-90 cursor-pointer border-2 bg-[#C04A22]/15 hover:bg-[#C04A22]/25 text-[#8C3015] border-[#C04A22]/30 shadow-[#C04A22]/15"
+                    className="flex items-center justify-center w-8 h-8 rounded-xl shadow-xs font-black transition-all active:scale-90 cursor-pointer border-[1.5px] bg-[#C04A22]/15 hover:bg-[#C04A22]/25 text-[#8C3015] border-[#C04A22]/30 shadow-[#C04A22]/15"
                     title="Open Tabs"
                   >
-                    <ArrowRight className="w-5 h-5 stroke-[3] text-[#8C3015]" />
+                    <ArrowRight className="w-3.5 h-3.5 stroke-[3] text-[#8C3015]" />
+                  </button>
+
+                  {/* Bottom Popup (first above Tab): [ + ] or [ - ] */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      togglePageInRecents();
+                    }}
+                    className="flex items-center justify-center w-8 h-8 rounded-xl shadow-xs font-black transition-all active:scale-90 cursor-pointer border-[1.5px] bg-[#C04A22]/15 hover:bg-[#C04A22]/25 text-[#8C3015] border-[#C04A22]/30 shadow-[#C04A22]/15"
+                    title={isCurrentPageInRecents ? "Remove current page from Tab (-)" : "Add current page to Tab (+)"}
+                  >
+                    {isCurrentPageInRecents ? (
+                      <Minus className="w-3.5 h-3.5 stroke-[3] text-[#8C3015]" />
+                    ) : (
+                      <Plus className="w-3.5 h-3.5 stroke-[3] text-[#8C3015]" />
+                    )}
                   </button>
                 </div>
 
-                {/* Stems connecting to the Tab button below */}
-                <svg className="w-16 h-3 text-[#C04A22]/40 -mt-0.5 overflow-visible pointer-events-none" viewBox="0 0 64 12" fill="none">
-                  <path d="M 18 0 Q 24 8 32 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  <path d="M 46 0 Q 40 8 32 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
+                {/* Vertical stem connecting to the Tab button below */}
+                <div className="w-[1.5px] h-2 bg-[#C04A22]/40 mt-0.5" />
               </div>
             )}
 
             {/* Tab Trigger Button */}
             <button
               onClick={toggleTabMenu}
-              className={`flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-xl transition-all min-w-0 relative group ${
-                isTabMenuOpen ? "text-[#8C3015] font-semibold bg-[#C04A22]/15 shadow-inner" : "text-slate-600 hover:text-[#8C3015]"
+              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all min-w-0 relative group ${
+                isTabMenuOpen ? "text-[#8C3015] font-semibold" : "text-slate-600 hover:text-[#8C3015]"
               }`}
               title="Tab Manager"
             >
-              <div className="p-1.5 rounded-xl transition-all relative">
+              <div className={`p-1.5 rounded-xl transition-all relative ${isTabMenuOpen ? "bg-[#C04A22]/10" : ""}`}>
                 <div className={`w-5 h-5 rounded-[5px] border-2 ${
-                  isTabMenuOpen ? "border-[#8C3015] bg-[#C04A22]/10" : "border-slate-700 group-hover:border-[#8C3015]"
-                } flex items-center justify-center font-black text-[10px] text-slate-800 group-hover:text-[#8C3015] transition`}>
+                  isTabMenuOpen ? "border-[#8C3015]" : "border-slate-700 group-hover:border-[#8C3015]"
+                } flex items-center justify-center font-black text-[10px] ${
+                  isTabMenuOpen ? "text-[#8C3015]" : "text-slate-800 group-hover:text-[#8C3015]"
+                } transition`}>
                   {tasks.length}
                 </div>
-                {tasks.length > 1 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                )}
               </div>
               <span className="text-[10px] font-medium leading-none">Tab</span>
             </button>

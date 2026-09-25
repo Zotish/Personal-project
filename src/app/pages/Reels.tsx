@@ -621,16 +621,16 @@ function ReelUploadModal({ onClose }: { onClose: () => void }) {
                 </div>
                 <div className="text-center px-4">
                   <p className="text-slate-900 font-bold text-base mb-1">
-                    {isDragging ? "Drop your video here" : "Tap or Drag & Drop to upload video"}
+                    {isDragging ? "Drop video here" : "Upload Video"}
                   </p>
-                  <p className="text-slate-500 text-xs leading-relaxed">
-                    Share your story, immigration tip, or community highlight
+                  <p className="text-slate-500 text-xs">
+                    Drag & drop or click to choose
                   </p>
-                  <p className="text-slate-400 text-[11px] mt-1 font-mono">MP4, MOV, WebM · Max 60 seconds</p>
+                  <p className="text-slate-400 text-[11px] mt-1 font-mono">MP4, MOV, WebM · Max 60s</p>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 transition">
                   <Upload className="w-3.5 h-3.5 text-slate-700" />
-                  <span className="text-slate-700 text-xs font-bold">Browse local files</span>
+                  <span className="text-slate-700 text-xs font-bold">Browse files</span>
                 </div>
               </div>
 

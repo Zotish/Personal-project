@@ -16,6 +16,7 @@ import {
   matchHousingQuery
 } from "../data/housingData";
 import { HousingDetailsModal } from "../components/housing/HousingDetailsModal";
+import { useCountryPlatform } from "../context/CountryPlatformContext";
 import type { Map as LeafletMapType } from "leaflet";
 import {
   safeBariKoiReverseGeocode,
@@ -23,33 +24,10 @@ import {
   getMapboxRasterStyle,
   getLeafletTileConfig,
   attachMapboxFallbackOnError,
+  loadBkoiGL,
+  bariKoiTransformRequest,
+  BARIKOI_API_KEY,
 } from "../services/barikoiService";
-
-// ─── BariKoi API Key & Loader ───────────────────────────────────────────────
-
-const BARIKOI_API_KEY = import.meta.env.VITE_BARIKOI_API_KEY || "bkoi_e25928917c9e7b36a3286d75f446427fa3433bf87361b2fd8c8d6c942300a38f";
-
-function loadBkoiGL(): Promise<any> {
-  return new Promise((resolve, reject) => {
-    if ((window as any).bkoigl) {
-      resolve((window as any).bkoigl);
-      return;
-    }
-    if (!document.getElementById("maplibre-gl-css")) {
-      const css = document.createElement("link");
-      css.id = "maplibre-gl-css";
-      css.rel = "stylesheet";
-      css.href = "https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css";
-      document.head.appendChild(css);
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/bkoi-gl@latest/dist/iife/bkoi-gl.js";
-    script.onload = () => resolve((window as any).bkoigl);
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
-}
 
 // ─── BariKoi Reverse Geocoding & Road Routing APIs ──────────────────────────
 
@@ -111,7 +89,8 @@ function BariKoiLiveHousingMap({
   savedIds,
   onToggleSave,
   isScrolled,
-  searchQuery
+  searchQuery,
+  countryCode,
 }: {
   userCoords: [number, number];
   isLocationGranted: boolean;
@@ -131,6 +110,7 @@ function BariKoiLiveHousingMap({
   onToggleSave?: (id: string) => void;
   isScrolled?: boolean;
   searchQuery?: string;
+  countryCode?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -191,22 +171,22 @@ function BariKoiLiveHousingMap({
     const L = LRef.current;
     const bkoigl = (window as any).bkoigl;
 
-    // 1. User Live GPS Pinpoint Marker
+    // 1. User Live GPS Pinpoint Marker (Brand Color matching Screenshot 2)
     if (isLocationGranted && userCoords) {
       const userHtml = `
-        <div style="position:relative;display:flex;align-items:center;justify-content:center;">
-          <div style="position:absolute;width:32px;height:32px;border-radius:50%;background:rgba(192,74,34,0.25);animation:ping 2s cubic-bezier(0,0,0.2,1) infinite;"></div>
-          <div style="width:18px;height:18px;border-radius:50%;background:#C04A22;border:3px solid white;box-shadow:0 0 12px rgba(192,74,34,0.8);"></div>
+        <div style="position:relative;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:9999;">
+          <div style="position:absolute;inset:-8px;border-radius:50%;background:rgba(216,90,48,0.35);animation:ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+          <div style="width:16px;height:16px;border-radius:50%;background:#D85A30;border:3px solid white;box-shadow:0 4px 12px rgba(216,90,48,0.5);position:relative;z-index:2;"></div>
         </div>
       `;
 
       if (L && map.addLayer) {
         if (!userMarkerRef.current) {
           const userIcon = L.divIcon({
-            className: "bkoi-user-marker",
+            className: "custom-user-location-pin",
             html: userHtml,
-            iconSize: [32, 32],
-            iconAnchor: [16, 16]
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
           });
           userMarkerRef.current = L.marker(userCoords, { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
         } else {
@@ -283,7 +263,7 @@ function BariKoiLiveHousingMap({
           bkoigl.apiKey = key;
         }
 
-        const mapStyle = getMapStyleForLocation(userCoords[0], userCoords[1]);
+        const mapStyle = getMapStyleForLocation(userCoords[0], userCoords[1], countryCode);
         const map = new bkoigl.Map({
           container: containerRef.current!,
           center: [userCoords[1], userCoords[0]], // [lng, lat]
@@ -292,6 +272,7 @@ function BariKoiLiveHousingMap({
           apiKey: key,
           attributionControl: false,
           style: mapStyle,
+          transformRequest: bariKoiTransformRequest,
         });
 
         // Gracefully handle missing sprite icons/layers from Barikoi style
@@ -309,7 +290,7 @@ function BariKoiLiveHousingMap({
           }
         });
 
-        attachMapboxFallbackOnError(map);
+        attachMapboxFallbackOnError(map, countryCode);
 
         map.on("load", () => {
           mapRef.current = map;
@@ -341,7 +322,7 @@ function BariKoiLiveHousingMap({
             attributionControl: false
           });
 
-          const tileCfg = getLeafletTileConfig(userCoords[0], userCoords[1]);
+          const tileCfg = getLeafletTileConfig(userCoords[0], userCoords[1], countryCode);
           L.tileLayer(tileCfg.url, {
             maxZoom: tileCfg.maxZoom,
             attribution: tileCfg.attribution,
@@ -371,6 +352,17 @@ function BariKoiLiveHousingMap({
       }
     };
   }, []);
+
+  // Dynamically update map style when country changes (e.g. BD/US -> BariKoi, Norway/Global -> Mapbox)
+  useEffect(() => {
+    if (!mapRef.current) return;
+    if (mapRef.current.setStyle) {
+      try {
+        const targetStyle = getMapStyleForLocation(userCoords[0], userCoords[1], countryCode);
+        mapRef.current.setStyle(targetStyle);
+      } catch (_) {}
+    }
+  }, [countryCode, userCoords]);
 
   // Update map center & pinpoint when user location updates
   useEffect(() => {
@@ -746,14 +738,14 @@ function BariKoiLiveHousingMap({
               </div>
 
               {/* Action Buttons: Direction & Details (Icon Only) */}
-              <div className="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+              <div className="mt-2.5 pt-2 flex items-center justify-between gap-2">
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     setMarkerClickedListing(null);
                     onShowDirection(markerClickedListing);
                   }}
-                  className="flex-1 py-2.5 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                  className="flex-1 py-2 rounded-xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95"
                   title="Direction"
                   aria-label="Direction"
                 >
@@ -764,7 +756,7 @@ function BariKoiLiveHousingMap({
                     e.stopPropagation();
                     onViewDetails?.(markerClickedListing);
                   }}
-                  className="flex-1 py-2.5 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                  className="flex-1 py-2 rounded-xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center shadow-none active:scale-95 cursor-pointer"
                   title="Details"
                   aria-label="Details"
                 >
@@ -808,36 +800,41 @@ function BariKoiLiveHousingMap({
           </div>
         )}
 
-        {/* Map Controls: Zoom In / Out / Recenter (Top Right) */}
-        <div className="absolute top-4 right-4 z-30 flex flex-col gap-1.5 pointer-events-auto">
-          <button
-            onClick={handleZoomIn}
-            className="w-9 h-9 rounded-xl bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 shadow-md border border-slate-200/80 flex items-center justify-center transition cursor-pointer hover:text-[#C04A22]"
-            title="Zoom In"
-          >
-            <Plus className="w-4.5 h-4.5" />
-          </button>
-          <button
-            onClick={handleZoomOut}
-            className="w-9 h-9 rounded-xl bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 shadow-md border border-slate-200/80 flex items-center justify-center transition cursor-pointer hover:text-[#C04A22]"
-            title="Zoom Out"
-          >
-            <Minus className="w-4.5 h-4.5" />
-          </button>
+        {/* Map Controls: Zoom In / Out / Recenter (Matching Screenshot 2) */}
+        <div className="absolute top-4 right-4 z-30 flex flex-col items-center gap-2 pointer-events-auto">
+          {/* Zoom controls pill */}
+          <div className="flex flex-col items-center bg-white/95 backdrop-blur-md rounded-xl shadow-md border border-slate-200/90 overflow-hidden">
+            <button
+              onClick={handleZoomIn}
+              className="w-8.5 h-8.5 flex items-center justify-center text-slate-700 hover:text-[#D85A30] hover:bg-slate-50 transition cursor-pointer"
+              title="Zoom In"
+            >
+              <Plus className="w-4 h-4 stroke-[2.2]" />
+            </button>
+            <div className="w-full h-px bg-slate-100" />
+            <button
+              onClick={handleZoomOut}
+              className="w-8.5 h-8.5 flex items-center justify-center text-slate-700 hover:text-[#D85A30] hover:bg-slate-50 transition cursor-pointer"
+              title="Zoom Out"
+            >
+              <Minus className="w-4 h-4 stroke-[2.2]" />
+            </button>
+          </div>
+          {/* Floating Navigation Button */}
           <button
             onClick={handleReset}
             disabled={isLocating}
-            className={`w-9 h-9 rounded-xl shadow-md border transition cursor-pointer active:scale-95 disabled:opacity-75 flex items-center justify-center ${
+            className={`w-9.5 h-9.5 rounded-full shadow-lg border transition-all cursor-pointer active:scale-95 disabled:opacity-75 flex items-center justify-center ${
               isLocationGranted
-                ? "bg-[#C04A22] text-white border-[#C04A22] shadow-[#C04A22]/30"
-                : "bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 border-slate-200/80 hover:text-[#C04A22]"
+                ? "bg-[#D85A30] text-white border-[#D85A30] shadow-[#D85A30]/30"
+                : "bg-white/95 backdrop-blur-md text-slate-700 hover:text-[#D85A30] border-slate-200/90"
             }`}
             title={isLocationGranted ? "Live Location Active (Click to Turn OFF)" : "Turn ON Live Location (GPS)"}
           >
             {isLocating ? (
-              <Loader2 className={`w-4.5 h-4.5 animate-spin ${isLocationGranted ? "text-white" : "text-[#C04A22]"}`} />
+              <Loader2 className={`w-4 h-4 animate-spin ${isLocationGranted ? "text-white" : "text-[#D85A30]"}`} />
             ) : (
-              <Navigation className={`w-4.5 h-4.5 ${isLocationGranted ? "text-white" : "text-[#C04A22]"}`} />
+              <Navigation className={`w-4 h-4 transition-transform ${isLocationGranted ? "text-white fill-current" : "text-slate-700 hover:text-[#D85A30]"}`} />
             )}
           </button>
         </div>
@@ -1022,7 +1019,13 @@ export function Housing() {
   // Geolocation & Device Location State
   const [isLocating, setIsLocating] = useState(false);
   const [locationPermissionStatus, setLocationPermissionStatus] = useState<"prompt" | "granted" | "denied">("prompt");
-  const [isLocationGranted, setIsLocationGranted] = useState(false);
+  const [isLocationGranted, setIsLocationGranted] = useState<boolean>(() => {
+    try {
+      return !!localStorage.getItem("bkoi_last_user_coords");
+    } catch (_) {
+      return false;
+    }
+  });
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
 
   // Saved Properties State
@@ -1048,17 +1051,85 @@ export function Housing() {
   // Property Details Modal State
   const [showDetailsModal, setShowDetailsModal] = useState<LiveHousingListing | null>(null);
 
-  // Default initial coordinates for BariKoi map view (Dhaka, Bangladesh)
-  const defaultCoords: [number, number] = [23.8103, 90.4125];
-  const [userCoords, setUserCoords] = useState<[number, number]>(defaultCoords);
-  const [userLocationName, setUserLocationName] = useState<string>("Dhaka, Bangladesh");
-  const [userArea, setUserArea] = useState<string>("Gulshan / Banani");
-  const [userCity, setUserCity] = useState<string>("Dhaka");
+  const { currentCountry } = useCountryPlatform();
+  const countryCode = "BD";
 
-  // Dynamic Live Housing List
-  const [liveHousing, setLiveHousing] = useState<LiveHousingListing[]>(() =>
-    generateLiveLocationHousing(defaultCoords[0], defaultCoords[1], "Gulshan / Banani", "Dhaka")
-  );
+  // Coordinates from current platform country or Cached User Location
+  const defaultCoords: [number, number] = currentCountry?.defaultCoords || [23.8103, 90.4125];
+  const [userCoords, setUserCoords] = useState<[number, number]>(() => {
+    try {
+      const cached = localStorage.getItem("bkoi_last_user_coords");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length === 2 && !isNaN(parsed[0]) && !isNaN(parsed[1])) {
+          return [parsed[0], parsed[1]];
+        }
+      }
+    } catch (_) {}
+    return defaultCoords;
+  });
+
+  const initialLoc = useMemo(() => {
+    try {
+      const cachedArea = localStorage.getItem("bkoi_last_user_area");
+      const cachedCity = localStorage.getItem("bkoi_last_user_city");
+      if (cachedArea || cachedCity) {
+        return {
+          city: cachedCity || "Your City",
+          area: cachedArea || "Your Area",
+          name: `${cachedArea || "Your Area"}, ${cachedCity || "Bangladesh"}`
+        };
+      }
+    } catch (_) {}
+    return { city: "Dhaka", area: "Gulshan / Banani", name: "Dhaka, Bangladesh" };
+  }, []);
+
+  const [userLocationName, setUserLocationName] = useState<string>(initialLoc.name);
+  const [userArea, setUserArea] = useState<string>(initialLoc.area);
+  const [userCity, setUserCity] = useState<string>(initialLoc.city);
+
+  // Dynamic Live Housing List initialized strictly around user's location
+  const [liveHousing, setLiveHousing] = useState<LiveHousingListing[]>(() => {
+    const coords = (() => {
+      try {
+        const cached = localStorage.getItem("bkoi_last_user_coords");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length === 2 && !isNaN(parsed[0]) && !isNaN(parsed[1])) {
+            return [parsed[0], parsed[1]];
+          }
+        }
+      } catch (_) {}
+      return defaultCoords;
+    })();
+    return generateLiveLocationHousing(coords[0], coords[1], initialLoc.area, initialLoc.city);
+  });
+
+  // Keep listings accurately synced with user's real area without ever moving to default location on nav off
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem("bkoi_last_user_coords");
+      if (cached) {
+        const [lat, lng] = JSON.parse(cached);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          fetchBariKoiReverseGeocode(lat, lng).then(geo => {
+            if (geo) {
+              const area = geo.area || geo.sub_district || "Your Location";
+              const city = geo.city || "Live City";
+              setUserLocationName(geo.address || `${area}, ${city}`);
+              setUserArea(area);
+              setUserCity(city);
+              try {
+                localStorage.setItem("bkoi_last_user_area", area);
+                localStorage.setItem("bkoi_last_user_city", city);
+              } catch (_) {}
+              setLiveHousing(generateLiveLocationHousing(lat, lng, area, city));
+            }
+          });
+        }
+      }
+    } catch (_) {}
+  }, []);
   const [selectedListing, setSelectedListing] = useState<LiveHousingListing | null>(null);
   const [directionListing, setDirectionListing] = useState<LiveHousingListing | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -1222,22 +1293,15 @@ export function Housing() {
   // Navigation Button Click Handler (Turn ON / Turn OFF Toggle)
   const handleNavigationClick = useCallback(() => {
     if (isLocationGranted) {
+      // Turn OFF live GPS follow, but KEEP userCoords and service cards in place!
       setIsLocationGranted(false);
       setLocationPermissionStatus("prompt");
       setShowPermissionPrompt(false);
-      setUserCoords(defaultCoords);
-      setUserLocationName("Jackson Heights, NY");
-      setUserArea("Queens / NYC");
-      setUserCity("New York");
       setDirectionListing(null);
-      setLiveHousing(generateLiveLocationHousing(defaultCoords[0], defaultCoords[1], "Queens / NYC", "New York"));
-      try {
-        localStorage.removeItem("bkoi_last_user_coords");
-      } catch (_) {}
     } else {
       executeGeolocation(true);
     }
-  }, [isLocationGranted, executeGeolocation, defaultCoords]);
+  }, [isLocationGranted, executeGeolocation]);
 
   return (
     <AppLayout noPad={true}>
@@ -1324,6 +1388,7 @@ export function Housing() {
               onToggleSave={toggleSave}
               isScrolled={isScrolled}
               searchQuery={searchQuery}
+              countryCode={countryCode}
             />
           </div>
         </div>
@@ -1375,7 +1440,7 @@ export function Housing() {
                     else cardRefs.current.delete(listing.id);
                   }}
                   onClick={() => setSelectedListing(listing)}
-                  className={`group bg-white rounded-none sm:rounded-3xl border-0 sm:border border-b sm:border-b-slate-200/90 border-slate-100/90 overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between h-full shadow-none sm:shadow-2xs ${
+                  className={`group bg-white rounded-none sm:rounded-3xl border-0 sm:border border-slate-200/90 overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between h-full shadow-none sm:shadow-2xs ${
                     isSelected
                       ? "sm:border-[#C04A22] sm:ring-2 sm:ring-[#C04A22]/20 sm:shadow-md"
                       : "sm:border-slate-200/90 sm:hover:border-slate-300 sm:hover:shadow-xs"
@@ -1495,14 +1560,14 @@ export function Housing() {
                   </div>
 
                   {/* Bottom: Aligned Action Buttons (Icon Only) */}
-                  <div className="p-4 sm:p-5 pt-3">
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
+                  <div className="px-4 sm:px-5 pb-3 pt-1">
+                    <div className="flex items-center justify-between gap-2.5">
                       <button
                         onClick={e => {
                           e.stopPropagation();
                           handleShowDirection(listing);
                         }}
-                        className="flex-1 py-2.5 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                        className="flex-1 py-2 rounded-2xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95"
                         title="Direction"
                         aria-label="Direction"
                       >
@@ -1514,7 +1579,7 @@ export function Housing() {
                           e.stopPropagation();
                           setShowDetailsModal(listing);
                         }}
-                        className="flex-1 py-2.5 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                        className="flex-1 py-2 rounded-2xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center shadow-none active:scale-95 cursor-pointer"
                         title="Details"
                         aria-label="Details"
                       >

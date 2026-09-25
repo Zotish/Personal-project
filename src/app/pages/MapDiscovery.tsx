@@ -7,12 +7,22 @@ import {
   CheckCircle, ChevronRight, Car, Bike, Footprints, AlertTriangle,
   DollarSign, Timer, Route, ArrowLeft, Loader2, ChevronDown, ChevronUp, Store,
   Building2, ExternalLink, Briefcase, Maximize2, Volume2, VolumeX,
-  CornerUpRight, CornerUpLeft, ArrowUp, CheckCircle2, LocateFixed
+  CornerUpRight, CornerUpLeft, ArrowUp, CheckCircle2, LocateFixed,
+  Plus, Minus
 } from "lucide-react";
 
 import { LiveJobListing, generateLiveLocationJobs, isJobQuery } from "../data/jobsData";
+import { generateLiveLocationHousing } from "../data/housingData";
+import {
+  generateHospitalListings,
+  generateGroceryShopListings,
+  generateFurnitureListings,
+  generateHalalFoodListings,
+  generateMoneyExchangeListings,
+} from "../data/serviceDirectoryData";
 import { JobDetailsModal } from "../components/jobs/JobDetailsModal";
 import { useMobileTabs } from "../context/MobileTabContext";
+import { useCountryPlatform } from "../context/CountryPlatformContext";
 import { buildMapShareUrl, shareOrCopy } from "../utils/shareUtils";
 import type { Map as LeafletMapType } from "leaflet";
 import {
@@ -22,12 +32,17 @@ import {
   triggerBariKoiCooldown,
   getCuratedFallbackPlaces,
   CURATED_BANGLADESH_PLACES,
+  CURATED_GLOBAL_DIASPORA_PLACES,
+  getUnifiedCuratedPlaces,
   type BariKoiAddressInfo,
   getMapStyleForLocation,
   getMapboxRasterStyle,
   getLeafletTileConfig,
   fetchGlobalRoute,
   attachMapboxFallbackOnError,
+  isLocationInBangladesh,
+  loadBkoiGL,
+  bariKoiTransformRequest,
 } from "../services/barikoiService";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -456,11 +471,9 @@ export async function fetchBariKoiNearbyPlaces(
     return inFlightNearbyRequests.get(cacheKey)!;
   }
 
-  // If in cooldown, outside Bangladesh, or API unavailable, immediately use rich curated fallback places
+  // If in cooldown, outside Bangladesh, or API unavailable, return empty results (no garbage faraway icons)
   if (!isBariKoiAvailable(lat, lng)) {
-    const fallback = getCuratedFallbackPlaces(lat, lng, category);
-    nearbyPlacesCache.set(cacheKey, fallback);
-    return fallback;
+    return [];
   }
 
   const ptypesForCategory: Record<string, string[]> = {
@@ -506,6 +519,10 @@ export async function fetchBariKoiNearbyPlaces(
               const pLng = parseFloat(p.longitude);
               if (isNaN(pLat) || isNaN(pLng) || pLat === 0 || pLng === 0) return;
 
+              // Proximity guard: discard any place further than 4.0 km away from user location
+              const distFromOriginKm = Math.hypot(pLat - lat, pLng - lng) * 111;
+              if (distFromOriginKm > 4.0) return;
+
               const distMeters = p.distance_in_meters;
               const distStr = distMeters
                 ? (distMeters < 1000 ? `${Math.round(distMeters)} m` : `${(distMeters / 1000).toFixed(1)} km`)
@@ -541,10 +558,7 @@ export async function fetchBariKoiNearbyPlaces(
         return results;
       }
 
-      // Graceful fallback to verified curated landmarks
-      const fallback = getCuratedFallbackPlaces(lat, lng, category);
-      nearbyPlacesCache.set(cacheKey, fallback);
-      return fallback;
+      return [];
     } finally {
       inFlightNearbyRequests.delete(cacheKey);
     }
@@ -554,11 +568,8 @@ export async function fetchBariKoiNearbyPlaces(
   return requestPromise;
 }
 
-// Initial BariKoi Verified Landmarks across all categories
-export const places: Place[] = CURATED_BANGLADESH_PLACES.map(p => ({
-  ...p,
-  distance: "Nearby",
-}));
+// Initial places (clean empty array - zero garbage static icons)
+export const places: Place[] = [];
 
 
 // ── Hover tooltip card (desktop only) ────────────────────────────────────────
@@ -624,14 +635,14 @@ function HoverTooltipCard({
         <div className="flex items-center gap-1.5 pt-1">
           <button
             onClick={() => onDirections(place)}
-            className="flex-1 py-1.5 px-2 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer active:scale-98"
+            className="flex-1 py-1.5 px-2 rounded-xl bg-transparent hover:opacity-70 text-[#C04A22] text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer active:scale-95"
           >
             <Navigation className="w-3 h-3 text-[#C04A22]" />
             <span>Direction</span>
           </button>
           <button
             onClick={() => onViewDetails(place)}
-            className="flex-1 py-1.5 px-2 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer active:scale-98"
+            className="flex-1 py-1.5 px-2 rounded-xl bg-transparent hover:opacity-70 text-[#C04A22] text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer active:scale-95"
           >
             <span>Details</span>
             <ChevronRight className="w-3 h-3" />
@@ -707,34 +718,12 @@ function HoverTooltipCard({
 
 
 
-// Official BariKoi GL JS Loader (https://docs.barikoi.com/)
-function loadBkoiGL(): Promise<any> {
-  return new Promise((resolve, reject) => {
-    if ((window as any).bkoigl) {
-      resolve((window as any).bkoigl);
-      return;
-    }
-    if (!document.getElementById("maplibre-gl-css")) {
-      const css = document.createElement("link");
-      css.id = "maplibre-gl-css";
-      css.rel = "stylesheet";
-      css.href = "https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css";
-      document.head.appendChild(css);
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/bkoi-gl@latest/dist/iife/bkoi-gl.js";
-    script.onload = () => resolve((window as any).bkoigl);
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
-}
 
 // ── Booking.com Style Leaflet map component ──────────────────────────────────
 function LeafletMap({
   visiblePlaces, activePlaceId, routes, selectedRouteId, userLocation, isGPSActive,
-  isLiveNavigating, navUserCoord, navHeading, recenterTrigger,
-  onMarkerClick, onMapClick, onRouteClick, onMarkerHover,
+  isLiveNavigating, navUserCoord, navHeading, recenterTrigger, zoomInTrigger, zoomOutTrigger,
+  onMarkerClick, onMapClick, onRouteClick, onMarkerHover, countryCode, defaultCoords,
 }: {
   visiblePlaces: Place[];
   activePlaceId: number | string | null;
@@ -746,16 +735,21 @@ function LeafletMap({
   navUserCoord?: [number, number] | null;
   navHeading?: number;
   recenterTrigger?: number;
+  zoomInTrigger?: number;
+  zoomOutTrigger?: number;
   onMarkerClick: (p: Place, px: { x: number; y: number }) => void;
   onMapClick: () => void;
   onRouteClick: (id: number) => void;
   onMarkerHover: (p: Place | null, px?: { x: number; y: number }) => void;
+  countryCode?: string;
+  defaultCoords?: [number, number];
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<Map<number | string, any>>(new Map());
   const userMarkerRef = useRef<any>(null);
   const hasInitialCenteredRef = useRef(false);
+  const lastCenteredLocationRef = useRef<[number, number] | null>(null);
   const routeLinesRef = useRef<any[]>([]);
   const navPuckRef = useRef<any>(null);
   const LRef = useRef<any>(null);
@@ -865,17 +859,41 @@ function LeafletMap({
     const bkoigl = (window as any).bkoigl;
     const L = LRef.current;
 
-    const ids = new Set(ps.map(p => p.id));
+    // Prune markers that are no longer in visiblePlaces (strictly removes any stale/faraway Dhaka markers)
+    const ids = new Set(ps.map(p => String(p.id)));
     markersRef.current.forEach((m, id) => {
-      if (!ids.has(id)) {
+      if (!ids.has(String(id))) {
         if (m.remove) m.remove();
         markersRef.current.delete(id);
       }
     });
 
     ps.forEach(place => {
-      if (markersRef.current.has(place.id)) return;
-      const active = place.id === activeId;
+      const active = String(place.id) === String(activeId);
+      const strId = String(place.id);
+      const existing = markersRef.current.get(strId) || markersRef.current.get(place.id);
+
+      if (existing) {
+        // ALWAYS update marker position if coordinates changed (prevents markers sticking to old/Dhaka coords)
+        if (existing.setLngLat) {
+          existing.setLngLat([place.lng, place.lat]);
+        } else if (existing.setLatLng) {
+          existing.setLatLng([place.lat, place.lng]);
+        }
+        // Update marker HTML and active highlight
+        if (existing.getElement) {
+          const el = existing.getElement();
+          if (el) el.innerHTML = makeMarkerHtml(place, active);
+        } else if (existing.setIcon && L) {
+          existing.setIcon(L.divIcon({
+            className: "booking-map-marker",
+            html: makeMarkerHtml(place, active),
+            iconSize: active ? [42, 48] : [34, 40],
+            iconAnchor: active ? [21, 48] : [17, 40],
+          }));
+        }
+        return;
+      }
 
       if (L && LRef.current) {
         // Leaflet marker
@@ -896,7 +914,7 @@ function LeafletMap({
           onMarkerHover(place, { x: px.x, y: px.y });
         });
         marker.on("mouseout", () => onMarkerHover(null));
-        markersRef.current.set(place.id, marker);
+        markersRef.current.set(strId, marker);
       } else if (bkoigl || map.project) {
         // bkoi-gl / Mapbox GL marker
         const el = document.createElement("div");
@@ -911,7 +929,7 @@ function LeafletMap({
           .setLngLat([place.lng, place.lat])
           .addTo(map);
 
-        el.addEventListener("click", (e) => {
+        el.addEventListener("click", (e: any) => {
           e.stopPropagation();
           const pos = map.project ? map.project([place.lng, place.lat]) : { x: 0, y: 0 };
           onMarkerClick(place, { x: pos.x, y: pos.y });
@@ -922,7 +940,7 @@ function LeafletMap({
           onMarkerHover(place, { x: pos.x, y: pos.y });
         });
         el.addEventListener("mouseleave", () => onMarkerHover(null));
-        markersRef.current.set(place.id, marker);
+        markersRef.current.set(strId, marker);
       }
     });
   }, [onMarkerClick, onMarkerHover]);
@@ -936,9 +954,11 @@ function LeafletMap({
       .then(bkoigl => {
         if (isCancelled || !containerRef.current || mapRef.current) return;
 
+        const fallbackCoords = defaultCoords || [23.8103, 90.4125];
         const defaultCenter: [number, number] = userLocation
           ? [userLocation[1], userLocation[0]] // [lng, lat] for bkoi-gl
-          : [90.4125, 23.8103];
+          : [fallbackCoords[1], fallbackCoords[0]];
+        lastCenteredLocationRef.current = userLocation ? [userLocation[0], userLocation[1]] : [fallbackCoords[0], fallbackCoords[1]];
         const defaultZoom = isGPSActive ? 14.8 : 13.5;
         const key = BARIKOI_API_KEY;
 
@@ -947,7 +967,7 @@ function LeafletMap({
           bkoigl.apiKey = key;
         }
 
-        const mapStyle = getMapStyleForLocation(userLocation?.[0], userLocation?.[1]);
+        const mapStyle = getMapStyleForLocation(userLocation?.[0] ?? fallbackCoords[0], userLocation?.[1] ?? fallbackCoords[1], countryCode);
 
         const map = new bkoigl.Map({
           container: containerRef.current!,
@@ -956,6 +976,7 @@ function LeafletMap({
           accessToken: key,
           apiKey: key,
           style: mapStyle,
+          transformRequest: bariKoiTransformRequest,
         });
 
         // Handle missing sprite images cleanly
@@ -973,7 +994,7 @@ function LeafletMap({
           }
         });
 
-        attachMapboxFallbackOnError(map);
+        attachMapboxFallbackOnError(map, countryCode);
 
         map.on("click", () => onMapClick());
         map.on("load", () => {
@@ -1002,7 +1023,9 @@ function LeafletMap({
             delete (L.Icon.Default.prototype as any)._getIconUrl;
           } catch (_) {}
 
-          const defaultCenter: [number, number] = userLocation || [23.8103, 90.4125];
+          const fallbackCoords = defaultCoords || [23.8103, 90.4125];
+          const defaultCenter: [number, number] = userLocation || fallbackCoords;
+          lastCenteredLocationRef.current = defaultCenter;
           const defaultZoom = isGPSActive ? 14.8 : 13.5;
 
           const map = L.map(containerRef.current!, {
@@ -1012,7 +1035,7 @@ function LeafletMap({
             attributionControl: false,
           });
 
-          const tileCfg = getLeafletTileConfig(userLocation?.[0], userLocation?.[1]);
+          const tileCfg = getLeafletTileConfig(userLocation?.[0], userLocation?.[1], countryCode);
           L.tileLayer(tileCfg.url, {
             maxZoom: tileCfg.maxZoom,
             attribution: tileCfg.attribution,
@@ -1044,6 +1067,25 @@ function LeafletMap({
       }
     };
   }, []);
+
+  // Dynamically switch map style & center camera whenever countryCode or defaultCoords changes
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const fallbackCoords = defaultCoords || [23.8103, 90.4125];
+    const targetStyle = getMapStyleForLocation(userLocation?.[0] ?? fallbackCoords[0], userLocation?.[1] ?? fallbackCoords[1], countryCode);
+    if (mapRef.current.setStyle) {
+      try {
+        mapRef.current.setStyle(targetStyle);
+      } catch (_) {}
+    }
+    if (defaultCoords && !userLocation && mapRef.current.flyTo) {
+      mapRef.current.flyTo({
+        center: [defaultCoords[1], defaultCoords[0]],
+        zoom: isGPSActive ? 14.8 : 13.5,
+        essential: true,
+      });
+    }
+  }, [countryCode, defaultCoords]);
 
   // Sync place markers whenever visiblePlaces or map loaded
   useEffect(() => {
@@ -1148,9 +1190,20 @@ function LeafletMap({
       }
     }
 
-    // ONLY center/zoom on initial map mount, NEVER override user's manual zoom out!
-    if (!hasInitialCenteredRef.current) {
+    // Center on user location: on initial mount OR when transitioning from default coords to real location
+    const prevLoc = lastCenteredLocationRef.current;
+    const isFirstCenter = !hasInitialCenteredRef.current;
+    const isMovingFromDefault = Boolean(
+      prevLoc &&
+      defaultCoords &&
+      Math.abs(prevLoc[0] - defaultCoords[0]) < 0.02 &&
+      Math.abs(prevLoc[1] - defaultCoords[1]) < 0.02 &&
+      (Math.abs(lat - defaultCoords[0]) > 0.03 || Math.abs(lng - defaultCoords[1]) > 0.03)
+    );
+
+    if (isFirstCenter || isMovingFromDefault) {
       hasInitialCenteredRef.current = true;
+      lastCenteredLocationRef.current = [lat, lng];
       if (L && map.flyTo) {
         map.flyTo([lat, lng], 14.8, { duration: 1.2 });
       } else if (map.flyTo) {
@@ -1171,6 +1224,31 @@ function LeafletMap({
       map.flyTo({ center: [lng, lat], zoom: 15.5, speed: 1.5 });
     }
   }, [recenterTrigger]);
+
+  // ── Google Maps Style Simple Zoom Controls (+ / -) ─────────────────────────
+  useEffect(() => {
+    if (!zoomInTrigger || !mapRef.current) return;
+    const map = mapRef.current;
+    try {
+      if (typeof map.zoomIn === "function") {
+        map.zoomIn();
+      } else if (typeof map.getZoom === "function" && typeof map.setZoom === "function") {
+        map.setZoom(map.getZoom() + 1);
+      }
+    } catch (_) {}
+  }, [zoomInTrigger]);
+
+  useEffect(() => {
+    if (!zoomOutTrigger || !mapRef.current) return;
+    const map = mapRef.current;
+    try {
+      if (typeof map.zoomOut === "function") {
+        map.zoomOut();
+      } else if (typeof map.getZoom === "function" && typeof map.setZoom === "function") {
+        map.setZoom(map.getZoom() - 1);
+      }
+    } catch (_) {}
+  }, [zoomOutTrigger]);
 
   // ── Live Navigation Vehicle Marker Sync & Camera Follow ───────────────────
   useEffect(() => {
@@ -1193,8 +1271,8 @@ function LeafletMap({
     el.className = "live-nav-vehicle-puck";
     el.style.cssText = "position:relative;width:48px;height:48px;display:flex;align-items:center;justify-content:center;pointer-events:none;";
     el.innerHTML = `
-      <div style="position:absolute;inset:-6px;border-radius:50%;background:rgba(26,115,232,0.25);animation:ping 1.8s cubic-bezier(0,0,0.2,1) infinite;"></div>
-      <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, #1a73e8, #0d47a1);border:3px solid white;box-shadow:0 6px 20px rgba(26,115,232,0.6), 0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;transform:rotate(${navHeading || 0}deg);transition:transform 0.3s ease;">
+      <div style="position:absolute;inset:-6px;border-radius:50%;background:rgba(216,90,48,0.25);animation:ping 1.8s cubic-bezier(0,0,0.2,1) infinite;"></div>
+      <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, #e6653c, #D85A30);border:3px solid white;box-shadow:0 6px 20px rgba(216,90,48,0.6), 0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;transform:rotate(${navHeading || 0}deg);transition:transform 0.3s ease;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
         </svg>
@@ -1996,14 +2074,14 @@ function MapPlaceCard({
       <div className="flex items-center gap-2 pt-0.5">
         <button
           onClick={onDirections}
-          className="flex-1 py-2.5 px-3 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 shadow-2xs"
+          className="flex-1 py-2 px-3 rounded-2xl bg-transparent hover:opacity-70 text-[#C04A22] text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
         >
           <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
           <span>Direction</span>
         </button>
         <button
           onClick={onViewDetails}
-          className="flex-1 py-2.5 px-3 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 shadow-2xs"
+          className="flex-1 py-2 px-3 rounded-2xl bg-transparent hover:opacity-70 text-[#C04A22] text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
         >
           <span>Details</span>
           <ChevronRight className="w-3.5 h-3.5" />
@@ -2211,7 +2289,7 @@ function PlaceCard({
 
         <div className="flex gap-2 mt-2.5">
           <button
-            className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/25 text-xs font-bold hover:bg-[#C04A22]/20 transition cursor-pointer"
+            className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl bg-transparent text-[#C04A22] text-xs font-bold hover:opacity-70 transition cursor-pointer active:scale-95"
             onClick={e => {
               e.stopPropagation();
               onDirections ? onDirections(place) : onClick();
@@ -2220,7 +2298,7 @@ function PlaceCard({
             <Navigation className="w-3 h-3 text-[#C04A22]" /> Direction
           </button>
           <button
-            className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/25 text-xs font-bold hover:bg-[#C04A22]/20 transition cursor-pointer"
+            className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl bg-transparent text-[#C04A22] text-xs font-bold hover:opacity-70 transition cursor-pointer active:scale-95"
             onClick={e => {
               e.stopPropagation();
               onViewDetails ? onViewDetails(place) : onClick();
@@ -2301,7 +2379,7 @@ function PlaceCard({
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
-const DEFAULT_LOCATION: [number, number] = [23.8103, 90.4125]; // Dhaka, Bangladesh (BariKoi native center)
+const DEFAULT_LOCATION: [number, number] = [23.8103, 90.4125]; // Dhaka, Bangladesh
 
 export function MapDiscoveryContent({
   embedded = false,
@@ -2314,6 +2392,8 @@ export function MapDiscoveryContent({
 }) {
   const navigate = useNavigate();
   const { isRecentsOpen } = useMobileTabs();
+  const { currentCountry, setCurrentCountry } = useCountryPlatform();
+  const countryDefaultCoords: [number, number] = currentCountry?.defaultCoords || DEFAULT_LOCATION;
   const routerLocation = useLocation();
   const searchParams = useMemo(() => new URLSearchParams(routerLocation.search), [routerLocation.search]);
   const urlPlaceId = searchParams.get("placeId") || searchParams.get("id") || searchParams.get("place");
@@ -2383,7 +2463,7 @@ export function MapDiscoveryContent({
         }
       }
     } catch (_) {}
-    return DEFAULT_LOCATION;
+    return countryDefaultCoords;
   });
 
   const [isGPSActive, setIsGPSActive] = useState<boolean>(() => {
@@ -2398,18 +2478,22 @@ export function MapDiscoveryContent({
 
   const [isLocating, setIsLocating] = useState(false);
   const [recenterCount, setRecenterCount] = useState(0);
+  const [zoomInCount, setZoomInCount] = useState(0);
+  const [zoomOutCount, setZoomOutCount] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
   // ── Continuous Real-Time GPS Tracking with watchPosition (Throttled) ──
   const lastGpsCoordsRef = useRef<[number, number] | null>(null);
   const lastGpsTimeRef = useRef<number>(0);
+  const gpsDisabledByUserRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!("geolocation" in navigator)) return;
 
     const watchId = navigator.geolocation.watchPosition(
       pos => {
+        if (gpsDisabledByUserRef.current) return;
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
         const now = Date.now();
@@ -2449,57 +2533,47 @@ export function MapDiscoveryContent({
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
-  // ── Auto-Detect User Location on Mount (High Accuracy + IP Fallback) ──
+  // ── Auto-Detect User Location on Mount (Preserve Cached User Location) ──
   useEffect(() => {
     if (routeState?.userLocation) return;
 
     const detectExactLocation = async () => {
-      // 1. Try browser device geolocation first
-      if ("geolocation" in navigator) {
+      // Check if permission was previously granted before requesting
+      if ("permissions" in navigator) {
         try {
-          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: true,
-              timeout: 5000,
-              maximumAge: 10000,
-            });
-          });
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          setUserLocation([lat, lng]);
-          setIsGPSActive(true);
-          try {
-            localStorage.setItem("bkoi_last_user_coords", JSON.stringify([lat, lng]));
-          } catch (_) {}
-          return;
+          const status = await navigator.permissions.query({ name: "geolocation" as any });
+          if (status.state === "granted" && "geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                if (gpsDisabledByUserRef.current) return;
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                setUserLocation([lat, lng]);
+                setIsGPSActive(true);
+                try {
+                  localStorage.setItem("bkoi_last_user_coords", JSON.stringify([lat, lng]));
+                } catch (_) {}
+              },
+              () => {
+                // If geolocation fails, preserve existing/cached user location! Do NOT overwrite with DEFAULT_LOCATION
+                setIsGPSActive(false);
+              },
+              { enableHighAccuracy: true, timeout: 5000, maximumAge: 10000 }
+            );
+            return;
+          }
         } catch (_) {}
       }
 
-      // 2. Exact IP Geolocation fallback
-      try {
-        const res = await fetch("https://ipwho.is/");
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.success && typeof data.latitude === "number" && typeof data.longitude === "number") {
-            const coords: [number, number] = [data.latitude, data.longitude];
-            setUserLocation(coords);
-            setIsGPSActive(true);
-            try {
-              localStorage.setItem("bkoi_last_user_coords", JSON.stringify(coords));
-            } catch (_) {}
-            return;
-          }
-        }
-      } catch (_) {}
-
-      // 3. Cached coordinate fallback
+      // If user has not granted permission: keep GPS inactive, preserve cached location so cards don't move to Dhaka
+      setIsGPSActive(false);
       try {
         const cached = localStorage.getItem("bkoi_last_user_coords");
         if (cached) {
           const parsed = JSON.parse(cached);
           if (Array.isArray(parsed) && parsed.length === 2 && !isNaN(parsed[0]) && !isNaN(parsed[1])) {
             setUserLocation([parsed[0], parsed[1]]);
-            setIsGPSActive(true);
+            return;
           }
         }
       } catch (_) {}
@@ -2564,12 +2638,31 @@ export function MapDiscoveryContent({
     };
   }, [userLocation, activeCategory]);
 
+  // Sync userLocation with country default only when country selection explicitly changes
+  const prevCountryCodeRef = useRef(currentCountry?.code);
+  useEffect(() => {
+    if (prevCountryCodeRef.current !== currentCountry?.code) {
+      const isFirstRun = prevCountryCodeRef.current === undefined;
+      prevCountryCodeRef.current = currentCountry?.code;
+      if (!isFirstRun && !isGPSActive && currentCountry?.defaultCoords) {
+        setUserLocation(currentCountry.defaultCoords);
+      }
+    }
+  }, [currentCountry?.code]);
+
   // Live Location Jobs generated dynamically around the user's real-time location
   const liveJobs = useMemo(() => {
-    const areaName = liveAddressInfo?.area || liveAddressInfo?.district || "Dhaka Local Area";
-    const cityName = liveAddressInfo?.city || "Dhaka";
+    const isNearbyUser = Boolean(
+      (userLocation && (Math.abs(userLocation[0] - DEFAULT_LOCATION[0]) > 0.01 || Math.abs(userLocation[1] - DEFAULT_LOCATION[1]) > 0.01)) ||
+      isGPSActive
+    );
+    const fallbackArea = isNearbyUser ? "Near You" : "Gulshan / Banani, Dhaka";
+    const fallbackCity = isNearbyUser ? "Local Area" : "Dhaka";
+
+    const areaName = liveAddressInfo?.area || liveAddressInfo?.district || fallbackArea;
+    const cityName = liveAddressInfo?.city || fallbackCity;
     return generateLiveLocationJobs(userLocation[0], userLocation[1], areaName, cityName);
-  }, [userLocation, liveAddressInfo]);
+  }, [userLocation, liveAddressInfo, isGPSActive]);
 
   const jobPlaces: Place[] = useMemo(() => {
     return liveJobs.map(j => ({
@@ -2594,7 +2687,9 @@ export function MapDiscoveryContent({
     }));
   }, [liveJobs]);
 
-  // BariKoi live autocomplete search state & API integration
+
+
+  // Live autocomplete search state & API integration (BariKoi in BD, Nominatim/Curated globally)
   const [bkoiPlaces, setBkoiPlaces] = useState<Place[]>([]);
 
   useEffect(() => {
@@ -2605,8 +2700,8 @@ export function MapDiscoveryContent({
     }
 
     const timer = setTimeout(async () => {
-      // If BariKoi is in cooldown or unavailable, search local curated places
-      if (!isBariKoiAvailable()) {
+      // ── Use BariKoi Autocomplete API for Bangladesh ──
+      if (!isBariKoiAvailable(userLocation?.[0], userLocation?.[1])) {
         const qLower = q.toLowerCase();
         const localMatches: Place[] = CURATED_BANGLADESH_PLACES.filter(p =>
           p.name.toLowerCase().includes(qLower) ||
@@ -2622,10 +2717,7 @@ export function MapDiscoveryContent({
       }
 
       const controller = new AbortController();
-      const isBD = userLocation ? isLocationInBangladesh(userLocation[0], userLocation[1]) : false;
-      const url = isBD
-        ? `https://barikoi.xyz/v2/api/search/autocomplete/place?api_key=${BARIKOI_API_KEY}&q=${encodeURIComponent(q)}&sub_area=true&sub_district=true`
-        : `https://barikoi.xyz/v2/api/search/autocomplete/place?api_key=${BARIKOI_API_KEY}&q=${encodeURIComponent(q)}&country=true&country_code=usa`;
+      const url = `https://barikoi.xyz/v2/api/search/autocomplete/place?api_key=${BARIKOI_API_KEY}&q=${encodeURIComponent(q)}&sub_area=true&sub_district=true`;
 
       try {
         const res = await fetch(url, { signal: controller.signal });
@@ -2666,7 +2758,7 @@ export function MapDiscoveryContent({
     }, 350);
 
     return () => clearTimeout(timer);
-  }, [query, userLocation]);
+  }, [query, userLocation, currentCountry]);
 
   // Dynamic shared place created from URL query parameters (Google Maps style)
   const sharedPlaceFromUrl = useMemo<Place | null>(() => {
@@ -2695,16 +2787,149 @@ export function MapDiscoveryContent({
     };
   }, [urlPlaceId, urlLat, urlLng, urlName, urlCategory, urlAddress, urlImage, urlPhone, urlDesc]);
 
-  // All combined places (Real-Time BariKoi Nearby + Live Location Jobs + BariKoi Autocomplete + Dynamic Shared Place)
-  // 100% Real-Time Data — Static data eliminated!
+  // Dynamic local category services generated strictly around the user's real-time location
+  const categoryPlaces: Place[] = useMemo(() => {
+    if (!userLocation) return [];
+    const areaName = liveAddressInfo?.area || liveAddressInfo?.district || "Near You";
+    const cityName = liveAddressInfo?.city || "Local Area";
+    const [lat, lng] = userLocation;
+
+    if (activeCategory === "housing") {
+      return generateLiveLocationHousing(lat, lng, areaName, cityName).map(h => ({
+        id: `housing-${h.id}`,
+        lat: h.lat,
+        lng: h.lng,
+        name: h.title,
+        category: "🏠 House Rental",
+        distance: h.distance,
+        rating: 4.8,
+        reviews: 24,
+        open: true,
+        openUntil: "Open",
+        address: `${h.agency} • ${h.area}, ${h.city}`,
+        phone: h.contactPhone,
+        languages: ["Bengali", "English"],
+        immigrantFriendly: true,
+        description: `${h.price} • ${h.beds} • ${h.propertyType} • ${h.description}`,
+        image: h.image,
+      }));
+    }
+
+    if (activeCategory === "hospital") {
+      return generateHospitalListings(lat, lng, areaName, cityName).map(s => ({
+        id: `hospital-${s.id}`,
+        lat: s.lat,
+        lng: s.lng,
+        name: s.title,
+        category: "🏥 Hospital",
+        distance: s.distance,
+        rating: s.rating,
+        reviews: s.reviews,
+        open: true,
+        openUntil: s.hours,
+        address: s.address,
+        phone: s.contactPhone,
+        languages: ["Bengali", "English"],
+        immigrantFriendly: true,
+        description: `${s.primaryHighlight} • ${s.overview}`,
+        image: s.image,
+      }));
+    }
+
+    if (activeCategory === "furniture") {
+      return generateFurnitureListings(lat, lng, areaName, cityName).map(s => ({
+        id: `furniture-${s.id}`,
+        lat: s.lat,
+        lng: s.lng,
+        name: s.title,
+        category: "🪑 Used Furniture",
+        distance: s.distance,
+        rating: s.rating,
+        reviews: s.reviews,
+        open: true,
+        openUntil: s.hours,
+        address: s.address,
+        phone: s.contactPhone,
+        languages: ["Bengali", "English"],
+        immigrantFriendly: true,
+        description: `${s.primaryHighlight} • ${s.overview}`,
+        image: s.image,
+      }));
+    }
+
+    if (activeCategory === "grocery") {
+      return generateGroceryShopListings(lat, lng, areaName, cityName).map(s => ({
+        id: `grocery-${s.id}`,
+        lat: s.lat,
+        lng: s.lng,
+        name: s.title,
+        category: "🛒 Grocery",
+        distance: s.distance,
+        rating: s.rating,
+        reviews: s.reviews,
+        open: true,
+        openUntil: s.hours,
+        address: s.address,
+        phone: s.contactPhone,
+        languages: ["Bengali", "English"],
+        immigrantFriendly: true,
+        description: `${s.primaryHighlight} • ${s.overview}`,
+        image: s.image,
+      }));
+    }
+
+    if (activeCategory === "restaurant") {
+      return generateHalalFoodListings(lat, lng, areaName, cityName).map(s => ({
+        id: `restaurant-${s.id}`,
+        lat: s.lat,
+        lng: s.lng,
+        name: s.title,
+        category: "🍽️ Restaurant",
+        distance: s.distance,
+        rating: s.rating,
+        reviews: s.reviews,
+        open: true,
+        openUntil: s.hours,
+        address: s.address,
+        phone: s.contactPhone,
+        languages: ["Bengali", "English"],
+        immigrantFriendly: true,
+        description: `${s.primaryHighlight} • ${s.overview}`,
+        image: s.image,
+      }));
+    }
+
+    if (activeCategory === "bank") {
+      return generateMoneyExchangeListings(lat, lng, areaName, cityName).map(s => ({
+        id: `bank-${s.id}`,
+        lat: s.lat,
+        lng: s.lng,
+        name: s.title,
+        category: "🏦 Bank",
+        distance: s.distance,
+        rating: s.rating,
+        reviews: s.reviews,
+        open: true,
+        openUntil: s.hours,
+        address: s.address,
+        phone: s.contactPhone,
+        languages: ["Bengali", "English"],
+        immigrantFriendly: true,
+        description: `${s.primaryHighlight} • ${s.overview}`,
+        image: s.image,
+      }));
+    }
+
+    return [];
+  }, [userLocation, activeCategory, liveAddressInfo]);
+
+  // All combined places (Real-Time Nearby + Live Location Jobs + Category Services + Autocomplete + Dynamic Shared Place)
   const allPlaces = useMemo(() => {
     let base: Place[] = [];
     if (query.trim()) {
-      base = bkoiPlaces.length > 0 ? bkoiPlaces : (realtimePlaces.length > 0 ? realtimePlaces : places);
+      base = bkoiPlaces.length > 0 ? bkoiPlaces : [...realtimePlaces, ...jobPlaces, ...categoryPlaces];
     } else {
-      base = realtimePlaces.length > 0
-        ? [...realtimePlaces, ...jobPlaces]
-        : (places.length > 0 ? [...places, ...jobPlaces] : jobPlaces);
+      base = [...realtimePlaces, ...jobPlaces, ...categoryPlaces];
     }
 
     if (sharedPlaceFromUrl) {
@@ -2712,7 +2937,7 @@ export function MapDiscoveryContent({
       return [sharedPlaceFromUrl, ...filtered];
     }
     return base;
-  }, [query, bkoiPlaces, realtimePlaces, jobPlaces, sharedPlaceFromUrl]);
+  }, [query, bkoiPlaces, realtimePlaces, jobPlaces, categoryPlaces, sharedPlaceFromUrl]);
 
   // Deep-linking from shared link: automatically center, zoom in, and open the active place card
   useEffect(() => {
@@ -2773,6 +2998,17 @@ export function MapDiscoveryContent({
         (activeCategory === "housing" && (p.category.includes("House") || p.category.includes("Apartment") || p.category.includes("Room") || p.category.includes("Housing") || p.category.includes("Rental")));
 
       if (!matchesCategory) return false;
+
+      // ── STRICT PROXIMITY RULE: Remove garbage faraway icons at the top! ──
+      // The user wants ONLY the service icons in their nearby location.
+      // Any distant static/garbage markers far away (e.g. North Dhaka / DAC when user is in Narayanganj) are strictly removed.
+      if (!q && userLocation) {
+        const distKm = getDistanceKm(userLocation[0], userLocation[1], p.lat, p.lng);
+        if (distKm > 4.0) {
+          return false;
+        }
+      }
+
       if (!q) return true;
 
       // Match against standard properties
@@ -2798,7 +3034,7 @@ export function MapDiscoveryContent({
 
       return false;
     });
-  }, [allPlaces, activeCategory, query]);
+  }, [allPlaces, activeCategory, query, userLocation]);
 
   // ── Compact Home Map: Filter only 2-3 items in immediate nearby range ──
   const displayPlaces = useMemo(() => {
@@ -2811,12 +3047,13 @@ export function MapDiscoveryContent({
 
     withDist.sort((a, b) => a.dist - b.dist);
 
-    // Pick 2-3 closest places within 5km radius
-    const inRange = withDist.filter(x => x.dist <= 5.0);
+    // Pick 2-3 closest places within 4km radius
+    const inRange = withDist.filter(x => x.dist <= 4.0);
     if (inRange.length > 0) {
       return inRange.slice(0, 3).map(x => x.place);
     }
-    return withDist.slice(0, 2).map(x => x.place);
+    // NEVER fallback to distant places in Dhaka or beyond 4km radius
+    return [];
   }, [compact, filteredPlaces, userLocation]);
 
   const handleQueryChange = (val: string) => {
@@ -2876,6 +3113,10 @@ export function MapDiscoveryContent({
               userLocation={userLocation}
               isGPSActive={isGPSActive}
               recenterTrigger={recenterCount}
+              zoomInTrigger={zoomInCount}
+              zoomOutTrigger={zoomOutCount}
+              countryCode={currentCountry?.code}
+              defaultCoords={countryDefaultCoords}
               onMarkerClick={(p) => {
                 handleCompactMapClick(p.id);
               }}
@@ -2886,71 +3127,79 @@ export function MapDiscoveryContent({
               onMarkerHover={() => {}}
             />
 
-            {/* Floating GPS Button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (isGPSActive) {
-                  setUserLocation(DEFAULT_LOCATION);
-                  setIsGPSActive(false);
-                  try {
-                    localStorage.removeItem("bkoi_last_user_coords");
-                  } catch (_) {}
-                } else {
-                  setIsLocating(true);
-                  const activateLocation = (coords: [number, number]) => {
-                    setUserLocation(coords);
-                    setIsGPSActive(true);
-                    setIsLocating(false);
-                    setRecenterCount((c) => c + 1);
-                    try {
-                      localStorage.setItem("bkoi_last_user_coords", JSON.stringify(coords));
-                    } catch (_) {}
-                  };
+            {/* Floating Controls: Zoom & GPS */}
+            <div className="absolute bottom-2.5 right-2.5 z-10 flex flex-col items-center gap-1.5 pointer-events-auto">
+              {/* Google Maps Style Small Zoom (+ / -) */}
+              <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-md shadow-md border border-slate-200/90 dark:border-slate-800 overflow-hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800 select-none">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomInCount(c => c + 1);
+                  }}
+                  className="w-7 h-7 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 transition cursor-pointer"
+                  title="Zoom in"
+                  aria-label="Zoom in"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[2.2]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomOutCount(c => c + 1);
+                  }}
+                  className="w-7 h-7 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 transition cursor-pointer"
+                  title="Zoom out"
+                  aria-label="Zoom out"
+                >
+                  <Minus className="w-3.5 h-3.5 stroke-[2.2]" />
+                </button>
+              </div>
 
-                  const fallbackLocation = async () => {
-                    try {
-                      const res = await fetch("https://ipwho.is/");
-                      if (res.ok) {
-                        const data = await res.json();
-                        if (data?.success && typeof data.latitude === "number" && typeof data.longitude === "number") {
-                          activateLocation([data.latitude, data.longitude]);
-                          return;
-                        }
-                      }
-                    } catch (_) {}
-
-                    let fb = DEFAULT_LOCATION;
-                    try {
-                      const cached = localStorage.getItem("bkoi_last_user_coords");
-                      if (cached) {
-                        const parsed = JSON.parse(cached);
-                        if (Array.isArray(parsed) && parsed.length === 2 && !isNaN(parsed[0]) && !isNaN(parsed[1])) {
-                          fb = [parsed[0], parsed[1]];
-                        }
-                      }
-                    } catch (_) {}
-                    activateLocation(fb);
-                  };
-
-                  if ("geolocation" in navigator) {
-                    navigator.geolocation.getCurrentPosition(
-                      pos => activateLocation([pos.coords.latitude, pos.coords.longitude]),
-                      () => fallbackLocation(),
-                      { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
-                    );
+              {/* Floating GPS Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isGPSActive) {
+                    gpsDisabledByUserRef.current = true;
+                    setIsGPSActive(false);
                   } else {
-                    fallbackLocation();
+                    gpsDisabledByUserRef.current = false;
+                    setIsLocating(true);
+                    const activateLocation = (coords: [number, number]) => {
+                      setUserLocation(coords);
+                      setIsGPSActive(true);
+                      setIsLocating(false);
+                      setRecenterCount((c) => c + 1);
+                      try {
+                        localStorage.setItem("bkoi_last_user_coords", JSON.stringify(coords));
+                      } catch (_) {}
+                    };
+
+                    if ("geolocation" in navigator) {
+                      navigator.geolocation.getCurrentPosition(
+                        pos => activateLocation([pos.coords.latitude, pos.coords.longitude]),
+                        (err) => {
+                          setIsLocating(false);
+                          setIsGPSActive(false);
+                          console.warn("Geolocation permission not granted:", err.message);
+                        },
+                        { enableHighAccuracy: true, timeout: 6000, maximumAge: 10000 }
+                      );
+                    } else {
+                      setIsLocating(false);
+                    }
                   }
-                }
-              }}
-              className={`absolute bottom-2.5 right-2.5 z-10 w-7.5 h-7.5 rounded-full flex items-center justify-center shadow-md transition cursor-pointer border ${
-                isGPSActive ? "bg-[#C04A22] text-white border-[#C04A22]" : "bg-white/95 backdrop-blur-md text-slate-700 hover:text-[#C04A22] border-slate-200/90"
-              }`}
-              title={isGPSActive ? "GPS Active" : "Find My Location"}
-            >
-              {isLocating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Navigation className="w-3.5 h-3.5" />}
-            </button>
+                }}
+                className={`w-7.5 h-7.5 rounded-full flex items-center justify-center shadow-md transition cursor-pointer border ${
+                  isGPSActive ? "bg-[#C04A22] text-white border-[#C04A22]" : "bg-white/95 backdrop-blur-md text-slate-700 hover:text-[#C04A22] border-slate-200/90"
+                }`}
+                title={isGPSActive ? "Turn OFF GPS Navigation" : "Turn ON Live Location (GPS)"}
+              >
+                {isLocating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Navigation className="w-3.5 h-3.5" />}
+              </button>
+            </div>
           </div>
         </div>
       ) : (
@@ -2994,6 +3243,7 @@ export function MapDiscoveryContent({
                   </div>
                 )}
               </div>
+
 
               {/* View Mode Toggle */}
               <div className="flex items-center bg-slate-100 p-1 rounded-xl flex-shrink-0">
@@ -3061,6 +3311,10 @@ export function MapDiscoveryContent({
                   navUserCoord={navUserCoord}
                   navHeading={navHeading}
                   recenterTrigger={recenterCount}
+                  zoomInTrigger={zoomInCount}
+                  zoomOutTrigger={zoomOutCount}
+                  countryCode={currentCountry?.code}
+                  defaultCoords={countryDefaultCoords}
                   onMarkerClick={(p, px) => {
                     if (!directionsFor && !isLiveNavigating) {
                       setMapActiveId(p.id);
@@ -3113,74 +3367,79 @@ export function MapDiscoveryContent({
                   );
                 })()}
 
-                {/* Floating My Location Button (hidden when Recent Apps Switcher is open or live navigating) */}
+                {/* Floating Map Controls: Google Maps Style Zoom (+ / -) & My Location */}
                 {!isRecentsOpen && !isLiveNavigating && (
-                  <button
-                    onClick={() => {
-                      if (isGPSActive) {
-                        setUserLocation(DEFAULT_LOCATION);
-                        setIsGPSActive(false);
-                      } else {
-                        setIsLocating(true);
-                        const activate = (coords: [number, number]) => {
-                          setUserLocation(coords);
-                          setIsGPSActive(true);
-                          setIsLocating(false);
-                          setRecenterCount((c) => c + 1);
-                          try {
-                            localStorage.setItem("bkoi_last_user_coords", JSON.stringify(coords));
-                          } catch (_) {}
-                        };
+                  <div className="absolute bottom-20 right-4 sm:bottom-6 sm:right-6 z-30 flex flex-col items-center gap-2 pointer-events-auto">
+                    {/* Google Maps Style Simple & Small Zoom (+ / -) Buttons */}
+                    <div className="bg-white dark:bg-slate-900 rounded-lg shadow-md border border-slate-200/90 dark:border-slate-800 overflow-hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800 select-none">
+                      <button
+                        type="button"
+                        onClick={() => setZoomInCount(c => c + 1)}
+                        className="w-8 h-8 sm:w-8.5 sm:h-8.5 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 dark:active:bg-slate-700 transition cursor-pointer"
+                        title="Zoom in"
+                        aria-label="Zoom in"
+                      >
+                        <Plus className="w-4 h-4 stroke-[2.2]" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setZoomOutCount(c => c + 1)}
+                        className="w-8 h-8 sm:w-8.5 sm:h-8.5 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 dark:active:bg-slate-700 transition cursor-pointer"
+                        title="Zoom out"
+                        aria-label="Zoom out"
+                      >
+                        <Minus className="w-4 h-4 stroke-[2.2]" />
+                      </button>
+                    </div>
 
-                        const fallback = async () => {
-                          try {
-                            const res = await fetch("https://ipwho.is/");
-                            if (res.ok) {
-                              const data = await res.json();
-                              if (data?.success && typeof data.latitude === "number" && typeof data.longitude === "number") {
-                                activate([data.latitude, data.longitude]);
-                                return;
-                              }
-                            }
-                          } catch (_) {}
-
-                          let fb = DEFAULT_LOCATION;
-                          try {
-                            const cached = localStorage.getItem("bkoi_last_user_coords");
-                            if (cached) {
-                              const parsed = JSON.parse(cached);
-                              if (Array.isArray(parsed) && parsed.length === 2 && !isNaN(parsed[0]) && !isNaN(parsed[1])) {
-                                fb = [parsed[0], parsed[1]];
-                              }
-                            }
-                          } catch (_) {}
-                          activate(fb);
-                        };
-
-                        if ("geolocation" in navigator) {
-                          navigator.geolocation.getCurrentPosition(
-                            pos => activate([pos.coords.latitude, pos.coords.longitude]),
-                            () => fallback(),
-                            { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
-                          );
+                    {/* Floating My Location Button */}
+                    <button
+                      onClick={() => {
+                        if (isGPSActive) {
+                          gpsDisabledByUserRef.current = true;
+                          setIsGPSActive(false);
                         } else {
-                          fallback();
+                          gpsDisabledByUserRef.current = false;
+                          setIsLocating(true);
+                          const activate = (coords: [number, number]) => {
+                            setUserLocation(coords);
+                            setIsGPSActive(true);
+                            setIsLocating(false);
+                            setRecenterCount((c) => c + 1);
+                            try {
+                              localStorage.setItem("bkoi_last_user_coords", JSON.stringify(coords));
+                            } catch (_) {}
+                          };
+
+                          if ("geolocation" in navigator) {
+                            navigator.geolocation.getCurrentPosition(
+                              pos => activate([pos.coords.latitude, pos.coords.longitude]),
+                              (err) => {
+                                setIsLocating(false);
+                                setIsGPSActive(false);
+                                console.warn("Geolocation permission not granted:", err.message);
+                              },
+                              { enableHighAccuracy: true, timeout: 6000, maximumAge: 10000 }
+                            );
+                          } else {
+                            setIsLocating(false);
+                          }
                         }
-                      }
-                    }}
-                    className={`absolute bottom-20 right-4 sm:bottom-6 sm:right-6 z-30 p-3 sm:p-3.5 rounded-full shadow-lg border transition-all flex items-center justify-center cursor-pointer active:scale-95 ${
-                      isGPSActive
-                        ? "bg-[#D85A30] text-white border-[#D85A30] shadow-[#D85A30]/30"
-                        : "bg-white text-foreground border-border hover:bg-slate-50"
-                    }`}
-                    title={isGPSActive ? "Turn OFF Live Location (Revert to default)" : "Turn ON Live Location (GPS)"}
-                  >
-                    {isLocating ? (
-                      <Loader2 className="w-5 h-5 animate-spin text-[#D85A30]" />
-                    ) : (
-                      <Navigation className={`w-5 h-5 transition-transform ${isGPSActive ? "text-white" : "text-[#D85A30]"}`} />
-                    )}
-                  </button>
+                      }}
+                      className={`p-3 sm:p-3.5 rounded-full shadow-lg border transition-all flex items-center justify-center cursor-pointer active:scale-95 ${
+                        isGPSActive
+                          ? "bg-[#D85A30] text-white border-[#D85A30] shadow-[#D85A30]/30"
+                          : "bg-white text-foreground border-border hover:bg-slate-50"
+                      }`}
+                      title={isGPSActive ? "Turn OFF GPS Navigation" : "Turn ON Live Location (GPS)"}
+                    >
+                      {isLocating ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-[#D85A30]" />
+                      ) : (
+                        <Navigation className={`w-5 h-5 transition-transform ${isGPSActive ? "text-white" : "text-[#D85A30]"}`} />
+                      )}
+                    </button>
+                  </div>
                 )}
 
                 {/* Mobile Floating Overlay only (hidden on desktop) */}
@@ -3258,7 +3517,7 @@ export function MapDiscoveryContent({
                         <MapPin className="w-6 h-6 text-muted-foreground" />
                       </div>
                       <h3 className="text-base font-semibold text-foreground mb-1">No places or jobs found</h3>
-                      <p className="text-xs text-muted-foreground mb-4">Try searching for "React developer", "Chef", "Used furniture", or "Legal Aid"</p>
+                      <p className="text-xs text-muted-foreground mb-4">Try searching for &quot;React developer&quot;, &quot;Chef&quot;, &quot;Used furniture&quot;, or &quot;Legal Aid&quot;</p>
                       <button onClick={() => { setQuery(""); setActiveCategory("all"); }} className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-semibold hover:opacity-90 transition cursor-pointer">
                         Reset filters
                       </button>

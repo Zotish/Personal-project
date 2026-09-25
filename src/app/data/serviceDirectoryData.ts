@@ -1,5 +1,5 @@
 // ─── SERVICE DIRECTORY DATA & REALISTIC GENERATORS ───────────────────────────
-// For: Halal Food, Legal Aid, Hospital, Pharmacy, Free Medicine, Social Aid, Gas & EV, Sports
+// For all services in Bangladesh (Dhaka default centered with BariKoi maps)
 
 export interface ServiceListing {
   id: string;
@@ -20,9 +20,9 @@ export interface ServiceListing {
   contactPhone: string;
   hours: string;
   website?: string;
-  primaryHighlight: string; // e.g. "$12 - $25", "Free Aid", "$3.19/gal", "100% Halal"
-  price?: string; // e.g. "$750", "$49", "Free Aid"
-  badge?: string; // e.g. "15% OFF", "FREE AID", "TOP #1", "NEW"
+  primaryHighlight: string;
+  price?: string;
+  badge?: string;
   tag?: "discounted" | "new" | "popular" | "all";
   tags: string[];
   badges: string[];
@@ -51,941 +51,1337 @@ export function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: nu
   return Math.round(R * c * 10) / 10;
 }
 
-// ─── 1. HALAL FOOD & DESI RESTAURANTS ──────────────────────────────────────────
-export function generateHalalFoodListings(lat: number, lng: number, area = "Jackson Heights", city = "Queens"): ServiceListing[] {
+// ─── 1. HALAL FOOD & RESTAURANTS ──────────────────────────────────────────────
+export function generateHalalFoodListings(lat: number, lng: number, area = "Gulshan", city = "Dhaka"): ServiceListing[] {
   const templates = [
     {
-      title: "Halal Grocery Pack",
-      subtitle: "Fresh Deshi Fish, Meat & Spice Box",
-      type: "Grocery & Meat",
-      category: "grocery-meat",
-      badge: "15% OFF",
-      price: "$49",
-      tag: "discounted",
-      primaryHighlight: "15% OFF",
-      image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=700&auto=format&fit=crop&q=80",
-      hours: "8:00 AM – 10:00 PM (Daily)",
-      contactPhone: "+1 (718) 898-1122",
-      tags: ["Deshi Grocery", "Padma Ilish", "Halal Beef", "Home Delivery"],
-      badges: ["15% OFF", "Fresh Delivery", "Zabihah Halal"],
-      features: [
-        { label: "Delivery", value: "Same-Day Doorstep Delivery" },
-        { label: "Package", value: "Meat, Fish, Spices, Rice Bundle" },
-        { label: "Discount", value: "15% Instant Newcomer Discount" }
-      ],
-      overview: "Fresh Deshi fish, meat & spice grocery box delivered home. Includes imported Padma Ilish, fresh halal beef cuts, Radhuni spices and Chinigura rice."
-    },
-    {
-      title: "Deshi Kitchen Subscription",
-      subtitle: "Daily Homemade Bangladeshi Meal Plan",
-      type: "Desi Kitchen",
-      category: "desi-kitchen",
-      badge: "NEW KITCHEN",
-      price: "$85/wk",
-      tag: "new",
-      primaryHighlight: "$85/wk",
-      image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=700&auto=format&fit=crop&q=80",
-      hours: "9:00 AM – 9:00 PM",
-      contactPhone: "+1 (718) 672-9900",
-      tags: ["Daily Tiffin", "Home Cooked", "Bangladeshi", "Weekly Plan"],
-      badges: ["NEW KITCHEN", "Low Oil", "Halal Certified"],
-      features: [
-        { label: "Frequency", value: "Lunch & Dinner, 6 Days/Week" },
-        { label: "Taste", value: "Authentic Home Style Deshi Taste" },
-        { label: "Trial", value: "3-Day Trial Pack Available" }
-      ],
-      overview: "Fresh homemade daily Bangladeshi meal delivery plan. Authentic family recipes cooked with minimal oil, rotating weekly dishes including fish curry, dal, bhorta and beef bhuna."
-    },
-    {
-      title: "Kabab King & Halal Diner",
-      subtitle: "Authentic Desi & Zabihah Grill",
+      title: "Kacchi Bhai – Special Basmati Kacchi",
+      subtitle: "Authentic Dum Biryani, Borhani & Firni",
       type: "Restaurant",
       category: "restaurant",
       badge: "TOP #1",
-      price: "$14.99",
+      price: "৳ 450",
       tag: "popular",
-      primaryHighlight: "100% Zabihah Halal",
-      image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=700&auto=format&fit=crop&q=80",
-      hours: "10:00 AM – 2:00 AM (Daily)",
-      contactPhone: "+1 (718) 457-5464",
-      tags: ["Biryani", "Seekh Kabab", "Fresh Naan", "Dine-in", "Takeout"],
-      badges: ["Zabihah Halal", "Top Rated", "Late Night"],
+      primaryHighlight: "Famous Basmati Kacchi",
+      image: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=700&auto=format&fit=crop&q=80",
+      hours: "11:30 AM – 11:00 PM (Daily)",
+      contactPhone: "+880 1711-234567",
+      address: `Road 11, Block D, ${area}, ${city}`,
+      tags: ["Kacchi Biryani", "Borhani", "Beef Rezala", "Zabihah Halal"],
+      badges: ["100% Halal", "Top Rated", "Dine-in & Delivery"],
       features: [
-        { label: "Halal Certification", value: "HMS Zabihah Certified" },
-        { label: "Cuisine", value: "Bangladeshi & Pakistani" },
-        { label: "Price Range", value: "$$ ($12–$25 per meal)" },
-        { label: "Seating", value: "Family Hall & Prayer Space" }
+        { label: "Specialty", value: "Premium Basmati Rice & Tender Mutton" },
+        { label: "Borhani", value: "Traditional spicy curd borhani included" },
+        { label: "Delivery", value: "Foodi, Pathao Food & In-house delivery" }
       ],
-      overview: "Renowned immigrant spot famous for piping hot kacchi biryani, freshly clay-oven baked garlic naan, and spicy mutton karahi. Dedicated family booths and clean prayer room available."
+      overview: "One of Dhaka's most loved kacchi destinations, serving fragrant basmati rice slow-cooked with tender marinated mutton cuts, aloo bukhara, and golden potatoes."
     },
     {
-      title: "Dhaka Kacchi Ghar & Sweets",
-      subtitle: "Old Dhaka Style Kacchi & Rasgulla",
+      title: "Sultan's Dine – Kacchi Platter",
+      subtitle: "Royal Kacchi Feast & Traditional Jorda",
+      type: "Restaurant",
+      category: "restaurant",
+      badge: "POPULAR",
+      price: "৳ 490",
+      tag: "popular",
+      primaryHighlight: "Royal Kacchi Platter",
+      image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=700&auto=format&fit=crop&q=80",
+      hours: "12:00 PM – 10:30 PM",
+      contactPhone: "+880 1722-345678",
+      address: `Green Akshay Plaza, Satmasjid Road, ${area}, ${city}`,
+      tags: ["Kacchi Platter", "Jorda", "Chicken Roast", "Family Hall"],
+      badges: ["Royal Feast", "Top Choice", "Dine-in"],
+      features: [
+        { label: "Platter", value: "Mutton Kacchi + Chicken Roast + Borhani + Jorda" },
+        { label: "Ambience", value: "Spacious air-conditioned family seating" },
+        { label: "Catering", value: "Bulk orders for parties and family programs" }
+      ],
+      overview: "Renowned royal dining experience offering signature mutton kacchi platters with rich chicken roast, creamy borhani, and traditional sweet jorda."
+    },
+    {
+      title: "Star Kabab & Restaurant",
+      subtitle: "Legendary Mutton Leg Roast, Nehari & Naan",
       type: "Desi Kitchen",
       category: "desi-kitchen",
-      badge: "POPULAR",
-      price: "$12 - $20",
+      badge: "LEGENDARY",
+      price: "৳ 220 - ৳ 650",
       tag: "popular",
-      primaryHighlight: "$14.99 Kacchi Platter",
-      image: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=700&auto=format&fit=crop&q=80",
-      hours: "11:00 AM – 11:30 PM",
-      contactPhone: "+1 (718) 728-3330",
-      tags: ["Kacchi Biryani", "Mishti", "Borhani", "Catering"],
-      badges: ["Authentic Dhaka", "Halal Certified", "Home Delivery"],
+      primaryHighlight: "Authentic Star Kabab",
+      image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=700&auto=format&fit=crop&q=80",
+      hours: "6:30 AM – 11:30 PM (Breakfast to Dinner)",
+      contactPhone: "+880 1733-456789",
+      address: `House 42, Road 11, ${area}, ${city}`,
+      tags: ["Mutton Kebab", "Nehari", "Khichuri", "Tandoori Naan"],
+      badges: ["Dhaka Icon", "Breakfast Khichuri", "Halal"],
       features: [
-        { label: "Specialty", value: "Traditional Basmati Dum Kacchi" },
-        { label: "Dessert Counter", value: "25+ Fresh Bengali Sweets" },
-        { label: "Catering", value: "Weddings, Milad & Community Events" },
-        { label: "Delivery", value: "DoorDash, UberEats & Direct" }
+        { label: "Breakfast", value: "Morning Khichuri, Nehari, Payaza & Faluda" },
+        { label: "Dinner", value: "Boti Kabab, Sheekh, Tikka & Butter Naan" },
+        { label: "Seating", value: "Multi-floor family and AC dining" }
       ],
-      overview: "Authentic Old Dhaka aromatic Dum Kacchi Biryani cooked in traditional copper degh. Fresh Borhani, Chomchom, and sweet curd (Mishti Doi) prepared daily by master chefs."
+      overview: "A timeless Dhaka culinary landmark serving sizzling seekh kebabs, clay-oven garlic naans, legendary mutton leg roast, and fresh faluda."
     },
     {
-      title: "Madina Halal Supermarket & Butcher",
-      subtitle: "Fresh Zabihah Meat & Desi Groceries",
-      type: "Grocery & Meat",
-      category: "grocery-meat",
-      badge: "SAVE 20%",
-      price: "$25",
-      tag: "discounted",
-      primaryHighlight: "Fresh Goat & Beef Cut",
-      image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=700&auto=format&fit=crop&q=80",
-      hours: "8:30 AM – 10:00 PM (Daily)",
-      contactPhone: "+1 (718) 898-1122",
-      tags: ["Zabihah Meat", "Ilish Fish", "Pran & Radhuni", "EBT Accepted"],
-      badges: ["Hand Slaughtered", "EBT / SNAP", "Fresh Daily"],
-      features: [
-        { label: "Butcher Service", value: "Custom cuts: Biryani, Curry, Mince" },
-        { label: "Fish Section", value: "Imported Padma Ilish, Rui, Katla" },
-        { label: "Spices", value: "100% Desi spices & mustard oils" },
-        { label: "Payment", value: "EBT/SNAP, Cards, Cash" }
-      ],
-      overview: "One-stop immigrant halal market. Hand-slaughtered fresh goat, beef, and country chicken cut to your specification. Frozen river fish from Bangladesh and bulk Basmati rice bags."
-    },
-    {
-      title: "Al-Noor Home Kitchen & Tiffin",
-      subtitle: "Daily Homemade Tiffin & Meal Plans",
+      title: "Deshi Kitchen Daily Tiffin",
+      subtitle: "Homestyle Bangladeshi Lunch & Dinner Subscription",
       type: "Home Kitchen",
       category: "desi-kitchen",
-      badge: "JUST IN",
-      price: "$150/mo",
+      badge: "NEW KITCHEN",
+      price: "৳ 4,500/mo",
       tag: "new",
-      primaryHighlight: "$150/Month Tiffin (Lunch+Dinner)",
+      primaryHighlight: "৳4,500/Month Tiffin (Lunch+Dinner)",
       image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=700&auto=format&fit=crop&q=80",
-      hours: "9:00 AM – 9:00 PM",
-      contactPhone: "+1 (718) 672-9900",
-      tags: ["Monthly Tiffin", "Bachelors & Students", "Low Oil", "Home Delivery"],
-      badges: ["Homemade", "Budget Friendly", "Doorstep Delivery"],
+      hours: "8:00 AM – 9:00 PM",
+      contactPhone: "+880 1819-123456",
+      address: `Road 4, Sector 7, ${area}, ${city}`,
+      tags: ["Monthly Tiffin", "Fish Curry", "Bhorta", "Low Oil"],
+      badges: ["Home Cooked", "Nutritious", "Doorstep Delivery"],
       features: [
-        { label: "Meal Plan", value: "Rice, Daal, Sabzi, Fish/Meat daily" },
-        { label: "Health", value: "Low oil, home cooked, no MSG" },
-        { label: "Coverage", value: "Queens, Brooklyn & Manhattan" },
-        { label: "Trial", value: "3-Day Trial Pack Available" }
+        { label: "Menu", value: "Rice, Dal, 2 Bhortas, Rui/Katla Fish or Beef" },
+        { label: "Health", value: "Cooked with mustard/rice bran oil, no MSG" },
+        { label: "Coverage", value: "Gulshan, Banani, Dhanmondi, Uttara & Mirpur" }
       ],
-      overview: "Homestyle nutritious meals specially crafted for immigrant students, bachelor tech workers, and busy families. Hot doorstep lunch and dinner delivery with daily rotating menus."
+      overview: "Nutritious home-cooked daily meal service for office professionals, students, and bachelor residents with hot doorstep delivery every lunch and dinner."
     },
     {
-      title: "Desi Fried Chicken & Burgers",
-      subtitle: "Halal Crispy Fast Food & Wings",
-      type: "Fast Food",
-      category: "fast-food",
-      badge: "$8.99 DEAL",
-      price: "$8.99",
-      tag: "discounted",
-      primaryHighlight: "$8.99 Meal Deal",
-      image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=700&auto=format&fit=crop&q=80",
-      hours: "11:00 AM – 3:00 AM",
-      contactPhone: "+1 (718) 424-7788",
-      tags: ["Halal Crispy Chicken", "Naga Wings", "Burgers", "Halal Loaded Fries"],
-      badges: ["100% Halal", "Late Night", "Spicy Naga"],
-      features: [
-        { label: "Signature", value: "Ghost Pepper Naga Wings & Crunch Burger" },
-        { label: "Halal Status", value: "All Chicken & Beef 100% Halal" },
-        { label: "Late Night", value: "Open till 3 AM on weekends" }
-      ],
-      overview: "American fast food comfort with an authentic Desi spicy twist. Naga crispy chicken tenders, smash beef burgers with house garlic aioli, and masala seasoned curly fries."
-    },
-    {
-      title: "Bonoful Sweets & Bakery",
-      subtitle: "Traditional Bengali Sweets & Pitha",
+      title: "Bonoful Sweets & Confectionery",
+      subtitle: "Fresh Singara, Kalojam & Traditional Pitha",
       type: "Bakery & Sweets",
       category: "sweets-bakery",
       badge: "POPULAR",
-      price: "$10",
+      price: "৳ 20 - ৳ 450",
       tag: "popular",
-      primaryHighlight: "Fresh Kalojam & Singara",
+      primaryHighlight: "Hot Singara & Mishti",
       image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=700&auto=format&fit=crop&q=80",
-      hours: "8:00 AM – 10:30 PM",
-      contactPhone: "+1 (718) 507-4400",
-      tags: ["Hot Singara", "Chai", "Rasmalai", "Custom Cakes"],
-      badges: ["Traditional Bakery", "Fresh Pitha", "Morning Breakfast"],
+      hours: "7:00 AM – 10:30 PM",
+      contactPhone: "+880 1744-567890",
+      address: `Plot 18, Block B, ${area}, ${city}`,
+      tags: ["Hot Singara", "Kalojam", "Rasgulla", "Chai"],
+      badges: ["Traditional Sweets", "Freshly Baked", "Tea Stall"],
       features: [
-        { label: "Morning Breakfast", value: "Paratha, Dal, Halwa & Karak Chai" },
-        { label: "Evening Snacks", value: "Crispy Singara, Mughlai Paratha" },
-        { label: "Celebrations", value: "Halal Birthday & Anniversary Cakes" }
+        { label: "Breakfast", value: "Hot Paratha, Dal, Halwa & Milk Tea" },
+        { label: "Snacks", value: "Crispy beef & vegetable singaras" },
+        { label: "Sweets Counter", value: "30+ varieties of authentic Bengali mishti" }
       ],
-      overview: "Beloved neighborhood tea house and confectionery. Famous for flaky Bengali singaras, fresh jalebi straight from the pan, and customized halal cakes for special occasions."
+      overview: "Neighborhood bakery and confectionery famous for crisp tea-time singaras, freshly fried jalebis, chomchom, and sweet Bogura curd."
+    },
+    {
+      title: "Dhaka Fried Chicken & Wings",
+      subtitle: "Halal Crispy Naga Wings & Smash Burgers",
+      type: "Fast Food",
+      category: "fast-food",
+      badge: "৳ 299 DEAL",
+      price: "৳ 299",
+      tag: "discounted",
+      primaryHighlight: "৳299 Combo Meal",
+      image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=700&auto=format&fit=crop&q=80",
+      hours: "11:00 AM – 2:00 AM",
+      contactPhone: "+880 1755-678901",
+      address: `Road 27, Dhanmondi / ${area}, ${city}`,
+      tags: ["Naga Wings", "Crispy Chicken", "Smash Burger", "Loaded Fries"],
+      badges: ["100% Halal", "Late Night", "Spicy Naga"],
+      features: [
+        { label: "Specialty", value: "Ghost Pepper Naga wings & garlic dip" },
+        { label: "Burger", value: "Double beef patty with melted cheese" },
+        { label: "Late Night", value: "Open till 2:00 AM on weekends" }
+      ],
+      overview: "Hot and spicy Dhaka-style fried chicken, loaded fries, and juicy smash burgers served with house-made naga chili sauce."
     }
   ];
 
   return generateMappedListings(lat, lng, area, city, templates);
 }
 
-// ─── 2. LEGAL AID & IMMIGRATION ATTORNEYS ──────────────────────────────────────
-export function generateLegalAidListings(lat: number, lng: number, area = "Jamaica", city = "Queens"): ServiceListing[] {
+// ─── 2. LEGAL AID & ADVOCACY ───────────────────────────────────────────────────
+export function generateLegalAidListings(lat: number, lng: number, area = "Kakrail", city = "Dhaka"): ServiceListing[] {
   const templates = [
     {
-      title: "Asylum & Free Legal Aid",
-      subtitle: "Immigrant Defense & Pro-Bono Counsel",
-      type: "Free Legal Aid",
-      category: "free-aid",
-      badge: "TOP #1",
-      price: "Pro-Bono",
-      tag: "popular",
-      primaryHighlight: "100% Free / Pro Bono",
-      image: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=700&auto=format&fit=crop&q=80",
-      hours: "Mon – Fri: 9:00 AM – 5:00 PM",
-      contactPhone: "+1 (718) 391-1332",
-      tags: ["Asylum", "Work Permit", "TPS", "Deportation Defense"],
-      badges: ["Free Legal Aid", "Government Funded", "Pro Bono"],
-      features: [
-        { label: "Cost", value: "Free for qualifying low-income immigrants" },
-        { label: "Languages", value: "Bengali, Spanish, Hindi, English" },
-        { label: "Practice Areas", value: "Asylum, EAD, DACA, Green Card, VAWA" }
-      ],
-      overview: "Free pro-bono immigration attorney consultation & TPS aid. Representation before immigration courts, credible fear interview preparation and fee waiver filings."
-    },
-    {
-      title: "AI Legal Doc Translator",
-      subtitle: "Certified USCIS Translation Service",
-      type: "Immigration Attorneys",
-      category: "immigration-lawyer",
-      badge: "NEW AI",
-      price: "Instant",
-      tag: "new",
-      primaryHighlight: "Certified Instant Translation",
-      image: "https://images.unsplash.com/photo-1450133064473-71024230f91b?w=700&auto=format&fit=crop&q=80",
-      hours: "24/7 Digital Intake",
-      contactPhone: "+1 (800) 555-0199",
-      tags: ["NID Translation", "Passport", "Birth Certificate", "USCIS Accepted"],
-      badges: ["NEW AI", "Certified Notary", "Instant"],
-      features: [
-        { label: "Turnaround", value: "Under 10 Minutes with Certified Stamp" },
-        { label: "Acceptance", value: "100% USCIS, Embassy & NVC Compliant" }
-      ],
-      overview: "Instant certified NID, Passport & certificate translation accepted by USCIS and local consulates with official certifier seal and notary signature."
-    },
-    {
-      title: "USCIS Case Tracker 2.0",
-      subtitle: "Automated Immigrant Notification Aid",
-      type: "Citizenship & Fee Waivers",
-      category: "citizenship",
-      badge: "NEW V2.0",
-      price: "Free",
-      tag: "new",
-      primaryHighlight: "Automated SMS Tracking",
-      image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=700&auto=format&fit=crop&q=80",
-      hours: "24/7 Real-Time Alerts",
-      contactPhone: "+1 (800) 555-0144",
-      tags: ["Case Tracker", "EAD Alerts", "Green Card", "Receipt Status"],
-      badges: ["NEW V2.0", "Free Tool", "Live Updates"],
-      features: [
-        { label: "Alerts", value: "Instant SMS & Email when status changes" },
-        { label: "Helpline", value: "Direct connection to legal volunteer navigators" }
-      ],
-      overview: "Automated real-time SMS status updates for Green Card & EAD work authorization petitions with direct access to pro bono helpline."
-    },
-    {
-      title: "Queens Legal Services (Immigration Unit)",
-      subtitle: "Nonprofit Pro-Bono Legal Assistance",
-      type: "Free Legal Aid",
+      title: "BLAST – Bangladesh Legal Aid and Services Trust",
+      subtitle: "National Pro Bono Legal Aid & Rights Advocacy",
+      type: "Legal Aid NGO",
       category: "free-aid",
       badge: "PRO BONO",
       price: "Free Aid",
       tag: "popular",
       primaryHighlight: "100% Free / Pro Bono",
-      image: "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=700&auto=format&fit=crop&q=80",
-      hours: "Mon – Fri: 9:00 AM – 5:00 PM",
-      contactPhone: "+1 (718) 391-1332",
-      tags: ["Asylum", "Work Permit", "TPS", "Deportation Defense", "Bengali Interpreters"],
-      badges: ["Free Legal Aid", "Government Funded", "Sliding Scale"],
-      features: [
-        { label: "Cost", value: "Free for qualifying low-income immigrants" },
-        { label: "Languages", value: "Bengali, Spanish, Hindi, English" },
-        { label: "Practice Areas", value: "Asylum, EAD, DACA, Green Card, VAWA" }
-      ],
-      overview: "Dedicated civil legal organization providing free representation in immigration court, work permit renewals, asylum documentation, and family reunification petitions without fear of status check."
-    },
-    {
-      title: "CUNY Citizenship Now! Legal Center",
-      subtitle: "Free University Immigration Assistance Clinic",
-      type: "Legal Clinic",
-      category: "free-aid",
-      badge: "FEE WAIVER",
-      price: "$0 Fee",
-      tag: "discounted",
-      primaryHighlight: "Free Application Assistance",
-      image: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=700&auto=format&fit=crop&q=80",
-      hours: "Mon – Fri: 9:30 AM – 4:30 PM",
-      contactPhone: "+1 (646) 664-9400",
-      tags: ["Citizenship N-400", "Green Card Renewal", "Fee Waiver", "DACA"],
-      badges: ["CUNY Clinic", "Free Aid", "Fee Waiver Help"],
-      features: [
-        { label: "Services", value: "N-400, I-90, I-765, USCIS Fee Waivers" },
-        { label: "Attorneys", value: "Licensed Immigration Attorneys & DOJ Accredited" }
-      ],
-      overview: "Largest university-based legal assistance program in the USA. Certified attorneys assist newcomer immigrants with citizenship filing, green card renewals, and USCIS fee waiver applications."
-    },
-    {
-      title: "Chowdhury & Partners Immigration Law",
-      subtitle: "Immigrant Rights & Business Visa Law Firm",
-      type: "Private Law Firm",
-      category: "immigration-lawyer",
-      badge: "POPULAR",
-      price: "$150/hr",
-      tag: "popular",
-      primaryHighlight: "Free 15-Min Consultation",
       image: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=700&auto=format&fit=crop&q=80",
-      hours: "Mon – Sat: 10:00 AM – 6:30 PM",
-      contactPhone: "+1 (718) 555-8910",
-      tags: ["Asylum Defense", "EAD / Work Auth", "H-1B & EB-2", "Court Appeals"],
-      badges: ["Top Rated Attorney", "Bengali Fluent", "Payment Plans"],
+      hours: "Sun – Thu: 9:00 AM – 5:00 PM",
+      contactPhone: "+880 2-8313650",
+      address: `1/1 Pioneer Road, Kakrail, ${city}`,
+      tags: ["Free Legal Aid", "Worker Rights", "Tenancy Disputes", "Family Law"],
+      badges: ["Non-Profit", "Bar Association Partner", "Free Consultation"],
       features: [
-        { label: "Consultation", value: "Free initial assessment" },
-        { label: "Payment Plans", value: "Flexible monthly installment plans" }
+        { label: "Services", value: "Civil, Criminal, Family & Human Rights Assistance" },
+        { label: "Cost", value: "Completely free for low-income citizens" },
+        { label: "Lawyers", value: "Over 500 panel lawyers across Bangladesh" }
       ],
-      overview: "Experienced immigration law practice specializing in asylum hearings, master calendar court defense, hardship waivers, and employment-based immigration for South Asian newcomers."
+      overview: "The largest specialized legal services non-governmental organization in Bangladesh providing free legal representation, advice, and mediation."
     },
     {
-      title: "Immigrant Fee Waiver Clinic",
-      subtitle: "Free USCIS Application Fee Assistance",
-      type: "Fee Waiver Help",
+      title: "Ain o Salish Kendra (ASK)",
+      subtitle: "Legal Aid & Human Rights Documentation Center",
+      type: "Human Rights & Legal",
       category: "free-aid",
-      badge: "FREE AID",
-      price: "$0 Aid",
-      tag: "discounted",
-      primaryHighlight: "100% Fee Waiver Support",
-      image: "https://images.unsplash.com/photo-1450133064473-71024230f91b?w=700&auto=format&fit=crop&q=80",
-      hours: "Mon – Fri: 10:00 AM – 4:00 PM",
-      contactPhone: "+1 (718) 555-0144",
-      tags: ["I-912 Fee Waiver", "N-400 Aid", "Pro Bono", "No Cost"],
-      badges: ["FREE AID", "Fee Waiver", "Volunteer Lawyers"],
-      features: [
-        { label: "Savings", value: "Save up to $725 in USCIS filing fees" },
-        { label: "Eligibility", value: "Medicaid, SNAP, or income under 150% FPL" }
-      ],
-      overview: "Dedicated pro bono legal volunteers assisting low-income immigrants in qualifying and applying for full USCIS fee waivers on citizenship and work permits."
-    }
-  ];
-
-  return generateMappedListings(lat, lng, area, city, templates);
-}
-
-// ─── 3. HOSPITALS & MEDICAL CENTERS ───────────────────────────────────────────
-export function generateHospitalListings(lat: number, lng: number, area = "Elmhurst", city = "Queens"): ServiceListing[] {
-  const templates = [
-    {
-      title: "NYC Health + Hospitals / Elmhurst",
-      subtitle: "Level 1 Trauma & 24/7 Emergency Hospital",
-      type: "Public Hospital",
-      category: "emergency-247",
-      badge: "24/7 ER",
-      price: "NYC Care",
-      tag: "popular",
-      primaryHighlight: "NYC Care & Medicaid Accepted",
-      image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=700&auto=format&fit=crop&q=80",
-      hours: "Emergency Room: 24 Hours Open (7 Days)",
-      contactPhone: "+1 (718) 334-4000",
-      tags: ["24/7 ER", "NYC Care", "No Insurance OK", "Maternity", "Bengali Interpreters"],
-      badges: ["24/7 Emergency", "Public Hospital", "Sliding Scale"],
-      features: [
-        { label: "Emergency Room", value: "Open 24/7/365 — Treats regardless of status" },
-        { label: "Insurance", value: "Medicaid, Medicare, NYC Care & Uninsured OK" },
-        { label: "Interpreter Services", value: "Free live in-person translation in 150+ languages" }
-      ],
-      overview: "The premier public healthcare hub for Queens immigrants. By law and hospital policy, emergency and outpatient treatment is provided to all residents regardless of immigration or insurance status."
-    },
-    {
-      title: "Community Healthcare Network – Queens Health Center",
-      subtitle: "Walk-in Neighborhood Community Clinic",
-      type: "Walk-in Clinic",
-      category: "walk-in-clinic",
-      badge: "FREE VISIT",
-      price: "$0 - $20",
-      tag: "discounted",
-      primaryHighlight: "Sliding Scale ($20 Visits)",
-      image: "https://images.unsplash.com/photo-1588776814546-1ffbb4b45c5b?w=700&auto=format&fit=crop&q=80",
-      hours: "Mon – Sat: 8:00 AM – 6:30 PM",
-      contactPhone: "+1 (718) 657-7088",
-      tags: ["Primary Care", "Dental", "Mental Health", "Vaccines", "Pediatrics"],
-      badges: ["Walk-in Welcome", "Sliding Scale", "Uninsured Welcome"],
-      features: [
-        { label: "Appointment", value: "Walk-in same day & online booking" },
-        { label: "Cost", value: "$0 – $20 based on income; no one turned away" }
-      ],
-      overview: "Affordable community health clinic offering primary care doctor visits, dental checkups, child immunizations, and prenatal checkups for immigrant families without health insurance."
-    },
-    {
-      title: "Mount Sinai Queens Medical Pavilion",
-      subtitle: "Comprehensive Acute Care & Specialty Hospital",
-      type: "Full Service Hospital",
-      category: "community-hospital",
-      badge: "TOP HOSPITAL",
-      price: "Medicaid",
-      tag: "popular",
-      primaryHighlight: "Comprehensive Specialty Care",
-      image: "https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=700&auto=format&fit=crop&q=80",
-      hours: "24/7 Emergency Department",
-      contactPhone: "+1 (718) 932-1000",
-      tags: ["Stroke Center", "Cardiology", "Orthopedics", "Emergency Care"],
-      badges: ["Mount Sinai Network", "Advanced Tech", "Multilingual"],
-      features: [
-        { label: "ER Capacity", value: "Rapid triage & board-certified emergency physicians" },
-        { label: "Financial Aid", value: "Sliding-scale financial assistance program available" }
-      ],
-      overview: "Modern acute hospital equipped with an advanced emergency wing, robotic surgery center, cardiac outpatient suites, and compassionate multilingual healthcare providers."
-    },
-    {
-      title: "Jackson Heights Multi-Specialty Clinic",
-      subtitle: "Bilingual Immigrant Health Center",
-      type: "Walk-in Clinic",
-      category: "walk-in-clinic",
-      badge: "NEW CLINIC",
-      price: "Low-Cost",
-      tag: "new",
-      primaryHighlight: "Multilingual Doctors Onsite",
-      image: "https://images.unsplash.com/photo-1576602976047-174e57a47881?w=700&auto=format&fit=crop&q=80",
-      hours: "8:30 AM – 7:00 PM (Daily)",
-      contactPhone: "+1 (718) 899-2233",
-      tags: ["Bengali Doctors", "Walk-in", "Lab Onsite", "Pediatric"],
-      badges: ["NEW CLINIC", "Multilingual Staff", "Walk-in"],
-      features: [
-        { label: "Doctors", value: "Bengali, Spanish, Hindi speaking MDs" },
-        { label: "Pharmacy", value: "Direct onsite prescription fulfillment" }
-      ],
-      overview: "Welcoming neighborhood walk-in clinic dedicated to newcomer families. General physician consultations, blood testing, pediatric care and women's health."
-    },
-    {
-      title: "Elmhurst Immigrant Urgent Care",
-      subtitle: "Affordable Walk-in Emergency & Family Clinic",
-      type: "Walk-in Clinic",
-      category: "walk-in-clinic",
-      badge: "50% OFF",
-      price: "$15 Copay",
-      tag: "discounted",
-      primaryHighlight: "50% Discount for Uninsured",
-      image: "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=700&auto=format&fit=crop&q=80",
-      hours: "8:00 AM – 11:00 PM (Daily)",
-      contactPhone: "+1 (718) 334-5500",
-      tags: ["Urgent Care", "X-Ray", "No Insurance", "Low Cost Copay"],
-      badges: ["50% OFF", "Walk-in", "Lab Onsite"],
-      features: [
-        { label: "Copay", value: "$15 flat rate for immigrant newcomer visits" },
-        { label: "Wait Time", value: "Average under 15 minutes" }
-      ],
-      overview: "Community-supported urgent care center providing walk-in treatment for minor injuries, fevers, lab testing, and X-rays with generous sliding-scale discounts."
-    }
-  ];
-
-  return generateMappedListings(lat, lng, area, city, templates);
-}
-
-// ─── 4. PHARMACIES ─────────────────────────────────────────────────────────────
-export function generatePharmacyListings(lat: number, lng: number, area = "Jackson Heights", city = "Queens"): ServiceListing[] {
-  const templates = [
-    {
-      title: "24h Urgent Pharmacy Finder",
-      subtitle: "Medicaid OTC & Round-The-Clock Dispensary",
-      type: "Community Pharmacy",
-      category: "24-hours",
-      badge: "MOST USED",
-      price: "24/7",
-      tag: "popular",
-      primaryHighlight: "Open 24/7 • Free Delivery",
-      image: "https://images.unsplash.com/photo-1576602976047-174e57a47881?w=700&auto=format&fit=crop&q=80",
-      hours: "24 Hours (7 Days a Week)",
-      contactPhone: "+1 (718) 478-6500",
-      tags: ["24/7 Open", "Free Rx Delivery", "Bengali Pharmacist", "OTC Medicines"],
-      badges: ["24/7 Open", "Medicaid & EBT", "Free Delivery"],
-      features: [
-        { label: "Refills", value: "Quick 10-minute refill & WhatsApp order" },
-        { label: "Insurance", value: "Accepts Medicaid, Medicare, NYC Care & Cash" }
-      ],
-      overview: "Medicaid OTC items, flu shots & 24/7 neighborhood clinics. Bilingual pharmacists ready to assist with rapid prescription dispensing and free home delivery."
-    },
-    {
-      title: "Prescription Rx Medicine",
-      subtitle: "Free Home Delivery & Rx Discounts",
-      type: "Discount Pharmacy",
-      category: "discount-pharmacy",
-      badge: "FREE AID",
-      price: "Free Aid",
-      tag: "discounted",
-      primaryHighlight: "$4 Generic Prescriptions",
-      image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=700&auto=format&fit=crop&q=80",
-      hours: "Mon – Sat: 9:00 AM – 8:00 PM",
-      contactPhone: "+1 (718) 335-9000",
-      tags: ["$4 Generics", "Senior Discount", "Asthma Inhalers", "Diabetes Supplies"],
-      badges: ["FREE AID", "Lowest Cash Price", "No Insurance OK"],
-      features: [
-        { label: "Uninsured Program", value: "30-day generic supplies starting at $0-$4" },
-        { label: "Diabetes Supplies", value: "Test strips, lancets & monitors at wholesale cost" }
-      ],
-      overview: "Free home delivery & Rx discount card for uninsured immigrants. Up to 85% discount on brand and generic maintenance medications."
-    },
-    {
-      title: "Deshi Care 24/7 Community Pharmacy",
-      subtitle: "Bengali & English Speaking Pharmacists",
-      type: "Community Pharmacy",
-      category: "24-hours",
-      badge: "POPULAR",
-      price: "Medicaid",
-      tag: "popular",
-      primaryHighlight: "Open 24/7 • Free Delivery",
-      image: "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=700&auto=format&fit=crop&q=80",
-      hours: "24 Hours (7 Days a Week)",
-      contactPhone: "+1 (718) 478-6500",
-      tags: ["24/7 Open", "Free Rx Delivery", "Bengali Pharmacist"],
-      badges: ["24/7 Open", "Medicaid & EBT", "Free Delivery"],
-      features: [
-        { label: "Refills", value: "Quick 10-minute refill & WhatsApp order" },
-        { label: "Delivery", value: "Free same-day delivery to your doorstep" }
-      ],
-      overview: "Trusted immigrant community pharmacy open around the clock. Prescription refills, generic alternatives that save up to 80%, flu shots, and blood pressure checkups."
-    },
-    {
-      title: "CVS Pharmacy & MinuteClinic",
-      subtitle: "Full-Service Retail & Clinic Pharmacy",
-      type: "Chain Pharmacy",
-      category: "retail-pharmacy",
-      badge: "TOP RATED",
-      price: "Express Rx",
-      tag: "new",
-      primaryHighlight: "Vaccines & Express Rx",
-      image: "https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=700&auto=format&fit=crop&q=80",
-      hours: "8:00 AM – 10:00 PM (Clinic: 9am-7pm)",
-      contactPhone: "+1 (718) 899-7000",
-      tags: ["Flu Shot", "MinuteClinic", "Drive-thru", "OTC Discounts"],
-      badges: ["MinuteClinic", "COVID & Flu Vaccines"],
-      features: [
-        { label: "Services", value: "Vaccines, rapid strep test, OTC cards accepted" },
-        { label: "Refill App", value: "Sync prescriptions automatically" }
-      ],
-      overview: "Full-line pharmacy with walk-in MinuteClinic. On-the-spot vaccinations, birth control consultations, minor illness treatment, and easy electronic prescription transfers."
-    },
-    {
-      title: "Immigrant Rx Discount Club",
-      subtitle: "Low-Cost Generic Prescription Program",
-      type: "Discount Pharmacy",
-      category: "discount-pharmacy",
-      badge: "80% OFF",
-      price: "$4 Rx",
-      tag: "discounted",
-      primaryHighlight: "Generics Starting at $4",
-      image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=700&auto=format&fit=crop&q=80",
-      hours: "9:00 AM – 9:00 PM",
-      contactPhone: "+1 (718) 898-4422",
-      tags: ["Generic Meds", "Cardio Rx", "Antibiotics", "Wholesale Price"],
-      badges: ["80% OFF", "Rx Discount", "No Insurance"],
-      features: [
-        { label: "Discount", value: "Up to 80% off retail pharmacy prices" },
-        { label: "Accepted", value: "Instant mobile membership, no SSN needed" }
-      ],
-      overview: "Free prescription savings program offering steep wholesale discounts on over 500 essential generic medications for newcomer families."
-    }
-  ];
-
-  return generateMappedListings(lat, lng, area, city, templates);
-}
-
-// ─── 5. FREE MEDICINE & PRESCRIPTION AID ──────────────────────────────────────
-export function generateFreeMedicineListings(lat: number, lng: number, area = "Corona", city = "Queens"): ServiceListing[] {
-  const templates = [
-    {
-      title: "Prescription Rx Medicine",
-      subtitle: "Free Home Delivery & Rx Discounts",
-      type: "Free Dispensary",
-      category: "free-medicine",
-      badge: "FREE AID",
-      price: "Free Aid",
-      tag: "discounted",
-      primaryHighlight: "100% Free Medications",
-      image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=700&auto=format&fit=crop&q=80",
-      hours: "Mon – Thu: 9:30 AM – 4:30 PM",
-      contactPhone: "+1 (718) 592-2300",
-      tags: ["100% Free Rx", "Insulin Aid", "Blood Pressure", "No Fee At All"],
-      badges: ["FREE AID", "Charity Funded", "No Insurance Needed"],
-      features: [
-        { label: "Eligibility", value: "Uninsured individuals under 300% Federal Poverty Line" },
-        { label: "Available Meds", value: "Insulin, Metformin, Lisinopril, Antibiotics, Inhalers" }
-      ],
-      overview: "Free home delivery & Rx discount card for uninsured immigrants. Charitably funded essential antibiotics, blood pressure and cardiovascular medication dispensaries."
-    },
-    {
-      title: "Medical Courier Express",
-      subtitle: "Same-Day Door Delivery For Prescriptions",
-      type: "Direct Mail Programs",
-      category: "mail-delivery",
-      badge: "JUST IN",
-      price: "$15",
-      tag: "new",
-      primaryHighlight: "Same-Day Door Delivery",
-      image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=700&auto=format&fit=crop&q=80",
-      hours: "8:00 AM – 8:00 PM (Daily)",
-      contactPhone: "+1 (800) 555-0188",
-      tags: ["Doorstep Courier", "Temperature Controlled", "Prescriptions", "Fast Delivery"],
-      badges: ["JUST IN", "Cold Chain", "Same Day"],
-      features: [
-        { label: "Speed", value: "Within 2-4 Hours Across Boroughs" },
-        { label: "Safety", value: "Insulated & Temperature Monitored Delivery" }
-      ],
-      overview: "Same-day prescription & medical report door delivery for low mobility and senior community members across the metropolitan area."
-    },
-    {
-      title: "Dispensary of Hope Community Clinic",
-      subtitle: "100% Free Prescription Medication Program",
-      type: "Free Dispensary",
-      category: "free-medicine",
-      badge: "100% FREE",
-      price: "$0 Cost",
-      tag: "popular",
-      primaryHighlight: "100% Free Medications",
-      image: "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=700&auto=format&fit=crop&q=80",
-      hours: "Mon – Thu: 9:30 AM – 4:30 PM",
-      contactPhone: "+1 (718) 592-2300",
-      tags: ["100% Free Rx", "Insulin Aid", "Blood Pressure", "No Fee At All"],
-      badges: ["100% Free", "Charity Funded", "No Insurance Needed"],
-      features: [
-        { label: "Eligibility", value: "Uninsured individuals under 300% Federal Poverty Line" },
-        { label: "Available Meds", value: "Insulin, Metformin, Lisinopril, Antibiotics, Inhalers" }
-      ],
-      overview: "Charitable pharmacy partnership distributing donated brand and generic medications completely free of charge to uninsured immigrant patients with a valid doctor's prescription."
-    },
-    {
-      title: "RxOutreach Immigrant Medicine Fund",
-      subtitle: "Mail-Order Free & Low-Cost Medication Charity",
-      type: "Charitable Pharmacy",
-      category: "free-medicine",
-      badge: "MAIL ORDER",
-      price: "$0 – $10",
-      tag: "discounted",
-      primaryHighlight: "$0 – $10 Mail Delivery",
-      image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=700&auto=format&fit=crop&q=80",
-      hours: "Customer Help: 8:00 AM – 6:00 PM EST",
-      contactPhone: "+1 (888) 796-1234",
-      tags: ["Mail Order", "Chronic Illness", "Direct to Home", "Free Consultation"],
-      badges: ["National Charity", "Home Delivery"],
-      features: [
-        { label: "Coverage", value: "Delivers to all 50 states directly to your address" },
-        { label: "Meds Covered", value: "Over 1,000 FDA-approved chronic medications" }
-      ],
-      overview: "Licensed nonprofit mail-order pharmacy dedicated to assisting low-income immigrants who cannot afford crucial medications for asthma, diabetes, heart disease, and mental health."
-    },
-    {
-      title: "Insulin & Diabetic Care Aid",
-      subtitle: "Emergency Free Insulin & Testing Supplies",
-      type: "Diabetes & Insulin Aid",
-      category: "insulin-aid",
-      badge: "FREE AID",
-      price: "$0 Aid",
-      tag: "discounted",
-      primaryHighlight: "100% Free Insulin Relief",
-      image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=700&auto=format&fit=crop&q=80",
-      hours: "Mon – Fri: 9:00 AM – 5:00 PM",
-      contactPhone: "+1 (800) 555-0166",
-      tags: ["Free Insulin", "Glucometers", "Test Strips", "Emergency Relief"],
-      badges: ["FREE AID", "Diabetic Support", "Charity"],
-      features: [
-        { label: "Supplies", value: "Monthly insulin vials & free digital glucose meter" },
-        { label: "Approval", value: "Same-day emergency supply voucher" }
-      ],
-      overview: "Emergency charitable program supplying free life-saving insulin, lancets, and blood glucose testing strips to uninsured diabetic newcomers."
-    }
-  ];
-
-  return generateMappedListings(lat, lng, area, city, templates);
-}
-
-// ─── 6. SOCIAL AID & GOVERNMENT SERVICES ──────────────────────────────────────
-export function generateSocialAidListings(lat: number, lng: number, area = "Woodside", city = "Queens"): ServiceListing[] {
-  const templates = [
-    {
-      title: "Emergency Food Pantries",
-      subtitle: "Community Halal Food Bank & Nutrition",
-      type: "Culturally Specific Pantries",
-      category: "food-security",
-      badge: "24/7 AID",
+      badge: "TOP AID",
       price: "Free",
       tag: "popular",
-      primaryHighlight: "Culturally Appropriate Food Pantry",
-      image: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=700&auto=format&fit=crop&q=80",
-      hours: "Mon – Fri: 9:30 AM – 5:00 PM",
-      contactPhone: "+1 (718) 321-7929",
-      tags: ["South Asian Food Pantry", "Health Insurance Help", "Senior Programs"],
-      badges: ["24/7 AID", "Halal Food Pantry", "Community Organization"],
+      primaryHighlight: "Free Legal Advocacy",
+      image: "https://images.unsplash.com/photo-1453733197781-79b8a8b16c14?w=700&auto=format&fit=crop&q=80",
+      hours: "Sun – Thu: 9:30 AM – 5:30 PM",
+      contactPhone: "+880 2-8126047",
+      address: `2/16 Block B, Lalmatia, ${city}`,
+      tags: ["Labor Rights", "Gender Justice", "Free Counseling", "Litigation Support"],
+      badges: ["Human Rights", "Free Clinic", "Court Representation"],
       features: [
-        { label: "Pantry Items", value: "Halal meat, Basmati rice, lentils (Daal), oil, flour" },
-        { label: "Health Navigators", value: "Enrollment in Medicaid & Essential Plan" }
+        { label: "Focus", value: "Women rights, child welfare, migrant worker support" },
+        { label: "Mediation", value: "Alternative dispute resolution (ADR)" }
       ],
-      overview: "Free food bank, halal groceries & community kitchens. Weekly emergency pantry boxes with rice, lentils, cooking oil, and milk for newcomer families."
+      overview: "A national legal aid and human rights organization committed to providing free legal advice, court counseling, and community advocacy."
     },
     {
-      title: "Winter Clothing Aid",
-      subtitle: "Warm Coats, Boots & Thermals Drive",
-      type: "Emergency Rent Relief",
-      category: "rent-relief",
-      badge: "50% OFF",
-      price: "$15 / Free",
-      tag: "discounted",
-      primaryHighlight: "Warm Winter Wear Distribution",
-      image: "https://images.unsplash.com/photo-1516762689617-e1cffcef479d?w=700&auto=format&fit=crop&q=80",
-      hours: "Mon – Sat: 10:00 AM – 6:00 PM",
-      contactPhone: "+1 (718) 555-0133",
-      tags: ["Winter Coats", "Boots", "Children Gloves", "New Arrivals Aid"],
-      badges: ["50% OFF", "Newcomer Support", "Winter Drive"],
-      features: [
-        { label: "Items", value: "Brand new heavy winter down jackets & thermal socks" },
-        { label: "Cost", value: "Free vouchers for low income; $15 thrift tier" }
-      ],
-      overview: "Brand new coats, boots & thermals for new immigrant families. Warm winter clothing drives and vouchers for newcomers in need."
-    },
-    {
-      title: "Community Moving Aid",
-      subtitle: "Vetted Immigrant Movers & Van Rentals",
-      type: "Family Support",
-      category: "family-support",
-      badge: "JUST IN",
-      price: "$40/hr",
-      tag: "new",
-      primaryHighlight: "Affordable Moving & Van Service",
-      image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=700&auto=format&fit=crop&q=80",
-      hours: "7:00 AM – 9:00 PM (Daily)",
-      contactPhone: "+1 (718) 555-0149",
-      tags: ["Moving Truck", "Furniture Transport", "New Immigrant Friendly"],
-      badges: ["JUST IN", "Affordable", "Trusted Community Movers"],
-      features: [
-        { label: "Van Sizes", value: "Cargo Vans, 10ft & 16ft Box Trucks" },
-        { label: "Help", value: "Loading, unloading & furniture assembly" }
-      ],
-      overview: "Vetted newcomer movers & van rentals across NY/NJ/TX. Budget-friendly moving aid for families relocating to new apartments."
-    },
-    {
-      title: "Queens Community House – Immigrant Services Hub",
-      subtitle: "Comprehensive Benefits & Public Aid Assistance",
-      type: "Community Social Center",
-      category: "social-services",
-      badge: "SNAP & RENT",
-      price: "Free Help",
+      title: "Supreme Court Legal Aid Committee",
+      subtitle: "Government Free Legal Support at Apex Court",
+      type: "Government Legal Aid",
+      category: "free-aid",
+      badge: "GOVT AID",
+      price: "Government Free",
       tag: "popular",
-      primaryHighlight: "SNAP, Cash & Rental Aid",
-      image: "https://images.unsplash.com/photo-1577495508048-b635879837f1?w=700&auto=format&fit=crop&q=80",
-      hours: "Mon – Fri: 9:00 AM – 5:30 PM",
-      contactPhone: "+1 (718) 592-5757",
-      tags: ["SNAP / Food Stamps", "One-Shot Rental Aid", "HEAP Heating Aid", "Family Counseling"],
-      badges: ["Free Social Aid", "Bengali Navigators", "Confidential"],
+      primaryHighlight: "Supreme Court Representation",
+      image: "https://images.unsplash.com/photo-1505664194779-8beaceb93744?w=700&auto=format&fit=crop&q=80",
+      hours: "Sun – Thu: 9:00 AM – 4:30 PM",
+      contactPhone: "+880 2-9562844",
+      address: `Supreme Court Compound, Ramna, ${city}`,
+      tags: ["High Court Division", "Appellate Division", "Bail Petitions", "Writ"],
+      badges: ["National Legal Aid", "Supreme Court", "100% Free"],
       features: [
-        { label: "SNAP Application", value: "Step-by-step submission & interview preparation" },
-        { label: "Eviction Prevention", value: "One-Shot Deal emergency back-rent assistance" },
-        { label: "Languages", value: "Bengali, Spanish, Nepali, Tibetan, English" }
+        { label: "Coverage", value: "High Court Division & Appellate Division legal aid" },
+        { label: "Eligibility", value: "Low-income citizens, distressed workers & prisoners" }
       ],
-      overview: "Government-accredited community agency helping new immigrant families apply for food stamps (SNAP), emergency rental support, winter utility heating grants (HEAP), and free childcare vouchers."
+      overview: "Official Government of Bangladesh legal aid committee providing free advocate representation before the High Court and Appellate divisions."
     },
     {
-      title: "Newcomer Household Starter Kits",
-      subtitle: "Essential Kitchen & Home Goods Aid",
-      type: "Family Support",
-      category: "family-support",
-      badge: "SAVE 70%",
-      price: "$20 / Free",
-      tag: "discounted",
-      primaryHighlight: "Complete Kitchen & Bedding Kit",
-      image: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=700&auto=format&fit=crop&q=80",
-      hours: "10:00 AM – 5:00 PM",
-      contactPhone: "+1 (718) 555-0155",
-      tags: ["Kitchenware", "Blankets", "Starter Box", "New Immigrants"],
-      badges: ["SAVE 70%", "Community Donated", "Household Aid"],
+      title: "BNWLA Legal Assistance Desk",
+      subtitle: "Bangladesh National Woman Lawyers' Association",
+      type: "Advocacy & Support",
+      category: "free-aid",
+      badge: "SPECIALIZED",
+      price: "Free",
+      tag: "new",
+      primaryHighlight: "Shelter & Legal Counseling",
+      image: "https://images.unsplash.com/photo-1450133064473-71024230f91b?w=700&auto=format&fit=crop&q=80",
+      hours: "Sun – Thu: 9:00 AM – 5:00 PM",
+      contactPhone: "+880 2-9122394",
+      address: `Agargaon / Sher-e-Bangla Nagar, ${city}`,
+      tags: ["Family Court", "Maintenance", "Shelter Support", "Counseling"],
+      badges: ["Women Empowerment", "Legal Clinic", "Hotline 24/7"],
       features: [
-        { label: "Kit Contents", value: "Cookware, plates, cutlery, bedsheets, blankets" },
-        { label: "Voucher", value: "Free for asylum seekers with case number" }
+        { label: "Hotline", value: "Dedicated 24/7 emergency legal helpline" },
+        { label: "Counseling", value: "Psychosocial support alongside legal filing" }
       ],
-      overview: "Community donation drive furnishing newly arrived immigrant households with essential cooking pots, pans, dish sets, and winter bedding."
+      overview: "Pioneering organization dedicated to creating equal rights and legal empowerment through free legal clinics, crisis intervention, and advocacy."
     }
   ];
 
   return generateMappedListings(lat, lng, area, city, templates);
 }
 
-// ─── 7. GAS & EV CHARGING STATIONS ────────────────────────────────────────────
-export function generateGasEVListings(lat: number, lng: number, area = "Astoria", city = "Queens"): ServiceListing[] {
+// ─── 3. HOSPITALS & HEALTHCARE ────────────────────────────────────────────────
+export function generateHospitalListings(lat: number, lng: number, area = "Panthapath", city = "Dhaka"): ServiceListing[] {
   const templates = [
     {
-      title: "Gas & EV Station Finder",
-      subtitle: "Live Petrol Prices & High-Speed EV Portal",
-      type: "Gas & EV Station",
-      category: "cheap-gas",
-      badge: "JUST IN",
-      price: "Live Rates",
-      tag: "new",
-      primaryHighlight: "Live Lowest Fuel Rates",
-      image: "https://images.unsplash.com/photo-1563720223185-11003d516935?w=700&auto=format&fit=crop&q=80",
-      hours: "Open 24 Hours",
-      contactPhone: "+1 (718) 278-4500",
-      tags: ["24/7 Gas", "Tesla Supercharger", "Live Prices", "EV Fast Charging"],
-      badges: ["JUST IN", "24/7 Open", "Live Petrol Rates"],
-      features: [
-        { label: "Regular Cash", value: "$3.15/gal (Lowest in neighborhood)" },
-        { label: "EV Plugs", value: "8x 250kW Supercharger + 4x CCS Ports" }
-      ],
-      overview: "Live cheap petrol prices & EV charging stations near zip. Compare regular, diesel and rapid electric charging station rates in real time."
-    },
-    {
-      title: "Mobil Express & Tesla Supercharger",
-      subtitle: "24-Hour Fuel & High-Speed EV Hub",
-      type: "Gas & EV Station",
-      category: "gas-ev",
-      badge: "TOP EV",
-      price: "$3.19/gal",
+      title: "Square Hospital Dhaka",
+      subtitle: "Tertiary Care Hospital & 24/7 Emergency Center",
+      type: "Tertiary Hospital",
+      category: "emergency-247",
+      badge: "24/7 ER",
+      price: "Inpatient / OPD",
       tag: "popular",
-      primaryHighlight: "Regular: $3.19/gal • 250kW EV",
-      image: "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=700&auto=format&fit=crop&q=80",
-      hours: "Open 24 Hours (7 Days)",
-      contactPhone: "+1 (718) 278-4500",
-      tags: ["24/7 Gas", "Tesla Supercharger", "Air & Vacuum", "Deli & Coffee"],
-      badges: ["Cheap Fuel", "24/7 Open", "EV Fast Charging"],
+      primaryHighlight: "International Standard Emergency",
+      image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=700&auto=format&fit=crop&q=80",
+      hours: "Emergency: 24/7 Open | OPD: 8:00 AM – 10:00 PM",
+      contactPhone: "+880 2-8159457",
+      address: `18/F Bir Uttam Qazi Nuruzzaman Sarak, Panthapath, ${city}`,
+      tags: ["24/7 Emergency", "Cardiology", "Trauma Care", "ICU / CCU", "Cath Lab"],
+      badges: ["JCI Standard", "24/7 Trauma", "Ambulance 10616"],
       features: [
-        { label: "Gas Prices", value: "Reg: $3.19 | Mid: $3.49 | Prem: $3.79 | Diesel: $3.89" },
-        { label: "EV Chargers", value: "8x 250kW Tesla Superchargers + 4x CCS Fast Plugs" },
-        { label: "Amenities", value: "24h Convenience Store, Free Tire Air with Fuel, ATM" }
+        { label: "Emergency Hotline", value: "10616 — 24/7 Rapid ambulance service" },
+        { label: "Departments", value: "Cardiology, Oncology, Neurology, Orthopedics" },
+        { label: "Diagnostic", value: "Modern MRI, CT, Pathology & 24/7 Blood Bank" }
       ],
-      overview: "Clean, illuminated 24-hour service station with competitive gas prices, modern EV fast charging bays, touchless car wash, tire air pump, and hot halal coffee/snacks."
+      overview: "One of the most advanced private healthcare hospitals in Bangladesh with world-class medical infrastructure, rapid response emergency trauma care, and specialist clinics."
     },
     {
-      title: "Discount Petrol & Soft Car Wash",
-      subtitle: "Full Service Gas, Diesel & Auto Wash",
-      type: "Gas Station",
-      category: "cheap-gas",
-      badge: "SAVE $0.20",
-      price: "$3.15/gal",
-      tag: "discounted",
-      primaryHighlight: "Regular: $3.15/gal • EVgo 150kW",
-      image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=700&auto=format&fit=crop&q=80",
-      hours: "Open 24 Hours",
-      contactPhone: "+1 (718) 726-1200",
-      tags: ["Lowest Price", "EVgo Charging", "Car Wash", "Pay at Pump"],
-      badges: ["SAVE $0.20", "Top Value Gas", "Car Wash"],
-      features: [
-        { label: "Prices", value: "Regular: $3.15 cash | Diesel: $3.85" },
-        { label: "EVgo Station", value: "CCS & CHAdeMO fast charging (20 min to 80%)" }
-      ],
-      overview: "High-volume station with great cash discount pricing on unleaded gasoline, dual EVgo charging pedestals, and automatic soft-cloth car wash tunnel."
-    },
-    {
-      title: "BP Connect & 150kW Fast EV Charger",
-      subtitle: "Discount Gas, Diesel & EV Fast Plugs",
-      type: "Fuel & EV Charging",
-      category: "gas-ev",
-      badge: "15¢ OFF",
-      price: "$3.12/gal",
-      tag: "discounted",
-      primaryHighlight: "15¢/gal App Cash Discount",
-      image: "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=700&auto=format&fit=crop&q=80",
-      hours: "Open 24 Hours (7 Days)",
-      contactPhone: "+1 (718) 726-8800",
-      tags: ["Cheap Gas", "EV Fast Charging", "24/7 Mart", "Pay In App"],
-      badges: ["15¢ OFF", "24/7 Open", "Cash Discount"],
-      features: [
-        { label: "Fuel Price", value: "Regular: $3.12 cash | Diesel: $3.79" },
-        { label: "EV Hub", value: "4x 150kW CCS Fast Chargers" }
-      ],
-      overview: "Well-lit 24-hour service station with generous cash discounts on fuel, rapid electric vehicle charging pedestals, and convenient convenience store."
-    }
-  ];
-
-  return generateMappedListings(lat, lng, area, city, templates);
-}
-
-// ─── 8. SPORTS & COMMUNITY GROUNDS ─────────────────────────────────────────────
-export function generateSportsListings(lat: number, lng: number, area = "Flushing", city = "Queens"): ServiceListing[] {
-  const templates = [
-    {
-      title: "Immigrant Cricket League",
-      subtitle: "NYC Weekend Tape & Leather Tournament",
-      type: "Cricket Leagues",
-      category: "cricket-league",
-      badge: "TOP LEAGUE",
-      price: "Free Entry",
+      title: "United Hospital Limited",
+      subtitle: "Multispecialty Healthcare & Cardiac Center",
+      type: "Private Hospital",
+      category: "community-hospital",
+      badge: "TOP HOSPITAL",
+      price: "Inpatient / OPD",
       tag: "popular",
-      primaryHighlight: "6 Turf Pitches • Free Access",
-      image: "https://images.unsplash.com/photo-1531415074868-036b1c57e329?w=700&auto=format&fit=crop&q=80",
-      hours: "Weekend Matches: 8:00 AM – 7:00 PM",
-      contactPhone: "+1 (718) 760-6565",
-      tags: ["Cricket Pitch", "Tape Ball Leagues", "Night Floodlights"],
-      badges: ["TOP LEAGUE", "Free Entry", "Trophies"],
+      primaryHighlight: "Premier Cardiac & Stroke Care",
+      image: "https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=700&auto=format&fit=crop&q=80",
+      hours: "24 Hours Emergency Service",
+      contactPhone: "+880 2-8836444",
+      address: `Plot 15, Road 71, Gulshan 2, ${city}`,
+      tags: ["Cardiac Center", "Neurology", "ICU", "Dialysis", "Emergency"],
+      badges: ["Premier Care", "Gulshan 2", "Hotline 10666"],
       features: [
-        { label: "Teams", value: "32 Community Clubs from NY, NJ, CT" },
-        { label: "Pitches", value: "Standard 22-yard turf and synthetic pitches" }
+        { label: "Cardiac Unit", value: "Pioneering bypass surgery & coronary stenting" },
+        { label: "Emergency", value: "Equipped with cardiac monitors & life support ICU" }
       ],
-      overview: "Weekend leather & tape-ball cricket tournaments with trophies and community gatherings across Flushing Meadows and Baisley Pond Park."
+      overview: "Leading multidisciplinary super-specialty hospital located in Gulshan 2, renowned for state-of-the-art cardiology, renal care, and intensive therapy units."
     },
     {
-      title: "Community Youth Soccer Club",
-      subtitle: "Free Coaching & Weekend Leagues",
-      type: "Soccer & Football",
-      category: "soccer",
-      badge: "NEW 2026",
-      price: "Free Aid",
-      tag: "new",
-      primaryHighlight: "Free Youth Coaching & Equipment",
-      image: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=700&auto=format&fit=crop&q=80",
-      hours: "Sat & Sun: 9:00 AM – 5:00 PM",
-      contactPhone: "+1 (718) 555-0177",
-      tags: ["Youth Soccer", "Free Uniforms", "Certified Coaches"],
-      badges: ["NEW 2026", "Free Coaching", "Youth League"],
+      title: "Evercare Hospital Dhaka",
+      subtitle: "JCI Accredited Multispecialty Hospital",
+      type: "Super Specialty",
+      category: "community-hospital",
+      badge: "JCI ACCREDITED",
+      price: "Comprehensive",
+      tag: "popular",
+      primaryHighlight: "JCI Accredited Facility",
+      image: "https://images.unsplash.com/photo-1588776814546-1ffbb4b45c5b?w=700&auto=format&fit=crop&q=80",
+      hours: "Emergency Room: 24/7 Open",
+      contactPhone: "+880 2-8431661",
+      address: `Plot 81, Block E, Bashundhara R/A, ${city}`,
+      tags: ["JCI Accredited", "Transplant Unit", "Pediatrics", "Oncology"],
+      badges: ["Accredited", "Bashundhara", "Hotline 10678"],
       features: [
-        { label: "Ages", value: "Boys & Girls ages 6 to 17" },
-        { label: "Gear", value: "Free soccer cleats, jerseys and shin guards provided" }
+        { label: "Accreditation", value: "Joint Commission International (JCI) Certified" },
+        { label: "Transplant", value: "Renal and bone marrow transplant centers" }
       ],
-      overview: "Free youth football coaching, turf access & equipment. Certified coaches providing weekend training sessions for newcomer children."
+      overview: "Comprehensive 425-bed tertiary care super-specialty hospital with state-of-the-art facilities, multidisciplinary specialist boards, and dedicated 24-hour trauma units."
     },
     {
-      title: "Queens Badminton & Indoor Sports Arena",
-      subtitle: "Indoor Air-Conditioned Courts & Gym",
-      type: "Indoor Arena",
-      category: "sports",
+      title: "Dhaka Medical College & Hospital (DMCH)",
+      subtitle: "Government Apex Hospital & Emergency Center",
+      type: "Public Hospital",
+      category: "emergency-247",
+      badge: "PUBLIC APEX",
+      price: "Nominal / Free",
+      tag: "popular",
+      primaryHighlight: "Govt Subsidized / Free Care",
+      image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=700&auto=format&fit=crop&q=80",
+      hours: "24 Hours Emergency (365 Days)",
+      contactPhone: "+880 2-55165088",
+      address: `Secretariat / Bakshibazar, Ramna, ${city}`,
+      tags: ["Burn & Plastic", "Trauma", "Free Treatment", "Medical College"],
+      badges: ["National Apex", "Low Cost", "Open 24/7"],
+      features: [
+        { label: "Emergency", value: "Highest volume trauma and emergency unit in South Asia" },
+        { label: "Affordability", value: "Subsidized government treatment for all citizens" }
+      ],
+      overview: "The historic apex public hospital of Bangladesh, providing round-the-clock emergency medical services, trauma surgery, and affordable specialized treatment."
+    },
+    {
+      title: "Labaid Specialized Hospital",
+      subtitle: "Cardiovascular, Gastro & Diagnostic Center",
+      type: "Specialized Hospital",
+      category: "walk-in-clinic",
       badge: "POPULAR",
-      price: "$20/hr",
+      price: "OPD & Diagnostics",
       tag: "discounted",
-      primaryHighlight: "8 Professional Yonex Courts",
-      image: "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=700&auto=format&fit=crop&q=80",
-      hours: "7:00 AM – 11:30 PM (Daily)",
-      contactPhone: "+1 (718) 888-2345",
-      tags: ["Badminton", "Table Tennis", "Coaching", "Equipment Rental"],
-      badges: ["POPULAR", "Air Conditioned", "Pro Courts"],
+      primaryHighlight: "Fast Diagnostic & OPD",
+      image: "https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=700&auto=format&fit=crop&q=80",
+      hours: "7:00 AM – 11:00 PM (Emergency 24/7)",
+      contactPhone: "+880 1711-006633",
+      address: `House 6, Road 4, Dhanmondi, ${city}`,
+      tags: ["Cardiac OPD", "Endoscopy", "Ultrasound", "Dhanmondi"],
+      badges: ["Labaid Care", "Dhanmondi", "Hotline 10606"],
       features: [
-        { label: "Courts", value: "8 Matched Olympic-standard Taraflex Badminton Courts" },
-        { label: "Pricing", value: "$20/hour per court; student and senior discount" }
+        { label: "Gastroenterology", value: "Advanced endoscopy and colonoscopy suites" },
+        { label: "Diagnostics", value: "Same-day routine and specialized laboratory tests" }
       ],
-      overview: "Modern indoor facility designed for year-round sports regardless of winter weather. Offers professional badminton courts, table tennis tables, racket stringing, and evening community leagues."
+      overview: "Prestigious center situated on Dhanmondi Road 4, famous for cardiac interventions, endoscopy, expert outpatient consultations, and accurate diagnostics."
+    }
+  ];
+
+  return generateMappedListings(lat, lng, area, city, templates);
+}
+
+// ─── 4. PHARMACIES & DISPENSARIES ─────────────────────────────────────────────
+export function generatePharmacyListings(lat: number, lng: number, area = "Kalabagan", city = "Dhaka"): ServiceListing[] {
+  const templates = [
+    {
+      title: "Lazz Pharma – Kalabagan (24 Hours)",
+      subtitle: "Bangladesh's Largest 24-Hour Retail Pharmacy",
+      type: "24/7 Pharmacy",
+      category: "24-hours",
+      badge: "OPEN 24/7",
+      price: "MRP / Discount",
+      tag: "popular",
+      primaryHighlight: "24/7 Genuine Medicines",
+      image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=700&auto=format&fit=crop&q=80",
+      hours: "Open 24 Hours (365 Days)",
+      contactPhone: "+880 2-9118021",
+      address: `64/3 Lake Circus, Kalabagan, Mirpur Road, ${city}`,
+      tags: ["Open 24h", "Prescription Drugs", "Cold Chain Insulin", "Emergency"],
+      badges: ["100% Genuine", "Open 24/7", "Home Delivery"],
+      features: [
+        { label: "Availability", value: "Rare life-saving cancer & cardiac drugs" },
+        { label: "Quality", value: "Temperature controlled refrigeration for insulin & vaccines" },
+        { label: "Home Delivery", value: "Emergency delivery across Dhaka city" }
+      ],
+      overview: "The most trusted 24-hour retail pharmacy in Bangladesh, guaranteeing 100% authentic pharmaceuticals, vaccines, surgical items, and diabetes care."
     },
     {
-      title: "NYC Desi Volleyball & Table Tennis Club",
-      subtitle: "Indoor Community Sports & Tournaments",
-      type: "Indoor Sports",
-      category: "sports",
-      badge: "50% OFF",
-      price: "$5 Entry",
-      tag: "discounted",
-      primaryHighlight: "50% Off Newcomer Day Pass",
-      image: "https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=700&auto=format&fit=crop&q=80",
-      hours: "Mon – Sun: 10:00 AM – 10:00 PM",
-      contactPhone: "+1 (718) 555-0192",
-      tags: ["Volleyball", "Table Tennis", "Community Tournament", "Free Coaching"],
-      badges: ["50% OFF", "Indoor Arena", "Family Friendly"],
+      title: "Tashfi Pharmacy & Healthcare",
+      subtitle: "Gulshan Circle Pharmacy & Medical Supplies",
+      type: "Retail Pharmacy",
+      category: "retail-pharmacy",
+      badge: "VERIFIED",
+      price: "Govt MRP",
+      tag: "popular",
+      primaryHighlight: "Gulshan 1 Drug Store",
+      image: "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=700&auto=format&fit=crop&q=80",
+      hours: "8:00 AM – 12:00 Midnight",
+      contactPhone: "+880 1711-889900",
+      address: `Gulshan 1 DDC Market, Gulshan Avenue, ${city}`,
+      tags: ["Imported OTC", "Baby Nutrition", "Surgical Goods", "Free BP Check"],
+      badges: ["Gulshan Area", "Certified Pharmacist", "Cash & Card"],
       features: [
-        { label: "Day Pass", value: "$5 entry with full racket & ball rental" },
-        { label: "Leagues", value: "Weekend friendly tournaments with medals" }
+        { label: "Pharmacist", value: "Graduate 'A' Grade Pharmacist on duty" },
+        { label: "Payment", value: "bKash, Nagad, Credit Cards & Cash" }
       ],
-      overview: "Vibrant community indoor recreation center featuring table tennis tables, volleyball courts, carrom boards, and youth sports clinics."
+      overview: "Full-service pharmacy located at Gulshan 1, providing complete prescription medicines, medical grade masks, nebulizers, and maternal health products."
+    },
+    {
+      title: "Tamanna Pharmacy Dhanmondi",
+      subtitle: "Dhanmondi Central Neighborhood Pharmacy",
+      type: "Discount Pharmacy",
+      category: "discount-pharmacy",
+      badge: "DISCOUNT",
+      price: "Up to 10% Off",
+      tag: "discounted",
+      primaryHighlight: "10% Discount on Prescriptions",
+      image: "https://images.unsplash.com/photo-1576602976047-174e57a47881?w=700&auto=format&fit=crop&q=80",
+      hours: "8:00 AM – 11:30 PM",
+      contactPhone: "+880 1722-112233",
+      address: `Road 7, Dhanmondi R/A, ${city}`,
+      tags: ["Prescription Discount", "Diabetes Care", "Blood Pressure", "Home Delivery"],
+      badges: ["Discount Card", "Fast Counter", "Genuine"],
+      features: [
+        { label: "Discount", value: "Flat 7% to 10% discount on regular chronic medicines" },
+        { label: "Consultation", value: "Free blood glucose & blood pressure checkup" }
+      ],
+      overview: "Community pharmacy serving Dhanmondi residents with discounted monthly medicine packs for elderly patients, hypertension, and diabetes management."
+    },
+    {
+      title: "Green Life Hospital Pharmacy",
+      subtitle: "24 Hours Hospital In-house Pharmacy",
+      type: "Hospital Pharmacy",
+      category: "24-hours",
+      badge: "OPEN 24/7",
+      price: "MRP",
+      tag: "new",
+      primaryHighlight: "Green Road 24h Counter",
+      image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=700&auto=format&fit=crop&q=80",
+      hours: "24 Hours (Daily)",
+      contactPhone: "+880 2-9612345",
+      address: `32 Green Road, Dhanmondi, ${city}`,
+      tags: ["Hospital Supply", "Emergency Injections", "IV Fluids", "24/7"],
+      badges: ["Hospital Counter", "24 Hours", "Emergency"],
+      features: [
+        { label: "Emergency Stocks", value: "Saline, IV cannulas, critical cardiac injections" }
+      ],
+      overview: "Reliable 24-hour pharmacy situated on Green Road, ensuring prompt availability of emergency drugs, baby formula, and critical care essentials."
+    }
+  ];
+
+  return generateMappedListings(lat, lng, area, city, templates);
+}
+
+// ─── 5. FREE MEDICINE & COMMUNITY AID ─────────────────────────────────────────
+export function generateFreeMedicineListings(lat: number, lng: number, area = "Moghbazar", city = "Dhaka"): ServiceListing[] {
+  const templates = [
+    {
+      title: "Red Crescent Bangladesh Free Medical Clinic",
+      subtitle: "Free Essential Medicines & Primary Health Care",
+      type: "Charity Health Clinic",
+      category: "free-medicine",
+      badge: "100% FREE",
+      price: "Free Aid",
+      tag: "popular",
+      primaryHighlight: "100% Free Prescription Aid",
+      image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=700&auto=format&fit=crop&q=80",
+      hours: "Sun – Thu: 9:00 AM – 3:30 PM",
+      contactPhone: "+880 2-9330188",
+      address: `684-686 Bara Moghbazar, ${city}`,
+      tags: ["Free Medicine", "Disaster Aid", "Red Crescent", "Antibiotics", "Vitamins"],
+      badges: ["Humanitarian", "Free Dispensary", "Community Health"],
+      features: [
+        { label: "Eligibility", value: "Free for low-income, rickshaw pullers & laborers" },
+        { label: "Supplies", value: "Antibiotics, oral rehydration, fever & chronic drugs" }
+      ],
+      overview: "Bangladesh Red Crescent Society's urban health dispensary providing free doctor checkups and complimentary prescription pharmaceuticals."
+    },
+    {
+      title: "Anjuman Mufidul Islam Free Dispensary",
+      subtitle: "Humanitarian Medical Relief & Free Medicines",
+      type: "Community Dispensary",
+      category: "free-medicine",
+      badge: "FREE AID",
+      price: "Free",
+      tag: "popular",
+      primaryHighlight: "Charity Medicine Dispenser",
+      image: "https://images.unsplash.com/photo-1576602976047-174e57a47881?w=700&auto=format&fit=crop&q=80",
+      hours: "Sat – Thu: 9:00 AM – 4:00 PM",
+      contactPhone: "+880 2-9334003",
+      address: `Anjuman Bhaban, Kakrail, ${city}`,
+      tags: ["Free Clinic", "Elderly Care", "Charity", "Essential Drugs"],
+      badges: ["Historic Charity", "Free Health", "Non-Profit"],
+      features: [
+        { label: "Services", value: "Outpatient primary doctor checkup and free medicine issue" },
+        { label: "Community", value: "Serving underprivileged urban families since 1905" }
+      ],
+      overview: "Historic charitable welfare organization providing free healthcare checkups and dispensing free essential daily medicines to underprivileged families."
+    },
+    {
+      title: "BIRDEM Free Diabetes & Insulin Program",
+      subtitle: "Subsidized & Free Insulin for Low-Income Patients",
+      type: "Insulin Assistance",
+      category: "insulin-aid",
+      badge: "INSULIN AID",
+      price: "Subsidized / Free",
+      tag: "popular",
+      primaryHighlight: "Free & Subsidized Insulin",
+      image: "https://images.unsplash.com/photo-1588776814546-1ffbb4b45c5b?w=700&auto=format&fit=crop&q=80",
+      hours: "Sun – Thu: 8:00 AM – 2:00 PM",
+      contactPhone: "+880 2-9661551",
+      address: `122 Kazi Nazrul Islam Avenue, Shahbagh, ${city}`,
+      tags: ["Insulin Aid", "Diabetes Care", "Glucose Strips", "Shahbagh"],
+      badges: ["BIRDEM", "Subsidized", "Registered Patients"],
+      features: [
+        { label: "Registration", value: "BADAS subsidized registration card holders" },
+        { label: "Package", value: "Regular monthly insulin vials and syringe supplies" }
+      ],
+      overview: "Diabetic Association of Bangladesh (BADAS) social welfare wing supplying free and heavily subsidized insulin to registered low-income patients."
+    }
+  ];
+
+  return generateMappedListings(lat, lng, area, city, templates);
+}
+
+// ─── 6. SOCIAL AID & COMMUNITY SUPPORT ────────────────────────────────────────
+export function generateSocialAidListings(lat: number, lng: number, area = "Mohakhali", city = "Dhaka"): ServiceListing[] {
+  const templates = [
+    {
+      title: "BRAC Urban Development & Social Support Center",
+      subtitle: "Community Empowerment, Micro-grants & Skills Training",
+      type: "Social Aid NGO",
+      category: "social-services",
+      badge: "GLOBAL NGO",
+      price: "Free Community Aid",
+      tag: "popular",
+      primaryHighlight: "World's #1 Social Organization",
+      image: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=700&auto=format&fit=crop&q=80",
+      hours: "Sun – Thu: 9:00 AM – 5:00 PM",
+      contactPhone: "+880 2-222281265",
+      address: `BRAC Centre, 75 Mohakhali, ${city}`,
+      tags: ["Skills Training", "Micro-loans", "Women Empowerment", "Legal Aid"],
+      badges: ["BRAC", "Community First", "Empowerment"],
+      features: [
+        { label: "Programs", value: "Ultra-poor graduation, skill development, microfinance" },
+        { label: "Support", value: "Assistance for migrant families and informal sector workers" }
+      ],
+      overview: "Flagship social development hub offering vocational education, emergency cash assistance, women's empowerment initiatives, and youth entrepreneurship guidance."
+    },
+    {
+      title: "Dhaka Ahsania Mission Welfare Desk",
+      subtitle: "Humanitarian Relief, Vocational Aid & Drug Rehab",
+      type: "Social Welfare",
+      category: "social-services",
+      badge: "COMMUNITY AID",
+      price: "Free Assistance",
+      tag: "popular",
+      primaryHighlight: "Community Welfare & Relief",
+      image: "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=700&auto=format&fit=crop&q=80",
+      hours: "Sat – Thu: 9:00 AM – 5:00 PM",
+      contactPhone: "+880 2-8119521",
+      address: `House 19, Road 12, Dhanmondi R/A, ${city}`,
+      tags: ["Disaster Relief", "Education Stipends", "Vocational Training", "Shelter"],
+      badges: ["Ahsania Mission", "Youth Aid", "Non-Profit"],
+      features: [
+        { label: "Education", value: "Stipends and textbook support for underprivileged youth" },
+        { label: "Skill Centers", value: "Tailoring, computer literacy, electrical training" }
+      ],
+      overview: "Renowned social welfare organization running education support, emergency relief distribution, and free vocational trade training programs."
+    },
+    {
+      title: "Al-Markazul Islami Relief Center",
+      subtitle: "Emergency Ambulance, Burial & Humanitarian Aid",
+      type: "Charitable Trust",
+      category: "social-services",
+      badge: "EMERGENCY AID",
+      price: "Free / Subsidized",
+      tag: "popular",
+      primaryHighlight: "24/7 Ambulance & Relief",
+      image: "https://images.unsplash.com/photo-1532629345422-7515f3d16bb7?w=700&auto=format&fit=crop&q=80",
+      hours: "24/7 Emergency Helpline",
+      contactPhone: "+880 1711-567890",
+      address: `Ring Road, Mohammadpur, ${city}`,
+      tags: ["Emergency Ambulance", "Free Medical Camp", "Food Relief", "24/7"],
+      badges: ["Hotline 24/7", "Relief Hub", "Mohammadpur"],
+      features: [
+        { label: "Ambulance", value: "24/7 free and low-cost emergency ambulance fleet" },
+        { label: "Food Pack", value: "Dry food ration distribution to urban slum families" }
+      ],
+      overview: "Dedicated humanitarian welfare institution providing low-cost and free emergency ambulance transports, disaster food aid, and free medical camps."
+    }
+  ];
+
+  return generateMappedListings(lat, lng, area, city, templates);
+}
+
+// ─── 7. GAS, EV & PETROL STATIONS ─────────────────────────────────────────────
+export function generateGasEVListings(lat: number, lng: number, area = "Tejgaon", city = "Dhaka"): ServiceListing[] {
+  const templates = [
+    {
+      title: "Trust Filling Station & EV Supercharge Hub",
+      subtitle: "Army Welfare Trust 24/7 Multi-Fuel & EV Fast Charging",
+      type: "Fuel & EV Station",
+      category: "gas-ev",
+      badge: "24/7 EV CHARGE",
+      price: "Octane ৳125/L | EV ৳8/unit",
+      tag: "popular",
+      primaryHighlight: "EV DC Fast Charging & Octane",
+      image: "https://images.unsplash.com/photo-1545459720-aac8509eb02c?w=700&auto=format&fit=crop&q=80",
+      hours: "Open 24 Hours (7 Days)",
+      contactPhone: "+880 2-8878901",
+      address: `Tejgaon Industrial Area, Shaheed Tajuddin Ahmed Sarani, ${city}`,
+      tags: ["Octane 95", "Diesel", "EV Fast Charger", "Car Wash", "Air Pump"],
+      badges: ["Army Welfare Trust", "24/7 Open", "EV 60kW DC"],
+      features: [
+        { label: "EV Charger", value: "60 kW Dual Gun CCS2 Fast DC Charging" },
+        { label: "Fuel Quality", value: "100% Certified pure Octane, Diesel, Petrol" },
+        { label: "Convenience", value: "Automated car wash, tyre inflation, convenience mart" }
+      ],
+      overview: "Dhaka's leading multi-fuel station featuring high-speed 60kW CCS2 electric vehicle DC chargers, automated car wash, pure imported octane, and 24-hour air service."
+    },
+    {
+      title: "Clean Fuel CNG & Petrol Pump",
+      subtitle: "High Pressure CNG Filling & Modern Auto Gas",
+      type: "CNG & Fuel Station",
+      category: "gas-ev",
+      badge: "HIGH PRESSURE",
+      price: "CNG ৳43/m³ | Octane ৳125/L",
+      tag: "popular",
+      primaryHighlight: "Fast CNG & Octane",
+      image: "https://images.unsplash.com/photo-1527018607616-a6fe78f2441c?w=700&auto=format&fit=crop&q=80",
+      hours: "6:00 AM – 11:00 PM (Govt Schedule)",
+      contactPhone: "+880 1711-334455",
+      address: `Mohakhali Commercial Area, Near Flyover, ${city}`,
+      tags: ["CNG Refill", "Octane", "Mobil 1 Oil", "Wheel Alignment"],
+      badges: ["High Pressure", "Mohakhali", "Fast Line"],
+      features: [
+        { label: "CNG Compressors", value: "4 Multi-line dispensers with steady pressure" },
+        { label: "Engine Oil", value: "Genuine Mobil 1, Castrol, Total lubricants" }
+      ],
+      overview: "High-volume CNG and petrol station located strategically at Mohakhali, offering quick automated fueling, engine lubricants, and vehicle maintenance."
+    },
+    {
+      title: "Padma Oil & EV Station Airport Road",
+      subtitle: "State-owned Padma Petroleum & Quick Service Point",
+      type: "Filling Station",
+      category: "gas-ev",
+      badge: "GOVT CERTIFIED",
+      price: "Govt Regulated",
+      tag: "discounted",
+      primaryHighlight: "Govt Regulated Fuel Rates",
+      image: "https://images.unsplash.com/photo-1545459720-aac8509eb02c?w=700&auto=format&fit=crop&q=80",
+      hours: "Open 24 Hours",
+      contactPhone: "+880 2-8901234",
+      address: `Airport Road, Kurmitola / Uttara, ${city}`,
+      tags: ["Airport Route", "Diesel Bulk", "Octane", "24/7 Service"],
+      badges: ["State Owned", "Open 24h", "Highway Fuel"],
+      features: [
+        { label: "Location", value: "Conveniently located on Dhaka-Mymensingh Highway" },
+        { label: "Payment", value: "Cards, bKash, Cash accepted" }
+      ],
+      overview: "24-hour government-certified petrol and diesel station providing reliable fuel measurements, vehicle wash bays, and fast refueling before entering the highway."
+    }
+  ];
+
+  return generateMappedListings(lat, lng, area, city, templates);
+}
+
+// ─── 8. SPORTS, STADIUMS & RECREATION ─────────────────────────────────────────
+export function generateSportsListings(lat: number, lng: number, area = "Mirpur", city = "Dhaka"): ServiceListing[] {
+  const templates = [
+    {
+      title: "Sher-e-Bangla National Cricket Stadium",
+      subtitle: "Home of Cricket & National Sports Complex",
+      type: "Cricket Stadium",
+      category: "stadium",
+      badge: "ICC VENUE",
+      price: "Match Tickets / Tours",
+      tag: "popular",
+      primaryHighlight: "Home of Bangladesh Cricket",
+      image: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=700&auto=format&fit=crop&q=80",
+      hours: "Match Days & Academy: 8:00 AM – 7:00 PM",
+      contactPhone: "+880 2-9008980",
+      address: `Sector 2, Mirpur, ${city}`,
+      tags: ["ICC Venue", "BCB Academy", "Cricket Matches", "Mirpur 2"],
+      badges: ["National Stadium", "Capacity 26,000", "Floodlights"],
+      features: [
+        { label: "Capacity", value: "26,000 spectators with modern grandstands" },
+        { label: "Academy", value: "BCB indoor training nets and fitness gymnasium" }
+      ],
+      overview: "The legendary home of cricket in Bangladesh, hosting international test, ODI and T20 matches, BPL tournaments, and youth cricket development camps."
+    },
+    {
+      title: "Bashundhara Kings Arena (Sports Complex)",
+      subtitle: "International Standard Football Stadium",
+      type: "Football Stadium",
+      category: "football",
+      badge: "FIFA VENUE",
+      price: "BPL Match Tickets",
+      tag: "popular",
+      primaryHighlight: "AFC & FIFA Standard Turf",
+      image: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=700&auto=format&fit=crop&q=80",
+      hours: "9:00 AM – 9:00 PM",
+      contactPhone: "+880 2-8432000",
+      address: `Bashundhara Sports Complex, Block N, Bashundhara R/A, ${city}`,
+      tags: ["Football Stadium", "Bashundhara Kings", "AFC Cup", "Gym"],
+      badges: ["State of the Art", "Natural Turf", "Modern Arena"],
+      features: [
+        { label: "Facilities", value: "Natural grass pitch, VIP galleries, floodlight system" },
+        { label: "Tournaments", value: "Bangladesh Premier League, AFC Cup and international friendlies" }
+      ],
+      overview: "Premier private football venue in Bangladesh, purpose-built with international specifications, natural grass turf, and world-class athletic facilities."
+    },
+    {
+      title: "Dhanmondi Club Sports Field (Sheikh Jamal)",
+      subtitle: "Community Cricket, Football & Morning Walk Turf",
+      type: "Community Sports Ground",
+      category: "community-club",
+      badge: "COMMUNITY CLUB",
+      price: "Public / Member",
+      tag: "popular",
+      primaryHighlight: "Dhanmondi Lake & Sports Field",
+      image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=700&auto=format&fit=crop&q=80",
+      hours: "5:30 AM – 9:00 PM",
+      contactPhone: "+880 1711-445566",
+      address: `Road 8, Dhanmondi Lake Front, ${city}`,
+      tags: ["Jogging Track", "Cricket Practice", "Morning Walk", "Lake View"],
+      badges: ["Green Turf", "Lakeside", "Family Friendly"],
+      features: [
+        { label: "Track", value: "Dedicated rubberized morning walking and running track" },
+        { label: "Cricket Nets", value: "Daily practice sessions for junior cricket academy" }
+      ],
+      overview: "Popular sports hub and green open space by Dhanmondi Lake, popular with morning runners, youth cricket trainees, and neighborhood families."
+    }
+  ];
+
+  return generateMappedListings(lat, lng, area, city, templates);
+}
+
+// ─── 9. SCHOOLS, COLLEGES & UNIVERSITIES ──────────────────────────────────────
+export function generateSchoolListings(lat: number, lng: number, area = "Ramna", city = "Dhaka"): ServiceListing[] {
+  const templates = [
+    {
+      title: "University of Dhaka (DU)",
+      subtitle: "The Oxford of the East – Premier Public University",
+      type: "Public University",
+      category: "university",
+      badge: "TOP #1 UNIVERSITY",
+      price: "Subsidized Govt Tuition",
+      tag: "popular",
+      primaryHighlight: "Highest Ranked Public University",
+      image: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=700&auto=format&fit=crop&q=80",
+      hours: "Sun – Thu: 8:00 AM – 5:00 PM",
+      contactPhone: "+880 2-9661900",
+      address: `Nilkhet Road, Dhaka University Campus, ${city}`,
+      tags: ["Public University", "Research", "Curzon Hall", "Arts & Sciences"],
+      badges: ["Historic Heritage", "Top Ranked", "Campus 600 Acres"],
+      features: [
+        { label: "Faculties", value: "13 Faculties, 83 Departments, 12 Institutes" },
+        { label: "Campus", value: "Historic Curzon Hall, Central Library & TSC" },
+        { label: "Admission", value: "Merit-based through central national admission test" }
+      ],
+      overview: "Bangladesh's oldest and most prestigious university, founded in 1921. DU has been the intellectual and cultural heart of the nation for over a century."
+    },
+    {
+      title: "BUET – Bangladesh University of Engineering & Tech",
+      subtitle: "Apex Engineering & Architecture Institution",
+      type: "Engineering University",
+      category: "university",
+      badge: "TOP ENGINEERING",
+      price: "Govt Subsidized",
+      tag: "popular",
+      primaryHighlight: "Premier Engineering Institute",
+      image: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=700&auto=format&fit=crop&q=80",
+      hours: "Sun – Thu: 8:00 AM – 5:00 PM",
+      contactPhone: "+880 2-9665650",
+      address: `Palashi, Polashi Campus, Ramna, ${city}`,
+      tags: ["Engineering", "Computer Science", "Architecture", "Civil"],
+      badges: ["Apex Engineering", "Top STEM", "High Placement"],
+      features: [
+        { label: "Departments", value: "CSE, EEE, Mechanical, Civil, Architecture, Chemical" },
+        { label: "Placement", value: "Global top tier graduate programs & tech placements" }
+      ],
+      overview: "The most competitive engineering institution in Bangladesh, producing world-class researchers, civil leaders, and global software architects."
+    },
+    {
+      title: "North South University (NSU)",
+      subtitle: "First Private University in Bangladesh",
+      type: "Private University",
+      category: "university",
+      badge: "TOP PRIVATE",
+      price: "৳ 6,500/credit",
+      tag: "popular",
+      primaryHighlight: "Global Ranking #1 Private",
+      image: "https://images.unsplash.com/photo-1562774053-701939374585?w=700&auto=format&fit=crop&q=80",
+      hours: "Sat – Thu: 8:30 AM – 6:00 PM",
+      contactPhone: "+880 2-55668200",
+      address: `Plot 15, Block B, Bashundhara R/A, ${city}`,
+      tags: ["BBA", "Computer Science", "Pharmacy", "Bashundhara"],
+      badges: ["QS Ranked", "Modern Campus", "US Curriculum"],
+      features: [
+        { label: "Accreditation", value: "ACBSP accredited School of Business, ABET in progress" },
+        { label: "Campus", value: "6.5-acre modern campus with digital libraries and laboratories" }
+      ],
+      overview: "Ranked as the top private university in Bangladesh, offering North American standard undergraduate and graduate degrees in Business, Engineering, and Life Sciences."
+    },
+    {
+      title: "Notre Dame College Dhaka",
+      subtitle: "Prestigious Higher Secondary College for Boys",
+      type: "Higher Secondary College",
+      category: "college",
+      badge: "EXCELLENCE",
+      price: "Affordable",
+      tag: "popular",
+      primaryHighlight: "Top HSC Results in Bangladesh",
+      image: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=700&auto=format&fit=crop&q=80",
+      hours: "Sun – Thu: 7:30 AM – 3:30 PM",
+      contactPhone: "+880 2-7192325",
+      address: `Toyenbee Circular Road, Motijheel, ${city}`,
+      tags: ["HSC Science", "Business Studies", "Notre Dame", "Motijheel"],
+      badges: ["Highest Merit", "Character Building", "Historic"],
+      features: [
+        { label: "Tradition", value: "Founded by Holy Cross Congregation in 1949" },
+        { label: "Success", value: "Over 99% GPA 5.00 in National HSC Board Examinations" }
+      ],
+      overview: "Pinnacle of higher secondary education in Bangladesh, renowned for strict academic discipline, extracurricular excellence, and peerless board examination records."
+    },
+    {
+      title: "Viqarunnisa Noon School & College",
+      subtitle: "Premier Higher Secondary Institution for Girls",
+      type: "School & College",
+      category: "college",
+      badge: "TOP GIRLS COLLEGE",
+      price: "Standard Board Fee",
+      tag: "popular",
+      primaryHighlight: "Leading Female Education",
+      image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=700&auto=format&fit=crop&q=80",
+      hours: "Sun – Thu: 7:30 AM – 2:00 PM",
+      contactPhone: "+880 2-9334180",
+      address: `1/A New Bailey Road, Ramna, ${city}`,
+      tags: ["Girls School", "HSC & SSC", "Bailey Road", "English Version"],
+      badges: ["Premier Girls", "Bailey Road", "Top Board Results"],
+      features: [
+        { label: "Curriculum", value: "Bangla & English Version National Curriculum" },
+        { label: "Campuses", value: "Main Bailey Road, Dhanmondi, Azimpur & Bashundhara" }
+      ],
+      overview: "Historic girls school and college renowned for generating the highest number of board toppers, nationwide debate champions, and women leaders."
+    },
+    {
+      title: "Scholastica Senior Campus Uttara",
+      subtitle: "Top British Curriculum English Medium School",
+      type: "English Medium School",
+      category: "english-medium",
+      badge: "CAMBRIDGE / EDEXCEL",
+      price: "International",
+      tag: "popular",
+      primaryHighlight: "O & A Levels Cambridge School",
+      image: "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=700&auto=format&fit=crop&q=80",
+      hours: "Sun – Thu: 7:45 AM – 2:30 PM",
+      contactPhone: "+880 2-8956550",
+      address: `Plot 2, Sector 13, Uttara, ${city}`,
+      tags: ["Cambridge O/A Levels", "Swimming Pool", "Auditorium", "Uttara"],
+      badges: ["English Medium", "Global Placement", "Top Infrastructure"],
+      features: [
+        { label: "Board", value: "Cambridge Assessment International Education" },
+        { label: "Facilities", value: "Olympic swimming pool, gymnasium, professional theater" }
+      ],
+      overview: "Leading English-medium institution offering Cambridge IGCSE and A Levels, known for modern sports complexes and graduates at Ivy League and Russell Group universities."
+    }
+  ];
+
+  return generateMappedListings(lat, lng, area, city, templates);
+}
+
+// ─── 10. TRANSIT, METRO & SUBWAY ──────────────────────────────────────────────
+export function generateTransitMetroListings(lat: number, lng: number, area = "Motijheel", city = "Dhaka"): ServiceListing[] {
+  const templates = [
+    {
+      title: "Dhaka Metro Rail: Motijheel Station (MRT-6)",
+      subtitle: "Southern Terminus Station – Dhaka Mass Rapid Transit",
+      type: "Metro Rail Station",
+      category: "metro-rail",
+      badge: "MRT LINE 6",
+      price: "৳ 20 - ৳ 100",
+      tag: "popular",
+      primaryHighlight: "Fast Air-Conditioned Metro",
+      image: "https://images.unsplash.com/photo-1517649763962-0c623266ddc0?w=700&auto=format&fit=crop&q=80",
+      hours: "7:10 AM – 9:40 PM (Daily except Friday)",
+      contactPhone: "+880 2-55138000",
+      address: `Bangladesh Bank Circle, Motijheel Commercial Area, ${city}`,
+      tags: ["MRT Line 6", "Rapid Transit Card", "Air Conditioned", "Escalators"],
+      badges: ["MRT Line 6", "Zero Traffic", "Accessible"],
+      features: [
+        { label: "Transit Time", value: "Motijheel to Uttara in only 32 minutes" },
+        { label: "Payment", value: "Rapid Pass & MRT Pass card with 10% fare discount" },
+        { label: "Frequency", value: "Trains every 6 to 8 minutes during peak hours" }
+      ],
+      overview: "The central commercial terminal of Dhaka Metro Rail (MRT Line 6), revolutionizing transit between South Dhaka (Motijheel) and North Dhaka (Uttara) in 32 minutes."
+    },
+    {
+      title: "Dhaka Metro Rail: Farmgate Station",
+      subtitle: "Central High-Volume Transit & Transfer Hub",
+      type: "Metro Rail Station",
+      category: "metro-rail",
+      badge: "BUS & METRO",
+      price: "৳ 20 - ৳ 60",
+      tag: "popular",
+      primaryHighlight: "Central Interchange Station",
+      image: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=700&auto=format&fit=crop&q=80",
+      hours: "7:15 AM – 9:45 PM",
+      contactPhone: "+880 2-55138000",
+      address: `Ananda Cinema Hall Road, Farmgate, Tejgaon, ${city}`,
+      tags: ["Farmgate Hub", "MRT Line 6", "Overpass Direct Access", "Elevators"],
+      badges: ["Major Hub", "Bus Connection", "Modern"],
+      features: [
+        { label: "Connections", value: "Direct footbridge link to Farmgate bus terminals" },
+        { label: "Accessibility", value: "Tactile paving, elevators for disabled passengers" }
+      ],
+      overview: "Busiest intermediate station on MRT Line 6, linking university students, government staff, and daily commuters with major city bus routes."
+    },
+    {
+      title: "Dhaka Metro Rail: Mirpur 10 Station",
+      subtitle: "Mirpur Central Interchange & Transit Station",
+      type: "Metro Rail Station",
+      category: "metro-rail",
+      badge: "MIRPUR HUB",
+      price: "৳ 20 - ৳ 80",
+      tag: "popular",
+      primaryHighlight: "Mirpur 10 Roundabout Terminal",
+      image: "https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=700&auto=format&fit=crop&q=80",
+      hours: "7:10 AM – 9:40 PM",
+      contactPhone: "+880 2-55138000",
+      address: `Mirpur 10 Golchokkor, Mirpur, ${city}`,
+      tags: ["Mirpur 10", "Stadium Access", "Shopping Hub", "MRT Line 6"],
+      badges: ["High Traffic", "Elevated Station", "Rapid Pass"],
+      features: [
+        { label: "Access", value: "Direct proximity to Sher-e-Bangla National Cricket Stadium" },
+        { label: "Security", value: "Baggage scanners and MRT police unit on duty" }
+      ],
+      overview: "Elevated modern station over Mirpur 10 roundabout providing swift, jam-free transit for residents of Mirpur, Pallabi, and Senpara."
+    },
+    {
+      title: "Dhaka Metro Rail: Uttara North Station",
+      subtitle: "Northern Terminus & Depot Complex (Diabari)",
+      type: "Metro Rail Station",
+      category: "metro-rail",
+      badge: "UTTARA TERMINUS",
+      price: "৳ 20 - ৳ 100",
+      tag: "popular",
+      primaryHighlight: "Diabari Depot & Terminus",
+      image: "https://images.unsplash.com/photo-1517649763962-0c623266ddc0?w=700&auto=format&fit=crop&q=80",
+      hours: "7:10 AM – 9:40 PM",
+      contactPhone: "+880 2-55138000",
+      address: `Diabari, Sector 15, Uttara, ${city}`,
+      tags: ["Diabari", "Uttara North", "Depot", "Parking Available"],
+      badges: ["Terminus", "Park & Ride", "Clean"],
+      features: [
+        { label: "Park & Ride", value: "Ample parking for cars, bikes, and rickshaws" },
+        { label: "Depot", value: "Main operational maintenance depot of MRT Line 6" }
+      ],
+      overview: "Northern gateway terminus in scenic Diabari, Uttara. Features park-and-ride facilities, automated ticket vending machines, and direct feeder buses."
+    },
+    {
+      title: "Kamalapur Central Railway Station",
+      subtitle: "Bangladesh Railway Principal Intercity Station",
+      type: "Railway Station",
+      category: "railway",
+      badge: "CENTRAL RAILWAY",
+      price: "Intercity Train Fares",
+      tag: "popular",
+      primaryHighlight: "National Rail Network Hub",
+      image: "https://images.unsplash.com/photo-1532105956626-9569c03602f6?w=700&auto=format&fit=crop&q=80",
+      hours: "Open 24 Hours (Train Schedules)",
+      contactPhone: "+880 2-9358634",
+      address: `Atish Dipankar Road, Kamalapur, Motijheel, ${city}`,
+      tags: ["Subarna Express", "Cox's Bazar Express", "E-Ticket", "Platforms 1-9"],
+      badges: ["Iconic Architecture", "Cox's Bazar Train", "Intercity"],
+      features: [
+        { label: "Key Trains", value: "Subarna, Sonar Bangla, Cox's Bazar Express, Parabat" },
+        { label: "Facilities", value: "Online e-ticketing verification, VIP lounge, cloak rooms" }
+      ],
+      overview: "The central railway terminal of Bangladesh connecting Dhaka to Chittagong, Cox's Bazar, Sylhet, Rajshahi, and Khulna via high-speed express trains."
+    },
+    {
+      title: "Mohakhali Inter-District Bus Terminal",
+      subtitle: "Northern & Eastern Bangladesh Highway Bus Terminal",
+      type: "Bus Terminal",
+      category: "bus-terminal",
+      badge: "BUS TERMINUS",
+      price: "Standard Bus Fares",
+      tag: "popular",
+      primaryHighlight: "Mymensingh, Sylhet & Tangail Routes",
+      image: "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=700&auto=format&fit=crop&q=80",
+      hours: "Open 24 Hours",
+      contactPhone: "+880 1711-667788",
+      address: `Bir Uttam A.K. Khandakar Road, Mohakhali, ${city}`,
+      tags: ["Ena Transport", "Shyamoli", "BRTC AC", "24/7 Departure"],
+      badges: ["High Frequency", "24/7 Bus Hub", "Highway"],
+      features: [
+        { label: "Destinations", value: "Mymensingh, Bogura, Sylhet, Kishoreganj, Tangail" },
+        { label: "Operators", value: "Ena, Shyamoli Paribahan, BRTC AC Bus services" }
+      ],
+      overview: "Major inter-district bus station serving millions of highway travelers traveling to Northern Bangladesh, Sylhet, and greater Mymensingh."
+    }
+  ];
+
+  return generateMappedListings(lat, lng, area, city, templates);
+}
+
+// ─── 11. GROCERY & SUPERSTORES ────────────────────────────────────────────────
+export function generateGroceryShopListings(lat: number, lng: number, area = "Gulshan", city = "Dhaka"): ServiceListing[] {
+  const templates = [
+    {
+      title: "Shwapno Flagship Superstore",
+      subtitle: "Fresh Fish, Meat, Organic Vegetables & Household",
+      type: "Superstore",
+      category: "superstore",
+      badge: "BEST VALUE",
+      price: "Retail MRP & Deals",
+      tag: "popular",
+      primaryHighlight: "Daily Discounts & Fresh Food",
+      image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=700&auto=format&fit=crop&q=80",
+      hours: "8:00 AM – 10:30 PM (Daily)",
+      contactPhone: "+880 9612-374927",
+      address: `Gulshan 1 Circle, Road 134, ${city}`,
+      tags: ["Fresh Fish", "Halal Beef", "Radhuni Spices", "Pran", "Home Delivery"],
+      badges: ["Superstore", "Reward Points", "Fast Checkout"],
+      features: [
+        { label: "Fresh Market", value: "Fresh country chicken, live fish cleaning, organic vegetables" },
+        { label: "Points", value: "Earn and redeem Shwapno loyalty reward points" },
+        { label: "Payment", value: "All credit/debit cards, bKash, Nagad, Cash" }
+      ],
+      overview: "Bangladesh's largest retail superstore chain offering farm-fresh produce, authentic spices, toiletries, dairy, and certified hand-cut halal meat."
+    },
+    {
+      title: "Unimart Gulshan Hypermarket",
+      subtitle: "Premium International Hypermarket & Gourmet Food Hall",
+      type: "Hypermarket",
+      category: "superstore",
+      badge: "PREMIUM",
+      price: "Gourmet & Retail",
+      tag: "popular",
+      primaryHighlight: "Huge Gourmet Hypermarket",
+      image: "https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=700&auto=format&fit=crop&q=80",
+      hours: "8:30 AM – 11:00 PM",
+      contactPhone: "+880 2-9844444",
+      address: `Gulshan Centre Point, Road 90, Gulshan 2, ${city}`,
+      tags: ["Imported Cheeses", "Organic Veg", "Food Hall", "Live Bakery"],
+      badges: ["Premier Experience", "Underground Parking", "Food Court"],
+      features: [
+        { label: "Selection", value: "Largest collection of imported snacks, condiments, and specialty coffee" },
+        { label: "Live Bakery", value: "Fresh croissants, artisan sourdough breads, cakes baked hourly" }
+      ],
+      overview: "State-of-the-art 40,000 sq ft hypermarket with extensive international imports, live butcher counters, fish aquariums, and an artisanal dining food hall."
+    },
+    {
+      title: "Agora Superstore Dhanmondi",
+      subtitle: "Pioneer Quality Supermarket in Bangladesh",
+      type: "Superstore",
+      category: "superstore",
+      badge: "QUALITY",
+      price: "Standard Retail",
+      tag: "popular",
+      primaryHighlight: "Pioneer Retail Supermarket",
+      image: "https://images.unsplash.com/photo-1534723452862-4c874018d66d?w=700&auto=format&fit=crop&q=80",
+      hours: "8:00 AM – 10:00 PM",
+      contactPhone: "+880 2-8119854",
+      address: `Plot 27, Road 16 (Old 27), Dhanmondi, ${city}`,
+      tags: ["Chinigura Rice", "Mustard Oil", "Baby Care", "Bakery"],
+      badges: ["Quality Assured", "Dhanmondi 27", "Reliable"],
+      features: [
+        { label: "History", value: "The first modern supermarket chain in Bangladesh (est. 2001)" },
+        { label: "Fresh Guarantee", value: "Strict quality checks on all dairy and perishable goods" }
+      ],
+      overview: "Trusted household destination for over two decades, delivering quality groceries, premium local spices, clean pulses, and personal care products."
+    },
+    {
+      title: "Karwan Bazar Central Wholesale Market",
+      subtitle: "Largest Wholesale Fish, Vegetable & Spice Market",
+      type: "Wholesale Market",
+      category: "wholesale-market",
+      badge: "BEST PRICES",
+      price: "Wholesale Rates",
+      tag: "discounted",
+      primaryHighlight: "Lowest Wholesale Prices",
+      image: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=700&auto=format&fit=crop&q=80",
+      hours: "Open 24 Hours (Midnight to Dawn Peak)",
+      contactPhone: "+880 1711-998877",
+      address: `Kazi Nazrul Islam Avenue, Karwan Bazar, ${city}`,
+      tags: ["Wholesale Prices", "Padma Ilish", "Direct Farmers", "Fresh Veg"],
+      badges: ["Wholesale Hub", "Farmers Direct", "Cash"],
+      features: [
+        { label: "Pricing", value: "Up to 30% to 50% cheaper than retail supermarkets" },
+        { label: "Variety", value: "Direct trucks arriving from all 64 districts every midnight" }
+      ],
+      overview: "The beating commercial heart of Dhaka's food supply. Direct farmer arrivals every midnight ensure the freshest fish, vegetables, fruits, and spices at rock-bottom prices."
+    }
+  ];
+
+  return generateMappedListings(lat, lng, area, city, templates);
+}
+
+// ─── 12. USED & NEW FURNITURE ─────────────────────────────────────────────────
+export function generateFurnitureListings(lat: number, lng: number, area = "Panthapath", city = "Dhaka"): ServiceListing[] {
+  const templates = [
+    {
+      title: "Hatil Furniture Flagship Showroom",
+      subtitle: "Smart & Ergonomic Wood Furniture Solutions",
+      type: "Furniture Showroom",
+      category: "furniture",
+      badge: "TOP BRAND",
+      price: "৳ 8,000 - ৳ 95,000",
+      tag: "popular",
+      primaryHighlight: "Premium Oak & Beech Wood",
+      image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=700&auto=format&fit=crop&q=80",
+      hours: "10:00 AM – 8:30 PM (Daily)",
+      contactPhone: "+880 9678-442845",
+      address: `Bir Uttam Qazi Nuruzzaman Sarak, Panthapath, ${city}`,
+      tags: ["Living Room", "Bed & Mattress", "Ergonomic Sofa", "Home Office"],
+      badges: ["Hatil Original", "Warranty 1 Year", "Free Delivery"],
+      features: [
+        { label: "Material", value: "Solid German beech wood and engineered veneer" },
+        { label: "Warranty", value: "12-month free service and lifetime hardware support" }
+      ],
+      overview: "Bangladesh's flagship furniture export brand, famous for space-saving modular sofas, solid wood dining tables, ergonomic executive chairs, and comfortable bedroom sets."
+    },
+    {
+      title: "Panthapath Wooden Furniture Market",
+      subtitle: "Bazaar for Solid Teak (Segun) & Budget Beds",
+      type: "Furniture Bazaar",
+      category: "furniture",
+      badge: "BARGAIN DEALS",
+      price: "৳ 4,000 - ৳ 45,000",
+      tag: "discounted",
+      primaryHighlight: "Chittagong Teak & Custom Work",
+      image: "https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=700&auto=format&fit=crop&q=80",
+      hours: "9:30 AM – 9:30 PM",
+      contactPhone: "+880 1711-554433",
+      address: `Panthapath Main Road, Near Square Hospital, ${city}`,
+      tags: ["Solid Segun", "Bargain Price", "Custom Carpentry", "Dressing Table"],
+      badges: ["Direct Craftsmen", "Negotiable", "Delivery Van"],
+      features: [
+        { label: "Custom Work", value: "Order custom designs built to exact room dimensions" },
+        { label: "Price", value: "Negotiable pricing direct from manufacturing artisans" }
+      ],
+      overview: "Dhaka's renowned furniture street with over 150 workshops crafting solid Chittagong Teak (Segun) beds, almirahs, dining sets, and affordable office desks."
+    }
+  ];
+
+  return generateMappedListings(lat, lng, area, city, templates);
+}
+
+// ─── 13. MONEY EXCHANGE & REMITTANCE ──────────────────────────────────────────
+export function generateMoneyExchangeListings(lat: number, lng: number, area = "Motijheel", city = "Dhaka"): ServiceListing[] {
+  const templates = [
+    {
+      title: "bKash & Nagad Central Customer Care Hub",
+      subtitle: "Official Digital Remittance, Cashout & Verification",
+      type: "Remittance Hub",
+      category: "remittance",
+      badge: "INSTANT bKash",
+      price: "Lowest Cashout Fee",
+      tag: "popular",
+      primaryHighlight: "Instant bKash & Foreign Inward Remittance",
+      image: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=700&auto=format&fit=crop&q=80",
+      hours: "9:00 AM – 7:00 PM (Customer Center)",
+      contactPhone: "+880 2-16247",
+      address: `Sena Kalyan Bhaban, 195 Motijheel C/A, ${city}`,
+      tags: ["bKash Cashout", "2.5% Remittance Incentive", "Nagad", "NID Verification"],
+      badges: ["Govt 2.5% Incentive", "Instant Transfer", "Official"],
+      features: [
+        { label: "Govt Incentive", value: "Instant 2.5% government cash incentive credited directly" },
+        { label: "Global Partners", value: "Western Union, Remitly, WorldRemit, TapTap Send" }
+      ],
+      overview: "Official central remittance care center offering instant foreign currency disbursement directly into bKash & Nagad wallets with full 2.5% government cash incentives."
+    },
+    {
+      title: "Motijheel Central Money Changer",
+      subtitle: "Bangladesh Bank Authorized Foreign Currency Exchange",
+      type: "Money Exchange",
+      category: "money-exchange",
+      badge: "BB AUTHORIZED",
+      price: "Live Interbank Rates",
+      tag: "popular",
+      primaryHighlight: "Official USD, EUR, GBP, SAR Rates",
+      image: "https://images.unsplash.com/photo-1601597111158-2fceff292cdc?w=700&auto=format&fit=crop&q=80",
+      hours: "9:30 AM – 5:30 PM (Sun – Thu)",
+      contactPhone: "+880 2-9556677",
+      address: `Dilkusha Commercial Area, Motijheel, ${city}`,
+      tags: ["Passport Endorsement", "USD Buy/Sell", "Euro", "Saudi Riyal"],
+      badges: ["Central Bank Approved", "Passport Endorse", "Cash"],
+      features: [
+        { label: "Licence", value: "Bangladesh Bank Authorized Dealer Money Changer" },
+        { label: "Endorsement", value: "Hajj/Umrah, medical, student, and tourist travel quota" }
+      ],
+      overview: "Authorized foreign currency exchange bureau providing live exchange rates for US Dollars, Euros, British Pounds, and Saudi Riyals with instant passport endorsements."
+    }
+  ];
+
+  return generateMappedListings(lat, lng, area, city, templates);
+}
+
+// ─── 14. TRAVEL & FLIGHT AGENCIES ─────────────────────────────────────────────
+export function generateTravelFlightListings(lat: number, lng: number, area = "Kurmitola", city = "Dhaka"): ServiceListing[] {
+  const templates = [
+    {
+      title: "Biman Bangladesh Airlines (Balaka Head Office)",
+      subtitle: "National Flag Carrier Ticketing & Sales Center",
+      type: "Airline Office",
+      category: "airline",
+      badge: "NATIONAL CARRIER",
+      price: "Domestic & Global Flights",
+      tag: "popular",
+      primaryHighlight: "Official Biman Bangladesh Flights",
+      image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=700&auto=format&fit=crop&q=80",
+      hours: "9:00 AM – 5:30 PM (Daily)",
+      contactPhone: "+880 2-8901600",
+      address: `Balaka Bhaban, Kurmitola, Hazrat Shahjalal Airport, ${city}`,
+      tags: ["Direct London/NY", "Umrah Flights", "Dhaka to Cox's Bazar", "Baggage Service"],
+      badges: ["Flag Carrier", "Boeing 787 Fleet", "Official"],
+      features: [
+        { label: "Routes", value: "Non-stop flights to London Heathrow, Toronto, Middle East & Asia" },
+        { label: "Domestic", value: "Daily connections to Sylhet, Chittagong, Cox's Bazar, Saidpur" }
+      ],
+      overview: "Central sales counter of Bangladesh's national flag carrier operating modern Boeing 787 Dreamliners to the UK, North America, Middle East, and domestic hubs."
+    },
+    {
+      title: "ShareTrip Travel & Flight Hub",
+      subtitle: "Online Flight Booking, Visa Processing & Holiday Packages",
+      type: "Travel Agency",
+      category: "travel-agency",
+      badge: "TOP AGENCY",
+      price: "Special Discount Fares",
+      tag: "popular",
+      primaryHighlight: "Instant Air Ticket Booking",
+      image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=700&auto=format&fit=crop&q=80",
+      hours: "9:00 AM – 8:00 PM (Support 24/7)",
+      contactPhone: "+880 9617-617617",
+      address: `Plot 50, Kamal Ataturk Avenue, Banani, ${city}`,
+      tags: ["Umrah Packages", "Thailand/Malaysia Visa", "Student Airfare", "Hotel Deals"],
+      badges: ["IATA Accredited", "24/7 Hotline", "EMI 0%"],
+      features: [
+        { label: "Visa Help", value: "Assistance for Tourist, Medical, and Student Visas" },
+        { label: "Payment", value: "0% EMI on all major credit cards up to 12 months" }
+      ],
+      overview: "IATA-accredited travel agency offering discount flight deals on Emirates, Qatar Airways, Singapore Airlines, and Biman, with visa processing services."
+    }
+  ];
+
+  return generateMappedListings(lat, lng, area, city, templates);
+}
+
+// ─── 15. CARS & AUTOMOTIVE ────────────────────────────────────────────────────
+export function generateCarsAutoListings(lat: number, lng: number, area = "Tejgaon", city = "Dhaka"): ServiceListing[] {
+  const templates = [
+    {
+      title: "Navana Toyota 3S Center Tejgaon",
+      subtitle: "Authorized Sales, Service & Genuine Spare Parts",
+      type: "Automobile Center",
+      category: "cars-auto",
+      badge: "AUTHORIZED TOYOTA",
+      price: "Official Pricing",
+      tag: "popular",
+      primaryHighlight: "Official Toyota Dealer & 3S Service",
+      image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=700&auto=format&fit=crop&q=80",
+      hours: "9:00 AM – 6:00 PM (Sat – Thu)",
+      contactPhone: "+880 2-8870500",
+      address: `205-207 Tejgaon Industrial Area, ${city}`,
+      tags: ["Toyota Corolla Cross", "Hybrid Service", "Genuine Parts", "Warranty"],
+      badges: ["Navana Original", "Authorized 3S", "Diagnostic Computer"],
+      features: [
+        { label: "Service", value: "Computerized engine diagnostic, hybrid battery check" },
+        { label: "Parts", value: "100% genuine Toyota imported oil filters, brake pads" }
+      ],
+      overview: "The official Toyota 3S (Sales, Service, Spare Parts) authorized center in Dhaka, equipped with modern hydraulic lifts and trained technicians."
+    },
+    {
+      title: "Baridhara Car Mart (Pragati Sarani)",
+      subtitle: "Reconditioned Japanese Hybrid Car Showroom",
+      type: "Car Showroom",
+      category: "cars-auto",
+      badge: "AUCTION GRADE 4.5+",
+      price: "৳ 18.5 Lac – ৳ 65 Lac",
+      tag: "popular",
+      primaryHighlight: "Japanese Reconditioned Cars",
+      image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=700&auto=format&fit=crop&q=80",
+      hours: "10:00 AM – 9:00 PM",
+      contactPhone: "+880 1711-223344",
+      address: `Progoti Shoroni, Baridhara / Kuril, ${city}`,
+      tags: ["Toyota Premio", "Axio Hybrid", "Honda Vezel", "Bank Loan 80%"],
+      badges: ["Auction Sheet Verified", "Bank Loan", "Showroom"],
+      features: [
+        { label: "Inspection", value: "Verified original Japan auction sheets provided" },
+        { label: "Loan", value: "Up to 80% bank auto loans processed within 5 working days" }
+      ],
+      overview: "Premium auto showroom showcasing auction-grade verified Japanese hybrid vehicles (Premio, Allion, Axio, Grace, Vezel, Harrier) with bank financing options."
+    }
+  ];
+
+  return generateMappedListings(lat, lng, area, city, templates);
+}
+
+// ─── 16. ELECTRONICS & GADGETS ────────────────────────────────────────────────
+export function generateElectronicsListings(lat: number, lng: number, area = "Elephant Road", city = "Dhaka"): ServiceListing[] {
+  const templates = [
+    {
+      title: "Multiplan Computer City Center",
+      subtitle: "Largest IT, Laptop & Desktop Computer Market",
+      type: "Computer Market",
+      category: "electronics",
+      badge: "TECH HUB",
+      price: "Wholesale & Retail",
+      tag: "popular",
+      primaryHighlight: "16 Floors of IT & Gadgets",
+      image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=700&auto=format&fit=crop&q=80",
+      hours: "10:00 AM – 8:30 PM (Closed Tuesday)",
+      contactPhone: "+880 2-9660000",
+      address: `69-71 New Elephant Road, ${city}`,
+      tags: ["Laptops", "Graphics Cards", "Monitor", "Repair & Upgrades"],
+      badges: ["Asia's Largest IT Mall", "1000+ Shops", "Official Warranty"],
+      features: [
+        { label: "Brands", value: "Apple, Asus, HP, Dell, Lenovo, Acer, MSI, Gigabyte" },
+        { label: "Services", value: "Laptop screen repair, thermal paste replacement, SSD upgrades" }
+      ],
+      overview: "South Asia's premier IT shopping complex with over 1,000 tech stores offering laptops, gaming rigs, monitors, printers, networking hardware, and repair services."
+    },
+    {
+      title: "Bashundhara City Mobile & Gadget Mall",
+      subtitle: "Smartphone Flagship Stores & Genuine Accessories",
+      type: "Gadget Market",
+      category: "electronics",
+      badge: "OFFICIAL WARRANTY",
+      price: "Best Market Price",
+      tag: "popular",
+      primaryHighlight: "Smartphones & Wearables",
+      image: "https://images.unsplash.com/photo-1580910051074-3eb694886505?w=700&auto=format&fit=crop&q=80",
+      hours: "10:00 AM – 9:00 PM (Closed Tuesday)",
+      contactPhone: "+880 2-9111440",
+      address: `Panthapath, Bashundhara City Level 5 & 6, ${city}`,
+      tags: ["iPhone", "Samsung Galaxy", "Xiaomi", "Smartwatch", "Earbuds"],
+      badges: ["Level 5 & 6", "Official Brand Stores", "Exchange Offers"],
+      features: [
+        { label: "Official Stores", value: "Samsung, Apple Authorized, Xiaomi, Realme, Vivo" },
+        { label: "Trade-in", value: "Exchange your old phone for instant upgrade discount" }
+      ],
+      overview: "The most visited consumer smartphone hub in Bangladesh. Official warranty devices, screen protectors, phone covers, and repair workshops."
     }
   ];
 
@@ -1000,6 +1396,7 @@ function generateMappedListings(
   cityName: string,
   templates: any[]
 ): ServiceListing[] {
+  // Realistic cluster coordinates around centerLat / centerLng
   const offsets = [
     { dLat: 0.0035, dLng: 0.0042 },
     { dLat: -0.0048, dLng: 0.0031 },
@@ -1028,14 +1425,14 @@ function generateMappedListings(
       lat: itemLat,
       lng: itemLng,
       location: `${areaName}, ${cityName}`,
-      address: `${100 + idx * 24} Broadway, ${areaName}, NY`,
-      rating: 4.6 + (idx % 4) * 0.1,
-      reviews: 120 + idx * 85,
+      address: tmpl.address || `House ${12 + idx * 8}, Road ${4 + (idx % 12)}, ${areaName}, ${cityName}`,
+      rating: tmpl.rating || 4.6 + (idx % 4) * 0.1,
+      reviews: tmpl.reviews || 120 + idx * 85,
       verified: true,
       image: tmpl.image,
-      contactPhone: tmpl.contactPhone || "+1 (718) 555-0199",
+      contactPhone: tmpl.contactPhone || `+880 1711-${200000 + idx * 11111}`,
       hours: tmpl.hours || "Open Daily",
-      website: tmpl.website || "https://immigrantconnect.org",
+      website: tmpl.website || "https://barikoi.com",
       primaryHighlight: tmpl.primaryHighlight,
       price: tmpl.price || tmpl.primaryHighlight,
       badge: tmpl.badge || tmpl.badges?.[0] || tmpl.type,

@@ -100,7 +100,7 @@ export function Sidebar() {
     <>
       <aside className="hidden lg:flex flex-col w-64 min-h-screen bg-white border-r border-border fixed left-0 top-0 z-40 shadow-sm">
       {/* Logo */}
-      <div className="p-4 border-b border-border">
+      <div className="p-4 border-b border-border flex items-center justify-between">
         <Logo size="md" onClick={() => navigate("/feed")} />
       </div>
 

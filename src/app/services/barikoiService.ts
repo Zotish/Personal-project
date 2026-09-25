@@ -19,6 +19,10 @@ try {
 import {
   isLocationInBangladesh,
   isBangladeshCountry,
+  isUsaCountry,
+  isLocationInUSA,
+  isBarikoiSupportedCountry,
+  getActivePlatformCountryCode,
   getMapStyleForLocation,
   getMapboxRasterStyle,
   getOsmRasterStyle,
@@ -31,11 +35,18 @@ import {
   markBariKoiTileServerBroken,
   MAPBOX_TOKEN,
   type MapWatermarkProvider,
+  bariKoiTransformRequest,
+  loadBkoiGL,
+  CURATED_GLOBAL_DIASPORA_PLACES,
 } from "./mapboxService";
 
 export {
   isLocationInBangladesh,
   isBangladeshCountry,
+  isUsaCountry,
+  isLocationInUSA,
+  isBarikoiSupportedCountry,
+  getActivePlatformCountryCode,
   getMapStyleForLocation,
   getMapboxRasterStyle,
   getOsmRasterStyle,
@@ -48,6 +59,9 @@ export {
   markBariKoiTileServerBroken,
   MAPBOX_TOKEN,
   type MapWatermarkProvider,
+  bariKoiTransformRequest,
+  loadBkoiGL,
+  CURATED_GLOBAL_DIASPORA_PLACES,
 };
 
 // ─── 1. Map Rendering Style URL (Official Global Style from BariKoi) ─────────
@@ -65,6 +79,8 @@ export function isBariKoiAvailable(lat?: number, lng?: number, countryCode?: str
       sessionStorage.removeItem("bkoi_cooldown_until");
     } catch (_) {}
   }
+
+  // BariKoi service is used for Bangladesh
   return !!BARIKOI_API_KEY;
 }
 
@@ -719,12 +735,34 @@ export function getCuratedFallbackPlaces(
     return pc.includes(cat);
   });
 
-  return filtered.map((p) => {
-    const distMeters = Math.hypot(p.lat - userLat, p.lng - userLng) * 111_000;
+  const nearbyOffsets = [
+    { dLat: 0.0032, dLng: 0.0035 },
+    { dLat: -0.0028, dLng: 0.0041 },
+    { dLat: 0.0042, dLng: -0.0031 },
+    { dLat: -0.0035, dLng: -0.0038 },
+    { dLat: 0.0018, dLng: 0.0052 },
+    { dLat: -0.0048, dLng: 0.0019 },
+    { dLat: 0.0051, dLng: -0.0015 },
+    { dLat: -0.0022, dLng: -0.0055 },
+    { dLat: 0.0062, dLng: 0.0038 },
+    { dLat: -0.0058, dLng: 0.0045 },
+    { dLat: 0.0039, dLng: -0.0062 },
+    { dLat: -0.0042, dLng: -0.0051 },
+  ];
+
+  return filtered.map((p, idx) => {
+    const off = nearbyOffsets[idx % nearbyOffsets.length];
+    // Position fallback place dynamically around the user's real location (300m - 1.2km)
+    // so no static garbage icons appear far away (e.g. North Dhaka / DAC when user is in Narayanganj)
+    const lat = userLat ? userLat + off.dLat : p.lat;
+    const lng = userLng ? userLng + off.dLng : p.lng;
+    const distMeters = Math.hypot(lat - (userLat || lat), lng - (userLng || lng)) * 111_000;
     const distStr = distMeters < 1000 ? `${Math.round(distMeters)} m` : `${(distMeters / 1000).toFixed(1)} km`;
 
     return {
       ...p,
+      lat,
+      lng,
       distance: distStr,
     };
   });

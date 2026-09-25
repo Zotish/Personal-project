@@ -33,6 +33,14 @@ import {
   SocialAidServicePage,
   GasEVServicePage,
   SportsServicePage,
+  SchoolServicePage,
+  TransitServicePage,
+  GroceryShopServicePage,
+  FurnitureServicePage,
+  MoneyExchangeServicePage,
+  TravelFlightServicePage,
+  CarsAutoServicePage,
+  ElectronicsServicePage,
 } from "./pages/ServiceDirectoryPages";
 import { ServiceDetail } from "./pages/ServiceDetail";
 import { PostDetails } from "./pages/PostDetails";
@@ -146,7 +154,24 @@ export default function App() {
             <Route path="/services/gas" element={<GasEVServicePage />} />
             <Route path="/services/sports" element={<SportsServicePage />} />
             <Route path="/services/checklist" element={<ImmigrationChecklist />} />
-            <Route path="/services/schools" element={<SchoolFinder />} />
+            <Route path="/services/schools" element={<SchoolServicePage />} />
+            <Route path="/services/education" element={<SchoolServicePage />} />
+            <Route path="/services/admission" element={<SchoolServicePage />} />
+            <Route path="/services/subway" element={<TransitServicePage />} />
+            <Route path="/services/metro" element={<TransitServicePage />} />
+            <Route path="/services/transit" element={<TransitServicePage />} />
+            <Route path="/services/shops" element={<GroceryShopServicePage />} />
+            <Route path="/services/local-shops" element={<GroceryShopServicePage />} />
+            <Route path="/services/grocery" element={<GroceryShopServicePage />} />
+            <Route path="/services/used-furniture" element={<FurnitureServicePage />} />
+            <Route path="/services/furniture" element={<FurnitureServicePage />} />
+            <Route path="/services/money-exchange" element={<MoneyExchangeServicePage />} />
+            <Route path="/services/remittance" element={<MoneyExchangeServicePage />} />
+            <Route path="/services/travel-agency" element={<TravelFlightServicePage />} />
+            <Route path="/services/travel" element={<TravelFlightServicePage />} />
+            <Route path="/services/flights" element={<TravelFlightServicePage />} />
+            <Route path="/services/cars" element={<CarsAutoServicePage />} />
+            <Route path="/services/electronics" element={<ElectronicsServicePage />} />
             <Route path="/services/religious" element={<ReligiousFinder />} />
             <Route path="/services/religion" element={<ReligiousFinder />} />
             <Route path="/services/food" element={<HalalFoodServicePage />} />

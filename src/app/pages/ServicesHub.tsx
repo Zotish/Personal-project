@@ -26,46 +26,46 @@ type ServiceItem = {
 const allServices: ServiceItem[] = [
   // ─── PAGE 1 / USER SPECIFIED TOP PRIORITY (10 FOR WEB, FIRST 8 FOR MOBILE) ─────
   // Row 1:
-  { id: "newcomer-jobs", name: "Jobs", desc: "Entry-level jobs, cash & authorized hiring", icon: Briefcase, link: "/services/jobs", category: "jobs" },
-  { id: "housing-rentals", name: "Housing", desc: "Sublets, rooms & no-credit-check apartments", icon: Home, link: "/services/housing", category: "housing" },
-  { id: "local-shops", name: "Grocery", desc: "Deshi grocery stores & halal meat shops", icon: Store, link: "/services/shops", category: "utility" },
-  { id: "food-bank", name: "Free Food", desc: "Free food bank & community food pantries", icon: Gift, link: "/services/free-food", category: "health" },
+  { id: "newcomer-jobs", name: "Jobs", desc: "Corporate, entry-level, tech & verified hiring", icon: Briefcase, link: "/services/jobs", category: "jobs" },
+  { id: "housing-rentals", name: "Housing", desc: "Apartments, bachelor flats, family sublets & rooms", icon: Home, link: "/services/housing", category: "housing" },
+  { id: "local-shops", name: "Grocery", desc: "Shwapno, Unimart, Agora & local fresh markets", icon: Store, link: "/services/shops", category: "utility" },
+  { id: "food-bank", name: "Free Food", desc: "Community food aid, charity relief & meal distribution", icon: Gift, link: "/services/free-food", category: "health" },
   // Row 2:
-  { id: "metro-transit", name: "Transport", desc: "MTA bus/subway maps, OMNY & live schedules", icon: Bus, link: "/services/subway", category: "travel" },
-  { id: "esl-education", name: "Education", desc: "Free English classes, college admission & GED", icon: GraduationCap, link: "/services/english", category: "education" },
-  { id: "religious", name: "Religion", desc: "Mosques, temples, churches near your area", icon: Building, link: "/services/religious", category: "utility" },
-  { id: "high-commission", name: "Embassy", desc: "Embassy, Consulate, Passport & NID services", icon: Landmark, link: "/services/embassy", category: "legal" },
+  { id: "metro-transit", name: "Transport", desc: "Dhaka Metro Rail (MRT-6), bus terminals & schedules", icon: Bus, link: "/services/subway", category: "travel" },
+  { id: "esl-education", name: "Education", desc: "Universities, colleges, English medium & schools", icon: GraduationCap, link: "/services/schools", category: "education" },
+  { id: "religious", name: "Religion", desc: "Mosques, temples & prayer spaces near your area", icon: Building, link: "/services/religious", category: "utility" },
+  { id: "high-commission", name: "Embassy", desc: "Embassies, High Commissions & Passport services", icon: Landmark, link: "/services/embassy", category: "legal" },
 
   // ─── PAGE 2 (ITEMS 9–16 FOR MOBILE): USER FURNITURE, LEGAL AID, HALAL FOOD, FREE MEDICINE, REMITTANCE, FLIGHT, PHARMACY, HOSPITAL ─────
   // Page 2 Row 1:
-  { id: "used-furniture", name: "Furniture", desc: "Beds, sofas, desks & free pickup options", icon: Armchair, link: "/services/used-furniture", category: "utility" },
-  { id: "legal-aid", name: "Legal Aid", desc: "Free immigration lawyers, Work Permit & TPS aid", icon: Scale, link: "/services/legal", category: "legal" },
-  { id: "halal-groceries", name: "Halal Food", desc: "Deshi fish, meat, spice stores & home delivery", icon: ShoppingCart, link: "/services/home-kitchen", category: "housing" },
-  { id: "health-medicine", name: "Free Medicine", desc: "Medicaid, free prescription aid & clinics", icon: Heart, link: "/services/free-medicine", category: "health" },
+  { id: "used-furniture", name: "Furniture", desc: "Hatil, solid teak beds, sofas & Panthapath market", icon: Armchair, link: "/services/used-furniture", category: "utility" },
+  { id: "legal-aid", name: "Legal Aid", desc: "Free legal aid, BLAST, human rights & court counsel", icon: Scale, link: "/services/legal", category: "legal" },
+  { id: "halal-groceries", name: "Halal Food", desc: "Kacchi biryani, traditional restaurants & tiffin", icon: ShoppingCart, link: "/services/home-kitchen", category: "housing" },
+  { id: "health-medicine", name: "Free Medicine", desc: "Red Crescent, free dispensaries & insulin aid", icon: Heart, link: "/services/free-medicine", category: "health" },
   // Page 2 Row 2:
-  { id: "remittance-exchange", name: "Remittance", desc: "Send money to Bangladesh, bKash & best rates", icon: BarChart2, link: "/services/money-exchange", category: "finance" },
-  { id: "flight-tickets", name: "Flights", desc: "Dhaka flights, Umrah packages & visa help", icon: Plane, link: "/services/travel-agency", category: "travel" },
-  { id: "pharmacy", name: "Pharmacy", desc: "24h pharmacies, OTC, flu shots & refills", icon: Heart, link: "/services/pharmacy", category: "health" },
-  { id: "community-hospital", name: "Hospital", desc: "Affordable healthcare, Medicaid & walk-in clinics", icon: Building2, link: "/services/community-hospital", category: "health" },
+  { id: "remittance-exchange", name: "Remittance", desc: "bKash, Nagad, bank transfers & currency exchange", icon: BarChart2, link: "/services/money-exchange", category: "finance" },
+  { id: "flight-tickets", name: "Flights", desc: "Biman Bangladesh, US-Bangla, Umrah & flight tickets", icon: Plane, link: "/services/travel-agency", category: "travel" },
+  { id: "pharmacy", name: "Pharmacy", desc: "24h pharmacies, prescription medicines & delivery", icon: Heart, link: "/services/pharmacy", category: "health" },
+  { id: "community-hospital", name: "Hospital", desc: "Square, United, Evercare & 24/7 trauma hospitals", icon: Building2, link: "/services/community-hospital", category: "health" },
 
   // ─── PAGE 3 AND SUBSEQUENT ────────────────────────────────────────────────
-  { id: "doc-translation", name: "Translation", desc: "Certified NID, Passport & Certificate translation", icon: Languages, link: "/services/translate", category: "legal" },
-  { id: "subway", name: "Subway", desc: "Real-time arrivals, transfers & exit info", icon: MapPin, link: "/services/subway", category: "travel" },
+  { id: "doc-translation", name: "Translation", desc: "Certified NID, passport & certificate translation", icon: Languages, link: "/services/translate", category: "legal" },
+  { id: "subway", name: "Subway", desc: "Real-time MRT arrivals, station exits & routes", icon: MapPin, link: "/services/subway", category: "travel" },
 
   // ─── TIER 3: SOCIAL AID, CARS, UTILITIES & EDUCATION ──────────────────────
-  { id: "social-services", name: "Social Aid", desc: "Food pantries, rental aid, SNAP & legal help", icon: Building, link: "/services/social-services", category: "legal" },
-  { id: "cars", name: "Cars & DMV", desc: "Buy, sell or rent cars and vehicles", icon: Car, link: "/services/cars", category: "utility" },
-  { id: "petrol", name: "Gas & EV", desc: "Live gas prices, EV charging & 24h stations", icon: Car, link: "/services/petrol", category: "utility" },
-  { id: "electronics", name: "Electronics", desc: "Phones, laptops, and gadgets near you", icon: Cpu, link: "/services/electronics", category: "utility" },
-  { id: "services", name: "Repairs", desc: "Local services: plumbing, cleaning, repairs", icon: Wrench, link: "/services/local", category: "utility" },
-  { id: "scholarship", name: "Scholarships", desc: "Scholarships for STEM, ESL & immigrant students", icon: Award, link: "/services/scholarship", category: "education" },
+  { id: "social-services", name: "Social Aid", desc: "BRAC, community development & emergency relief", icon: Building, link: "/services/social-services", category: "legal" },
+  { id: "cars", name: "Cars & Auto", desc: "Navana Toyota, reconditioned hybrid cars & BRTA", icon: Car, link: "/services/cars", category: "utility" },
+  { id: "petrol", name: "Gas & EV", desc: "Octane, EV DC fast chargers, CNG stations & 24h marts", icon: Car, link: "/services/petrol", category: "utility" },
+  { id: "electronics", name: "Electronics", desc: "Multiplan, Bashundhara City laptops & smartphones", icon: Cpu, link: "/services/electronics", category: "utility" },
+  { id: "services", name: "Repairs", desc: "Home AC servicing, plumbing, electrical & cleaning", icon: Wrench, link: "/services/local", category: "utility" },
+  { id: "scholarship", name: "Scholarships", desc: "Prime Minister's Fellowship & higher study grants", icon: Award, link: "/services/scholarship", category: "education" },
 
   // ─── TIER 4: COMMUNITY & LIFESTYLE ─────────────────────────────────────────
-  { id: "buy-sell", name: "Buy & Sell", desc: "Buy and sell goods in your community", icon: ShoppingBag, link: "/services/buy-sell", category: "utility" },
-  { id: "rentals", name: "Rentals", desc: "Furniture, car, and equipment rentals", icon: KeyRound, link: "/services/rentals", category: "housing" },
-  { id: "sports", name: "Sports", desc: "Cricket, soccer leagues, tournaments & local clubs", icon: Trophy, link: "/services/sports", category: "utility" },
-  { id: "fashion", name: "Fashion", desc: "Clothes, shoes, and accessories for all cultures", icon: Shirt, link: "/services/fashion", category: "utility" },
-  { id: "event-tickets", name: "Tickets", desc: "Concerts, events, movie & show tickets", icon: Ticket, link: "/services/movie-hall", category: "utility" },
+  { id: "buy-sell", name: "Buy & Sell", desc: "Verified second-hand goods & gadgets in your area", icon: ShoppingBag, link: "/services/buy-sell", category: "utility" },
+  { id: "rentals", name: "Rentals", desc: "Car, microbus, furniture & equipment rentals", icon: KeyRound, link: "/services/rentals", category: "housing" },
+  { id: "sports", name: "Sports", desc: "Sher-e-Bangla Stadium, football turfs & clubs", icon: Trophy, link: "/services/sports", category: "utility" },
+  { id: "fashion", name: "Fashion", desc: "Traditional sarees, panjabis & boutique designers", icon: Shirt, link: "/services/fashion", category: "utility" },
+  { id: "event-tickets", name: "Tickets", desc: "Star Cineplex, Blockbuster Cinemas & concert tickets", icon: Ticket, link: "/services/movie-hall", category: "utility" },
 ];
 
 // ─── FEATURED CATALOG DATA (DISCOUNTED, NEW ARRIVAL, POPULAR) ────────────────
@@ -593,7 +593,7 @@ export function ServicesHub() {
                 <React.Fragment key={prod.id}>
                   <div
                     onClick={() => setSelectedProduct(prod)}
-                    className="group bg-white rounded-none sm:rounded-2xl border-0 sm:border border-b sm:border-b-slate-200/80 border-slate-100/90 overflow-hidden shadow-none sm:shadow-2xs hover:shadow-md hover:border-[#C04A22]/40 transition-all cursor-pointer flex flex-col justify-between"
+                    className="group bg-white rounded-none sm:rounded-2xl border-0 sm:border border-slate-200/80 overflow-hidden shadow-none sm:shadow-2xs hover:shadow-md hover:border-[#C04A22]/40 transition-all cursor-pointer flex flex-col justify-between"
                   >
                   <div>
                     {/* Photo Header with Badge Overlay */}

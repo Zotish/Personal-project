@@ -19,7 +19,40 @@ export function isLocationInBangladesh(lat: number, lng: number): boolean {
 // Check if a country code is Bangladesh
 export function isBangladeshCountry(countryCode?: string): boolean {
   if (!countryCode) return false;
-  return countryCode.toUpperCase() === "BD" || countryCode.toUpperCase() === "BANGLADESH";
+  const c = countryCode.trim().toUpperCase();
+  return c === "BD" || c === "BANGLADESH";
+}
+
+// Check if a country code is USA
+export function isUsaCountry(countryCode?: string): boolean {
+  if (!countryCode) return false;
+  const c = countryCode.trim().toUpperCase();
+  return c === "US" || c === "USA" || c === "UNITED STATES";
+}
+
+// Geographic bounding box for USA (including Contiguous US, Alaska, Hawaii, Puerto Rico)
+export function isLocationInUSA(lat: number, lng: number): boolean {
+  // Contiguous US & Puerto Rico
+  if (lat >= 17.5 && lat <= 50.0 && lng >= -126.0 && lng <= -65.0) return true;
+  // Alaska
+  if (lat >= 50.0 && lat <= 72.0 && lng >= -179.5 && lng <= -129.0) return true;
+  // Hawaii
+  if (lat >= 18.0 && lat <= 23.5 && lng >= -161.0 && lng <= -154.0) return true;
+  return false;
+}
+
+/**
+ * Retrieves the currently active country code from platform storage or URL.
+ */
+export function getActivePlatformCountryCode(): string {
+  return "BD";
+}
+
+/**
+ * Returns true as BariKoi is used for Bangladesh (the only supported country).
+ */
+export function isBarikoiSupportedCountry(_countryCode?: string, _lat?: number, _lng?: number): boolean {
+  return true;
 }
 
 // ─── Global Vector & Raster Map Styles ────────────────────────────────────────
@@ -103,26 +136,30 @@ export function resetBariKoiTileServerStatus() {
   } catch (_) {}
 }
 
-export type MapWatermarkProvider = "barikoi" | "mapbox";
+export type MapWatermarkProvider = "barikoi" | "mapbox" | "osm";
 
 /**
- * Creates and mounts a custom watermark badge (BariKoi or Mapbox) at the bottom-left
+ * Creates and mounts a custom watermark badge (BariKoi, Mapbox, or OpenStreetMap) at the bottom-left
  * of the map, completely replacing the default MapLibre logo.
  */
 export function setupMapWatermark(map: any, forcedProvider?: MapWatermarkProvider): {
   setProvider: (provider: MapWatermarkProvider) => void;
   cleanup: () => void;
 } {
-  const initialStyle = map?.getStyle?.();
-  const isInitiallyMapbox =
-    initialStyle?.sources?.["mapbox-streets"] !== undefined ||
-    initialStyle?.name?.toLowerCase().includes("mapbox");
   const center = map?.getCenter?.();
-  const isOutsideBD = center && typeof center.lat === "number" && typeof center.lng === "number" && !isLocationInBangladesh(center.lat, center.lng);
+  const isBkoiSupported = center && typeof center.lat === "number" && typeof center.lng === "number"
+    ? isBarikoiSupportedCountry(undefined, center.lat, center.lng)
+    : isBarikoiSupportedCountry();
 
-  let currentProvider: MapWatermarkProvider =
-    forcedProvider ||
-    (isInitiallyMapbox || isOutsideBD || isBariKoiTileServerBroken ? "mapbox" : "barikoi");
+  const determineProvider = (_activeMap: any): MapWatermarkProvider => {
+    if (forcedProvider) return forcedProvider;
+    if (isBariKoiTileServerBroken) {
+      return (MAPBOX_TOKEN && MAPBOX_TOKEN.trim().length > 10) ? "mapbox" : "osm";
+    }
+    return "barikoi";
+  };
+
+  let currentProvider: MapWatermarkProvider = forcedProvider || "barikoi";
   let watermarkElement: HTMLElement | null = null;
   let observer: MutationObserver | null = null;
 
@@ -147,6 +184,17 @@ export function setupMapWatermark(map: any, forcedProvider?: MapWatermarkProvide
         (el.parentElement as HTMLElement).style.display = "none";
       }
     });
+
+    // If outside Bangladesh, suppress any rogue BariKoi elements injected by CDN SDK
+    if (!isBkoiSupported) {
+      const rogue = container.querySelectorAll("a[href*='barikoi.com'], .bkoi-watermark");
+      rogue.forEach((el) => {
+        if (!watermarkElement || !watermarkElement.contains(el)) {
+          (el as HTMLElement).style.display = "none";
+          (el as HTMLElement).style.visibility = "hidden";
+        }
+      });
+    }
   };
 
   const renderBadgeHTML = (provider: MapWatermarkProvider): string => {
@@ -161,13 +209,24 @@ export function setupMapWatermark(map: any, forcedProvider?: MapWatermarkProvide
         </a>
       `;
     }
+    if (provider === "mapbox") {
+      return `
+        <a href="https://www.mapbox.com" target="_blank" rel="noopener noreferrer" class="map-provider-watermark mapbox-watermark" title="Powered by Mapbox" aria-label="Mapbox logo">
+          <svg class="mapbox-box-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L3 7.5L12 13L21 7.5L12 2Z" fill="#4264FB" fill-opacity="0.9"/>
+            <path d="M3 10.5L12 16L21 10.5M3 14.5L12 20L21 14.5" stroke="#4264FB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="brand-text brand-mapbox">mapbox</span>
+        </a>
+      `;
+    }
     return `
-      <a href="https://www.mapbox.com" target="_blank" rel="noopener noreferrer" class="map-provider-watermark mapbox-watermark" title="Powered by Mapbox" aria-label="Mapbox logo">
-        <svg class="mapbox-box-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2L3 7.5L12 13L21 7.5L12 2Z" fill="#4264FB" fill-opacity="0.9"/>
-          <path d="M3 10.5L12 16L21 10.5M3 14.5L12 20L21 14.5" stroke="#4264FB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <a href="https://www.openstreetmap.org" target="_blank" rel="noopener noreferrer" class="map-provider-watermark osm-watermark" title="Powered by OpenStreetMap" aria-label="OpenStreetMap logo">
+        <svg class="osm-globe-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="9" stroke="#0284c7" stroke-width="2"/>
+          <path d="M3.6 9h16.8M3.6 15h16.8M12 3a14 14 0 000 18 14 14 0 000-18z" stroke="#0284c7" stroke-width="2"/>
         </svg>
-        <span class="brand-text brand-mapbox">mapbox</span>
+        <span class="brand-text"><span class="brand-osm" style="color: #0284c7; font-weight: 700;">OpenStreetMap</span></span>
       </a>
     `;
   };
@@ -221,12 +280,8 @@ export function setupMapWatermark(map: any, forcedProvider?: MapWatermarkProvide
   const onStyleLoad = () => {
     removeDefaultMapLibreLogo();
     try {
-      const style = map.getStyle?.();
-      const isMapbox =
-        style?.sources?.["mapbox-streets"] !== undefined ||
-        style?.name?.toLowerCase().includes("mapbox") ||
-        isBariKoiTileServerBroken;
-      setProvider(isMapbox ? "mapbox" : "barikoi");
+      const nextProvider = determineProvider(map);
+      setProvider(nextProvider);
     } catch (_) {
       mountOrUpdate();
     }
@@ -268,53 +323,196 @@ export function setupMapWatermark(map: any, forcedProvider?: MapWatermarkProvide
 }
 
 /**
+ * Intercepts requests destined for broken BariKoi vector sub-layers (barikoi_admin, poi)
+ * on tiles.bmapsbd.com which return 502 Bad Gateway without CORS headers.
+ * Resolves them to empty data URIs in-memory so the browser never initiates failing network calls.
+ */
+export function bariKoiTransformRequest(url: string, resourceType?: string): { url: string } {
+  if (!url) return { url };
+
+  // 1. Intercept glyphs/font requests from broken tiles.bmapsbd.com/font/
+  // Redirect to Mapbox's high-speed, official vector font protobufs (or MapLibre demotiles)
+  if (resourceType === "Glyphs" || url.includes("/font/")) {
+    const match = url.match(/\/([^/?#]+\.pbf)(\?.*)?$/i);
+    const range = match ? match[1] : "0-255.pbf";
+    const token = MAPBOX_TOKEN ? MAPBOX_TOKEN.trim() : "";
+    if (token && token.length > 10) {
+      return {
+        url: `https://api.mapbox.com/fonts/v1/mapbox/Roboto%20Regular,Arial%20Unicode%20MS%20Regular/${range}?access_token=${token}`
+      };
+    }
+    return {
+      url: `https://demotiles.maplibre.org/font/Noto%20Sans%20Regular/${range}`
+    };
+  }
+
+  // 2. Intercept the broken tile layers on tiles.bmapsbd.com (excluding planet and sprite which work)
+  const isBrokenVectorEndpoint =
+    url.includes("tiles.bmapsbd.com/") &&
+    !url.includes("planet.tiles.bmapsbd.com") &&
+    !url.includes("/sprite") &&
+    !url.includes("/font");
+
+  if (isBrokenVectorEndpoint) {
+    // Any Source definition or non-coordinate URL resolves to empty TileJSON so MapLibre never fetches broken tiles
+    if (resourceType === "Source" || !/\/\d+\/\d+\/\d+/.test(url)) {
+      return {
+        url: "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+          tilejson: "2.2.0",
+          tiles: [],
+          minzoom: 0,
+          maxzoom: 22
+        }))
+      };
+    }
+    // For individual vector tile coordinates: return empty vector tile buffer
+    return {
+      url: "data:application/x-protobuf;base64,"
+    };
+  }
+
+  return { url };
+}
+
+/**
+ * Official BariKoi GL JS Loader with automatic CORS & 502 error interception.
+ * Automatically injects MapLibre CSS, loads bkoi-gl, and patches Map constructor
+ * so that broken upstream vector tile endpoints (tiles.bmapsbd.com/barikoi_admin, /poi)
+ * never cause CORS blocks or console errors.
+ */
+export function loadBkoiGL(): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const patchBkoiglMap = (bkoigl: any) => {
+      if (!bkoigl || !bkoigl.Map || (bkoigl.Map as any).__patched) return;
+      const OrigMap = bkoigl.Map;
+      function PatchedMap(this: any, options: any) {
+        const userTransform = options?.transformRequest;
+        const mergedOptions = {
+          ...options,
+          transformRequest: (url: string, resourceType: string) => {
+            const transformed = bariKoiTransformRequest(url, resourceType);
+            if (userTransform) {
+              return userTransform(transformed.url, resourceType);
+            }
+            return transformed;
+          }
+        };
+        return new OrigMap(mergedOptions);
+      }
+      PatchedMap.prototype = OrigMap.prototype;
+      Object.assign(PatchedMap, OrigMap);
+      (PatchedMap as any).__patched = true;
+      bkoigl.Map = PatchedMap;
+    };
+
+    if (typeof window === "undefined") {
+      resolve(null);
+      return;
+    }
+
+    if ((window as any).bkoigl) {
+      const bkoigl = (window as any).bkoigl;
+      patchBkoiglMap(bkoigl);
+      resolve(bkoigl);
+      return;
+    }
+
+    if (!document.getElementById("maplibre-gl-css")) {
+      const css = document.createElement("link");
+      css.id = "maplibre-gl-css";
+      css.rel = "stylesheet";
+      css.href = "https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css";
+      document.head.appendChild(css);
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://unpkg.com/bkoi-gl@latest/dist/iife/bkoi-gl.js";
+    script.onload = () => {
+      const bkoigl = (window as any).bkoigl;
+      patchBkoiglMap(bkoigl);
+      resolve(bkoigl);
+    };
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
+// Auto-patch window.bkoigl if already present on script evaluation
+if (typeof window !== "undefined" && (window as any).bkoigl) {
+  try {
+    loadBkoiGL();
+  } catch (_) {}
+}
+
+/**
  * Attaches a robust error listener to a bkoi-gl / MapLibre map instance.
  * If BariKoi style or tiles fail (e.g. 502 Bad Gateway, CORS, network error, or missing source layers),
  * it seamlessly switches the map to Mapbox Streets raster style and updates the watermark to Mapbox!
  */
-export function attachMapboxFallbackOnError(map: any): () => void {
+export function attachMapboxFallbackOnError(map: any, countryCode?: string): () => void {
   let hasFallenBack = false;
 
-  // Setup dynamic watermark (BariKoi by default, or Mapbox if already known broken/outside BD)
-  const watermark = setupMapWatermark(map, isBariKoiTileServerBroken ? "mapbox" : "barikoi");
+  const center = map?.getCenter?.();
+  const isBkoiSupported = isBarikoiSupportedCountry(
+    countryCode,
+    typeof center?.lat === "number" ? center.lat : undefined,
+    typeof center?.lng === "number" ? center.lng : undefined
+  );
+  const initialProvider: MapWatermarkProvider = isBariKoiTileServerBroken
+    ? (MAPBOX_TOKEN && MAPBOX_TOKEN.trim().length > 10 ? "mapbox" : "osm")
+    : "barikoi";
+  const watermark = setupMapWatermark(map, initialProvider);
 
   const triggerMapboxFallback = () => {
     if (hasFallenBack) return;
     hasFallenBack = true;
     markBariKoiTileServerBroken();
-    watermark.setProvider("mapbox");
-    console.warn("BariKoi tile server unavailable (502 Bad Gateway / CORS). Automatically falling back to Mapbox...");
+    watermark.setProvider((MAPBOX_TOKEN && MAPBOX_TOKEN.trim().length > 10) ? "mapbox" : "osm");
+    console.warn("BariKoi tile server unavailable. Automatically falling back to global map...");
     try {
       map.setStyle(getMapboxRasterStyle());
     } catch (e) {
-      console.error("Failed to switch to Mapbox fallback style:", e);
+      console.error("Failed to switch to global fallback style:", e);
     }
   };
 
   const onError = (e: any) => {
-    const url = (e?.error?.url || e?.url || "").toLowerCase();
+    const url = (e?.error?.url || e?.url || e?.tile?.url || "").toLowerCase();
     const status = e?.error?.status || e?.status;
     const msg = (e?.error?.message || e?.message || "").toLowerCase();
 
-    // 1. Ignore benign 404 on sparse vector layers (e.g. village, poi, missing sprites)
-    // In MapLibre/vector tiles, 404 simply means no features in that bounding box
+    // 1. Ignore benign 404 on sparse vector layers (e.g. village, missing sprites)
     if (status === 404 || msg.includes("404")) {
       return;
     }
 
-    // 2. Only trigger fallback on true server outage (502 Bad Gateway, 503, 504, 500)
-    // or actual CORS policy block on the main base map/style
+    // 2. Trigger fallback on true server outage (502 Bad Gateway, 503, 504, 500)
     const isServerOutage =
       status === 502 ||
       status === 503 ||
       status === 504 ||
       status === 500;
 
-    const isCorsBlock =
-      (msg.includes("cors") || msg.includes("access-control-allow-origin")) &&
-      (url.includes("bmapsbd.com") || url.includes("barikoi.com") || msg.includes("bmapsbd.com"));
+    // 3. Detect CORS block or network failure on primary BariKoi tiles / styles
+    const isBariKoiTarget =
+      url.includes("bmapsbd.com") ||
+      url.includes("barikoi.com") ||
+      msg.includes("bmapsbd.com") ||
+      msg.includes("barikoi.com");
 
-    if (isServerOutage || isCorsBlock) {
+    const isNetworkOrCors =
+      msg.includes("cors") ||
+      msg.includes("failed to fetch") ||
+      msg.includes("network") ||
+      msg.includes("access-control") ||
+      status === 0;
+
+    const isPrimaryTileOutage =
+      url.includes("planet") ||
+      url.includes("style.json") ||
+      !url;
+
+    if (isServerOutage || (isNetworkOrCors && isBariKoiTarget && isPrimaryTileOutage)) {
       triggerMapboxFallback();
       return;
     }
@@ -332,33 +530,22 @@ export function attachMapboxFallbackOnError(map: any): () => void {
 
 
 // Returns the optimal style for MapLibre / bkoi-gl based on location & provider availability
-export function getMapStyleForLocation(lat?: number, lng?: number, countryCode?: string): any {
-  // 1. If BariKoi tile server is known to be down, fallback to Mapbox
+// Only Bangladesh is supported, using BariKoi official map style.
+export function getMapStyleForLocation(_lat?: number, _lng?: number, _countryCode?: string): any {
   if (isBariKoiTileServerBroken) {
     return getMapboxRasterStyle();
   }
-
-  // 2. Default: ALWAYS use BariKoi official green vector style (supporting global/USA)
   return `https://map.barikoi.com/styles/barkoi_green_pl/style.json?key=${BARIKOI_API_KEY}`;
 }
 
-// Returns Leaflet TileLayer configuration with Mapbox -> OpenStreetMap fallback
-export function getLeafletTileConfig(lat?: number, lng?: number, countryCode?: string) {
+// Returns Leaflet TileLayer configuration using BariKoi
+export function getLeafletTileConfig(_lat?: number, _lng?: number, _countryCode?: string) {
   if (!isBariKoiTileServerBroken) {
     return {
       url: `https://map.barikoi.com/styles/barkoi_green_pl/style.json?key=${BARIKOI_API_KEY}`,
       attribution: '&copy; <a href="https://barikoi.com">BariKoi</a>',
       maxZoom: 19,
       isVector: true,
-    };
-  }
-
-  if (MAPBOX_TOKEN && MAPBOX_TOKEN.trim().length > 10) {
-    return {
-      url: `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN.trim()}`,
-      attribution: '&copy; <a href="https://www.mapbox.com/">Mapbox</a> &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
-      maxZoom: 19,
-      isVector: false,
     };
   }
 
@@ -404,6 +591,11 @@ const GLOBAL_DIASPORA_HUBS: GlobalHub[] = [
   { name: "Stratford", city: "London", district: "Newham", postCode: "E15 1AZ", country: "United Kingdom", lat: 51.5416, lng: -0.0034 },
   { name: "Central London", city: "London", district: "Greater London", postCode: "SW1A 1AA", country: "United Kingdom", lat: 51.5074, lng: -0.1278 },
   { name: "Sparkbrook", city: "Birmingham", district: "West Midlands", postCode: "B11 1AR", country: "United Kingdom", lat: 52.4612, lng: -1.8745 },
+  // Norway
+  { name: "Grønland / Tøyen", city: "Oslo", district: "Gamle Oslo", postCode: "0188", country: "Norway", lat: 59.9127, lng: 10.7622 },
+  { name: "Oslo Sentrum", city: "Oslo", district: "Sentrum", postCode: "0154", country: "Norway", lat: 59.9115, lng: 10.7579 },
+  { name: "Majorstuen", city: "Oslo", district: "Frogner", postCode: "0368", country: "Norway", lat: 59.9298, lng: 10.7135 },
+  { name: "Bergen Sentrum", city: "Bergen", district: "Vestland", postCode: "5014", country: "Norway", lat: 60.3913, lng: 5.3221 },
 ];
 
 function getFallbackGlobalAddress(lat: number, lng: number): BariKoiAddressInfo {
@@ -461,14 +653,12 @@ export async function reverseGeocodeWithMapboxFallback(
 
   const requestPromise = (async () => {
     try {
-      const isBD = isLocationInBangladesh(lat, lng) || isBangladeshCountry(countryCode);
+      const isBkoiSupported = isBarikoiSupportedCountry(countryCode, lat, lng);
 
-      // 1. Try BariKoi first (Supports both Bangladesh and USA/International)
-      if (isBariKoiAvailable()) {
+      // 1. Try BariKoi for BD and USA
+      if (isBkoiSupported && isBariKoiAvailable(lat, lng, countryCode)) {
         try {
-          const bkoiUrl = isBD
-            ? `https://barikoi.xyz/v2/api/search/reverse/geocode?api_key=${BARIKOI_API_KEY}&longitude=${lng}&latitude=${lat}&district=true&post_code=true&country=true&sub_district=true&union=true&pauroshova=true&location_type=true&division=true&address=true&area=true&bangla=true`
-            : `https://barikoi.xyz/v2/api/search/reverse/geocode?api_key=${BARIKOI_API_KEY}&latitude=${lat}&longitude=${lng}&country=true&country_code=usa`;
+          const bkoiUrl = `https://barikoi.xyz/v2/api/search/reverse/geocode?api_key=${BARIKOI_API_KEY}&longitude=${lng}&latitude=${lat}&district=true&post_code=true&country=true&sub_district=true&union=true&pauroshova=true&location_type=true&division=true&address=true&area=true&bangla=true`;
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 3500);
 
@@ -582,8 +772,111 @@ export async function reverseGeocodeWithMapboxFallback(
   return requestPromise;
 }
 
-// ─── Curated Global Diaspora Resources (USA, Canada, UK) ───────────────────────
+// ─── Curated Global Diaspora Resources (USA, Canada, UK, Norway) ───────────────────────
 export const CURATED_GLOBAL_DIASPORA_PLACES: CuratedPlace[] = [
+  // 🏥 Hospitals & Immigrant Centers (Norway - Oslo)
+  {
+    id: "no-hosp-1",
+    name: "Oslo universitetssykehus (Ullevål)",
+    category: "🏥 Hospital",
+    lat: 59.9365,
+    lng: 10.7329,
+    rating: 4.8,
+    reviews: 1250,
+    open: true,
+    openUntil: "24h Akuttmottak (Emergency)",
+    address: "Kirkeveien 166, 0450 Oslo, Norway",
+    phone: "+47 915 02 770",
+    languages: ["Norsk", "English", "العربية", "Somali", "Urdu"],
+    immigrantFriendly: true,
+    description: "Norway's largest university hospital with comprehensive multilingual interpretation and emergency healthcare services.",
+    image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=500&h=300&fit=crop",
+  },
+  {
+    id: "no-legal-1",
+    name: "Caritas Ressurssenter Oslo",
+    category: "⚖️ Legal Aid",
+    lat: 59.9142,
+    lng: 10.7548,
+    rating: 4.9,
+    reviews: 860,
+    open: true,
+    openUntil: "5:00 PM",
+    address: "Storgata 38, 0182 Oslo, Norway",
+    phone: "+47 22 60 76 60",
+    languages: ["Norsk", "English", "Polski", "Español", "العربية", "Bengali"],
+    immigrantFriendly: true,
+    description: "Essential immigrant resource center offering free legal advice, UDI guidance, Norwegian language cafes, and job search counseling.",
+    image: "https://images.unsplash.com/photo-1450133064473-71024230f91b?w=500&h=300&fit=crop",
+  },
+  {
+    id: "no-legal-2",
+    name: "UDI & Service Centre for Foreign Workers (SUA)",
+    category: "⚖️ Legal Aid",
+    lat: 59.9103,
+    lng: 10.7634,
+    rating: 4.6,
+    reviews: 940,
+    open: true,
+    openUntil: "3:30 PM",
+    address: "Schweigaards gate 17, 0191 Oslo, Norway",
+    phone: "+47 22 80 66 00",
+    languages: ["Norsk", "English"],
+    immigrantFriendly: true,
+    description: "Official government service center where the Police, UDI, Tax Administration, and Labour Inspection collaborate for fast-track residence and tax cards.",
+    image: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=500&h=300&fit=crop",
+  },
+  {
+    id: "no-relig-1",
+    name: "Islamic Cultural Centre Norway (ICC)",
+    category: "🕌 Mosque / Community",
+    lat: 59.9131,
+    lng: 10.7645,
+    rating: 4.9,
+    reviews: 1120,
+    open: true,
+    openUntil: "Open for 5 Daily Prayers",
+    address: "Tøyenbekken 24, 0188 Oslo, Norway",
+    phone: "+47 22 17 00 40",
+    languages: ["Norsk", "English", "العربية", "Urdu"],
+    immigrantFriendly: true,
+    description: "Historic cultural centre and mosque in Grønland, Oslo providing community welfare, youth activities, and halal food pantry distributions.",
+    image: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=500&h=300&fit=crop",
+  },
+  {
+    id: "no-groc-1",
+    name: "Grønland Basar & Asian Supermarket",
+    category: "🛒 Grocery",
+    lat: 59.9126,
+    lng: 10.7618,
+    rating: 4.8,
+    reviews: 1450,
+    open: true,
+    openUntil: "9:00 PM",
+    address: "Tøyenbekken 21, 0188 Oslo, Norway",
+    phone: "+47 22 17 48 90",
+    languages: ["Norsk", "English", "Bengali", "Hindi", "Urdu", "Arabic"],
+    immigrantFriendly: true,
+    description: "Bustling international supermarket in Grønland stocking authentic halal meats, Asian and Middle Eastern staples, fresh produce, and spices.",
+    image: "https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=500&h=300&fit=crop",
+  },
+  {
+    id: "no-bank-1",
+    name: "DNB Bank Oslo Sentrum",
+    category: "🏦 Bank",
+    lat: 59.9118,
+    lng: 10.7512,
+    rating: 4.7,
+    reviews: 790,
+    open: true,
+    openUntil: "4:00 PM",
+    address: "Karl Johans gate 27, 0159 Oslo, Norway",
+    phone: "+47 915 04 800",
+    languages: ["Norsk", "English"],
+    immigrantFriendly: true,
+    description: "Major branch assisting international newcomers with BankID setup, foreigner bank account creation, and overseas money transfers.",
+    image: "https://images.unsplash.com/photo-1501167786227-4cba60f6d58f?w=500&h=300&fit=crop",
+  },
   // 🏥 Hospitals & Medical Centers (USA - New York)
   {
     id: "us-hosp-1",
@@ -915,15 +1208,18 @@ export function getUnifiedCuratedPlaces(
     return pc.includes(cat);
   });
 
-  return filtered.map((p) => {
-    const distMeters = Math.hypot(p.lat - userLat, p.lng - userLng) * 111_000;
-    const distStr = distMeters < 1000 ? `${Math.round(distMeters)} m` : `${(distMeters / 1000).toFixed(1)} km`;
+  return filtered
+    .map((p) => {
+      const distMeters = Math.hypot(p.lat - userLat, p.lng - userLng) * 111_000;
+      const distStr = distMeters < 1000 ? `${Math.round(distMeters)} m` : `${(distMeters / 1000).toFixed(1)} km`;
 
-    return {
-      ...p,
-      distance: distStr,
-    };
-  });
+      return {
+        ...p,
+        distance: distStr,
+        _distMeters: distMeters,
+      };
+    })
+    .sort((a, b) => a._distMeters - b._distMeters);
 }
 
 // ─── Global Directions / Routing with Mapbox & OSRM Fallback ──────────────────

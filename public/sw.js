@@ -45,6 +45,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Bypass external map tile streaming and geospatial CDN assets (handled natively by map renderer)
+  if (
+    url.hostname.includes('mapbox.com') ||
+    url.hostname.includes('bmapsbd.com') ||
+    url.hostname.includes('barikoi.com') ||
+    url.hostname.includes('openstreetmap.org') ||
+    url.pathname.endsWith('.pbf') ||
+    url.pathname.endsWith('.mvt')
+  ) {
+    return;
+  }
+
   // For HTML navigation requests: Network First with Cache Fallback
   if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
     event.respondWith(

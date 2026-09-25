@@ -33,7 +33,7 @@ export const INITIAL_ADS: SponsoredAd[] = [
     badgeText: "Sponsored",
     description: "Support your family in Bangladesh, India, Mexico & across 140+ countries. Instant mobile wallet & direct bank deposits. First 3 transfers are 100% free for ImmigrantConnect members!",
     mediaUrl: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=800&h=400&fit=crop",
-    ctaText: "Claim $0 Fee Transfer",
+    ctaText: "Learn More",
     ctaUrl: "https://www.remitly.com",
     targetCountry: "ALL",
     targetPlacement: "all",
@@ -124,7 +124,12 @@ export function AdsProvider({ children }: { children: ReactNode }) {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((item: SponsoredAd) => ({
+            ...item,
+            ctaText: item.ctaText === "Claim $0 Fee Transfer" ? "Learn More" : item.ctaText,
+          }));
+        }
       }
     } catch (e) {
       console.warn("Failed to load ads from localStorage", e);

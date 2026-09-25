@@ -34,7 +34,7 @@ export const LANG_PAIR_METAS: Record<Lang, LangPairItem> = {
 export function useCountryLanguagePair() {
   const { currentCountry } = useCountryPlatform();
 
-  const rawMotherLang = (currentCountry?.primaryLanguage?.code?.toLowerCase() || "bn");
+  const rawMotherLang = (currentCountry?.primaryLanguage?.code?.toLowerCase() || "en");
   const motherLangCode = (rawMotherLang === "ja" ? "en" : rawMotherLang) as Lang;
   const isEnglishCountry = motherLangCode === "en";
 

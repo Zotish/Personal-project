@@ -12,40 +12,18 @@ import {
 } from "lucide-react";
 import { ServiceListing, formatDistance, getDistanceKm } from "../../data/serviceDirectoryData";
 import type { Map as LeafletMapType } from "leaflet";
+import { useCountryPlatform } from "../../context/CountryPlatformContext";
 import {
   safeBariKoiReverseGeocode,
   getMapStyleForLocation,
   getMapboxRasterStyle,
   getLeafletTileConfig,
   attachMapboxFallbackOnError,
+  BARIKOI_API_KEY,
+  loadBkoiGL,
+  bariKoiTransformRequest,
+  isLocationInBangladesh,
 } from "../../services/barikoiService";
-
-// ─── BariKoi API Key & Loader ───────────────────────────────────────────────
-const BARIKOI_API_KEY =
-  import.meta.env.VITE_BARIKOI_API_KEY ||
-  "bkoi_e25928917c9e7b36a3286d75f446427fa3433bf87361b2fd8c8d6c942300a38f";
-
-function loadBkoiGL(): Promise<any> {
-  return new Promise((resolve, reject) => {
-    if ((window as any).bkoigl) {
-      resolve((window as any).bkoigl);
-      return;
-    }
-    if (!document.getElementById("maplibre-gl-css")) {
-      const css = document.createElement("link");
-      css.id = "maplibre-gl-css";
-      css.rel = "stylesheet";
-      css.href = "https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css";
-      document.head.appendChild(css);
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/bkoi-gl@latest/dist/iife/bkoi-gl.js";
-    script.onload = () => resolve((window as any).bkoigl);
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
-}
 
 // ─── Real Road Routing API (OSRM Turn-by-Turn) ──────────────────────────────
 async function fetchRealRoadRoute(
@@ -129,7 +107,8 @@ function InteractiveServiceMap({
   isScrolled,
   searchQuery,
   themeColor = "#C04A22",
-  serviceName
+  serviceName,
+  countryCode,
 }: {
   userCoords: [number, number];
   isLocationGranted: boolean;
@@ -146,6 +125,7 @@ function InteractiveServiceMap({
   searchQuery: string;
   themeColor?: string;
   serviceName: string;
+  countryCode?: string;
 }) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -242,6 +222,46 @@ function InteractiveServiceMap({
       return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>`;
     }
 
+    // 9. Education & Schools
+    if (s.includes("school") || s.includes("education") || c.includes("university") || c.includes("college") || t.includes("school") || t.includes("university") || t.includes("college")) {
+      return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>`;
+    }
+
+    // 10. Transit, Metro & Subway
+    if (s.includes("transit") || s.includes("metro") || s.includes("subway") || c.includes("metro") || c.includes("railway") || t.includes("metro") || t.includes("station") || t.includes("bus")) {
+      return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><path d="m8 19-2 3"/><path d="m18 22-2-3"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg>`;
+    }
+
+    // 11. Grocery & Superstores
+    if (s.includes("grocery") || s.includes("shop") || c.includes("superstore") || c.includes("market") || t.includes("superstore") || t.includes("grocery")) {
+      return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/></svg>`;
+    }
+
+    // 12. Furniture
+    if (s.includes("furniture") || c.includes("furniture") || t.includes("furniture") || t.includes("sofa")) {
+      return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3"/><path d="M3 11v5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v2H7v-2a2 2 0 0 0-4 0Z"/><path d="M5 18v2"/><path d="M19 18v2"/></svg>`;
+    }
+
+    // 13. Remittance & Money Exchange
+    if (s.includes("money") || s.includes("remittance") || s.includes("exchange") || c.includes("remittance")) {
+      return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`;
+    }
+
+    // 14. Travel & Flight
+    if (s.includes("travel") || s.includes("flight") || s.includes("airline") || c.includes("airline")) {
+      return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>`;
+    }
+
+    // 15. Cars & Auto
+    if (s.includes("car") || s.includes("auto") || c.includes("cars-auto") || t.includes("car")) {
+      return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C1.4 11.2 1 12 1 13v3c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>`;
+    }
+
+    // 16. Electronics & Gadgets
+    if (s.includes("electronic") || s.includes("gadget") || c.includes("electronics")) {
+      return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>`;
+    }
+
     // Default fallback
     return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`;
   };
@@ -274,7 +294,7 @@ function InteractiveServiceMap({
           bkoigl.apiKey = key;
         }
 
-        const mapStyle = getMapStyleForLocation(userCoords[0], userCoords[1]);
+        const mapStyle = getMapStyleForLocation(userCoords[0], userCoords[1], countryCode);
         const map = new bkoigl.Map({
           container: mapContainerRef.current,
           center: [userCoords[1], userCoords[0]],
@@ -282,6 +302,7 @@ function InteractiveServiceMap({
           maxZoom: 18,
           minZoom: 4,
           style: mapStyle,
+          transformRequest: bariKoiTransformRequest,
           accessToken: key,
           apiKey: key,
           doubleClickZoom: true,
@@ -303,7 +324,7 @@ function InteractiveServiceMap({
           }
         });
 
-        attachMapboxFallbackOnError(map);
+        attachMapboxFallbackOnError(map, countryCode);
 
         map.on("load", () => {
           if (!isMounted) return;
@@ -325,6 +346,17 @@ function InteractiveServiceMap({
     };
   }, []);
 
+  // Dynamically update map style when country changes (e.g. BD/US -> BariKoi, Norway/Global -> Mapbox)
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    if (mapInstanceRef.current.setStyle) {
+      try {
+        const targetStyle = getMapStyleForLocation(userCoords[0], userCoords[1], countryCode);
+        mapInstanceRef.current.setStyle(targetStyle);
+      } catch (_) {}
+    }
+  }, [countryCode, userCoords]);
+
   // Update User Marker (Pulsing Live GPS Dot like Jobs)
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -335,10 +367,9 @@ function InteractiveServiceMap({
     const el = document.createElement("div");
     el.className = "bkoi-user-marker";
     el.innerHTML = `
-      <div style="position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:9999;">
-        <div style="position:absolute;width:48px;height:48px;border-radius:50%;background:rgba(37,99,235,0.25);animation:ping 2s cubic-bezier(0,0,0.2,1) infinite;"></div>
-        <div style="position:absolute;width:28px;height:28px;border-radius:50%;background:rgba(37,99,235,0.35);border:2px solid #ffffff;box-shadow:0 0 12px rgba(37,99,235,0.4);"></div>
-        <div style="width:16px;height:16px;border-radius:50%;background:#1d4ed8;border:3px solid #ffffff;box-shadow:0 3px 10px rgba(0,0,0,0.35);"></div>
+      <div style="position:relative;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:9999;">
+        <div style="position:absolute;inset:-8px;border-radius:50%;background:rgba(216,90,48,0.35);animation:ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+        <div style="width:16px;height:16px;border-radius:50%;background:#D85A30;border:3px solid white;box-shadow:0 4px 12px rgba(216,90,48,0.5);position:relative;z-index:2;"></div>
       </div>
     `;
 
@@ -521,14 +552,14 @@ function InteractiveServiceMap({
                   {markerClickedItem.primaryHighlight}
                 </span>
               </div>
-              <div className="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+              <div className="mt-2.5 pt-2 flex items-center justify-between gap-2">
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     setMarkerClickedItem(null);
                     onShowDirection(markerClickedItem);
                   }}
-                  className="flex-1 py-2.5 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                  className="flex-1 py-2 rounded-xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95"
                   title="Direction"
                   aria-label="Direction"
                 >
@@ -539,7 +570,7 @@ function InteractiveServiceMap({
                     e.stopPropagation();
                     onOpenDetails(markerClickedItem);
                   }}
-                  className="flex-1 py-2.5 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                  className="flex-1 py-2 rounded-xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center shadow-none active:scale-95 cursor-pointer"
                   title="Details"
                   aria-label="Details"
                 >
@@ -550,27 +581,33 @@ function InteractiveServiceMap({
           </div>
         )}
 
-        <div className="absolute top-3 right-3 flex flex-col gap-1.5 z-20">
+        {/* Map Controls: Zoom In / Out / Recenter (Matching Screenshot 2) */}
+        <div className="absolute top-3 right-3 flex flex-col items-center gap-2 z-20 pointer-events-auto">
+          {/* Zoom controls pill */}
+          <div className="flex flex-col items-center bg-white/95 backdrop-blur-md rounded-xl shadow-md border border-slate-200/90 overflow-hidden">
+            <button
+              onClick={() => mapInstanceRef.current?.zoomIn()}
+              className="w-8.5 h-8.5 flex items-center justify-center text-slate-700 hover:text-[#D85A30] hover:bg-slate-50 transition cursor-pointer"
+              title="Zoom In"
+            >
+              <Plus className="w-4 h-4 stroke-[2.2]" />
+            </button>
+            <div className="w-full h-px bg-slate-100" />
+            <button
+              onClick={() => mapInstanceRef.current?.zoomOut()}
+              className="w-8.5 h-8.5 flex items-center justify-center text-slate-700 hover:text-[#D85A30] hover:bg-slate-50 transition cursor-pointer"
+              title="Zoom Out"
+            >
+              <Minus className="w-4 h-4 stroke-[2.2]" />
+            </button>
+          </div>
+          {/* Floating Navigation Button */}
           <button
             onClick={handleCenterUser}
-            className="w-9 h-9 rounded-xl bg-white/95 backdrop-blur-md shadow-md border border-slate-200/80 flex items-center justify-center text-slate-700 hover:text-[#C04A22] transition cursor-pointer"
+            className="w-9.5 h-9.5 rounded-full shadow-lg border transition-all cursor-pointer active:scale-95 flex items-center justify-center bg-[#D85A30] text-white border-[#D85A30] shadow-[#D85A30]/30"
             title="Center My Location"
           >
-            <Navigation className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => mapInstanceRef.current?.zoomIn()}
-            className="w-9 h-9 rounded-xl bg-white/95 backdrop-blur-md shadow-md border border-slate-200/80 flex items-center justify-center text-slate-700 hover:text-[#C04A22] transition cursor-pointer"
-            title="Zoom In"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => mapInstanceRef.current?.zoomOut()}
-            className="w-9 h-9 rounded-xl bg-white/95 backdrop-blur-md shadow-md border border-slate-200/80 flex items-center justify-center text-slate-700 hover:text-[#C04A22] transition cursor-pointer"
-            title="Zoom Out"
-          >
-            <Minus className="w-4 h-4" />
+            <Navigation className="w-4 h-4 fill-current" />
           </button>
         </div>
 
@@ -824,8 +861,8 @@ export function ServiceMapDirectory({
   bannerPlaceholder,
   filterTabs,
   generateListings,
-  defaultAreaName = "Jackson Heights",
-  defaultCityName = "Queens"
+  defaultAreaName = "Gulshan / Banani",
+  defaultCityName = "Dhaka"
 }: ServiceMapDirectoryProps) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -871,36 +908,103 @@ export function ServiceMapDirectory({
     };
   }, []);
 
+  const { currentCountry } = useCountryPlatform();
+
   // User Coordinates & Location
-  const defaultCoords: [number, number] = [40.7505, -73.8860]; // Jackson Heights, Queens
-  const [userCoords, setUserCoords] = useState<[number, number]>(defaultCoords);
-  const [userArea, setUserArea] = useState<string>(defaultAreaName);
-  const [userCity, setUserCity] = useState<string>(defaultCityName);
-  const [isLocationGranted, setIsLocationGranted] = useState(false);
+  const defaultCoords: [number, number] = currentCountry?.defaultCoords || [23.8103, 90.4125]; // Dhaka, Bangladesh
+  const [userCoords, setUserCoords] = useState<[number, number]>(() => {
+    try {
+      const cached = localStorage.getItem("bkoi_last_user_coords");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length === 2 && !isNaN(parsed[0]) && !isNaN(parsed[1])) {
+          return [parsed[0], parsed[1]];
+        }
+      }
+    } catch (_) {}
+    return defaultCoords;
+  });
+  const [userArea, setUserArea] = useState<string>(() => {
+    try {
+      return localStorage.getItem("bkoi_last_user_area") || defaultAreaName;
+    } catch (_) {
+      return defaultAreaName;
+    }
+  });
+  const [userCity, setUserCity] = useState<string>(() => {
+    try {
+      return localStorage.getItem("bkoi_last_user_city") || defaultCityName;
+    } catch (_) {
+      return defaultCityName;
+    }
+  });
+  const [isLocationGranted, setIsLocationGranted] = useState<boolean>(() => {
+    try {
+      return !!localStorage.getItem("bkoi_last_user_coords");
+    } catch (_) {
+      return false;
+    }
+  });
 
   // Generate live location items
-  const [liveItems, setLiveItems] = useState<ServiceListing[]>(() =>
-    generateListings(defaultCoords[0], defaultCoords[1], defaultAreaName, defaultCityName)
-  );
+  const [liveItems, setLiveItems] = useState<ServiceListing[]>(() => {
+    const coords = (() => {
+      try {
+        const cached = localStorage.getItem("bkoi_last_user_coords");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length === 2 && !isNaN(parsed[0]) && !isNaN(parsed[1])) {
+            return [parsed[0], parsed[1]];
+          }
+        }
+      } catch (_) {}
+      return defaultCoords;
+    })();
+    const area = (() => {
+      try {
+        return localStorage.getItem("bkoi_last_user_area") || defaultAreaName;
+      } catch (_) {
+        return defaultAreaName;
+      }
+    })();
+    const city = (() => {
+      try {
+        return localStorage.getItem("bkoi_last_user_city") || defaultCityName;
+      } catch (_) {
+        return defaultCityName;
+      }
+    })();
+    return generateListings(coords[0], coords[1], area, city);
+  });
 
   // Geolocation detection
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         pos => {
-          const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+          const inBD = isLocationInBangladesh(pos.coords.latitude, pos.coords.longitude);
+          const coords: [number, number] = inBD
+            ? [pos.coords.latitude, pos.coords.longitude]
+            : userCoords;
           setUserCoords(coords);
           setIsLocationGranted(true);
+          try {
+            localStorage.setItem("bkoi_last_user_coords", JSON.stringify(coords));
+          } catch (_) {}
           fetchBariKoiReverseGeocode(coords[0], coords[1]).then(geo => {
             const area = geo?.area || defaultAreaName;
             const city = geo?.city || defaultCityName;
             setUserArea(area);
             setUserCity(city);
+            try {
+              localStorage.setItem("bkoi_last_user_area", area);
+              localStorage.setItem("bkoi_last_user_city", city);
+            } catch (_) {}
             setLiveItems(generateListings(coords[0], coords[1], area, city));
           });
         },
         () => {
-          // Default to Jackson Heights on deny/timeout
+          // Do not overwrite userCoords if already known
         },
         { timeout: 8000 }
       );
@@ -1030,6 +1134,7 @@ export function ServiceMapDirectory({
               searchQuery={searchQuery}
               themeColor={themeColor}
               serviceName={serviceName}
+              countryCode={currentCountry?.code}
             />
           </div>
         </div>
@@ -1078,7 +1183,7 @@ export function ServiceMapDirectory({
                   onClick={() => {
                     setSelectedItem(item);
                   }}
-                  className={`group bg-white rounded-none sm:rounded-3xl border-0 sm:border border-b sm:border-b-slate-200/90 border-slate-100/90 overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between h-full shadow-none sm:shadow-2xs ${
+                  className={`group bg-white rounded-none sm:rounded-3xl border-0 sm:border border-slate-200/90 overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between h-full shadow-none sm:shadow-2xs ${
                     isSelected
                       ? "sm:border-[#C04A22] sm:ring-2 sm:ring-[#C04A22]/20 sm:shadow-md"
                       : "sm:border-slate-200/90 sm:hover:border-slate-300 sm:hover:shadow-xs"
@@ -1163,14 +1268,14 @@ export function ServiceMapDirectory({
                   </div>
 
                   {/* Card Body Footer: Direction & Details Buttons (Icon Only) */}
-                  <div className="p-4 sm:p-5 pt-3">
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
+                  <div className="px-4 sm:px-5 pb-3 pt-1">
+                    <div className="flex items-center justify-between gap-2.5">
                       <button
                         onClick={e => {
                           e.stopPropagation();
                           handleShowDirection(item);
                         }}
-                        className="flex-1 py-2.5 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                        className="flex-1 py-2 rounded-2xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95"
                         title="Direction"
                         aria-label="Direction"
                       >
@@ -1182,7 +1287,7 @@ export function ServiceMapDirectory({
                           setSelectedItem(item);
                           setModalItem(item);
                         }}
-                        className="flex-1 py-2.5 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                        className="flex-1 py-2 rounded-2xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center shadow-none active:scale-95 cursor-pointer"
                         title="Details"
                         aria-label="Details"
                       >

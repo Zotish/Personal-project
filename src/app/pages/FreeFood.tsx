@@ -15,40 +15,17 @@ import {
   matchFreeFoodQuery
 } from "../data/freeFoodData";
 import { FoodDetailsModal } from "../components/food/FoodDetailsModal";
+import { useCountryPlatform } from "../context/CountryPlatformContext";
 import {
   safeBariKoiReverseGeocode,
   getMapStyleForLocation,
   getMapboxRasterStyle,
   getLeafletTileConfig,
   attachMapboxFallbackOnError,
+  loadBkoiGL,
+  bariKoiTransformRequest,
+  BARIKOI_API_KEY,
 } from "../services/barikoiService";
-
-// ─── BariKoi API Key & Loader ───────────────────────────────────────────────
-const BARIKOI_API_KEY =
-  import.meta.env.VITE_BARIKOI_API_KEY ||
-  "bkoi_e25928917c9e7b36a3286d75f446427fa3433bf87361b2fd8c8d6c942300a38f";
-
-function loadBkoiGL(): Promise<any> {
-  return new Promise((resolve, reject) => {
-    if ((window as any).bkoigl) {
-      resolve((window as any).bkoigl);
-      return;
-    }
-    if (!document.getElementById("maplibre-gl-css")) {
-      const css = document.createElement("link");
-      css.id = "maplibre-gl-css";
-      css.rel = "stylesheet";
-      css.href = "https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css";
-      document.head.appendChild(css);
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/bkoi-gl@latest/dist/iife/bkoi-gl.js";
-    script.onload = () => resolve((window as any).bkoigl);
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
-}
 
 // ─── BariKoi Reverse Geocoding & Road Routing APIs ──────────────────────────
 async function fetchBariKoiReverseGeocode(lat: number, lng: number) {
@@ -106,7 +83,8 @@ function BariKoiLiveFoodMap({
   onClearDirection,
   onShowDirection,
   onViewDetails,
-  isScrolled
+  isScrolled,
+  countryCode,
 }: {
   userCoords: [number, number];
   isLocationGranted: boolean;
@@ -122,6 +100,7 @@ function BariKoiLiveFoodMap({
   onShowDirection: (listing: LiveFoodListing) => void;
   onViewDetails?: (listing: LiveFoodListing) => void;
   isScrolled?: boolean;
+  countryCode?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -183,21 +162,22 @@ function BariKoiLiveFoodMap({
     const bkoigl = (window as any).bkoigl;
 
     // 1. User Live GPS Pinpoint Marker
+    // 1. User Live GPS Pinpoint Marker (Brand Color matching Screenshot 2)
     if (isLocationGranted && userCoords) {
       const userHtml = `
-        <div style="position:relative;display:flex;align-items:center;justify-content:center;">
-          <div style="position:absolute;width:32px;height:32px;border-radius:50%;background:rgba(192,74,34,0.25);animation:ping 2s cubic-bezier(0,0,0.2,1) infinite;"></div>
-          <div style="width:18px;height:18px;border-radius:50%;background:#C04A22;border:3px solid white;box-shadow:0 0 12px rgba(192,74,34,0.8);"></div>
+        <div style="position:relative;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:9999;">
+          <div style="position:absolute;inset:-8px;border-radius:50%;background:rgba(216,90,48,0.35);animation:ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+          <div style="width:16px;height:16px;border-radius:50%;background:#D85A30;border:3px solid white;box-shadow:0 4px 12px rgba(216,90,48,0.5);position:relative;z-index:2;"></div>
         </div>
       `;
 
       if (L && map.addLayer) {
         if (!userMarkerRef.current) {
           const userIcon = L.divIcon({
-            className: "bkoi-user-marker",
+            className: "custom-user-location-pin",
             html: userHtml,
-            iconSize: [32, 32],
-            iconAnchor: [16, 16]
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
           });
           userMarkerRef.current = L.marker(userCoords, { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
         } else {
@@ -284,17 +264,18 @@ function BariKoiLiveFoodMap({
           bkoigl.apiKey = key;
         }
 
-        const mapStyle = getMapStyleForLocation(userCoords[0], userCoords[1]);
+        const mapStyle = getMapStyleForLocation(userCoords[0], userCoords[1], countryCode);
         const map = new bkoigl.Map({
           container: containerRef.current,
           center: [userCoords[1], userCoords[0]],
           zoom: 14.5,
           accessToken: key,
           apiKey: key,
-          style: mapStyle
+          style: mapStyle,
+          transformRequest: bariKoiTransformRequest,
         });
 
-        attachMapboxFallbackOnError(map);
+        attachMapboxFallbackOnError(map, countryCode);
 
         map.on("load", () => {
           mapRef.current = map;
@@ -318,7 +299,7 @@ function BariKoiLiveFoodMap({
             zoomControl: false
           });
 
-          const tileCfg = getLeafletTileConfig(userCoords[0], userCoords[1]);
+          const tileCfg = getLeafletTileConfig(userCoords[0], userCoords[1], countryCode);
           L.tileLayer(tileCfg.url, {
             attribution: tileCfg.attribution,
             maxZoom: tileCfg.maxZoom
@@ -339,6 +320,17 @@ function BariKoiLiveFoodMap({
       isSubscribed = false;
     };
   }, []);
+
+  // Dynamically update map style when country changes (e.g. BD/US -> BariKoi, Norway/Global -> Mapbox)
+  useEffect(() => {
+    if (!mapRef.current) return;
+    if (mapRef.current.setStyle) {
+      try {
+        const targetStyle = getMapStyleForLocation(userCoords[0], userCoords[1], countryCode);
+        mapRef.current.setStyle(targetStyle);
+      } catch (_) {}
+    }
+  }, [countryCode, userCoords]);
 
   // Update markers when listings or selection changes
   useEffect(() => {
@@ -563,14 +555,14 @@ function BariKoiLiveFoodMap({
               </p>
 
               {/* Action Buttons: Direction & Details (Icon Only) */}
-              <div className="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+              <div className="mt-2.5 pt-2 flex items-center justify-between gap-2">
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     setMarkerClickedListing(null);
                     onShowDirection(markerClickedListing);
                   }}
-                  className="flex-1 py-2.5 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                  className="flex-1 py-2 rounded-xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95"
                   title="Direction"
                   aria-label="Direction"
                 >
@@ -581,7 +573,7 @@ function BariKoiLiveFoodMap({
                     e.stopPropagation();
                     onViewDetails?.(markerClickedListing);
                   }}
-                  className="flex-1 py-2.5 rounded-xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                  className="flex-1 py-2 rounded-xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center shadow-none active:scale-95 cursor-pointer"
                   title="Details"
                   aria-label="Details"
                 >
@@ -626,35 +618,41 @@ function BariKoiLiveFoodMap({
         )}
 
         {/* Map Controls: Zoom In / Out / Recenter (Top Right) */}
-        <div className="absolute top-4 right-4 z-30 flex flex-col gap-1.5 pointer-events-auto">
-          <button
-            onClick={handleZoomIn}
-            className="w-9 h-9 rounded-xl bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 shadow-md border border-slate-200/80 flex items-center justify-center transition cursor-pointer hover:text-[#C04A22]"
-            title="Zoom In"
-          >
-            <Plus className="w-4.5 h-4.5" />
-          </button>
-          <button
-            onClick={handleZoomOut}
-            className="w-9 h-9 rounded-xl bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 shadow-md border border-slate-200/80 flex items-center justify-center transition cursor-pointer hover:text-[#C04A22]"
-            title="Zoom Out"
-          >
-            <Minus className="w-4.5 h-4.5" />
-          </button>
+        {/* Map Controls: Zoom In / Out / Recenter (Matching Screenshot 2) */}
+        <div className="absolute top-4 right-4 z-30 flex flex-col items-center gap-2 pointer-events-auto">
+          {/* Zoom controls pill */}
+          <div className="flex flex-col items-center bg-white/95 backdrop-blur-md rounded-xl shadow-md border border-slate-200/90 overflow-hidden">
+            <button
+              onClick={handleZoomIn}
+              className="w-8.5 h-8.5 flex items-center justify-center text-slate-700 hover:text-[#D85A30] hover:bg-slate-50 transition cursor-pointer"
+              title="Zoom In"
+            >
+              <Plus className="w-4 h-4 stroke-[2.2]" />
+            </button>
+            <div className="w-full h-px bg-slate-100" />
+            <button
+              onClick={handleZoomOut}
+              className="w-8.5 h-8.5 flex items-center justify-center text-slate-700 hover:text-[#D85A30] hover:bg-slate-50 transition cursor-pointer"
+              title="Zoom Out"
+            >
+              <Minus className="w-4 h-4 stroke-[2.2]" />
+            </button>
+          </div>
+          {/* Floating Navigation Button */}
           <button
             onClick={handleReset}
             disabled={isLocating}
-            className={`w-9 h-9 rounded-xl shadow-md border transition cursor-pointer active:scale-95 disabled:opacity-75 flex items-center justify-center ${
+            className={`w-9.5 h-9.5 rounded-full shadow-lg border transition-all cursor-pointer active:scale-95 disabled:opacity-75 flex items-center justify-center ${
               isLocationGranted
-                ? "bg-[#C04A22] text-white border-[#C04A22] shadow-[#C04A22]/30"
-                : "bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 border-slate-200/80 hover:text-[#C04A22]"
+                ? "bg-[#D85A30] text-white border-[#D85A30] shadow-[#D85A30]/30"
+                : "bg-white/95 backdrop-blur-md text-slate-700 hover:text-[#D85A30] border-slate-200/90"
             }`}
             title={isLocationGranted ? "Live Location Active (Click to Recenter)" : "Turn ON Live Location (GPS)"}
           >
             {isLocating ? (
-              <Loader2 className={`w-4.5 h-4.5 animate-spin ${isLocationGranted ? "text-white" : "text-[#C04A22]"}`} />
+              <Loader2 className={`w-4 h-4 animate-spin ${isLocationGranted ? "text-white" : "text-[#D85A30]"}`} />
             ) : (
-              <Navigation className={`w-4.5 h-4.5 ${isLocationGranted ? "text-white" : "text-[#C04A22]"}`} />
+              <Navigation className={`w-4 h-4 transition-transform ${isLocationGranted ? "text-white fill-current" : "text-slate-700 hover:text-[#D85A30]"}`} />
             )}
           </button>
         </div>
@@ -818,14 +816,52 @@ function BariKoiLiveFoodMap({
 // ─── Master Free Food Page (100% Housing/Jobs Identical Design System) ──────
 export function FreeFood() {
   const navigate = useNavigate();
+  const { currentCountry } = useCountryPlatform();
+  const countryCode = "BD";
+
+  const defaultCoords: [number, number] = currentCountry?.defaultCoords || [23.8103, 90.4125];
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<string>("all");
-  const [userCoords, setUserCoords] = useState<[number, number]>([23.8103, 90.4125]);
-  const [userArea, setUserArea] = useState<string>("Dhaka Area");
-  const [userCity, setUserCity] = useState<string>("Dhaka");
-  const [isLocationGranted, setIsLocationGranted] = useState(false);
+  const [userCoords, setUserCoords] = useState<[number, number]>(() => {
+    try {
+      const cached = localStorage.getItem("bkoi_last_user_coords");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length === 2 && !isNaN(parsed[0]) && !isNaN(parsed[1])) {
+          return [parsed[0], parsed[1]];
+        }
+      }
+    } catch (_) {}
+    return defaultCoords;
+  });
+
+  const initialLoc = useMemo(() => {
+    try {
+      const cachedArea = localStorage.getItem("bkoi_last_user_area");
+      const cachedCity = localStorage.getItem("bkoi_last_user_city");
+      if (cachedArea || cachedCity) {
+        return {
+          city: cachedCity || "Your City",
+          area: cachedArea || "Your Area",
+          name: `${cachedArea || "Your Area"}, ${cachedCity || "Bangladesh"}`
+        };
+      }
+    } catch (_) {}
+    return { city: "Dhaka", area: "Dhanmondi / Mohammadpur", name: "Dhaka, Bangladesh" };
+  }, []);
+
+  const [isLocationGranted, setIsLocationGranted] = useState<boolean>(() => {
+    try {
+      return !!localStorage.getItem("bkoi_last_user_coords");
+    } catch (_) {
+      return false;
+    }
+  });
   const [isLocating, setIsLocating] = useState(false);
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
+
+  const [userArea, setUserArea] = useState<string>(initialLoc.area);
+  const [userCity, setUserCity] = useState<string>(initialLoc.city);
   const [selectedListing, setSelectedListing] = useState<LiveFoodListing | null>(null);
   const [directionListing, setDirectionListing] = useState<LiveFoodListing | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState<LiveFoodListing | null>(null);
@@ -892,8 +928,8 @@ export function FreeFood() {
 
         const geo = await fetchBariKoiReverseGeocode(lat, lng);
         if (geo) {
-          setUserArea(geo.area || geo.sub_district || "Dhaka Area");
-          setUserCity(geo.city || "Dhaka");
+          setUserArea(geo.area || geo.sub_district || initialLoc.area);
+          setUserCity(geo.city || initialLoc.city);
         }
       },
       (err) => {
@@ -1060,6 +1096,7 @@ export function FreeFood() {
               onShowDirection={handleShowDirection}
               onViewDetails={listing => setShowDetailsModal(listing)}
               isScrolled={isScrolled}
+              countryCode={countryCode}
             />
           </div>
         </div>
@@ -1110,7 +1147,7 @@ export function FreeFood() {
                     else cardRefs.current.delete(listing.id);
                   }}
                   onClick={() => setSelectedListing(listing)}
-                  className={`group bg-white rounded-none sm:rounded-3xl border-0 sm:border border-b sm:border-b-slate-200/90 border-slate-100/90 overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between h-full shadow-none sm:shadow-2xs ${
+                  className={`group bg-white rounded-none sm:rounded-3xl border-0 sm:border border-slate-200/90 overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between h-full shadow-none sm:shadow-2xs ${
                     isSelected
                       ? "sm:border-[#C04A22] sm:ring-2 sm:ring-[#C04A22]/20 sm:shadow-md"
                       : "sm:border-slate-200/90 sm:hover:border-slate-300 sm:hover:shadow-xs"
@@ -1206,14 +1243,14 @@ export function FreeFood() {
                   </div>
 
                   {/* Bottom: Action Buttons (Icon Only) */}
-                  <div className="p-4 sm:p-5 pt-3">
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
+                  <div className="px-4 sm:px-5 pb-3 pt-1">
+                    <div className="flex items-center justify-between gap-2.5">
                       <button
                         onClick={e => {
                           e.stopPropagation();
                           handleShowDirection(listing);
                         }}
-                        className="flex-1 py-2.5 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center cursor-pointer shadow-2xs hover:shadow-xs active:scale-98"
+                        className="flex-1 py-2 rounded-2xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95"
                         title="Direction"
                         aria-label="Direction"
                       >
@@ -1225,7 +1262,7 @@ export function FreeFood() {
                           e.stopPropagation();
                           setShowDetailsModal(listing);
                         }}
-                        className="flex-1 py-2.5 rounded-2xl bg-[#C04A22]/12 hover:bg-[#C04A22]/20 text-[#8C3015] border border-[#C04A22]/25 font-bold transition flex items-center justify-center shadow-2xs hover:shadow-xs active:scale-98 cursor-pointer"
+                        className="flex-1 py-2 rounded-2xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center shadow-none active:scale-95 cursor-pointer"
                         title="Details"
                         aria-label="Details"
                       >

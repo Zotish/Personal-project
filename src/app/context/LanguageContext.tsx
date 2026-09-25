@@ -23,22 +23,24 @@ export const SUPPORTED_LANGUAGES: LanguageMeta[] = [
 
 export const COUNTRY_CODE_TO_LANG: Record<string, Lang> = {
   US: "en",
-  BD: "bn",
+  BD: "en",
   CA: "en",
   GB: "en",
-  DE: "de",
+  DE: "en",
   AU: "en",
-  AE: "ar",
-  JP: "en", // Japanese is disabled, fallback to English
-  FR: "fr",
-  IT: "it",
-  SA: "ar",
-  MY: "ms",
-  ES: "es",
+  AE: "en",
+  JP: "en",
+  FR: "en",
+  IT: "en",
+  SA: "en",
+  MY: "en",
+  ES: "en",
   IN: "en",
+  NO: "en",
 };
 
 const STORAGE_KEY = "ic_lang";
+const USER_SELECTED_KEY = "ic_lang_user_selected";
 
 interface LanguageContextValue {
   lang: Lang;
@@ -54,29 +56,22 @@ function detectLanguageFromUrlOrStorage(): Lang {
   if (typeof window !== "undefined") {
     try {
       const params = new URLSearchParams(window.location.search);
-      // 1. Direct ?lang=...
+      // 1. Direct explicit ?lang=...
       const qLang = params.get("lang")?.toLowerCase();
       if (qLang && qLang !== "ja" && (qLang in translations)) {
         return qLang as Lang;
       }
-      // 2. Country launch param ?country=... (e.g. ?country=bd -> bn, ?country=de -> de)
-      const qCountry = params.get("country")?.toUpperCase();
-      if (qCountry && COUNTRY_CODE_TO_LANG[qCountry]) {
-        return COUNTRY_CODE_TO_LANG[qCountry];
-      }
-      // 3. Stored preference
+      // 2. Explicit user selection in localStorage (if user clicked toggle)
+      const userSelected = localStorage.getItem(USER_SELECTED_KEY);
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === "ja") {
-        localStorage.removeItem(STORAGE_KEY);
-        return "en";
-      }
-      if (stored && stored !== "ja" && (stored in translations)) {
+      if (userSelected === "true" && stored && stored !== "ja" && (stored in translations)) {
         return stored as Lang;
       }
     } catch {
       // ignore
     }
   }
+  // Default language is English for any country
   return "en";
 }
 
@@ -88,6 +83,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     setLangState(l);
     try {
       localStorage.setItem(STORAGE_KEY, l);
+      localStorage.setItem(USER_SELECTED_KEY, "true");
     } catch {
       // ignore
     }

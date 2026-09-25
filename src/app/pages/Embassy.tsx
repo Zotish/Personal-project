@@ -25,49 +25,11 @@ import {
   getMapboxRasterStyle,
   getLeafletTileConfig,
   attachMapboxFallbackOnError,
+  loadBkoiGL,
+  bariKoiTransformRequest,
+  BARIKOI_API_KEY,
 } from "../services/barikoiService";
-
-// Icon mapping helper
-const SERVICE_ICONS: Record<string, any> = {
-  BookOpen: BookOpen,
-  FileCheck: FileCheck,
-  Award: Award,
-  ShieldCheck: ShieldCheck,
-  Globe: Globe,
-  CreditCard: CreditCard,
-  FileText: FileText,
-  Landmark: Landmark,
-  Plane: Plane,
-  Heart: Heart,
-  Calendar: Calendar
-};
-
-// ─── BariKoi API Key & Loader ───────────────────────────────────────────────
-const BARIKOI_API_KEY =
-  import.meta.env.VITE_BARIKOI_API_KEY ||
-  "bkoi_e25928917c9e7b36a3286d75f446427fa3433bf87361b2fd8c8d6c942300a38f";
-
-function loadBkoiGL(): Promise<any> {
-  return new Promise((resolve, reject) => {
-    if ((window as any).bkoigl) {
-      resolve((window as any).bkoigl);
-      return;
-    }
-    if (!document.getElementById("maplibre-gl-css")) {
-      const css = document.createElement("link");
-      css.id = "maplibre-gl-css";
-      css.rel = "stylesheet";
-      css.href = "https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css";
-      document.head.appendChild(css);
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/bkoi-gl@latest/dist/iife/bkoi-gl.js";
-    script.onload = () => resolve((window as any).bkoigl);
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
-}
+import { useCountryPlatform } from "../context/CountryPlatformContext";
 
 // Real road route calculation using OSRM
 async function fetchRealRoadRoute(startLat: number, startLng: number, endLat: number, endLng: number, mode: "car" | "bike" | "walk" = "car") {
@@ -113,7 +75,8 @@ function BariKoiMissionMap({
   directionMission,
   onClearDirection,
   onShowDirection,
-  isScrolled
+  isScrolled,
+  countryCode,
 }: {
   userCoords: [number, number];
   missions: ConsularMission[];
@@ -123,6 +86,7 @@ function BariKoiMissionMap({
   onClearDirection: () => void;
   onShowDirection: (mission: ConsularMission) => void;
   isScrolled?: boolean;
+  countryCode?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -232,17 +196,18 @@ function BariKoiMissionMap({
           bkoigl.apiKey = key;
         }
 
-        const mapStyle = getMapStyleForLocation(36.5, -88.5, "US");
+        const mapStyle = getMapStyleForLocation(userCoords[0], userCoords[1], countryCode);
         const map = new bkoigl.Map({
           container: containerRef.current,
-          center: [-88.5, 36.5], // USA Center
+          center: [userCoords[1], userCoords[0]],
           zoom: 3.5,
           accessToken: key,
           apiKey: key,
-          style: mapStyle
+          style: mapStyle,
+          transformRequest: bariKoiTransformRequest,
         });
 
-        attachMapboxFallbackOnError(map);
+        attachMapboxFallbackOnError(map, countryCode);
 
         map.on("load", () => {
           mapRef.current = map;
@@ -265,7 +230,7 @@ function BariKoiMissionMap({
             zoomControl: false
           });
 
-          const tileCfg = getLeafletTileConfig(36.5, -88.5, "US");
+          const tileCfg = getLeafletTileConfig(userCoords[0], userCoords[1], countryCode);
           L.tileLayer(tileCfg.url, {
             attribution: tileCfg.attribution,
             maxZoom: tileCfg.maxZoom
@@ -286,6 +251,17 @@ function BariKoiMissionMap({
       isSubscribed = false;
     };
   }, []);
+
+  // Dynamically update map style when country changes (e.g. BD/US -> BariKoi, Norway/Global -> Mapbox)
+  useEffect(() => {
+    if (!mapRef.current) return;
+    if (mapRef.current.setStyle) {
+      try {
+        const targetStyle = getMapStyleForLocation(userCoords[0], userCoords[1], countryCode);
+        mapRef.current.setStyle(targetStyle);
+      } catch (_) {}
+    }
+  }, [countryCode, userCoords]);
 
   useEffect(() => {
     syncMapMarkers();
@@ -715,6 +691,8 @@ function ConsularServiceModal({
 // ─── MASTER EMBASSY & CONSULAR SERVICES PAGE ────────────────────────────────
 export function Embassy() {
   const navigate = useNavigate();
+  const { currentCountry } = useCountryPlatform();
+  const countryCode = "BD";
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMission, setSelectedMission] = useState<ConsularMission | null>(null);
   const [directionMission, setDirectionMission] = useState<ConsularMission | null>(null);
@@ -722,8 +700,8 @@ export function Embassy() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [savedServiceIds, setSavedServiceIds] = useState<string[]>([]);
 
-  // Default DC coordinates for Embassy
-  const userCoords: [number, number] = [38.9395, -77.0658];
+  // Default coordinates from current country (Dhaka, Bangladesh)
+  const userCoords: [number, number] = currentCountry?.defaultCoords || [23.8103, 90.4125];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -811,6 +789,7 @@ export function Embassy() {
               }}
               onShowDirection={handleShowDirection}
               isScrolled={isScrolled}
+              countryCode={countryCode}
             />
           </div>
         </div>
