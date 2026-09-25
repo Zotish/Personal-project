@@ -2201,7 +2201,7 @@ export function HomeFeed() {
 
                   {/* Auto-injected Sponsored Ad after every 2-3 posts */}
                   {(idx + 1) % 3 === 0 && (
-                    <div className="my-1 animate-in fade-in duration-200">
+                    <div className="my-0 sm:my-2 animate-in fade-in duration-200">
                       <SponsoredFeedAd slotIndex={Math.floor(idx / 3)} placement="feed" />
                     </div>
                   )}

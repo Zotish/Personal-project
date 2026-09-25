@@ -235,7 +235,7 @@ function CommunityDetail({ community, onBack }: { community: typeof allCommuniti
             </div>
 
               {(idx + 1) % 3 === 0 && (
-                <div className="my-2 animate-in fade-in">
+                <div className="my-0 sm:my-2 animate-in fade-in">
                   <SponsoredFeedAd slotIndex={Math.floor(idx / 3)} placement="all" />
                 </div>
               )}
