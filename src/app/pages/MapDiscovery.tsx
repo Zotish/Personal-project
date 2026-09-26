@@ -2439,13 +2439,63 @@ export function MapDiscoveryContent({
   const [navHeading, setNavHeading] = useState<number>(0);
   const [activeNavRoute, setActiveNavRoute] = useState<RouteOption | null>(null);
 
+  const dismissedPlaceIdRef = useRef<number | string | null>(null);
+  const initialPlaceHandledRef = useRef<boolean>(false);
+  const lastIncomingPlaceIdRef = useRef<number | string | null>(null);
+
+  // Sync incoming routeState/urlPlaceId when navigating from another page (e.g. homepage map)
+  useEffect(() => {
+    const incomingId = routeState?.selectedPlaceId || urlPlaceId;
+    if (incomingId && String(incomingId) !== String(lastIncomingPlaceIdRef.current)) {
+      lastIncomingPlaceIdRef.current = incomingId;
+      dismissedPlaceIdRef.current = null;
+      initialPlaceHandledRef.current = false;
+      setMapActiveId(incomingId);
+    }
+  }, [routeState?.selectedPlaceId, urlPlaceId]);
+
+  // Clean close handler for place card that clears history state and prevents unwanted reopening
+  const handleClosePlaceCard = useCallback(() => {
+    const currentId = mapActiveId ?? routeState?.selectedPlaceId ?? urlPlaceId;
+    if (currentId !== null && currentId !== undefined) {
+      dismissedPlaceIdRef.current = currentId;
+    }
+    initialPlaceHandledRef.current = true;
+    setMapActiveId(null);
+    setHoverPlace(null);
+
+    // Clear selectedPlaceId from history state and URL query params
+    const hasRouteStatePlace = Boolean(routeState?.selectedPlaceId);
+    const hasUrlPlace = Boolean(searchParams.get("placeId") || searchParams.get("id") || searchParams.get("place"));
+
+    if (hasRouteStatePlace || hasUrlPlace) {
+      const nextSearchParams = new URLSearchParams(searchParams);
+      nextSearchParams.delete("placeId");
+      nextSearchParams.delete("id");
+      nextSearchParams.delete("place");
+
+      navigate(
+        {
+          pathname: routerLocation.pathname,
+          search: nextSearchParams.toString() ? `?${nextSearchParams.toString()}` : "",
+        },
+        {
+          replace: true,
+          state: {
+            ...routeState,
+            selectedPlaceId: null,
+          },
+        }
+      );
+    }
+  }, [mapActiveId, routeState, urlPlaceId, searchParams, navigate, routerLocation.pathname]);
+
   const handleStartDirection = (place: Place) => {
+    handleClosePlaceCard();
     setDirectionsFor(place);
     setIsLiveNavigating(false);
     setNavUserCoord(null);
     setActiveNavRoute(null);
-    setMapActiveId(null);
-    setHoverPlace(null);
   };
 
   // Initialize userLocation from URL query params, routeState, localStorage cache, or default
@@ -2939,10 +2989,15 @@ export function MapDiscoveryContent({
     return base;
   }, [query, bkoiPlaces, realtimePlaces, jobPlaces, categoryPlaces, sharedPlaceFromUrl]);
 
-  // Deep-linking from shared link: automatically center, zoom in, and open the active place card
+  // Deep-linking from shared link / home mini-map: automatically center, zoom in, and open the active place card
   useEffect(() => {
     const targetId = urlPlaceId || routeState?.selectedPlaceId || (sharedPlaceFromUrl ? sharedPlaceFromUrl.id : null);
     if (!targetId && !urlLat && !urlLng) return;
+
+    // If user has explicitly dismissed this place, do NOT reopen it!
+    if (targetId && (String(dismissedPlaceIdRef.current) === String(targetId) || initialPlaceHandledRef.current)) {
+      return;
+    }
 
     let target = (sharedPlaceFromUrl && String(sharedPlaceFromUrl.id) === String(targetId))
       ? sharedPlaceFromUrl
@@ -2963,6 +3018,7 @@ export function MapDiscoveryContent({
     }
 
     if (target) {
+      initialPlaceHandledRef.current = true;
       setMapActiveId(target.id);
       setActiveCategory("all");
       setUserLocation([target.lat, target.lng]);
@@ -3074,7 +3130,7 @@ export function MapDiscoveryContent({
   };
 
   const handleOpenDetails = (place: Place) => {
-    setMapActiveId(null);
+    handleClosePlaceCard();
     if (place.isJob && place.jobData) {
       setDetailJob(place.jobData);
     } else {
@@ -3317,14 +3373,14 @@ export function MapDiscoveryContent({
                   defaultCoords={countryDefaultCoords}
                   onMarkerClick={(p, px) => {
                     if (!directionsFor && !isLiveNavigating) {
+                      dismissedPlaceIdRef.current = null;
                       setMapActiveId(p.id);
                       setMarkerPx(px);
                       setHoverPlace(null);
                     }
                   }}
                   onMapClick={() => {
-                    setMapActiveId(null);
-                    setHoverPlace(null);
+                    handleClosePlaceCard();
                   }}
                   onRouteClick={id => setSelectedRouteId(id)}
                   onMarkerHover={(p, px) => {
@@ -3360,7 +3416,7 @@ export function MapDiscoveryContent({
                         w: mapContainerRef.current?.offsetWidth ?? 800,
                         h: mapContainerRef.current?.offsetHeight ?? 600,
                       }}
-                      onClose={() => setMapActiveId(null)}
+                      onClose={handleClosePlaceCard}
                       onViewDetails={() => handleOpenDetails(activePlace)}
                       onDirections={() => handleStartDirection(activePlace)}
                     />

@@ -76,6 +76,7 @@ function BariKoiMissionMap({
   onClearDirection,
   onShowDirection,
   isScrolled,
+  onToggleSize,
   countryCode,
 }: {
   userCoords: [number, number];
@@ -86,6 +87,7 @@ function BariKoiMissionMap({
   onClearDirection: () => void;
   onShowDirection: (mission: ConsularMission) => void;
   isScrolled?: boolean;
+  onToggleSize?: () => void;
   countryCode?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -354,18 +356,65 @@ function BariKoiMissionMap({
     }
   }, [directionMission, userCoords, travelMode]);
 
+  // Zoom out to show user location and nearby missions when map is compact
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || directionMission || selectedMission) return;
+
+    if (isScrolled) {
+      const bkoigl = (window as any).bkoigl;
+      if (bkoigl && map.fitBounds) {
+        const bounds = new bkoigl.LngLatBounds();
+        bounds.extend([userCoords[1], userCoords[0]]);
+        (missions || []).slice(0, 4).forEach(m => {
+          if (m.lng && m.lat) bounds.extend([m.lng, m.lat]);
+        });
+        map.fitBounds(bounds, {
+          padding: { top: 35, bottom: 35, left: 35, right: 35 },
+          maxZoom: 13.2,
+          duration: 600
+        });
+      } else if (map.flyTo) {
+        map.flyTo({
+          center: [userCoords[1], userCoords[0]],
+          zoom: 13.0,
+          duration: 600
+        });
+      }
+    } else {
+      if (map.flyTo) {
+        map.flyTo({
+          center: [userCoords[1], userCoords[0]],
+          zoom: 14.5,
+          duration: 600
+        });
+      }
+    }
+  }, [isScrolled, userCoords, missions, directionMission, selectedMission]);
+
+  // Clean resize after CSS transition finishes (avoids WebGL redraw thrashing)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (mapRef.current) {
+        if (mapRef.current.resize) mapRef.current.resize();
+        else if (mapRef.current.invalidateSize) mapRef.current.invalidateSize();
+      }
+    }, 160);
+    return () => clearTimeout(timer);
+  }, [directionMission, isNavCardMinimized, isScrolled]);
+
   return (
-    <div className="w-full flex flex-col bg-white overflow-hidden transition-all duration-300">
-      {/* ── MAP CONTAINER (Home Map Compact Height: h-[230px] sm:h-[250px]) ── */}
+    <div className={`w-full flex flex-col bg-white overflow-hidden transition-all duration-300 ease-out ${isScrolled ? "h-0" : "h-auto"}`}>
+      {/* ── MAP CONTAINER (Dynamic Height depending on scroll & route state) ── */}
       <div
-        className={`relative w-full transition-[height] duration-300 ease-in-out ${
+        className={`relative w-full transition-[height] duration-300 ease-out ${
           directionMission
             ? isNavCardMinimized
-              ? "h-[230px] sm:h-[250px]"
-              : "h-[200px] sm:h-[230px]"
+              ? "h-[380px] sm:h-[470px] md:h-[530px] lg:h-[590px]"
+              : "h-[240px] sm:h-[300px] md:h-[360px] lg:h-[400px]"
             : isScrolled
-              ? "h-[190px] sm:h-[210px]"
-              : "h-[230px] sm:h-[250px]"
+              ? "h-0 overflow-hidden"
+              : "h-[360px] sm:h-[420px] md:h-[460px] lg:h-[480px]"
         }`}
       >
         <div ref={containerRef} className="w-full h-full" />
@@ -459,7 +508,7 @@ function BariKoiMissionMap({
 
       {/* ── ROUTE NAVIGATION CARD ── */}
       {directionMission && (
-        <div className="w-full bg-[#FAFAFA] border-t border-slate-200/90 px-3 py-3 sm:px-4 sm:py-3.5 transition-all duration-300">
+        <div className="w-full bg-[#FAFAFA] border-t border-slate-200/90 px-3 py-3 sm:px-4 sm:py-3.5 transition-all duration-150 ease-out">
           {isNavCardMinimized ? (
             <div
               onClick={() => setIsNavCardMinimized(false)}
@@ -703,13 +752,64 @@ export function Embassy() {
   // Default coordinates from current country (Dhaka, Bangladesh)
   const userCoords: [number, number] = currentCountry?.defaultCoords || [23.8103, 90.4125];
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 80);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  const cardListRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef<number | null>(null);
+  const isPointerDragging = useRef(false);
+  const pointerStartY = useRef(0);
+
+  // Upward / downward pull gestures STRICTLY on the pull handle ("black shadow line")
+  const handleHandleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleHandleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartY.current === null) return;
+    const currentY = e.touches[0].clientY;
+    const diffY = touchStartY.current - currentY; // positive = dragged UP, negative = dragged DOWN
+
+    // Drag UP on handle -> Full Screen!
+    if (!isScrolled && diffY > 15) {
+      setIsScrolled(true);
+      touchStartY.current = currentY;
+    }
+    // Drag DOWN on handle -> Restore map!
+    else if (isScrolled && diffY < -15) {
+      setIsScrolled(false);
+      touchStartY.current = currentY;
+    }
+  };
+
+  const handleHandleTouchEnd = () => {
+    touchStartY.current = null;
+  };
+
+  // Pointer drag gesture for the pull handle (mouse click & drag or stylus)
+  const handleHandlePointerDown = (e: React.PointerEvent) => {
+    isPointerDragging.current = true;
+    pointerStartY.current = e.clientY;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (_) {}
+  };
+
+  const handleHandlePointerMove = (e: React.PointerEvent) => {
+    if (!isPointerDragging.current) return;
+    const diffY = pointerStartY.current - e.clientY;
+    if (!isScrolled && diffY > 12) {
+      setIsScrolled(true);
+      isPointerDragging.current = false;
+    } else if (isScrolled && diffY < -12) {
+      setIsScrolled(false);
+      isPointerDragging.current = false;
+    }
+  };
+
+  const handleHandlePointerUp = (e: React.PointerEvent) => {
+    isPointerDragging.current = false;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch (_) {}
+  };
 
   const toggleSave = (id: string) => {
     setSavedServiceIds(prev =>
@@ -738,9 +838,9 @@ export function Embassy() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-[#FDFBF9] pb-16">
+      <div className="w-full h-[calc(100dvh-4rem)] lg:h-[calc(100vh)] flex flex-col overflow-hidden bg-[#FDFBF9]">
         {/* ── TOP STICKY BAR: Clean Search Only (Filters Removed) ───────────── */}
-        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 sm:px-6 shadow-2xs">
+        <div className="flex-shrink-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 sm:px-6 shadow-2xs">
           <div className="max-w-7xl mx-auto flex items-center gap-3">
             <button
               onClick={() => navigate(-1)}
@@ -772,11 +872,14 @@ export function Embassy() {
           </div>
         </div>
 
-        {/* ── BARIKOI LIVE MAP (EXPANDED / COMPACT HOME MAP SIZE: h-[230px] sm:h-[250px]) ── */}
-        <div id="embassy-map-section" className={`w-full max-w-7xl mx-auto px-1 sm:px-2 pt-1 sm:pt-2 transition-all duration-300 ${
-          isScrolled ? "sticky top-[60px] z-10" : ""
-        }`}>
-          <div className="rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm bg-white">
+        {/* ── BARIKOI LIVE MAP (FIXED HEIGHT BY DEFAULT - COLLAPSES TO 0 ON FULL SCREEN) ── */}
+        <div
+          id="embassy-map-section"
+          className={`w-full max-w-7xl mx-auto px-0 flex-shrink-0 z-10 transition-all duration-300 ease-out overflow-hidden ${
+            isScrolled ? "max-h-0 opacity-0 pointer-events-none" : "max-h-[800px] opacity-100"
+          }`}
+        >
+          <div className="rounded-none sm:rounded-b-2xl overflow-hidden border-b border-slate-200/90 shadow-xs bg-white">
             <BariKoiMissionMap
               userCoords={userCoords}
               missions={BD_DIPLOMATIC_MISSIONS}
@@ -789,14 +892,41 @@ export function Embassy() {
               }}
               onShowDirection={handleShowDirection}
               isScrolled={isScrolled}
+              onToggleSize={() => setIsScrolled(prev => !prev)}
               countryCode={countryCode}
             />
           </div>
         </div>
 
-        {/* ── MAIN DIRECTORY CONTENT: Clean Minimalist List of Consular Services ── */}
-        <div className="w-full max-w-7xl mx-auto px-1 sm:px-2 pt-1.5 sm:pt-2">
-          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden divide-y divide-slate-100">
+        {/* ── MAIN DIRECTORY CONTENT: Clean Minimalist List of Consular Services (UPORE / ON TOP) ── */}
+        <div
+          ref={cardListRef}
+          className="flex-1 min-h-0 overflow-y-auto w-full max-w-7xl mx-auto px-1 sm:px-2 pt-1 sm:pt-2 relative z-20 bg-[#FAFAFA] rounded-t-3xl shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-2 sm:-mt-3 pb-24"
+        >
+          {/* Sticky Header: Pull handle ("black shadow line") */}
+          <div className="sticky top-0 z-30 bg-[#FAFAFA]/95 backdrop-blur-md pt-2 pb-2 px-4 sm:px-2 border-b border-slate-200/60 shadow-2xs">
+            {/* Pull handle indicator ("black shadow line" - Pull up for full screen / pull down to restore) */}
+            <div
+              onPointerDown={handleHandlePointerDown}
+              onPointerMove={handleHandlePointerMove}
+              onPointerUp={handleHandlePointerUp}
+              onPointerCancel={handleHandlePointerUp}
+              onTouchStart={handleHandleTouchStart}
+              onTouchMove={handleHandleTouchMove}
+              onTouchEnd={handleHandleTouchEnd}
+              onClick={() => setIsScrolled(prev => !prev)}
+              className="w-full flex flex-col items-center justify-center py-2 cursor-grab active:cursor-grabbing select-none group touch-none"
+              title={isScrolled ? "Pull down or click to show map" : "Pull up for full screen"}
+            >
+              <div className="w-14 h-1.5 bg-slate-300 group-hover:bg-slate-400 group-active:bg-slate-500 rounded-full transition-all shadow-xs" />
+            </div>
+            <div className="flex items-center justify-between text-xs text-slate-500 font-medium px-1 pb-1">
+              <span>{filteredServices.length} Consular Services</span>
+              <span className="text-emerald-700 font-semibold">{BD_DIPLOMATIC_MISSIONS.length} Diplomatic Missions</span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden divide-y divide-slate-100 mt-2">
             {filteredServices.map(service => (
               <button
                 key={service.id}

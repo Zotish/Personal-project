@@ -89,6 +89,7 @@ function BariKoiLiveHousingMap({
   savedIds,
   onToggleSave,
   isScrolled,
+  onToggleSize,
   searchQuery,
   countryCode,
 }: {
@@ -109,6 +110,7 @@ function BariKoiLiveHousingMap({
   savedIds?: string[];
   onToggleSave?: (id: string) => void;
   isScrolled?: boolean;
+  onToggleSize?: () => void;
   searchQuery?: string;
   countryCode?: string;
 }) {
@@ -583,6 +585,42 @@ function BariKoiLiveHousingMap({
     }
   }, [directionListing, selectedListing, userCoords]);
 
+  // Zoom out to show user location and nearby listings when map is compact
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || directionListing || selectedListing) return;
+
+    if (isScrolled) {
+      const bkoigl = (window as any).bkoigl;
+      if (bkoigl && map.fitBounds) {
+        const bounds = new bkoigl.LngLatBounds();
+        bounds.extend([userCoords[1], userCoords[0]]);
+        (listings || []).slice(0, 4).forEach(l => {
+          if (l.lng && l.lat) bounds.extend([l.lng, l.lat]);
+        });
+        map.fitBounds(bounds, {
+          padding: { top: 35, bottom: 35, left: 35, right: 35 },
+          maxZoom: 13.2,
+          duration: 600
+        });
+      } else if (map.flyTo) {
+        map.flyTo({
+          center: [userCoords[1], userCoords[0]],
+          zoom: 13.0,
+          duration: 600
+        });
+      }
+    } else {
+      if (map.flyTo) {
+        map.flyTo({
+          center: [userCoords[1], userCoords[0]],
+          zoom: 14.5,
+          duration: 600
+        });
+      }
+    }
+  }, [isScrolled, userCoords, listings, directionListing, selectedListing]);
+
   // Zoom Controls
   const handleZoomIn = () => {
     if (!mapRef.current) return;
@@ -655,28 +693,23 @@ function BariKoiLiveHousingMap({
       }
     };
 
-    const t1 = setTimeout(handleResize, 60);
-    const t2 = setTimeout(handleResize, 250);
-    const t3 = setTimeout(handleResize, 450);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
+    // Clean resize after CSS transition finishes (avoids WebGL redraw thrashing)
+    const timer = setTimeout(handleResize, 160);
+    return () => clearTimeout(timer);
   }, [directionListing, isNavCardMinimized, isScrolled]);
 
   return (
-    <div className="w-full flex flex-col bg-white overflow-hidden transition-all duration-300">
+    <div className={`w-full flex flex-col bg-white overflow-hidden transition-all duration-300 ease-out ${isScrolled ? "h-0" : "h-auto"}`}>
       {/* ── MAP CONTAINER (Dynamic Height depending on scroll & route state) ── */}
       <div
-        className={`relative w-full transition-[height] duration-300 ease-in-out ${
+        className={`relative w-full transition-[height] duration-300 ease-out ${
           directionListing
             ? isNavCardMinimized
               ? "h-[380px] sm:h-[470px] md:h-[530px] lg:h-[590px]"
               : "h-[240px] sm:h-[300px] md:h-[360px] lg:h-[400px]"
             : isScrolled
-              ? "h-[210px] sm:h-[240px] md:h-[260px] lg:h-[280px]" // Screenshot compact height when scrolling list!
-              : "h-[440px] sm:h-[520px] md:h-[580px] lg:h-[620px]" // Default full height
+              ? "h-0 overflow-hidden"
+              : "h-[360px] sm:h-[420px] md:h-[460px] lg:h-[480px]"
         }`}
       >
         <div ref={containerRef} className="w-full h-full" />
@@ -842,7 +875,7 @@ function BariKoiLiveHousingMap({
 
       {/* ── ROUTE NAVIGATION CARD (Outside Map Canvas - Sits directly below the map!) ── */}
       {directionListing && (
-        <div className="w-full bg-[#FAFAFA] border-t border-slate-200/90 px-3 py-3 sm:px-4 sm:py-3.5 transition-all duration-300">
+        <div className="w-full bg-[#FAFAFA] border-t border-slate-200/90 px-3 py-3 sm:px-4 sm:py-3.5 transition-all duration-150 ease-out">
           {/* 1. Minimized Route Bar */}
           {isNavCardMinimized ? (
             <div
@@ -1168,40 +1201,64 @@ export function Housing() {
 
   const nearbyHousing = filteredHousing.filter(j => j.isNearby);
 
-  // Scroll detection for collapsing map height with transition lock to eliminate jitter
-  useEffect(() => {
-    let timeoutId: any = null;
-    let isTransitioning = false;
+  const cardListRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef<number | null>(null);
+  const isPointerDragging = useRef(false);
+  const pointerStartY = useRef(0);
 
-    const handleScroll = () => {
-      if (isTransitioning) return;
-      const y = window.scrollY;
-      setIsScrolled(prev => {
-        if (!prev && y > 100) {
-          isTransitioning = true;
-          clearTimeout(timeoutId);
-          timeoutId = setTimeout(() => {
-            isTransitioning = false;
-          }, 350);
-          return true;
-        }
-        if (prev && y < 30) {
-          isTransitioning = true;
-          clearTimeout(timeoutId);
-          timeoutId = setTimeout(() => {
-            isTransitioning = false;
-          }, 350);
-          return false;
-        }
-        return prev;
-      });
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      clearTimeout(timeoutId);
-    };
-  }, []);
+  // Upward / downward pull gestures STRICTLY on the pull handle ("black shadow line")
+  const handleHandleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleHandleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartY.current === null) return;
+    const currentY = e.touches[0].clientY;
+    const diffY = touchStartY.current - currentY; // positive = dragged UP, negative = dragged DOWN
+
+    // Drag UP on handle -> Full Screen!
+    if (!isScrolled && diffY > 15) {
+      setIsScrolled(true);
+      touchStartY.current = currentY;
+    }
+    // Drag DOWN on handle -> Restore map!
+    else if (isScrolled && diffY < -15) {
+      setIsScrolled(false);
+      touchStartY.current = currentY;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchStartY.current = null;
+  };
+
+  // Pointer drag gesture for the pull handle (mouse click & drag or stylus)
+  const handleHandlePointerDown = (e: React.PointerEvent) => {
+    isPointerDragging.current = true;
+    pointerStartY.current = e.clientY;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (_) {}
+  };
+
+  const handleHandlePointerMove = (e: React.PointerEvent) => {
+    if (!isPointerDragging.current) return;
+    const diffY = pointerStartY.current - e.clientY;
+    if (!isScrolled && diffY > 12) {
+      setIsScrolled(true);
+      isPointerDragging.current = false;
+    } else if (isScrolled && diffY < -12) {
+      setIsScrolled(false);
+      isPointerDragging.current = false;
+    }
+  };
+
+  const handleHandlePointerUp = (e: React.PointerEvent) => {
+    isPointerDragging.current = false;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch (_) {}
+  };
 
 
 
@@ -1305,9 +1362,9 @@ export function Housing() {
 
   return (
     <AppLayout noPad={true}>
-      <div className="w-full min-h-screen bg-[#FAFAFA] pb-16">
+      <div className="w-full h-[calc(100dvh-4rem)] lg:h-[calc(100vh)] flex flex-col overflow-hidden bg-[#FAFAFA]">
         {/* ── TOP STICKY BAR: Search Housing & Purpose Filter ────────────────── */}
-        <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 sm:px-6 shadow-2xs">
+        <div className="flex-shrink-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 sm:px-6 shadow-2xs">
           <div className="max-w-7xl mx-auto flex items-center gap-3">
             <button
               onClick={() => navigate(-1)}
@@ -1361,11 +1418,14 @@ export function Housing() {
           </div>
         </div>
 
-        {/* ── BARIKOI LIVE MAP (EXPANDED / COMPACT STICKY HEIGHT) ────── */}
-        <div id="housing-map-section" className={`w-full max-w-7xl mx-auto px-2 sm:px-4 sticky top-[86px] sm:top-[90px] md:top-[90px] lg:top-[90px] z-20 transition-all duration-300 ${
-          isScrolled ? "pt-0 pb-3.5 sm:pb-4 bg-[#FAFAFA]" : "pt-2 sm:pt-3 pb-0 bg-[#FAFAFA]"
-        }`}>
-          <div className="rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm bg-white">
+        {/* ── BARIKOI LIVE MAP (FIXED HEIGHT BY DEFAULT - COLLAPSES TO 0 ON FULL SCREEN) ────── */}
+        <div
+          id="housing-map-section"
+          className={`w-full max-w-7xl mx-auto px-0 flex-shrink-0 z-10 transition-all duration-300 ease-out overflow-hidden ${
+            isScrolled ? "max-h-0 opacity-0 pointer-events-none" : "max-h-[800px] opacity-100"
+          }`}
+        >
+          <div className="rounded-none sm:rounded-b-2xl overflow-hidden border-b border-slate-200/90 shadow-xs bg-white">
             <BariKoiLiveHousingMap
               userCoords={userCoords}
               isLocationGranted={isLocationGranted}
@@ -1387,45 +1447,68 @@ export function Housing() {
               savedIds={savedIds}
               onToggleSave={toggleSave}
               isScrolled={isScrolled}
+              onToggleSize={() => setIsScrolled(prev => !prev)}
               searchQuery={searchQuery}
               countryCode={countryCode}
             />
           </div>
         </div>
 
-        {/* ── MAIN HOUSING DIRECTORY CONTENT (1-COL MOBILE, 2-COL PAD, 3-COL DESKTOP) ── */}
-        <div className="max-w-7xl mx-auto px-0 sm:px-6 pt-3 sm:pt-4 relative z-0">
-          {/* Toggle Button Header */}
-          <div className="grid grid-cols-2 gap-2.5 mb-4 max-w-md px-4 sm:px-0">
+        {/* ── MAIN HOUSING DIRECTORY CONTENT (UPORE / ON TOP - FIXED MAP, FREE CARD SCROLL, PULL HANDLE FOR FULL SCREEN) ── */}
+        <div
+          ref={cardListRef}
+          className="flex-1 min-h-0 overflow-y-auto max-w-7xl w-full mx-auto px-0 sm:px-6 relative z-20 bg-[#FAFAFA] rounded-t-3xl shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-2 sm:-mt-3 pb-24"
+        >
+          {/* Sticky Header: Pull handle ("black shadow line") + Toggle Button Header */}
+          <div className="sticky top-0 z-30 bg-[#FAFAFA]/95 backdrop-blur-md pt-2 pb-2.5 px-4 sm:px-0 border-b border-slate-200/60 shadow-2xs">
+            {/* Pull handle indicator ("black shadow line" - Pull up for full screen / pull down to restore) */}
             <div
-              onClick={() => setActiveFilter("nearby")}
-              className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border text-center transition-all cursor-pointer active:scale-99 ${
-                activeFilter === "nearby"
-                  ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
-                  : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
-              }`}
+              onPointerDown={handleHandlePointerDown}
+              onPointerMove={handleHandlePointerMove}
+              onPointerUp={handleHandlePointerUp}
+              onPointerCancel={handleHandlePointerUp}
+              onTouchStart={handleHandleTouchStart}
+              onTouchMove={handleHandleTouchMove}
+              onTouchEnd={handleHandleTouchEnd}
+              onClick={() => setIsScrolled(prev => !prev)}
+              className="w-full flex flex-col items-center justify-center py-2 cursor-grab active:cursor-grabbing select-none group touch-none"
+              title={isScrolled ? "Pull down or click to show map" : "Pull up for full screen"}
             >
-              <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
-                {nearbyHousing.length} Nearby
-              </div>
+              <div className="w-14 h-1.5 bg-slate-300 group-hover:bg-slate-400 group-active:bg-slate-500 rounded-full transition-all shadow-xs" />
             </div>
 
-            <div
-              onClick={() => setActiveFilter("all")}
-              className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border text-center transition-all cursor-pointer active:scale-99 ${
-                activeFilter === "all"
-                  ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
-                  : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
-              }`}
-            >
-              <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
-                {liveHousing.length} Full State
+            {/* Toggle Button Header */}
+            <div className="grid grid-cols-2 gap-2.5 max-w-md pt-1">
+              <div
+                onClick={() => setActiveFilter("nearby")}
+                className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border text-center transition-all cursor-pointer active:scale-99 ${
+                  activeFilter === "nearby"
+                    ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
+                    : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
+                }`}
+              >
+                <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
+                  {nearbyHousing.length} Nearby
+                </div>
+              </div>
+
+              <div
+                onClick={() => setActiveFilter("all")}
+                className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border text-center transition-all cursor-pointer active:scale-99 ${
+                  activeFilter === "all"
+                    ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
+                    : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
+                }`}
+              >
+                <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
+                  {liveHousing.length} Full State
+                </div>
               </div>
             </div>
           </div>
 
           {/* Equal Grid of Housing Cards (1 on mobile, 2 on pad, 3 on desktop) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-0 sm:gap-5 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-0 sm:gap-5 items-stretch pt-3 px-4 sm:px-0">
             {(activeFilter === "nearby" ? nearbyHousing : filteredHousing).map(listing => {
               const isSelected = selectedListing?.id === listing.id;
               const isSaved = savedIds.includes(listing.id);
@@ -1440,7 +1523,7 @@ export function Housing() {
                     else cardRefs.current.delete(listing.id);
                   }}
                   onClick={() => setSelectedListing(listing)}
-                  className={`group bg-white rounded-none sm:rounded-3xl border-0 sm:border border-slate-200/90 overflow-hidden transition-all duration-200 cursor-pointer flex flex-col justify-between h-full shadow-none sm:shadow-2xs ${
+                  className={`group bg-white rounded-none sm:rounded-3xl border-0 sm:border border-slate-200/90 overflow-hidden transition-all duration-150 ease-out cursor-pointer flex flex-col justify-between h-full shadow-none sm:shadow-2xs ${
                     isSelected
                       ? "sm:border-[#C04A22] sm:ring-2 sm:ring-[#C04A22]/20 sm:shadow-md"
                       : "sm:border-slate-200/90 sm:hover:border-slate-300 sm:hover:shadow-xs"
@@ -1453,7 +1536,7 @@ export function Housing() {
                       <img
                         src={listing.image}
                         alt={listing.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         loading="lazy"
                       />
                       {/* Top-Right: Purpose Badge (Rent / Purchase) */}
