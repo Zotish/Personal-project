@@ -89,7 +89,7 @@ function BariKoiLiveHousingMap({
   savedIds,
   onToggleSave,
   isScrolled,
-  onToggleSize,
+  dragMapHeight,
   searchQuery,
   countryCode,
 }: {
@@ -110,7 +110,7 @@ function BariKoiLiveHousingMap({
   savedIds?: string[];
   onToggleSave?: (id: string) => void;
   isScrolled?: boolean;
-  onToggleSize?: () => void;
+  dragMapHeight?: number | null;
   searchQuery?: string;
   countryCode?: string;
 }) {
@@ -594,26 +594,7 @@ function BariKoiLiveHousingMap({
     }
   }, [directionListing, selectedListing, userCoords]);
 
-  // Zoom out to show user location and nearby listings when map is compact
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || directionListing || selectedListing) return;
-
-    if (map.resize) {
-      try { map.resize(); } catch (_) {}
-    }
-
-    if (map.flyTo) {
-      map.flyTo({
-        center: [userCoords[1], userCoords[0]],
-        zoom: isScrolled ? 14.2 : 14.8,
-        duration: 400,
-        essential: true
-      });
-    } else if (map.setView) {
-      map.setView(userCoords, isScrolled ? 14.2 : 14.8);
-    }
-  }, [isScrolled, userCoords, directionListing, selectedListing]);
+  // User pinpoint center is continuously handled in synchronized 60fps camera effect below
 
   // Zoom Controls
   const handleZoomIn = () => {
@@ -654,61 +635,96 @@ function BariKoiLiveHousingMap({
     }
   }, [directionListing]);
 
-  // Resize map cleanly when height changes
+  // Smoothly sync map size and camera with bottom sheet up/down motion (60fps continuous WebGL resize)
   useEffect(() => {
-    const handleResize = () => {
-      if (!mapRef.current) return;
-      if (mapRef.current.resize) {
-        mapRef.current.resize();
-      } else if (mapRef.current.invalidateSize) {
-        mapRef.current.invalidateSize();
-      }
+    const map = mapRef.current;
+    if (!map) return;
 
-      if (directionListing && lastCoordinatesRef.current && lastCoordinatesRef.current.length > 0) {
-        const coords = lastCoordinatesRef.current;
-        if (mapRef.current.fitBounds) {
-          let minLng = coords[0][0], maxLng = coords[0][0];
-          let minLat = coords[0][1], maxLat = coords[0][1];
-          coords.forEach(([cLng, cLat]) => {
-            if (cLng < minLng) minLng = cLng;
-            if (cLng > maxLng) maxLng = cLng;
-            if (cLat < minLat) minLat = cLat;
-            if (cLat > maxLat) maxLat = cLat;
-          });
-          mapRef.current.fitBounds(
-            [[minLng, minLat], [maxLng, maxLat]],
-            { padding: 35, maxZoom: 16.5, duration: 600 }
-          );
-        } else if (LRef.current && mapRef.current.fitBounds) {
-          const latLngs = coords.map(([lng, lat]) => [lat, lng]);
-          const bounds = LRef.current.latLngBounds(latLngs);
-          mapRef.current.fitBounds(bounds, { padding: [35, 35], maxZoom: 16.5 });
-        }
-      } else if (!selectedListing) {
-        // Re-center on user's exact pinpoint in the new canvas dimensions
-        if (mapRef.current.flyTo) {
-          mapRef.current.flyTo({
-            center: [userCoords[1], userCoords[0]],
-            zoom: isScrolled ? 14.2 : 14.8,
-            duration: 300,
-            essential: true
-          });
-        } else if (mapRef.current.setView) {
-          mapRef.current.setView(userCoords, isScrolled ? 14.2 : 14.8);
+    // Smooth camera ease to focus on user pinpoint with appropriate zoom for sheet position
+    if (!directionListing && !selectedListing) {
+      if (map.easeTo) {
+        map.easeTo({
+          center: [userCoords[1], userCoords[0]],
+          zoom: isScrolled ? 14.0 : 14.8,
+          duration: 300,
+          easing: (t: number) => t * (2 - t)
+        });
+      } else if (map.flyTo) {
+        map.flyTo({
+          center: [userCoords[1], userCoords[0]],
+          zoom: isScrolled ? 14.0 : 14.8,
+          duration: 300,
+          essential: true
+        });
+      } else if (map.setView) {
+        map.setView(userCoords, isScrolled ? 14.0 : 14.8);
+      }
+    } else if (directionListing && lastCoordinatesRef.current && lastCoordinatesRef.current.length > 0) {
+      const coords = lastCoordinatesRef.current;
+      if (map.fitBounds) {
+        let minLng = coords[0][0], maxLng = coords[0][0];
+        let minLat = coords[0][1], maxLat = coords[0][1];
+        coords.forEach(([cLng, cLat]) => {
+          if (cLng < minLng) minLng = cLng;
+          if (cLng > maxLng) maxLng = cLng;
+          if (cLat < minLat) minLat = cLat;
+          if (cLat > maxLat) maxLat = cLat;
+        });
+        map.fitBounds(
+          [[minLng, minLat], [maxLng, maxLat]],
+          { padding: isScrolled ? 35 : 55, maxZoom: 16.5, duration: 300 }
+        );
+      } else if (LRef.current && map.fitBounds) {
+        const latLngs = coords.map(([lng, lat]) => [lat, lng]);
+        const bounds = LRef.current.latLngBounds(latLngs);
+        map.fitBounds(bounds, { padding: [35, 35], maxZoom: 16.5 });
+      }
+    }
+
+    // Continuously resize map viewport on every animation frame during the 300ms CSS height transition
+    let rafId: number;
+    const start = performance.now();
+    const duration = 320;
+
+    const tick = (now: number) => {
+      if (map.resize) {
+        try { map.resize(); } catch (_) {}
+      } else if (map.invalidateSize) {
+        try { map.invalidateSize(); } catch (_) {}
+      }
+      if (now - start < duration) {
+        rafId = requestAnimationFrame(tick);
+      } else {
+        if (map.resize) {
+          try { map.resize(); } catch (_) {}
+        } else if (map.invalidateSize) {
+          try { map.invalidateSize(); } catch (_) {}
         }
       }
     };
 
-    // Clean resize after CSS transition finishes (avoids WebGL redraw thrashing)
-    const timer = setTimeout(handleResize, 160);
-    return () => clearTimeout(timer);
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
   }, [directionListing, isNavCardMinimized, isScrolled, userCoords, selectedListing]);
 
+  // Live real-time WebGL canvas resize during active mouse / finger dragging
+  useEffect(() => {
+    if (dragMapHeight === null || dragMapHeight === undefined) return;
+    const map = mapRef.current;
+    if (!map) return;
+    if (map.resize) {
+      try { map.resize(); } catch (_) {}
+    } else if (map.invalidateSize) {
+      try { map.invalidateSize(); } catch (_) {}
+    }
+  }, [dragMapHeight]);
+
   return (
-    <div className="w-full flex flex-col bg-white overflow-hidden transition-all duration-150 ease-out">
+    <div className="w-full flex flex-col bg-white overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]">
       {/* ── MAP CONTAINER (Dynamic Height depending on scroll & route state) ── */}
       <div
-        className={`relative w-full transition-[height] duration-150 ease-out ${
+        style={dragMapHeight !== null && dragMapHeight !== undefined ? { height: `${dragMapHeight}px`, transition: 'none' } : undefined}
+        className={`relative w-full ${dragMapHeight !== null && dragMapHeight !== undefined ? '' : 'transition-[height] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]'} ${
           directionListing
             ? isNavCardMinimized
               ? "h-[380px] sm:h-[470px] md:h-[530px] lg:h-[590px]"
@@ -858,22 +874,6 @@ function BariKoiLiveHousingMap({
             >
               <Minus className="w-4 h-4 stroke-[2.2]" />
             </button>
-            {onToggleSize && (
-              <>
-                <div className="w-full h-px bg-slate-100" />
-                <button
-                  onClick={onToggleSize}
-                  className="w-8.5 h-8.5 flex items-center justify-center text-slate-700 hover:text-[#D85A30] hover:bg-slate-50 transition cursor-pointer"
-                  title={isScrolled ? "Expand Map" : "Compact Map"}
-                >
-                  {isScrolled ? (
-                    <ChevronDown className="w-4 h-4 stroke-[2.2]" />
-                  ) : (
-                    <ChevronUp className="w-4 h-4 stroke-[2.2]" />
-                  )}
-                </button>
-              </>
-            )}
           </div>
           {/* Floating Navigation Button */}
           <button
@@ -1226,37 +1226,105 @@ export function Housing() {
   // Smooth scroll detection for dynamic map resizing
   const cardListRef = useRef<HTMLDivElement>(null);
 
-  const handleCardListScroll = () => {
-    if (!cardListRef.current) return;
-    const y = cardListRef.current.scrollTop;
-    if (y > 25 && !isScrolled) {
-      setIsScrolled(true);
-    } else if (y <= 5 && isScrolled) {
+  // Uber-style 1:1 real-time drag tracking for mouse & touch
+  const [dragMapHeight, setDragMapHeight] = useState<number | null>(null);
+  const isDraggingRef = useRef<boolean>(false);
+  const startDragYRef = useRef<number>(0);
+  const startMapHeightRef = useRef<number>(0);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+
+    const mapEl = document.getElementById("housing-map-section")?.querySelector(".relative.w-full");
+    const currentH = mapEl ? mapEl.getBoundingClientRect().height : (isScrolled ? 240 : 500);
+
+    startDragYRef.current = e.clientY;
+    startMapHeightRef.current = currentH;
+    isDraggingRef.current = true;
+    setDragMapHeight(currentH);
+
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "grabbing";
+
+    const isMobile = window.innerWidth < 640;
+    const minH = isMobile ? 210 : 260;
+    const maxH = isMobile ? 440 : 580;
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      if (!isDraggingRef.current) return;
+      const deltaY = moveEvent.clientY - startDragYRef.current;
+      const nextH = Math.min(maxH, Math.max(minH, startMapHeightRef.current + deltaY));
+      setDragMapHeight(nextH);
+    };
+
+    const onPointerUp = (upEvent: PointerEvent) => {
+      if (!isDraggingRef.current) return;
+      isDraggingRef.current = false;
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+
+      const totalDeltaY = upEvent.clientY - startDragYRef.current;
+
+      if (Math.abs(totalDeltaY) < 6) {
+        setDragMapHeight(null);
+        setIsScrolled(prev => {
+          const next = !prev;
+          if (!next && cardListRef.current) cardListRef.current.scrollTop = 0;
+          return next;
+        });
+        return;
+      }
+
+      const midPoint = (minH + maxH) / 2;
+      const finalH = Math.min(maxH, Math.max(minH, startMapHeightRef.current + totalDeltaY));
+
+      if (finalH < midPoint) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+        if (cardListRef.current) cardListRef.current.scrollTop = 0;
+      }
+      setDragMapHeight(null);
+    };
+
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    window.addEventListener("pointerup", onPointerUp, { once: true });
+  };
+
+  // Card list touch gestures (pull-down when at top expands map, swipe-up when expanded compacts map)
+  const listTouchStartYRef = useRef<number | null>(null);
+
+  const handleListTouchStart = (e: React.TouchEvent) => {
+    listTouchStartYRef.current = e.touches[0].clientY;
+  };
+
+  const handleListTouchMove = (e: React.TouchEvent) => {
+    if (listTouchStartYRef.current === null || !cardListRef.current) return;
+    const deltaY = e.touches[0].clientY - listTouchStartYRef.current;
+
+    if (cardListRef.current.scrollTop <= 2 && deltaY > 30 && isScrolled) {
       setIsScrolled(false);
+      listTouchStartYRef.current = null;
+    } else if (!isScrolled && deltaY < -30) {
+      setIsScrolled(true);
+      listTouchStartYRef.current = null;
     }
   };
 
-  useEffect(() => {
-    let ticking = false;
+  const handleListTouchEnd = () => {
+    listTouchStartYRef.current = null;
+  };
 
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const y = window.scrollY;
-          if (y > 100 && !isScrolled) {
-            setIsScrolled(true);
-          } else if (y <= 15 && isScrolled) {
-            setIsScrolled(false);
-          }
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [isScrolled]);
+  // Smooth scroll detection for dynamic map resizing
+  const handleCardListScroll = () => {
+    if (!cardListRef.current) return;
+    const y = cardListRef.current.scrollTop;
+    if (y > 20 && !isScrolled) {
+      setIsScrolled(true);
+    }
+  };
 
 
 
@@ -1440,7 +1508,7 @@ export function Housing() {
               savedIds={savedIds}
               onToggleSave={toggleSave}
               isScrolled={isScrolled}
-              onToggleSize={() => setIsScrolled(prev => !prev)}
+              dragMapHeight={dragMapHeight}
               searchQuery={searchQuery}
               countryCode={countryCode}
             />
@@ -1451,15 +1519,18 @@ export function Housing() {
         <div
           ref={cardListRef}
           onScroll={handleCardListScroll}
+          onTouchStart={handleListTouchStart}
+          onTouchMove={handleListTouchMove}
+          onTouchEnd={handleListTouchEnd}
           className="flex-1 min-h-0 overflow-y-auto max-w-7xl w-full mx-auto px-0 sm:px-6 pt-2 sm:pt-4 relative z-20 bg-[#FAFAFA] rounded-t-3xl shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-2 sm:-mt-3 pb-24"
         >
-          {/* Uber-style pull handle indicator (Click to expand/compact map smoothly) */}
+          {/* Uber-style pull handle indicator (Live 1:1 mouse/touch drag tracker) */}
           <div
-            onClick={() => setIsScrolled(prev => !prev)}
-            className="w-full flex items-center justify-center py-2 cursor-pointer group"
-            title={isScrolled ? "Expand Map" : "Compact Map"}
+            onPointerDown={handlePointerDown}
+            className="w-full flex items-center justify-center py-3 cursor-grab active:cursor-grabbing select-none group touch-none"
+            title={isScrolled ? "Drag down to expand map" : "Drag up to compact map"}
           >
-            <div className="w-12 h-1.5 bg-slate-300 group-hover:bg-slate-400 rounded-full transition-colors" />
+            <div className="w-12 h-1.5 bg-slate-300 group-hover:bg-slate-400 active:bg-slate-500 rounded-full transition-colors" />
           </div>
           {/* Toggle Button Header */}
           <div className="grid grid-cols-2 gap-2.5 mb-4 max-w-md px-4 sm:px-0">

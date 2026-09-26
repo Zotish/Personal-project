@@ -76,7 +76,7 @@ function BariKoiMissionMap({
   onClearDirection,
   onShowDirection,
   isScrolled,
-  onToggleSize,
+  dragMapHeight,
   countryCode,
 }: {
   userCoords: [number, number];
@@ -87,7 +87,7 @@ function BariKoiMissionMap({
   onClearDirection: () => void;
   onShowDirection: (mission: ConsularMission) => void;
   isScrolled?: boolean;
-  onToggleSize?: () => void;
+  dragMapHeight?: number | null;
   countryCode?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -406,56 +406,76 @@ function BariKoiMissionMap({
     }
   }, [directionMission, userCoords, travelMode]);
 
-  // Always center directly on user's exact pinpoint location
+  // Smoothly sync map size and camera with bottom sheet up/down motion (60fps continuous WebGL resize)
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || directionMission || selectedMission) return;
+    if (!map) return;
 
-    if (map.resize) {
-      try { map.resize(); } catch (_) {}
+    // Smooth camera ease to focus on user pinpoint with appropriate zoom for sheet position
+    if (!directionMission && !selectedMission) {
+      if (map.easeTo) {
+        map.easeTo({
+          center: [userCoords[1], userCoords[0]],
+          zoom: isScrolled ? 14.0 : 14.8,
+          duration: 300,
+          easing: (t: number) => t * (2 - t)
+        });
+      } else if (map.flyTo) {
+        map.flyTo({
+          center: [userCoords[1], userCoords[0]],
+          zoom: isScrolled ? 14.0 : 14.8,
+          duration: 300,
+          essential: true
+        });
+      } else if (map.setView) {
+        map.setView([userCoords[0], userCoords[1]], isScrolled ? 14.0 : 14.8);
+      }
     }
 
-    if (map.flyTo) {
-      map.flyTo({
-        center: [userCoords[1], userCoords[0]],
-        zoom: isScrolled ? 14.2 : 14.8,
-        duration: 400,
-        essential: true
-      });
-    } else if (map.setView) {
-      map.setView([userCoords[0], userCoords[1]], isScrolled ? 14.2 : 14.8);
-    }
-  }, [isScrolled, userCoords, directionMission, selectedMission]);
+    // Continuously resize map viewport on every animation frame during the 300ms CSS height transition
+    let rafId: number;
+    const start = performance.now();
+    const duration = 320;
 
-  // Clean resize after CSS transition finishes (avoids WebGL redraw thrashing)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (mapRef.current) {
-        if (mapRef.current.resize) mapRef.current.resize();
-        else if (mapRef.current.invalidateSize) mapRef.current.invalidateSize();
-
-        if (!directionMission && !selectedMission) {
-          if (mapRef.current.flyTo) {
-            mapRef.current.flyTo({
-              center: [userCoords[1], userCoords[0]],
-              zoom: isScrolled ? 14.2 : 14.8,
-              duration: 300,
-              essential: true
-            });
-          } else if (mapRef.current.setView) {
-            mapRef.current.setView([userCoords[0], userCoords[1]], isScrolled ? 14.2 : 14.8);
-          }
+    const tick = (now: number) => {
+      if (map.resize) {
+        try { map.resize(); } catch (_) {}
+      } else if (map.invalidateSize) {
+        try { map.invalidateSize(); } catch (_) {}
+      }
+      if (now - start < duration) {
+        rafId = requestAnimationFrame(tick);
+      } else {
+        if (map.resize) {
+          try { map.resize(); } catch (_) {}
+        } else if (map.invalidateSize) {
+          try { map.invalidateSize(); } catch (_) {}
         }
       }
-    }, 160);
-    return () => clearTimeout(timer);
+    };
+
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
   }, [directionMission, isNavCardMinimized, isScrolled, userCoords, selectedMission]);
 
+  // Live real-time WebGL canvas resize during active mouse / finger dragging
+  useEffect(() => {
+    if (dragMapHeight === null || dragMapHeight === undefined) return;
+    const map = mapRef.current;
+    if (!map) return;
+    if (map.resize) {
+      try { map.resize(); } catch (_) {}
+    } else if (map.invalidateSize) {
+      try { map.invalidateSize(); } catch (_) {}
+    }
+  }, [dragMapHeight]);
+
   return (
-    <div className="w-full flex flex-col bg-white overflow-hidden transition-all duration-150 ease-out">
+    <div className="w-full flex flex-col bg-white overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]">
       {/* ── MAP CONTAINER (Dynamic Height depending on scroll & route state) ── */}
       <div
-        className={`relative w-full transition-[height] duration-150 ease-out ${
+        style={dragMapHeight !== null && dragMapHeight !== undefined ? { height: `${dragMapHeight}px`, transition: 'none' } : undefined}
+        className={`relative w-full ${dragMapHeight !== null && dragMapHeight !== undefined ? '' : 'transition-[height] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]'} ${
           directionMission
             ? isNavCardMinimized
               ? "h-[320px] sm:h-[380px]"
@@ -551,19 +571,6 @@ function BariKoiMissionMap({
           >
             <Minus className="w-4.5 h-4.5" />
           </button>
-          {onToggleSize && (
-            <button
-              onClick={onToggleSize}
-              className="w-9 h-9 rounded-xl bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 shadow-md border border-slate-200/80 flex items-center justify-center transition cursor-pointer hover:text-emerald-700"
-              title={isScrolled ? "Expand Map" : "Compact Map"}
-            >
-              {isScrolled ? (
-                <ChevronDown className="w-4.5 h-4.5" />
-              ) : (
-                <ChevronUp className="w-4.5 h-4.5" />
-              )}
-            </button>
-          )}
         </div>
       </div>
 
@@ -816,37 +823,105 @@ export function Embassy() {
   // Smooth scroll detection for dynamic map resizing
   const cardListRef = useRef<HTMLDivElement>(null);
 
-  const handleCardListScroll = () => {
-    if (!cardListRef.current) return;
-    const y = cardListRef.current.scrollTop;
-    if (y > 25 && !isScrolled) {
-      setIsScrolled(true);
-    } else if (y <= 5 && isScrolled) {
+  // Uber-style 1:1 real-time drag tracking for mouse & touch
+  const [dragMapHeight, setDragMapHeight] = useState<number | null>(null);
+  const isDraggingRef = useRef<boolean>(false);
+  const startDragYRef = useRef<number>(0);
+  const startMapHeightRef = useRef<number>(0);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+
+    const mapEl = document.getElementById("embassy-map-section")?.querySelector(".relative.w-full");
+    const currentH = mapEl ? mapEl.getBoundingClientRect().height : (isScrolled ? 200 : 350);
+
+    startDragYRef.current = e.clientY;
+    startMapHeightRef.current = currentH;
+    isDraggingRef.current = true;
+    setDragMapHeight(currentH);
+
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "grabbing";
+
+    const isMobile = window.innerWidth < 640;
+    const minH = isMobile ? 190 : 210;
+    const maxH = isMobile ? 320 : 380;
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      if (!isDraggingRef.current) return;
+      const deltaY = moveEvent.clientY - startDragYRef.current;
+      const nextH = Math.min(maxH, Math.max(minH, startMapHeightRef.current + deltaY));
+      setDragMapHeight(nextH);
+    };
+
+    const onPointerUp = (upEvent: PointerEvent) => {
+      if (!isDraggingRef.current) return;
+      isDraggingRef.current = false;
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+
+      const totalDeltaY = upEvent.clientY - startDragYRef.current;
+
+      if (Math.abs(totalDeltaY) < 6) {
+        setDragMapHeight(null);
+        setIsScrolled(prev => {
+          const next = !prev;
+          if (!next && cardListRef.current) cardListRef.current.scrollTop = 0;
+          return next;
+        });
+        return;
+      }
+
+      const midPoint = (minH + maxH) / 2;
+      const finalH = Math.min(maxH, Math.max(minH, startMapHeightRef.current + totalDeltaY));
+
+      if (finalH < midPoint) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+        if (cardListRef.current) cardListRef.current.scrollTop = 0;
+      }
+      setDragMapHeight(null);
+    };
+
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    window.addEventListener("pointerup", onPointerUp, { once: true });
+  };
+
+  // Card list touch gestures (pull-down when at top expands map, swipe-up when expanded compacts map)
+  const listTouchStartYRef = useRef<number | null>(null);
+
+  const handleListTouchStart = (e: React.TouchEvent) => {
+    listTouchStartYRef.current = e.touches[0].clientY;
+  };
+
+  const handleListTouchMove = (e: React.TouchEvent) => {
+    if (listTouchStartYRef.current === null || !cardListRef.current) return;
+    const deltaY = e.touches[0].clientY - listTouchStartYRef.current;
+
+    if (cardListRef.current.scrollTop <= 2 && deltaY > 30 && isScrolled) {
       setIsScrolled(false);
+      listTouchStartYRef.current = null;
+    } else if (!isScrolled && deltaY < -30) {
+      setIsScrolled(true);
+      listTouchStartYRef.current = null;
     }
   };
 
-  useEffect(() => {
-    let ticking = false;
+  const handleListTouchEnd = () => {
+    listTouchStartYRef.current = null;
+  };
 
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const y = window.scrollY;
-          if (y > 100 && !isScrolled) {
-            setIsScrolled(true);
-          } else if (y <= 15 && isScrolled) {
-            setIsScrolled(false);
-          }
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [isScrolled]);
+  // Smooth scroll detection for dynamic map resizing
+  const handleCardListScroll = () => {
+    if (!cardListRef.current) return;
+    const y = cardListRef.current.scrollTop;
+    if (y > 20 && !isScrolled) {
+      setIsScrolled(true);
+    }
+  };
 
   const toggleSave = (id: string) => {
     setSavedServiceIds(prev =>
@@ -924,7 +999,7 @@ export function Embassy() {
               }}
               onShowDirection={handleShowDirection}
               isScrolled={isScrolled}
-              onToggleSize={() => setIsScrolled(prev => !prev)}
+              dragMapHeight={dragMapHeight}
               countryCode={countryCode}
             />
           </div>
@@ -934,15 +1009,18 @@ export function Embassy() {
         <div
           ref={cardListRef}
           onScroll={handleCardListScroll}
+          onTouchStart={handleListTouchStart}
+          onTouchMove={handleListTouchMove}
+          onTouchEnd={handleListTouchEnd}
           className="flex-1 min-h-0 overflow-y-auto w-full max-w-7xl mx-auto px-1 sm:px-2 pt-2 sm:pt-4 relative z-20 bg-[#FAFAFA] rounded-t-3xl shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-2 sm:-mt-3 pb-24"
         >
-          {/* Uber-style pull handle indicator (Click to expand/compact map smoothly) */}
+          {/* Uber-style pull handle indicator (Live 1:1 mouse/touch drag tracker) */}
           <div
-            onClick={() => setIsScrolled(prev => !prev)}
-            className="w-full flex items-center justify-center py-2 cursor-pointer group"
-            title={isScrolled ? "Expand Map" : "Compact Map"}
+            onPointerDown={handlePointerDown}
+            className="w-full flex items-center justify-center py-3 cursor-grab active:cursor-grabbing select-none group touch-none"
+            title={isScrolled ? "Drag down to expand map" : "Drag up to compact map"}
           >
-            <div className="w-12 h-1.5 bg-slate-300 group-hover:bg-slate-400 rounded-full transition-colors" />
+            <div className="w-12 h-1.5 bg-slate-300 group-hover:bg-slate-400 active:bg-slate-500 rounded-full transition-colors" />
           </div>
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden divide-y divide-slate-100">
             {filteredServices.map(service => (
