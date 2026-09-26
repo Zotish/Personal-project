@@ -1040,36 +1040,43 @@ export function Embassy() {
         </div>
 
         {/* ── MAIN DIRECTORY CONTENT: Clean Minimalist List of Consular Services (UPORE / ON TOP) ── */}
-        <div
-          ref={cardListRef}
-          onScroll={handleCardListScroll}
-          onTouchStart={handleListTouchStart}
-          onTouchMove={handleListTouchMove}
-          onTouchEnd={handleListTouchEnd}
-          className="flex-1 min-h-0 overflow-y-auto w-full max-w-7xl mx-auto px-1 sm:px-2 pt-2 sm:pt-4 relative z-20 bg-[#FAFAFA] rounded-t-3xl shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-2 sm:-mt-3 pb-24"
-        >
-          {/* Uber-style pull handle indicator (Live 1:1 mouse/touch drag tracker) */}
-          <div
-            onPointerDown={handlePointerDown}
-            className="w-full flex items-center justify-center py-3 cursor-grab active:cursor-grabbing select-none group touch-none"
-          >
-            <div className="w-12 h-1.5 bg-slate-300 group-hover:bg-slate-400 active:bg-slate-500 rounded-full transition-colors" />
+        <div className="flex-1 min-h-[120px] flex flex-col w-full max-w-7xl mx-auto px-1 sm:px-2 relative z-20 bg-[#FAFAFA] rounded-t-3xl shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-2 sm:-mt-3 overflow-hidden">
+          {/* ── PINNED BOTTOM SHEET HEADER: Handle bar (NEVER HIDES!) ── */}
+          <div className="flex-shrink-0 bg-[#FAFAFA] rounded-t-3xl pt-2 sm:pt-3 select-none">
+            {/* Uber-style pull handle indicator (Live 1:1 mouse/touch drag tracker) */}
+            <div
+              onPointerDown={handlePointerDown}
+              className="w-full flex items-center justify-center py-2.5 cursor-grab active:cursor-grabbing select-none group touch-none"
+            >
+              <div className="w-12 h-1.5 bg-slate-300 group-hover:bg-slate-400 active:bg-slate-500 rounded-full transition-colors" />
+            </div>
           </div>
-          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden divide-y divide-slate-100">
-            {filteredServices.map(service => (
-              <button
-                key={service.id}
-                onClick={() => setActiveServiceModal(service)}
-                className="group w-full flex items-center justify-between px-4 py-3.5 sm:px-5 sm:py-4 hover:bg-slate-50 transition-all text-left cursor-pointer active:scale-[0.99]"
-                title={service.title}
-              >
-                <span className="text-sm sm:text-base font-medium text-slate-900 group-hover:text-emerald-900 transition-colors">
-                  {service.shortName}
-                </span>
 
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-700 transition-colors flex-shrink-0" />
-              </button>
-            ))}
+          {/* ── SCROLLABLE SERVICES LIST ── */}
+          <div
+            ref={cardListRef}
+            onScroll={handleCardListScroll}
+            onTouchStart={handleListTouchStart}
+            onTouchMove={handleListTouchMove}
+            onTouchEnd={handleListTouchEnd}
+            className="flex-1 min-h-0 overflow-y-auto px-1 sm:px-2 pb-24"
+          >
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden divide-y divide-slate-100">
+              {filteredServices.map(service => (
+                <button
+                  key={service.id}
+                  onClick={() => setActiveServiceModal(service)}
+                  className="group w-full flex items-center justify-between px-4 py-3.5 sm:px-5 sm:py-4 hover:bg-slate-50 transition-all text-left cursor-pointer active:scale-[0.99]"
+                  title={service.title}
+                >
+                  <span className="text-sm sm:text-base font-medium text-slate-900 group-hover:text-emerald-900 transition-colors">
+                    {service.shortName}
+                  </span>
+
+                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-700 transition-colors flex-shrink-0" />
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

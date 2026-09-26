@@ -593,7 +593,7 @@ function InteractiveServiceMap({
               ? "h-0 overflow-hidden"
               : isScrolled
                 ? "h-[210px] sm:h-[240px] md:h-[260px] lg:h-[280px]"
-                : "h-[440px] sm:h-[520px] md:h-[580px] lg:h-[620px]"
+                : "h-[340px] sm:h-[460px] md:h-[520px] lg:h-[580px]"
         }`}
       >
         <div ref={mapContainerRef} className="w-full h-full" />
@@ -964,7 +964,8 @@ export function ServiceMapDirectory({
     const isMobile = window.innerWidth < 640;
     const minH = 0; // User can drag cart all the way to the top of the map!
     const midH = isMobile ? 210 : 250;
-    const maxH = isMobile ? 440 : 580;
+    const maxAllowedH = Math.max(160, (window.innerHeight || 800) - (isMobile ? 320 : 360));
+    const maxH = Math.min(isMobile ? 360 : 540, maxAllowedH);
     const currentH = mapEl ? mapEl.getBoundingClientRect().height : (sheetMode === "full" ? 0 : isScrolled ? midH : maxH);
 
     startDragYRef.current = e.clientY;
@@ -1310,52 +1311,58 @@ export function ServiceMapDirectory({
         </div>
 
         {/* ── MAIN DIRECTORY LISTINGS (UPORE / ON TOP - PAUSES RIGHT BELOW COMPACT MAP) ─────────── */}
-        <div
-          ref={cardListRef}
-          onScroll={handleCardListScroll}
-          onTouchStart={handleListTouchStart}
-          onTouchMove={handleListTouchMove}
-          onTouchEnd={handleListTouchEnd}
-          className="flex-1 min-h-0 overflow-y-auto max-w-7xl w-full mx-auto px-0 sm:px-6 pt-2 sm:pt-4 relative z-20 bg-[#FAFAFA] rounded-t-3xl shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-2 sm:-mt-3 pb-24"
-        >
-          {/* Uber-style pull handle indicator (Live 1:1 mouse/touch drag tracker) */}
+        <div className="flex-1 min-h-[145px] flex flex-col max-w-7xl w-full mx-auto px-0 sm:px-6 relative z-20 bg-[#FAFAFA] rounded-t-3xl shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-2 sm:-mt-3 overflow-hidden">
+          {/* ── PINNED BOTTOM SHEET HEADER: Handle bar + Filter Options (NEVER HIDES!) ── */}
+          <div className="flex-shrink-0 bg-[#FAFAFA] rounded-t-3xl pt-2 sm:pt-3 select-none border-b border-slate-200/40">
+            {/* Uber-style pull handle indicator (Live 1:1 mouse/touch drag tracker) */}
+            <div
+              onPointerDown={handlePointerDown}
+              className="w-full flex items-center justify-center py-2.5 cursor-grab active:cursor-grabbing select-none group touch-none"
+            >
+              <div className="w-12 h-1.5 bg-slate-300 group-hover:bg-slate-400 active:bg-slate-500 rounded-full transition-colors" />
+            </div>
+
+            {/* Nearby Filter Count */}
+            <div className="grid grid-cols-2 gap-2.5 pb-3 max-w-md px-4 sm:px-0">
+              <div
+                onClick={() => setActiveFilter(activeFilter === "nearby" ? "all" : "nearby")}
+                className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
+                  activeFilter === "nearby"
+                    ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
+                    : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
+                }`}
+              >
+                <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
+                  {nearbyItems.length} {serviceName} nearby
+                </div>
+              </div>
+
+              <div
+                onClick={() => setActiveFilter("all")}
+                className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
+                  activeFilter === "all"
+                    ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
+                    : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
+                }`}
+              >
+                <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
+                  {liveItems.length} total in {userCity}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── SCROLLABLE SERVICE ITEMS LIST ── */}
           <div
-            onPointerDown={handlePointerDown}
-            className="w-full flex items-center justify-center py-3 cursor-grab active:cursor-grabbing select-none group touch-none"
+            ref={cardListRef}
+            onScroll={handleCardListScroll}
+            onTouchStart={handleListTouchStart}
+            onTouchMove={handleListTouchMove}
+            onTouchEnd={handleListTouchEnd}
+            className="flex-1 min-h-0 overflow-y-auto px-0 sm:px-0 pb-24"
           >
-            <div className="w-12 h-1.5 bg-slate-300 group-hover:bg-slate-400 active:bg-slate-500 rounded-full transition-colors" />
-          </div>
-          {/* Nearby Filter Count */}
-          <div className="grid grid-cols-2 gap-2.5 mb-4 max-w-md px-4 sm:px-0">
-            <div
-              onClick={() => setActiveFilter(activeFilter === "nearby" ? "all" : "nearby")}
-              className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
-                activeFilter === "nearby"
-                  ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
-                  : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
-              }`}
-            >
-              <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
-                {nearbyItems.length} {serviceName} nearby
-              </div>
-            </div>
-
-            <div
-              onClick={() => setActiveFilter("all")}
-              className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
-                activeFilter === "all"
-                  ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
-                  : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
-              }`}
-            >
-              <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
-                {liveItems.length} total in {userCity}
-              </div>
-            </div>
-          </div>
-
-          {/* Card Container: Equal Grid across all devices */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-0 sm:gap-5 items-stretch">
+            {/* Card Container: Equal Grid across all devices */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-0 sm:gap-5 items-stretch">
             {(activeFilter === "nearby" ? nearbyItems : filteredItems).map(item => {
               const isSelected = selectedItem?.id === item.id;
               const isSaved = savedIds.includes(item.id);
@@ -1503,6 +1510,7 @@ export function ServiceMapDirectory({
           )}
         </div>
       </div>
+    </div>
 
       {/* Full Details Modal ("Explore a gele baki details dekhabe") */}
       <ServiceDetailsModal
