@@ -105,6 +105,7 @@ function InteractiveServiceMap({
   savedIds,
   onToggleSave,
   isScrolled,
+  sheetMode,
   dragMapHeight,
   searchQuery,
   themeColor = "#C04A22",
@@ -123,6 +124,7 @@ function InteractiveServiceMap({
   savedIds: string[];
   onToggleSave: (id: string) => void;
   isScrolled: boolean;
+  sheetMode?: "expanded" | "mid" | "full";
   dragMapHeight?: number | null;
   searchQuery: string;
   themeColor?: string;
@@ -583,12 +585,12 @@ function InteractiveServiceMap({
       <div
         style={dragMapHeight !== null && dragMapHeight !== undefined ? { height: `${dragMapHeight}px`, transition: 'none' } : undefined}
         className={`relative w-full ${dragMapHeight !== null && dragMapHeight !== undefined ? '' : 'transition-[height] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]'} ${
-          dragMapHeight !== null && dragMapHeight !== undefined
-            ? ''
-            : directionItem
-              ? isNavCardMinimized
-                ? "h-[380px] sm:h-[470px] md:h-[530px] lg:h-[590px]"
-                : "h-[240px] sm:h-[300px] md:h-[360px] lg:h-[400px]"
+          directionItem
+            ? isNavCardMinimized
+              ? "h-[380px] sm:h-[470px] md:h-[530px] lg:h-[590px]"
+              : "h-[240px] sm:h-[300px] md:h-[360px] lg:h-[400px]"
+            : sheetMode === "full"
+              ? "h-0 overflow-hidden"
               : isScrolled
                 ? "h-[210px] sm:h-[240px] md:h-[260px] lg:h-[280px]"
                 : "h-[440px] sm:h-[520px] md:h-[580px] lg:h-[620px]"
@@ -947,6 +949,7 @@ export function ServiceMapDirectory({
   const [directionItem, setDirectionItem] = useState<ServiceListing | null>(null);
   const [modalItem, setModalItem] = useState<ServiceListing | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [sheetMode, setSheetMode] = useState<"expanded" | "mid" | "full">("expanded");
   const [dragMapHeight, setDragMapHeight] = useState<number | null>(null);
   const cardListRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef<boolean>(false);
@@ -958,7 +961,11 @@ export function ServiceMapDirectory({
     if (e.button !== 0 && e.pointerType === "mouse") return;
 
     const mapEl = document.getElementById("service-map-container")?.querySelector(".relative.w-full");
-    const currentH = mapEl ? mapEl.getBoundingClientRect().height : (isScrolled ? 240 : 500);
+    const isMobile = window.innerWidth < 640;
+    const minH = 0; // User can drag cart all the way to the top of the map!
+    const midH = isMobile ? 210 : 250;
+    const maxH = isMobile ? 440 : 580;
+    const currentH = mapEl ? mapEl.getBoundingClientRect().height : (sheetMode === "full" ? 0 : isScrolled ? midH : maxH);
 
     startDragYRef.current = e.clientY;
     startMapHeightRef.current = currentH;
@@ -968,15 +975,9 @@ export function ServiceMapDirectory({
     document.body.style.userSelect = "none";
     document.body.style.cursor = "grabbing";
 
-    const isMobile = window.innerWidth < 640;
-    const minH = isMobile ? 210 : 260;
-    const maxH = isMobile ? 440 : 580;
-
     const onPointerMove = (moveEvent: PointerEvent) => {
       if (!isDraggingRef.current) return;
       const deltaY = moveEvent.clientY - startDragYRef.current;
-      // Dragging down (deltaY > 0) -> map expands (height increases)
-      // Dragging up (deltaY < 0) -> sheet slides up (height decreases)
       const nextH = Math.min(maxH, Math.max(minH, startMapHeightRef.current + deltaY));
       setDragMapHeight(nextH);
     };
@@ -991,27 +992,48 @@ export function ServiceMapDirectory({
 
       const totalDeltaY = upEvent.clientY - startDragYRef.current;
 
-      // Click / tap without significant drag
-      if (Math.abs(totalDeltaY) < 6) {
+      // Handle bar is NOT a clickable button - ignore simple clicks/taps without dragging
+      if (Math.abs(totalDeltaY) < 8) {
         setDragMapHeight(null);
-        setIsScrolled(prev => {
-          const next = !prev;
-          if (!next && cardListRef.current) cardListRef.current.scrollTop = 0;
-          return next;
-        });
         return;
       }
 
-      // Snap based on position
-      const midPoint = (minH + maxH) / 2;
       const finalH = Math.min(maxH, Math.max(minH, startMapHeightRef.current + totalDeltaY));
+      const thresholdTopMid = midH / 2; // ~110px
+      const thresholdMidBottom = (midH + maxH) / 2; // ~350px-380px
 
-      if (finalH < midPoint) {
-        setIsScrolled(true);
+      // Fast flick gestures
+      if (totalDeltaY < -60) {
+        if (startMapHeightRef.current <= midH + 40) {
+          setSheetMode("full");
+          setIsScrolled(true);
+        } else {
+          setSheetMode("mid");
+          setIsScrolled(true);
+        }
+      } else if (totalDeltaY > 60) {
+        if (startMapHeightRef.current < midH - 40) {
+          setSheetMode("mid");
+          setIsScrolled(true);
+        } else {
+          setSheetMode("expanded");
+          setIsScrolled(false);
+          if (cardListRef.current) cardListRef.current.scrollTop = 0;
+        }
       } else {
-        setIsScrolled(false);
-        if (cardListRef.current) cardListRef.current.scrollTop = 0;
+        if (finalH < thresholdTopMid) {
+          setSheetMode("full");
+          setIsScrolled(true);
+        } else if (finalH < thresholdMidBottom) {
+          setSheetMode("mid");
+          setIsScrolled(true);
+        } else {
+          setSheetMode("expanded");
+          setIsScrolled(false);
+          if (cardListRef.current) cardListRef.current.scrollTop = 0;
+        }
       }
+
       setDragMapHeight(null);
     };
 
@@ -1254,7 +1276,12 @@ export function ServiceMapDirectory({
         </div>
 
         {/* ── BARIKOI LIVE MAP (EXPANDED / COMPACT STICKY HEIGHT - NICHE/UNDERNEATH) ────── */}
-        <div id="service-map-container" className="w-full max-w-7xl mx-auto px-0 flex-shrink-0 z-10">
+        <div
+          id="service-map-container"
+          className={`w-full max-w-7xl mx-auto px-0 flex-shrink-0 z-10 transition-[height] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] ${
+            sheetMode === "full" && dragMapHeight === null ? "h-0 overflow-hidden" : ""
+          }`}
+        >
           <div className="rounded-none sm:rounded-b-2xl overflow-hidden border-b border-slate-200/90 shadow-xs bg-white">
             <InteractiveServiceMap
               userCoords={userCoords}
@@ -1272,6 +1299,7 @@ export function ServiceMapDirectory({
               savedIds={savedIds}
               onToggleSave={toggleSave}
               isScrolled={isScrolled}
+              sheetMode={sheetMode}
               dragMapHeight={dragMapHeight}
               searchQuery={searchQuery}
               themeColor={themeColor}
@@ -1294,7 +1322,6 @@ export function ServiceMapDirectory({
           <div
             onPointerDown={handlePointerDown}
             className="w-full flex items-center justify-center py-3 cursor-grab active:cursor-grabbing select-none group touch-none"
-            title="Drag to resize map"
           >
             <div className="w-12 h-1.5 bg-slate-300 group-hover:bg-slate-400 active:bg-slate-500 rounded-full transition-colors" />
           </div>

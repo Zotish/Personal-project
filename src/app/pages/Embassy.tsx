@@ -76,6 +76,7 @@ function BariKoiMissionMap({
   onClearDirection,
   onShowDirection,
   isScrolled,
+  sheetMode,
   dragMapHeight,
   countryCode,
 }: {
@@ -87,6 +88,7 @@ function BariKoiMissionMap({
   onClearDirection: () => void;
   onShowDirection: (mission: ConsularMission) => void;
   isScrolled?: boolean;
+  sheetMode?: "expanded" | "mid" | "full";
   dragMapHeight?: number | null;
   countryCode?: string;
 }) {
@@ -456,7 +458,7 @@ function BariKoiMissionMap({
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [directionMission, isNavCardMinimized, isScrolled, userCoords, selectedMission]);
+  }, [directionMission, isNavCardMinimized, isScrolled, sheetMode, userCoords, selectedMission]);
 
   // Live real-time WebGL canvas resize during active mouse / finger dragging
   useEffect(() => {
@@ -480,9 +482,11 @@ function BariKoiMissionMap({
             ? isNavCardMinimized
               ? "h-[320px] sm:h-[380px]"
               : "h-[200px] sm:h-[240px]"
-            : isScrolled
-              ? "h-[190px] sm:h-[210px]"
-              : "h-[320px] sm:h-[380px]"
+            : sheetMode === "full"
+              ? "h-0 overflow-hidden"
+              : isScrolled
+                ? "h-[190px] sm:h-[210px]"
+                : "h-[320px] sm:h-[380px]"
         }`}
       >
         <div ref={containerRef} className="w-full h-full" />
@@ -824,6 +828,7 @@ export function Embassy() {
   const cardListRef = useRef<HTMLDivElement>(null);
 
   // Uber-style 1:1 real-time drag tracking for mouse & touch
+  const [sheetMode, setSheetMode] = useState<"expanded" | "mid" | "full">("expanded");
   const [dragMapHeight, setDragMapHeight] = useState<number | null>(null);
   const isDraggingRef = useRef<boolean>(false);
   const startDragYRef = useRef<number>(0);
@@ -833,7 +838,11 @@ export function Embassy() {
     if (e.button !== 0 && e.pointerType === "mouse") return;
 
     const mapEl = document.getElementById("embassy-map-section")?.querySelector(".relative.w-full");
-    const currentH = mapEl ? mapEl.getBoundingClientRect().height : (isScrolled ? 200 : 350);
+    const isMobile = window.innerWidth < 640;
+    const minH = 0; // User can drag cart all the way to the top of the map!
+    const midH = isMobile ? 190 : 210;
+    const maxH = isMobile ? 320 : 380;
+    const currentH = mapEl ? mapEl.getBoundingClientRect().height : (sheetMode === "full" ? 0 : isScrolled ? midH : maxH);
 
     startDragYRef.current = e.clientY;
     startMapHeightRef.current = currentH;
@@ -842,10 +851,6 @@ export function Embassy() {
 
     document.body.style.userSelect = "none";
     document.body.style.cursor = "grabbing";
-
-    const isMobile = window.innerWidth < 640;
-    const minH = isMobile ? 190 : 210;
-    const maxH = isMobile ? 320 : 380;
 
     const onPointerMove = (moveEvent: PointerEvent) => {
       if (!isDraggingRef.current) return;
@@ -864,25 +869,48 @@ export function Embassy() {
 
       const totalDeltaY = upEvent.clientY - startDragYRef.current;
 
-      if (Math.abs(totalDeltaY) < 6) {
+      // Handle bar is NOT a clickable button - ignore simple clicks/taps without dragging
+      if (Math.abs(totalDeltaY) < 8) {
         setDragMapHeight(null);
-        setIsScrolled(prev => {
-          const next = !prev;
-          if (!next && cardListRef.current) cardListRef.current.scrollTop = 0;
-          return next;
-        });
         return;
       }
 
-      const midPoint = (minH + maxH) / 2;
       const finalH = Math.min(maxH, Math.max(minH, startMapHeightRef.current + totalDeltaY));
+      const thresholdTopMid = midH / 2; // ~100px
+      const thresholdMidBottom = (midH + maxH) / 2; // ~260px-290px
 
-      if (finalH < midPoint) {
-        setIsScrolled(true);
+      // Fast flick gestures
+      if (totalDeltaY < -60) {
+        if (startMapHeightRef.current <= midH + 40) {
+          setSheetMode("full");
+          setIsScrolled(true);
+        } else {
+          setSheetMode("mid");
+          setIsScrolled(true);
+        }
+      } else if (totalDeltaY > 60) {
+        if (startMapHeightRef.current < midH - 40) {
+          setSheetMode("mid");
+          setIsScrolled(true);
+        } else {
+          setSheetMode("expanded");
+          setIsScrolled(false);
+          if (cardListRef.current) cardListRef.current.scrollTop = 0;
+        }
       } else {
-        setIsScrolled(false);
-        if (cardListRef.current) cardListRef.current.scrollTop = 0;
+        if (finalH < thresholdTopMid) {
+          setSheetMode("full");
+          setIsScrolled(true);
+        } else if (finalH < thresholdMidBottom) {
+          setSheetMode("mid");
+          setIsScrolled(true);
+        } else {
+          setSheetMode("expanded");
+          setIsScrolled(false);
+          if (cardListRef.current) cardListRef.current.scrollTop = 0;
+        }
       }
+
       setDragMapHeight(null);
     };
 
@@ -985,7 +1013,12 @@ export function Embassy() {
         </div>
 
         {/* ── BARIKOI LIVE MAP (NICHE/UNDERNEATH) ── */}
-        <div id="embassy-map-section" className="w-full max-w-7xl mx-auto px-0 flex-shrink-0 z-10">
+        <div
+          id="embassy-map-section"
+          className={`w-full max-w-7xl mx-auto px-0 flex-shrink-0 z-10 transition-[height] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] ${
+            sheetMode === "full" && dragMapHeight === null ? "h-0 overflow-hidden" : ""
+          }`}
+        >
           <div className="rounded-none sm:rounded-b-2xl overflow-hidden border-b border-slate-200/90 shadow-xs bg-white">
             <BariKoiMissionMap
               userCoords={userCoords}
@@ -999,6 +1032,7 @@ export function Embassy() {
               }}
               onShowDirection={handleShowDirection}
               isScrolled={isScrolled}
+              sheetMode={sheetMode}
               dragMapHeight={dragMapHeight}
               countryCode={countryCode}
             />
@@ -1018,7 +1052,6 @@ export function Embassy() {
           <div
             onPointerDown={handlePointerDown}
             className="w-full flex items-center justify-center py-3 cursor-grab active:cursor-grabbing select-none group touch-none"
-            title={isScrolled ? "Drag down to expand map" : "Drag up to compact map"}
           >
             <div className="w-12 h-1.5 bg-slate-300 group-hover:bg-slate-400 active:bg-slate-500 rounded-full transition-colors" />
           </div>

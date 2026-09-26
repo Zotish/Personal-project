@@ -89,6 +89,7 @@ function BariKoiLiveHousingMap({
   savedIds,
   onToggleSave,
   isScrolled,
+  sheetMode,
   dragMapHeight,
   searchQuery,
   countryCode,
@@ -110,6 +111,7 @@ function BariKoiLiveHousingMap({
   savedIds?: string[];
   onToggleSave?: (id: string) => void;
   isScrolled?: boolean;
+  sheetMode?: "expanded" | "mid" | "full";
   dragMapHeight?: number | null;
   searchQuery?: string;
   countryCode?: string;
@@ -705,7 +707,7 @@ function BariKoiLiveHousingMap({
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [directionListing, isNavCardMinimized, isScrolled, userCoords, selectedListing]);
+  }, [directionListing, isNavCardMinimized, isScrolled, sheetMode, userCoords, selectedListing]);
 
   // Live real-time WebGL canvas resize during active mouse / finger dragging
   useEffect(() => {
@@ -729,9 +731,11 @@ function BariKoiLiveHousingMap({
             ? isNavCardMinimized
               ? "h-[380px] sm:h-[470px] md:h-[530px] lg:h-[590px]"
               : "h-[240px] sm:h-[300px] md:h-[360px] lg:h-[400px]"
-            : isScrolled
-              ? "h-[210px] sm:h-[240px] md:h-[260px] lg:h-[280px]" // Screenshot compact height when scrolling list!
-              : "h-[440px] sm:h-[520px] md:h-[580px] lg:h-[620px]" // Default full height
+            : sheetMode === "full"
+              ? "h-0 overflow-hidden"
+              : isScrolled
+                ? "h-[210px] sm:h-[240px] md:h-[260px] lg:h-[280px]" // Screenshot compact height when scrolling list!
+                : "h-[440px] sm:h-[520px] md:h-[580px] lg:h-[620px]" // Default full height
         }`}
       >
         <div ref={containerRef} className="w-full h-full" />
@@ -1227,6 +1231,7 @@ export function Housing() {
   const cardListRef = useRef<HTMLDivElement>(null);
 
   // Uber-style 1:1 real-time drag tracking for mouse & touch
+  const [sheetMode, setSheetMode] = useState<"expanded" | "mid" | "full">("expanded");
   const [dragMapHeight, setDragMapHeight] = useState<number | null>(null);
   const isDraggingRef = useRef<boolean>(false);
   const startDragYRef = useRef<number>(0);
@@ -1236,7 +1241,11 @@ export function Housing() {
     if (e.button !== 0 && e.pointerType === "mouse") return;
 
     const mapEl = document.getElementById("housing-map-section")?.querySelector(".relative.w-full");
-    const currentH = mapEl ? mapEl.getBoundingClientRect().height : (isScrolled ? 240 : 500);
+    const isMobile = window.innerWidth < 640;
+    const minH = 0; // User can drag cart all the way to the top of the map!
+    const midH = isMobile ? 210 : 250;
+    const maxH = isMobile ? 440 : 580;
+    const currentH = mapEl ? mapEl.getBoundingClientRect().height : (sheetMode === "full" ? 0 : isScrolled ? midH : maxH);
 
     startDragYRef.current = e.clientY;
     startMapHeightRef.current = currentH;
@@ -1245,10 +1254,6 @@ export function Housing() {
 
     document.body.style.userSelect = "none";
     document.body.style.cursor = "grabbing";
-
-    const isMobile = window.innerWidth < 640;
-    const minH = isMobile ? 210 : 260;
-    const maxH = isMobile ? 440 : 580;
 
     const onPointerMove = (moveEvent: PointerEvent) => {
       if (!isDraggingRef.current) return;
@@ -1267,25 +1272,48 @@ export function Housing() {
 
       const totalDeltaY = upEvent.clientY - startDragYRef.current;
 
-      if (Math.abs(totalDeltaY) < 6) {
+      // Handle bar is NOT a clickable button - ignore simple clicks/taps without dragging
+      if (Math.abs(totalDeltaY) < 8) {
         setDragMapHeight(null);
-        setIsScrolled(prev => {
-          const next = !prev;
-          if (!next && cardListRef.current) cardListRef.current.scrollTop = 0;
-          return next;
-        });
         return;
       }
 
-      const midPoint = (minH + maxH) / 2;
       const finalH = Math.min(maxH, Math.max(minH, startMapHeightRef.current + totalDeltaY));
+      const thresholdTopMid = midH / 2; // ~110px
+      const thresholdMidBottom = (midH + maxH) / 2; // ~350px-380px
 
-      if (finalH < midPoint) {
-        setIsScrolled(true);
+      // Fast flick gestures
+      if (totalDeltaY < -60) {
+        if (startMapHeightRef.current <= midH + 40) {
+          setSheetMode("full");
+          setIsScrolled(true);
+        } else {
+          setSheetMode("mid");
+          setIsScrolled(true);
+        }
+      } else if (totalDeltaY > 60) {
+        if (startMapHeightRef.current < midH - 40) {
+          setSheetMode("mid");
+          setIsScrolled(true);
+        } else {
+          setSheetMode("expanded");
+          setIsScrolled(false);
+          if (cardListRef.current) cardListRef.current.scrollTop = 0;
+        }
       } else {
-        setIsScrolled(false);
-        if (cardListRef.current) cardListRef.current.scrollTop = 0;
+        if (finalH < thresholdTopMid) {
+          setSheetMode("full");
+          setIsScrolled(true);
+        } else if (finalH < thresholdMidBottom) {
+          setSheetMode("mid");
+          setIsScrolled(true);
+        } else {
+          setSheetMode("expanded");
+          setIsScrolled(false);
+          if (cardListRef.current) cardListRef.current.scrollTop = 0;
+        }
       }
+
       setDragMapHeight(null);
     };
 
@@ -1485,7 +1513,12 @@ export function Housing() {
         </div>
 
         {/* ── BARIKOI LIVE MAP (EXPANDED / COMPACT STICKY HEIGHT - NICHE/UNDERNEATH) ────── */}
-        <div id="housing-map-section" className="w-full max-w-7xl mx-auto px-0 flex-shrink-0 z-10">
+        <div
+          id="housing-map-section"
+          className={`w-full max-w-7xl mx-auto px-0 flex-shrink-0 z-10 transition-[height] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] ${
+            sheetMode === "full" && dragMapHeight === null ? "h-0 overflow-hidden" : ""
+          }`}
+        >
           <div className="rounded-none sm:rounded-b-2xl overflow-hidden border-b border-slate-200/90 shadow-xs bg-white">
             <BariKoiLiveHousingMap
               userCoords={userCoords}
@@ -1508,6 +1541,7 @@ export function Housing() {
               savedIds={savedIds}
               onToggleSave={toggleSave}
               isScrolled={isScrolled}
+              sheetMode={sheetMode}
               dragMapHeight={dragMapHeight}
               searchQuery={searchQuery}
               countryCode={countryCode}
