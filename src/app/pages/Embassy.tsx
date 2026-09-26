@@ -134,12 +134,62 @@ function BariKoiMissionMap({
     `;
   };
 
+  const userMarkerRef = useRef<any>(null);
+
+  // User Marker HTML (Distinct Live GPS Pinpoint Marker in Branding Color #D85A30)
+  const createUserMarkerHtml = () => `
+    <div style="position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:999999;">
+      <!-- Pinpoint Radar Waves (Brand Color #D85A30) -->
+      <div style="position:absolute;inset:-10px;border-radius:50%;background:rgba(216,90,48,0.22);animation:userPinRadar 2s cubic-bezier(0,0,0.2,1) infinite;"></div>
+      <div style="position:absolute;inset:-4px;border-radius:50%;background:rgba(230,101,60,0.32);animation:userPinRadar 2s cubic-bezier(0,0,0.2,1) 0.6s infinite;"></div>
+      <!-- Core Beacon (Brand Color #D85A30) -->
+      <div style="width:18px;height:18px;border-radius:50%;background:#D85A30;border:3px solid #ffffff;box-shadow:0 3px 12px rgba(216,90,48,0.5);position:relative;z-index:2;display:flex;align-items:center;justify-content:center;">
+        <div style="width:6px;height:6px;border-radius:50%;background:#ffffff;"></div>
+      </div>
+      <style>
+        @keyframes userPinRadar {
+          0% { transform: scale(0.6); opacity: 0.9; }
+          70% { transform: scale(2.2); opacity: 0; }
+          100% { transform: scale(2.2); opacity: 0; }
+        }
+      </style>
+    </div>
+  `;
+
   // Sync Markers
   const syncMapMarkers = useCallback(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
     const L = LRef.current;
     const bkoigl = (window as any).bkoigl;
+
+    // 1. User Exact Pinpoint Marker
+    if (userCoords) {
+      if (userMarkerRef.current && userMarkerRef.current.remove) {
+        userMarkerRef.current.remove();
+      }
+
+      if (L && map.addLayer) {
+        const userIcon = L.divIcon({
+          className: "bkoi-user-pin",
+          html: createUserMarkerHtml(),
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        });
+        userMarkerRef.current = L.marker([userCoords[0], userCoords[1]], { icon: userIcon, zIndexOffset: 99999 }).addTo(map);
+      } else if (bkoigl || map.project) {
+        const el = document.createElement("div");
+        el.className = "bkoi-user-pinpoint-marker";
+        el.style.zIndex = "999999";
+        el.innerHTML = createUserMarkerHtml();
+        const MarkerClass = bkoigl?.Marker || (window as any).maplibregl?.Marker;
+        if (MarkerClass) {
+          userMarkerRef.current = new MarkerClass({ element: el })
+            .setLngLat([userCoords[1], userCoords[0]])
+            .addTo(map);
+        }
+      }
+    }
 
     markersRef.current.forEach(m => {
       if (m.remove) m.remove();
@@ -182,7 +232,7 @@ function BariKoiMissionMap({
         }
       }
     });
-  }, [missions, selectedMission, handleMarkerClick]);
+  }, [missions, selectedMission, userCoords, handleMarkerClick]);
 
   // Init Map
   useEffect(() => {
@@ -356,41 +406,26 @@ function BariKoiMissionMap({
     }
   }, [directionMission, userCoords, travelMode]);
 
-  // Zoom out to show user location and nearby missions when map is compact
+  // Always center directly on user's exact pinpoint location
   useEffect(() => {
     const map = mapRef.current;
     if (!map || directionMission || selectedMission) return;
 
-    if (isScrolled) {
-      const bkoigl = (window as any).bkoigl;
-      if (bkoigl && map.fitBounds) {
-        const bounds = new bkoigl.LngLatBounds();
-        bounds.extend([userCoords[1], userCoords[0]]);
-        (missions || []).slice(0, 4).forEach(m => {
-          if (m.lng && m.lat) bounds.extend([m.lng, m.lat]);
-        });
-        map.fitBounds(bounds, {
-          padding: { top: 35, bottom: 35, left: 35, right: 35 },
-          maxZoom: 13.2,
-          duration: 600
-        });
-      } else if (map.flyTo) {
-        map.flyTo({
-          center: [userCoords[1], userCoords[0]],
-          zoom: 13.0,
-          duration: 600
-        });
-      }
-    } else {
-      if (map.flyTo) {
-        map.flyTo({
-          center: [userCoords[1], userCoords[0]],
-          zoom: 14.5,
-          duration: 600
-        });
-      }
+    if (map.resize) {
+      try { map.resize(); } catch (_) {}
     }
-  }, [isScrolled, userCoords, missions, directionMission, selectedMission]);
+
+    if (map.flyTo) {
+      map.flyTo({
+        center: [userCoords[1], userCoords[0]],
+        zoom: isScrolled ? 14.2 : 14.8,
+        duration: 400,
+        essential: true
+      });
+    } else if (map.setView) {
+      map.setView([userCoords[0], userCoords[1]], isScrolled ? 14.2 : 14.8);
+    }
+  }, [isScrolled, userCoords, directionMission, selectedMission]);
 
   // Clean resize after CSS transition finishes (avoids WebGL redraw thrashing)
   useEffect(() => {
@@ -398,23 +433,36 @@ function BariKoiMissionMap({
       if (mapRef.current) {
         if (mapRef.current.resize) mapRef.current.resize();
         else if (mapRef.current.invalidateSize) mapRef.current.invalidateSize();
+
+        if (!directionMission && !selectedMission) {
+          if (mapRef.current.flyTo) {
+            mapRef.current.flyTo({
+              center: [userCoords[1], userCoords[0]],
+              zoom: isScrolled ? 14.2 : 14.8,
+              duration: 300,
+              essential: true
+            });
+          } else if (mapRef.current.setView) {
+            mapRef.current.setView([userCoords[0], userCoords[1]], isScrolled ? 14.2 : 14.8);
+          }
+        }
       }
     }, 160);
     return () => clearTimeout(timer);
-  }, [directionMission, isNavCardMinimized, isScrolled]);
+  }, [directionMission, isNavCardMinimized, isScrolled, userCoords, selectedMission]);
 
   return (
-    <div className={`w-full flex flex-col bg-white overflow-hidden transition-all duration-300 ease-out ${isScrolled ? "h-0" : "h-auto"}`}>
+    <div className="w-full flex flex-col bg-white overflow-hidden transition-all duration-150 ease-out">
       {/* ── MAP CONTAINER (Dynamic Height depending on scroll & route state) ── */}
       <div
-        className={`relative w-full transition-[height] duration-300 ease-out ${
+        className={`relative w-full transition-[height] duration-150 ease-out ${
           directionMission
             ? isNavCardMinimized
-              ? "h-[380px] sm:h-[470px] md:h-[530px] lg:h-[590px]"
-              : "h-[240px] sm:h-[300px] md:h-[360px] lg:h-[400px]"
+              ? "h-[320px] sm:h-[380px]"
+              : "h-[200px] sm:h-[240px]"
             : isScrolled
-              ? "h-0 overflow-hidden"
-              : "h-[360px] sm:h-[420px] md:h-[460px] lg:h-[480px]"
+              ? "h-[190px] sm:h-[210px]"
+              : "h-[320px] sm:h-[380px]"
         }`}
       >
         <div ref={containerRef} className="w-full h-full" />
@@ -503,6 +551,19 @@ function BariKoiMissionMap({
           >
             <Minus className="w-4.5 h-4.5" />
           </button>
+          {onToggleSize && (
+            <button
+              onClick={onToggleSize}
+              className="w-9 h-9 rounded-xl bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 shadow-md border border-slate-200/80 flex items-center justify-center transition cursor-pointer hover:text-emerald-700"
+              title={isScrolled ? "Expand Map" : "Compact Map"}
+            >
+              {isScrolled ? (
+                <ChevronDown className="w-4.5 h-4.5" />
+              ) : (
+                <ChevronUp className="w-4.5 h-4.5" />
+              )}
+            </button>
+          )}
         </div>
       </div>
 
@@ -752,64 +813,40 @@ export function Embassy() {
   // Default coordinates from current country (Dhaka, Bangladesh)
   const userCoords: [number, number] = currentCountry?.defaultCoords || [23.8103, 90.4125];
 
+  // Smooth scroll detection for dynamic map resizing
   const cardListRef = useRef<HTMLDivElement>(null);
-  const touchStartY = useRef<number | null>(null);
-  const isPointerDragging = useRef(false);
-  const pointerStartY = useRef(0);
 
-  // Upward / downward pull gestures STRICTLY on the pull handle ("black shadow line")
-  const handleHandleTouchStart = (e: React.TouchEvent) => {
-    touchStartY.current = e.touches[0].clientY;
-  };
-
-  const handleHandleTouchMove = (e: React.TouchEvent) => {
-    if (touchStartY.current === null) return;
-    const currentY = e.touches[0].clientY;
-    const diffY = touchStartY.current - currentY; // positive = dragged UP, negative = dragged DOWN
-
-    // Drag UP on handle -> Full Screen!
-    if (!isScrolled && diffY > 15) {
+  const handleCardListScroll = () => {
+    if (!cardListRef.current) return;
+    const y = cardListRef.current.scrollTop;
+    if (y > 25 && !isScrolled) {
       setIsScrolled(true);
-      touchStartY.current = currentY;
-    }
-    // Drag DOWN on handle -> Restore map!
-    else if (isScrolled && diffY < -15) {
+    } else if (y <= 5 && isScrolled) {
       setIsScrolled(false);
-      touchStartY.current = currentY;
     }
   };
 
-  const handleHandleTouchEnd = () => {
-    touchStartY.current = null;
-  };
+  useEffect(() => {
+    let ticking = false;
 
-  // Pointer drag gesture for the pull handle (mouse click & drag or stylus)
-  const handleHandlePointerDown = (e: React.PointerEvent) => {
-    isPointerDragging.current = true;
-    pointerStartY.current = e.clientY;
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch (_) {}
-  };
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const y = window.scrollY;
+          if (y > 100 && !isScrolled) {
+            setIsScrolled(true);
+          } else if (y <= 15 && isScrolled) {
+            setIsScrolled(false);
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
 
-  const handleHandlePointerMove = (e: React.PointerEvent) => {
-    if (!isPointerDragging.current) return;
-    const diffY = pointerStartY.current - e.clientY;
-    if (!isScrolled && diffY > 12) {
-      setIsScrolled(true);
-      isPointerDragging.current = false;
-    } else if (isScrolled && diffY < -12) {
-      setIsScrolled(false);
-      isPointerDragging.current = false;
-    }
-  };
-
-  const handleHandlePointerUp = (e: React.PointerEvent) => {
-    isPointerDragging.current = false;
-    try {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch (_) {}
-  };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isScrolled]);
 
   const toggleSave = (id: string) => {
     setSavedServiceIds(prev =>
@@ -872,13 +909,8 @@ export function Embassy() {
           </div>
         </div>
 
-        {/* ── BARIKOI LIVE MAP (FIXED HEIGHT BY DEFAULT - COLLAPSES TO 0 ON FULL SCREEN) ── */}
-        <div
-          id="embassy-map-section"
-          className={`w-full max-w-7xl mx-auto px-0 flex-shrink-0 z-10 transition-all duration-300 ease-out overflow-hidden ${
-            isScrolled ? "max-h-0 opacity-0 pointer-events-none" : "max-h-[800px] opacity-100"
-          }`}
-        >
+        {/* ── BARIKOI LIVE MAP (NICHE/UNDERNEATH) ── */}
+        <div id="embassy-map-section" className="w-full max-w-7xl mx-auto px-0 flex-shrink-0 z-10">
           <div className="rounded-none sm:rounded-b-2xl overflow-hidden border-b border-slate-200/90 shadow-xs bg-white">
             <BariKoiMissionMap
               userCoords={userCoords}
@@ -901,32 +933,18 @@ export function Embassy() {
         {/* ── MAIN DIRECTORY CONTENT: Clean Minimalist List of Consular Services (UPORE / ON TOP) ── */}
         <div
           ref={cardListRef}
-          className="flex-1 min-h-0 overflow-y-auto w-full max-w-7xl mx-auto px-1 sm:px-2 pt-1 sm:pt-2 relative z-20 bg-[#FAFAFA] rounded-t-3xl shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-2 sm:-mt-3 pb-24"
+          onScroll={handleCardListScroll}
+          className="flex-1 min-h-0 overflow-y-auto w-full max-w-7xl mx-auto px-1 sm:px-2 pt-2 sm:pt-4 relative z-20 bg-[#FAFAFA] rounded-t-3xl shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-2 sm:-mt-3 pb-24"
         >
-          {/* Sticky Header: Pull handle ("black shadow line") */}
-          <div className="sticky top-0 z-30 bg-[#FAFAFA]/95 backdrop-blur-md pt-2 pb-2 px-4 sm:px-2 border-b border-slate-200/60 shadow-2xs">
-            {/* Pull handle indicator ("black shadow line" - Pull up for full screen / pull down to restore) */}
-            <div
-              onPointerDown={handleHandlePointerDown}
-              onPointerMove={handleHandlePointerMove}
-              onPointerUp={handleHandlePointerUp}
-              onPointerCancel={handleHandlePointerUp}
-              onTouchStart={handleHandleTouchStart}
-              onTouchMove={handleHandleTouchMove}
-              onTouchEnd={handleHandleTouchEnd}
-              onClick={() => setIsScrolled(prev => !prev)}
-              className="w-full flex flex-col items-center justify-center py-2 cursor-grab active:cursor-grabbing select-none group touch-none"
-              title={isScrolled ? "Pull down or click to show map" : "Pull up for full screen"}
-            >
-              <div className="w-14 h-1.5 bg-slate-300 group-hover:bg-slate-400 group-active:bg-slate-500 rounded-full transition-all shadow-xs" />
-            </div>
-            <div className="flex items-center justify-between text-xs text-slate-500 font-medium px-1 pb-1">
-              <span>{filteredServices.length} Consular Services</span>
-              <span className="text-emerald-700 font-semibold">{BD_DIPLOMATIC_MISSIONS.length} Diplomatic Missions</span>
-            </div>
+          {/* Uber-style pull handle indicator (Click to expand/compact map smoothly) */}
+          <div
+            onClick={() => setIsScrolled(prev => !prev)}
+            className="w-full flex items-center justify-center py-2 cursor-pointer group"
+            title={isScrolled ? "Expand Map" : "Compact Map"}
+          >
+            <div className="w-12 h-1.5 bg-slate-300 group-hover:bg-slate-400 rounded-full transition-colors" />
           </div>
-
-          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden divide-y divide-slate-100 mt-2">
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden divide-y divide-slate-100">
             {filteredServices.map(service => (
               <button
                 key={service.id}

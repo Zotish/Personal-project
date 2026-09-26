@@ -210,11 +210,23 @@ function BariKoiLiveJobsMap({
     `;
   };
 
-  // Precise Live GPS User Location Marker (Pulsing Radar Pinpoint Dot - Brand Color matching Screenshot 2)
+  // Distinct Live GPS User Pinpoint Marker in Branding Color (#D85A30)
   const createUserMarkerHtml = () => `
-    <div style="position:relative;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:9999;">
-      <div style="position:absolute;inset:-8px;border-radius:50%;background:rgba(216,90,48,0.35);animation:ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-      <div style="width:16px;height:16px;border-radius:50%;background:#D85A30;border:3px solid white;box-shadow:0 4px 12px rgba(216,90,48,0.5);position:relative;z-index:2;"></div>
+    <div style="position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:999999;">
+      <!-- Pinpoint Radar Waves (Brand Color #D85A30) -->
+      <div style="position:absolute;inset:-10px;border-radius:50%;background:rgba(216,90,48,0.22);animation:userPinRadar 2s cubic-bezier(0,0,0.2,1) infinite;"></div>
+      <div style="position:absolute;inset:-4px;border-radius:50%;background:rgba(230,101,60,0.32);animation:userPinRadar 2s cubic-bezier(0,0,0.2,1) 0.6s infinite;"></div>
+      <!-- Core Beacon (Brand Color #D85A30) -->
+      <div style="width:18px;height:18px;border-radius:50%;background:#D85A30;border:3px solid #ffffff;box-shadow:0 3px 12px rgba(216,90,48,0.5);position:relative;z-index:2;display:flex;align-items:center;justify-content:center;">
+        <div style="width:6px;height:6px;border-radius:50%;background:#ffffff;"></div>
+      </div>
+      <style>
+        @keyframes userPinRadar {
+          0% { transform: scale(0.6); opacity: 0.9; }
+          70% { transform: scale(2.2); opacity: 0; }
+          100% { transform: scale(2.2); opacity: 0; }
+        }
+      </style>
     </div>
   `;
 
@@ -225,40 +237,35 @@ function BariKoiLiveJobsMap({
     const bkoigl = (window as any).bkoigl;
     const L = LRef.current;
 
-    // 1. Sync / Update User Live GPS Marker ONLY if permission is granted
-    if (isLocationGranted) {
-      if (userMarkerRef.current) {
-        if (userMarkerRef.current.setLngLat) {
-          userMarkerRef.current.setLngLat([userCoords[1], userCoords[0]]);
-        } else if (userMarkerRef.current.setLatLng) {
-          userMarkerRef.current.setLatLng(userCoords);
-        }
-      } else {
-        if (L && map.addLayer) {
-          const userIcon = L.divIcon({
-            className: "custom-user-location-pin",
-            html: createUserMarkerHtml(),
-            iconSize: [24, 24],
-            iconAnchor: [12, 12]
-          });
-          const userM = L.marker(userCoords, { icon: userIcon }).addTo(map);
-          userMarkerRef.current = userM;
-        } else if (bkoigl || map.project) {
-          const el = document.createElement("div");
-          el.innerHTML = createUserMarkerHtml();
-          const MarkerClass = bkoigl?.Marker || (window as any).maplibregl?.Marker;
-          if (MarkerClass) {
-            const userM = new MarkerClass({ element: el })
-              .setLngLat([userCoords[1], userCoords[0]])
-              .addTo(map);
-            userMarkerRef.current = userM;
-          }
-        }
+    // 1. Sync / Update User Exact Pinpoint Marker (Always visible at userCoords)
+    if (userMarkerRef.current) {
+      if (userMarkerRef.current.setLngLat) {
+        userMarkerRef.current.setLngLat([userCoords[1], userCoords[0]]);
+      } else if (userMarkerRef.current.setLatLng) {
+        userMarkerRef.current.setLatLng(userCoords);
       }
     } else {
-      if (userMarkerRef.current) {
-        if (userMarkerRef.current.remove) userMarkerRef.current.remove();
-        userMarkerRef.current = null;
+      if (L && map.addLayer) {
+        const userIcon = L.divIcon({
+          className: "custom-user-location-pin",
+          html: createUserMarkerHtml(),
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        });
+        const userM = L.marker(userCoords, { icon: userIcon, zIndexOffset: 99999 }).addTo(map);
+        userMarkerRef.current = userM;
+      } else if (bkoigl || map.project) {
+        const el = document.createElement("div");
+        el.className = "bkoi-user-pinpoint-marker";
+        el.style.zIndex = "999999";
+        el.innerHTML = createUserMarkerHtml();
+        const MarkerClass = bkoigl?.Marker || (window as any).maplibregl?.Marker;
+        if (MarkerClass) {
+          const userM = new MarkerClass({ element: el })
+            .setLngLat([userCoords[1], userCoords[0]])
+            .addTo(map);
+          userMarkerRef.current = userM;
+        }
       }
     }
 
@@ -649,41 +656,26 @@ function BariKoiLiveJobsMap({
     }
   }, [directionJob, selectedJob, userCoords]);
 
-  // Zoom out to show user location and nearby jobs when map is compact
+  // Always center directly on user's exact pinpoint location
   useEffect(() => {
     const map = mapRef.current;
     if (!map || directionJob || selectedJob) return;
 
-    if (isScrolled) {
-      const bkoigl = (window as any).bkoigl;
-      if (bkoigl && map.fitBounds) {
-        const bounds = new bkoigl.LngLatBounds();
-        bounds.extend([userCoords[1], userCoords[0]]);
-        (jobs || []).slice(0, 4).forEach(j => {
-          if (j.lng && j.lat) bounds.extend([j.lng, j.lat]);
-        });
-        map.fitBounds(bounds, {
-          padding: { top: 35, bottom: 35, left: 35, right: 35 },
-          maxZoom: 13.2,
-          duration: 600
-        });
-      } else if (map.flyTo) {
-        map.flyTo({
-          center: [userCoords[1], userCoords[0]],
-          zoom: 13.0,
-          duration: 600
-        });
-      }
-    } else {
-      if (map.flyTo) {
-        map.flyTo({
-          center: [userCoords[1], userCoords[0]],
-          zoom: 14.5,
-          duration: 600
-        });
-      }
+    if (map.resize) {
+      try { map.resize(); } catch (_) {}
     }
-  }, [isScrolled, userCoords, jobs, directionJob, selectedJob]);
+
+    if (map.flyTo) {
+      map.flyTo({
+        center: [userCoords[1], userCoords[0]],
+        zoom: isScrolled ? 14.2 : 14.8,
+        duration: 400,
+        essential: true
+      });
+    } else if (map.setView) {
+      map.setView(userCoords, isScrolled ? 14.2 : 14.8);
+    }
+  }, [isScrolled, userCoords, directionJob, selectedJob]);
 
   // Zoom Controls
   const handleZoomIn = () => {
@@ -698,9 +690,9 @@ function BariKoiLiveJobsMap({
     onNavigationClick();
     if (mapRef.current) {
       if (mapRef.current.flyTo) {
-        mapRef.current.flyTo({ center: [userCoords[1], userCoords[0]], zoom: 15.5, speed: 1.5 });
+        mapRef.current.flyTo({ center: [userCoords[1], userCoords[0]], zoom: isScrolled ? 14.8 : 15.5, speed: 1.5 });
       } else if (mapRef.current.setView) {
-        mapRef.current.setView(userCoords, 15.5);
+        mapRef.current.setView(userCoords, isScrolled ? 14.8 : 15.5);
       }
     }
   };
@@ -715,7 +707,7 @@ function BariKoiLiveJobsMap({
     }
   }, [directionJob]);
 
-  // Whenever map height changes between expanded / minimized / normal, resize and refit bounds cleanly
+  // Whenever map height changes between expanded / minimized / normal, resize and refit cleanly
   useEffect(() => {
     const handleResize = () => {
       if (!mapRef.current) return;
@@ -746,25 +738,37 @@ function BariKoiLiveJobsMap({
           const bounds = LRef.current.latLngBounds(latLngs);
           mapRef.current.fitBounds(bounds, { padding: [35, 35], maxZoom: 16.5 });
         }
+      } else if (!selectedJob) {
+        // In compact or normal mode without active route: Ensure exact pinpoint is dead center in the resized canvas!
+        if (mapRef.current.flyTo) {
+          mapRef.current.flyTo({
+            center: [userCoords[1], userCoords[0]],
+            zoom: isScrolled ? 14.2 : 14.8,
+            duration: 300,
+            essential: true
+          });
+        } else if (mapRef.current.setView) {
+          mapRef.current.setView(userCoords, isScrolled ? 14.2 : 14.8);
+        }
       }
     };
 
     // Clean resize after CSS transition finishes (avoids WebGL redraw thrashing)
     const timer = setTimeout(handleResize, 160);
     return () => clearTimeout(timer);
-  }, [directionJob, isNavCardMinimized, isScrolled]);
+  }, [directionJob, isNavCardMinimized, isScrolled, userCoords, selectedJob]);
 
   return (
-    <div className={`w-full flex flex-col bg-white overflow-hidden transition-all duration-300 ease-out ${isScrolled ? "h-0" : "h-auto"}`}>
+    <div className="w-full flex flex-col bg-white overflow-hidden transition-all duration-150 ease-out">
       {/* ── MAP CONTAINER (Dynamic Height depending on scroll & route state) ── */}
       <div
-        className={`relative w-full transition-[height] duration-300 ease-out ${directionJob
+        className={`relative w-full transition-[height] duration-150 ease-out ${directionJob
             ? isNavCardMinimized
               ? "h-[380px] sm:h-[470px] md:h-[530px] lg:h-[590px]"
               : "h-[240px] sm:h-[300px] md:h-[360px] lg:h-[400px]"
             : isScrolled
-              ? "h-0 overflow-hidden"
-              : "h-[360px] sm:h-[420px] md:h-[460px] lg:h-[480px]"
+              ? "h-[210px] sm:h-[240px] md:h-[260px] lg:h-[280px]" // Screenshot compact height when scrolling list!
+              : "h-[440px] sm:h-[520px] md:h-[580px] lg:h-[620px]" // Default full height
           }`}
       >
         <div ref={containerRef} className="w-full h-full" />
@@ -898,6 +902,22 @@ function BariKoiLiveJobsMap({
             >
               <Minus className="w-4 h-4 stroke-[2.2]" />
             </button>
+            {onToggleSize && (
+              <>
+                <div className="w-full h-px bg-slate-100" />
+                <button
+                  onClick={onToggleSize}
+                  className="w-8.5 h-8.5 flex items-center justify-center text-slate-700 hover:text-[#D85A30] hover:bg-slate-50 transition cursor-pointer"
+                  title={isScrolled ? "Expand Map" : "Compact Map"}
+                >
+                  {isScrolled ? (
+                    <ChevronDown className="w-4 h-4 stroke-[2.2]" />
+                  ) : (
+                    <ChevronUp className="w-4 h-4 stroke-[2.2]" />
+                  )}
+                </button>
+              </>
+            )}
           </div>
           {/* Floating Navigation Button */}
           <button
@@ -1236,63 +1256,38 @@ export function Jobs() {
 
   // Smooth scroll detection for dynamic map resizing
   const cardListRef = useRef<HTMLDivElement>(null);
-  const touchStartY = useRef<number | null>(null);
-  const isPointerDragging = useRef(false);
-  const pointerStartY = useRef(0);
 
-  // Upward / downward pull gestures STRICTLY on the pull handle ("black shadow line")
-  const handleHandleTouchStart = (e: React.TouchEvent) => {
-    touchStartY.current = e.touches[0].clientY;
-  };
-
-  const handleHandleTouchMove = (e: React.TouchEvent) => {
-    if (touchStartY.current === null) return;
-    const currentY = e.touches[0].clientY;
-    const diffY = touchStartY.current - currentY; // positive = dragged UP, negative = dragged DOWN
-
-    // Drag UP on handle -> Full Screen!
-    if (!isScrolled && diffY > 15) {
+  const handleCardListScroll = () => {
+    if (!cardListRef.current) return;
+    const y = cardListRef.current.scrollTop;
+    if (y > 25 && !isScrolled) {
       setIsScrolled(true);
-      touchStartY.current = currentY;
-    }
-    // Drag DOWN on handle -> Restore map!
-    else if (isScrolled && diffY < -15) {
+    } else if (y <= 5 && isScrolled) {
       setIsScrolled(false);
-      touchStartY.current = currentY;
     }
   };
 
-  const handleHandleTouchEnd = () => {
-    touchStartY.current = null;
-  };
+  useEffect(() => {
+    let ticking = false;
 
-  // Pointer drag gesture for the pull handle (mouse click & drag or stylus)
-  const handleHandlePointerDown = (e: React.PointerEvent) => {
-    isPointerDragging.current = true;
-    pointerStartY.current = e.clientY;
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch (_) {}
-  };
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const y = window.scrollY;
+          if (y > 100 && !isScrolled) {
+            setIsScrolled(true);
+          } else if (y <= 15 && isScrolled) {
+            setIsScrolled(false);
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
 
-  const handleHandlePointerMove = (e: React.PointerEvent) => {
-    if (!isPointerDragging.current) return;
-    const diffY = pointerStartY.current - e.clientY;
-    if (!isScrolled && diffY > 12) {
-      setIsScrolled(true);
-      isPointerDragging.current = false;
-    } else if (isScrolled && diffY < -12) {
-      setIsScrolled(false);
-      isPointerDragging.current = false;
-    }
-  };
-
-  const handleHandlePointerUp = (e: React.PointerEvent) => {
-    isPointerDragging.current = false;
-    try {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch (_) {}
-  };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isScrolled]);
 
   // Request Live GPS Location strictly from device GPS when navigation button is clicked
   const executeGeolocation = useCallback((highAccuracy: boolean = true) => {
@@ -1479,13 +1474,8 @@ export function Jobs() {
           </div>
         </div>
 
-        {/* ── BARIKOI LIVE MAP (FIXED HEIGHT BY DEFAULT - COLLAPSES TO 0 ON FULL SCREEN) ────── */}
-        <div
-          id="jobs-map-section"
-          className={`w-full max-w-7xl mx-auto px-0 flex-shrink-0 z-10 transition-all duration-300 ease-out overflow-hidden ${
-            isScrolled ? "max-h-0 opacity-0 pointer-events-none" : "max-h-[800px] opacity-100"
-          }`}
-        >
+        {/* ── BARIKOI LIVE MAP (EXPANDED / COMPACT STICKY HEIGHT - NICHE/UNDERNEATH) ────── */}
+        <div id="jobs-map-section" className="w-full max-w-7xl mx-auto px-0 flex-shrink-0 z-10">
           <div className="rounded-none sm:rounded-b-2xl overflow-hidden border-b border-slate-200/90 shadow-xs bg-white">
             <BariKoiLiveJobsMap
               userCoords={userCoords}
@@ -1515,65 +1505,56 @@ export function Jobs() {
           </div>
         </div>
 
-        {/* ── MAIN JOB DIRECTORY CONTENT (UPORE / ON TOP - FIXED MAP, FREE CARD SCROLL, PULL HANDLE FOR FULL SCREEN) ── */}
+        {/* ── MAIN JOB DIRECTORY CONTENT (UPORE / ON TOP - PAUSES RIGHT BELOW COMPACT MAP) ── */}
         <div
           ref={cardListRef}
-          className="flex-1 min-h-0 overflow-y-auto max-w-7xl w-full mx-auto px-0 sm:px-6 relative z-20 bg-[#FAFAFA] rounded-t-3xl shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-2 sm:-mt-3 pb-24"
+          onScroll={handleCardListScroll}
+          className="flex-1 min-h-0 overflow-y-auto max-w-7xl w-full mx-auto px-0 sm:px-6 pt-2 sm:pt-4 relative z-20 bg-[#FAFAFA] rounded-t-3xl shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-2 sm:-mt-3 pb-24"
         >
-          {/* Sticky Header: Pull handle ("black shadow line") + "x nearby jobs" & "full state jobs" */}
-          <div className="sticky top-0 z-30 bg-[#FAFAFA]/95 backdrop-blur-md pt-2 pb-2.5 px-4 sm:px-0 border-b border-slate-200/60 shadow-2xs">
-            {/* Pull handle indicator ("black shadow line" - Pull up for full screen / pull down to restore) */}
-            <div
-              onPointerDown={handleHandlePointerDown}
-              onPointerMove={handleHandlePointerMove}
-              onPointerUp={handleHandlePointerUp}
-              onPointerCancel={handleHandlePointerUp}
-              onTouchStart={handleHandleTouchStart}
-              onTouchMove={handleHandleTouchMove}
-              onTouchEnd={handleHandleTouchEnd}
-              onClick={() => setIsScrolled(prev => !prev)}
-              className="w-full flex flex-col items-center justify-center py-2 cursor-grab active:cursor-grabbing select-none group touch-none"
-              title={isScrolled ? "Pull down or click to show map" : "Pull up for full screen"}
-            >
-              <div className="w-14 h-1.5 bg-slate-300 group-hover:bg-slate-400 group-active:bg-slate-500 rounded-full transition-all shadow-xs" />
-            </div>
-
-            {/* Filter Option Buttons ("x jobs nearby" and "full state jobs") */}
-            <div className="flex items-center justify-between gap-3 pt-1">
-              <div className="grid grid-cols-2 gap-2.5 max-w-md w-full">
-                {/* Left Option: Nearby Me Jobs */}
-                <div
-                  onClick={() => setActiveFilter(activeFilter === "nearby" ? "all" : "nearby")}
-                  className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
-                    activeFilter === "nearby"
-                      ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
-                      : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
-                  }`}
-                >
-                  <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
-                    {nearbyJobs.length} jobs nearby
-                  </div>
+          {/* Uber-style pull handle indicator (Click to expand/compact map smoothly) */}
+          <div
+            onClick={() => setIsScrolled(prev => !prev)}
+            className="w-full flex items-center justify-center py-2 cursor-pointer group"
+            title={isScrolled ? "Expand Map" : "Compact Map"}
+          >
+            <div className="w-12 h-1.5 bg-slate-300 group-hover:bg-slate-400 rounded-full transition-colors" />
+          </div>
+          {/* Controls Bar: Filter Options */}
+          <div className="flex items-center justify-between gap-3 mb-4 px-4 sm:px-0">
+            {/* Filter Option Buttons */}
+            <div className="grid grid-cols-2 gap-2.5 max-w-md w-full">
+              {/* Left Option: Nearby Me Jobs */}
+              <div
+                onClick={() => setActiveFilter(activeFilter === "nearby" ? "all" : "nearby")}
+                className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
+                  activeFilter === "nearby"
+                    ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
+                    : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
+                }`}
+              >
+                <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
+                  {nearbyJobs.length} jobs nearby
                 </div>
+              </div>
 
-                {/* Right Option: Full State Jobs */}
-                <div
-                  onClick={() => setActiveFilter("all")}
-                  className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
-                    activeFilter === "all"
-                      ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
-                      : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
-                  }`}
-                >
-                  <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
-                    {liveJobs.length} full state jobs
-                  </div>
+              {/* Right Option: Full State Jobs */}
+              <div
+                onClick={() => setActiveFilter("all")}
+                className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
+                  activeFilter === "all"
+                    ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
+                    : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
+                }`}
+              >
+                <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
+                  {liveJobs.length} full state jobs
                 </div>
               </div>
             </div>
           </div>
 
           {/* Equal Grid of Job Cards (Consistent positioning & equal heights on both sides) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-0 sm:gap-5 items-stretch pt-3 px-4 sm:px-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-0 sm:gap-5 items-stretch">
             {(activeFilter === "nearby" ? nearbyJobs : filteredJobs).map(job => {
               const isSelected = selectedJob?.id === job.id;
               const isSaved = savedJobIds.includes(job.id);
