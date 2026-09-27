@@ -815,7 +815,7 @@ function BariKoiLiveHousingMap({
                     setMarkerClickedListing(null);
                     onShowDirection(markerClickedListing);
                   }}
-                  className="flex-1 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-100 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
+                  className="flex-1 py-1.5 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95 hover:opacity-70"
                   title="Direction"
                   aria-label="Direction"
                 >
@@ -826,7 +826,7 @@ function BariKoiLiveHousingMap({
                     e.stopPropagation();
                     onViewDetails?.(markerClickedListing);
                   }}
-                  className="flex-1 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-100 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
+                  className="flex-1 py-1.5 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95 hover:opacity-70"
                   title="Details"
                   aria-label="Details"
                 >

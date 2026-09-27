@@ -576,8 +576,8 @@ export function ServicesHub() {
                   onClick={() => setFeaturedTab(tab.id as any)}
                   className={`w-full py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm font-bold transition-all text-center cursor-pointer ${
                     active
-                      ? "bg-[#C04A22]/15 text-[#8C3015] shadow-2xs shadow-[#C04A22]/20"
-                      : "bg-slate-100/80 text-slate-700 hover:bg-[#C04A22]/10 hover:text-[#8C3015]"
+                      ? "bg-[#C04A22]/15 text-[#8C3015] border border-[#C04A22]/40 shadow-2xs shadow-[#C04A22]/20"
+                      : "bg-slate-100/80 text-slate-700 border border-transparent hover:bg-[#C04A22]/10 hover:text-[#8C3015]"
                   }`}
                 >
                   {tab.label}
