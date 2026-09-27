@@ -140,6 +140,7 @@ function InteractiveServiceMap({
   const [travelMode, setTravelMode] = useState<"car" | "bike" | "walk">("car");
   const [isNavCardMinimized, setIsNavCardMinimized] = useState(false);
   const [markerClickedItem, setMarkerClickedItem] = useState<ServiceListing | null>(null);
+  const [cardPlacement, setCardPlacement] = useState<"bottom" | "top">("bottom");
   const [routeInfo, setRouteInfo] = useState<{
     coordinates: [number, number][];
     distanceText: string;
@@ -149,9 +150,28 @@ function InteractiveServiceMap({
   } | null>(null);
 
   const handleMarkerClick = useCallback((item: ServiceListing) => {
+    let placement: "bottom" | "top" = "bottom";
+    const map = mapInstanceRef.current;
+    if (map) {
+      let pinY: number | null = null;
+      if (typeof map.latLngToContainerPoint === "function") {
+        pinY = map.latLngToContainerPoint([item.lat, item.lng]).y;
+      } else if (typeof map.project === "function") {
+        pinY = map.project([item.lng, item.lat]).y;
+      }
+      const containerH = mapContainerRef.current?.clientHeight || 450;
+      if (isScrolled || (pinY !== null && pinY > containerH * 0.4)) {
+        placement = "top";
+      } else {
+        placement = "bottom";
+      }
+    } else if (isScrolled) {
+      placement = "top";
+    }
+    setCardPlacement(placement);
     setMarkerClickedItem(item);
     onSelectItem(item);
-  }, [onSelectItem]);
+  }, [onSelectItem, isScrolled]);
 
   useEffect(() => {
     const handleScroll = () => setMarkerClickedItem(null);
@@ -160,8 +180,8 @@ function InteractiveServiceMap({
   }, []);
 
   useEffect(() => {
-    if (isScrolled) setMarkerClickedItem(null);
-  }, [isScrolled]);
+    if (sheetMode === "full") setMarkerClickedItem(null);
+  }, [sheetMode]);
 
   useEffect(() => {
     if (directionItem) setMarkerClickedItem(null);
@@ -499,16 +519,19 @@ function InteractiveServiceMap({
     }
   }, [items, searchQuery, directionItem, mapLoaded]);
 
-  // Fly to selected item
+  // Fly to selected item with offset away from card
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !mapLoaded || !selectedItem || directionItem) return;
+    const yOffset = cardPlacement === "top" ? 75 : -75;
     map.flyTo({
       center: [selectedItem.lng, selectedItem.lat],
+      offset: [0, yOffset],
       zoom: 15.5,
-      duration: 800
+      duration: 1200,
+      essential: true
     });
-  }, [selectedItem, directionItem, mapLoaded]);
+  }, [selectedItem, directionItem, mapLoaded, cardPlacement]);
 
   // User pinpoint center is continuously handled in synchronized 60fps camera effect above
 
@@ -592,99 +615,87 @@ function InteractiveServiceMap({
             : sheetMode === "full"
               ? "h-0 overflow-hidden"
               : isScrolled
-                ? "h-[210px] sm:h-[240px] md:h-[260px] lg:h-[280px]"
-                : "h-[340px] sm:h-[460px] md:h-[520px] lg:h-[580px]"
+                ? "h-[380px] sm:h-[400px] md:h-[420px] lg:h-[440px]"
+                : "h-[520px] sm:h-[550px] md:h-[580px] lg:h-[620px]"
         }`}
       >
         <div ref={mapContainerRef} className="w-full h-full" />
 
-        {markerClickedItem && !directionItem && !isScrolled && (
-          <div className="absolute bottom-3 left-3 right-3 sm:right-auto sm:left-4 sm:bottom-4 z-30 w-auto sm:w-[330px] bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden animate-in slide-in-from-bottom-3 duration-250 pointer-events-auto">
+        {markerClickedItem && !directionItem && sheetMode !== "full" && (
+          <div
+            className={`absolute z-30 w-[275px] sm:w-[315px] bg-white rounded-2xl shadow-xl border border-slate-200/90 overflow-hidden duration-200 pointer-events-auto left-1/2 -translate-x-1/2 sm:left-4 sm:translate-x-0 ${
+              cardPlacement === "top"
+                ? "top-3 sm:top-4 animate-in slide-in-from-top-3"
+                : "bottom-3 sm:bottom-4 animate-in slide-in-from-bottom-3"
+            }`}
+          >
             <div className="relative w-full h-28 sm:h-32 overflow-hidden bg-slate-100">
               <img src={markerClickedItem.image} alt={markerClickedItem.title} className="w-full h-full object-cover" />
-              <div className="absolute top-2 right-2 flex items-center gap-1.5">
-                <div className="px-2.5 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[11px] font-bold shadow-xs border border-slate-200/60">
+              <div className="absolute top-1.5 right-1.5 flex items-center gap-1.5">
+                <div className="px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[10px] font-bold shadow-xs border border-slate-200/60">
                   {markerClickedItem.type}
                 </div>
                 <button
                   onClick={() => setMarkerClickedItem(null)}
-                  className="w-6.5 h-6.5 rounded-full bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 flex items-center justify-center shadow transition cursor-pointer"
+                  className="w-6 h-6 rounded-full bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 flex items-center justify-center shadow transition cursor-pointer"
                   title="Close"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[11px] font-medium flex items-center gap-1 shadow-xs">
+              <div className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-medium flex items-center gap-1 shadow-xs">
                 <MapPin className="w-3 h-3 text-emerald-400" />
                 <span>{markerClickedItem.distanceKm.toFixed(1)} km away</span>
               </div>
             </div>
 
-            <div className="p-3 sm:p-3.5">
-              <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-snug line-clamp-1">{markerClickedItem.title}</h3>
-              <p className="text-xs text-slate-500 font-medium mt-0.5 truncate">{markerClickedItem.subtitle} • {markerClickedItem.location}</p>
-              <div className="mt-1.5">
-                <span className="text-[#C04A22] text-xs font-bold inline-block">
+            <div className="p-2.5 sm:p-3">
+              <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight line-clamp-1">{markerClickedItem.title}</h3>
+              <p className="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5 truncate">{markerClickedItem.subtitle} • {markerClickedItem.location}</p>
+              <div className="mt-1">
+                <span className="text-[#C04A22] text-[11px] sm:text-xs font-bold inline-block">
                   {markerClickedItem.primaryHighlight}
                 </span>
               </div>
-              <div className="mt-2.5 pt-2 flex items-center justify-between gap-2">
+              <div className="mt-1.5 pt-1.5 border-t border-slate-100 flex items-center justify-between gap-2">
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     setMarkerClickedItem(null);
                     onShowDirection(markerClickedItem);
                   }}
-                  className="flex-1 py-2 rounded-xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95"
+                  className="flex-1 py-1 rounded-lg bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95"
                   title="Direction"
                   aria-label="Direction"
                 >
-                  <Navigation className="w-4 h-4 text-[#C04A22]" />
+                  <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
                 </button>
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     onOpenDetails(markerClickedItem);
                   }}
-                  className="flex-1 py-2 rounded-xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center shadow-none active:scale-95 cursor-pointer"
+                  className="flex-1 py-1 rounded-lg bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center shadow-none active:scale-95 cursor-pointer"
                   title="Details"
                   aria-label="Details"
                 >
-                  <Info className="w-4 h-4 text-[#C04A22]" />
+                  <Info className="w-3.5 h-3.5 text-[#C04A22]" />
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Map Controls: Zoom In / Out / Recenter (Matching Screenshot 2) */}
-        <div className="absolute top-3 right-3 flex flex-col items-center gap-2 z-20 pointer-events-auto">
-          {/* Zoom controls pill */}
-          <div className="flex flex-col items-center bg-white/95 backdrop-blur-md rounded-xl shadow-md border border-slate-200/90 overflow-hidden">
-            <button
-              onClick={() => mapInstanceRef.current?.zoomIn()}
-              className="w-8.5 h-8.5 flex items-center justify-center text-slate-700 hover:text-[#D85A30] hover:bg-slate-50 transition cursor-pointer"
-              title="Zoom In"
-            >
-              <Plus className="w-4 h-4 stroke-[2.2]" />
-            </button>
-            <div className="w-full h-px bg-slate-100" />
-            <button
-              onClick={() => mapInstanceRef.current?.zoomOut()}
-              className="w-8.5 h-8.5 flex items-center justify-center text-slate-700 hover:text-[#D85A30] hover:bg-slate-50 transition cursor-pointer"
-              title="Zoom Out"
-            >
-              <Minus className="w-4 h-4 stroke-[2.2]" />
-            </button>
-          </div>
+        {/* Map Controls: Floating Navigation Button */}
+        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 flex flex-col items-center gap-2 z-20 pointer-events-auto">
           {/* Floating Navigation Button */}
           <button
             onClick={handleCenterUser}
-            className="w-9.5 h-9.5 rounded-full shadow-lg border transition-all cursor-pointer active:scale-95 flex items-center justify-center bg-[#D85A30] text-white border-[#D85A30] shadow-[#D85A30]/30"
+            className="w-7.5 h-7.5 sm:w-8.5 sm:h-8.5 rounded-full shadow-md border transition-all cursor-pointer active:scale-95 flex items-center justify-center bg-[#D85A30] text-white border-[#D85A30] shadow-[#D85A30]/30"
             title="Center My Location"
           >
-            <Navigation className="w-4 h-4 fill-current" />
+            <Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current" />
           </button>
         </div>
 
@@ -963,9 +974,8 @@ export function ServiceMapDirectory({
     const mapEl = document.getElementById("service-map-container")?.querySelector(".relative.w-full");
     const isMobile = window.innerWidth < 640;
     const minH = 0; // User can drag cart all the way to the top of the map!
-    const midH = isMobile ? 210 : 250;
-    const maxAllowedH = Math.max(160, (window.innerHeight || 800) - (isMobile ? 320 : 360));
-    const maxH = Math.min(isMobile ? 360 : 540, maxAllowedH);
+    const midH = isMobile ? 380 : 400;
+    const maxH = isMobile ? 520 : 580;
     const currentH = mapEl ? mapEl.getBoundingClientRect().height : (sheetMode === "full" ? 0 : isScrolled ? midH : maxH);
 
     startDragYRef.current = e.clientY;
@@ -1057,6 +1067,7 @@ export function ServiceMapDirectory({
 
     if (cardListRef.current.scrollTop <= 2 && deltaY > 35 && isScrolled) {
       setIsScrolled(false);
+      setSheetMode("expanded");
       listTouchStartYRef.current = null;
     }
   };
@@ -1065,13 +1076,35 @@ export function ServiceMapDirectory({
     listTouchStartYRef.current = null;
   };
 
-  // Card list scroll detection
+  // Card list scroll detection for instant hide/show of bottom navigation bar
+  const lastCardScrollYRef = useRef(0);
+
   const handleCardListScroll = () => {
     if (!cardListRef.current) return;
-    const y = cardListRef.current.scrollTop;
-    if (y > 20 && !isScrolled) {
-      setIsScrolled(true);
+    const currentY = cardListRef.current.scrollTop;
+
+    // At top of list, always show nav bar
+    if (currentY <= 15) {
+      window.dispatchEvent(new CustomEvent("nav-visibility", { detail: { visible: true } }));
+      lastCardScrollYRef.current = currentY;
+      return;
     }
+
+    const diff = currentY - lastCardScrollYRef.current;
+
+    // Scrolling down -> instantly hide bottom nav bar like Home Feed!
+    if (diff > 4) {
+      window.dispatchEvent(new CustomEvent("nav-visibility", { detail: { visible: false } }));
+      if (sheetMode === "expanded") {
+        setSheetMode("mid");
+        setIsScrolled(true);
+      }
+    } else if (diff < -4) {
+      // Scrolling up -> instantly bring back bottom nav bar!
+      window.dispatchEvent(new CustomEvent("nav-visibility", { detail: { visible: true } }));
+    }
+
+    lastCardScrollYRef.current = currentY;
   };
 
   const { currentCountry } = useCountryPlatform();
@@ -1200,66 +1233,64 @@ export function ServiceMapDirectory({
     );
   };
 
+  const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+
   const handleShowDirection = (item: ServiceListing) => {
     setDirectionItem(item);
     setSelectedItem(item);
-    // Scroll map into view smoothly
-    const mapEl = document.getElementById("service-map-container");
-    if (mapEl) {
-      mapEl.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
   };
 
   return (
     <AppLayout noPad={true}>
-      <div className="w-full h-[calc(100dvh-4rem)] lg:h-[calc(100vh)] flex flex-col overflow-hidden bg-[#FAFAFA]">
+      <div className="w-full h-[100dvh] lg:h-[100vh] flex flex-col overflow-hidden bg-[#FAFAFA]">
         {/* ── TOP STICKY BAR: Search & Back ───────────────────────────────── */}
-        <div className="flex-shrink-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 sm:px-6 shadow-2xs">
-          <div className="max-w-7xl mx-auto flex items-center gap-3">
+        <div className="flex-shrink-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-2.5 py-1.5 sm:px-5 sm:py-2 shadow-2xs">
+          <div className="max-w-7xl mx-auto flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={() => navigate(-1)}
-              className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer flex-shrink-0"
+              className="w-7.5 h-7.5 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer flex-shrink-0"
               title="Back"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
 
             {/* Service Header Badge */}
             <div className="hidden sm:flex items-center gap-2 pr-2 border-r border-slate-200">
               <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                className="w-7.5 h-7.5 rounded-lg flex items-center justify-center text-white"
                 style={{ background: "linear-gradient(135deg, #e6653c 0%, #D85A30 100%)" }}
               >
-                <ServiceIcon className="w-4 h-4" />
+                <ServiceIcon className="w-3.5 h-3.5" />
               </div>
-              <span className="font-bold text-slate-800 text-sm whitespace-nowrap">
+              <span className="font-bold text-slate-800 text-xs sm:text-sm whitespace-nowrap">
                 {serviceName}
               </span>
             </div>
 
             {/* Search Input */}
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder={bannerPlaceholder || `Search ${serviceName.toLowerCase()} nearby...`}
-                className="w-full pl-10 pr-9 py-2.5 bg-slate-50 hover:bg-white focus:bg-white rounded-xl border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C04A22]/20 focus:border-[#C04A22] shadow-2xs transition"
+                className="w-full pl-7.5 pr-7 py-1 sm:py-1.5 bg-slate-50 hover:bg-white focus:bg-white rounded-md sm:rounded-lg border border-slate-200 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C04A22]/20 focus:border-[#C04A22] shadow-2xs transition"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
           </div>
 
           {/* Filter Pills */}
-          <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar pt-2.5 pb-0.5">
+          <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar pt-1 pb-0.5">
             {filterTabs.map(tab => (
               <button
                 key={tab.id}
@@ -1283,7 +1314,7 @@ export function ServiceMapDirectory({
             sheetMode === "full" && dragMapHeight === null ? "h-0 overflow-hidden" : ""
           }`}
         >
-          <div className="rounded-none sm:rounded-b-2xl overflow-hidden border-b border-slate-200/90 shadow-xs bg-white">
+          <div className="rounded-none overflow-hidden border-b border-slate-200/90 shadow-xs bg-white">
             <InteractiveServiceMap
               userCoords={userCoords}
               isLocationGranted={isLocationGranted}
@@ -1310,10 +1341,10 @@ export function ServiceMapDirectory({
           </div>
         </div>
 
-        {/* ── MAIN DIRECTORY LISTINGS (UPORE / ON TOP - PAUSES RIGHT BELOW COMPACT MAP) ─────────── */}
-        <div className="flex-1 min-h-[145px] flex flex-col max-w-7xl w-full mx-auto px-0 sm:px-6 relative z-20 bg-[#FAFAFA] rounded-t-3xl shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-2 sm:-mt-3 overflow-hidden">
-          {/* ── PINNED BOTTOM SHEET HEADER: Handle bar + Filter Options (NEVER HIDES!) ── */}
-          <div className="flex-shrink-0 bg-[#FAFAFA] rounded-t-3xl pt-2 sm:pt-3 select-none border-b border-slate-200/40">
+        {/* ── MAIN DIRECTORY BOTTOM SHEET CONTAINER ─────────── */}
+        <div className="flex-1 min-h-0 flex flex-col max-w-7xl w-full mx-auto px-0 relative z-20 bg-[#FAFAFA] rounded-none shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-px">
+          {/* ── PERSISTENT DRAG HANDLE & FILTER HEADER (NEVER HIDES! Jekhanei jak na keno) ── */}
+          <div className="flex-shrink-0 z-30 bg-[#FAFAFA] rounded-none pt-2 sm:pt-3 pb-2.5 px-4 sm:px-6">
             {/* Uber-style pull handle indicator (Live 1:1 mouse/touch drag tracker) */}
             <div
               onPointerDown={handlePointerDown}
@@ -1321,48 +1352,47 @@ export function ServiceMapDirectory({
             >
               <div className="w-12 h-1.5 bg-slate-300 group-hover:bg-slate-400 active:bg-slate-500 rounded-full transition-colors" />
             </div>
-
             {/* Nearby Filter Count */}
-            <div className="grid grid-cols-2 gap-2.5 pb-3 max-w-md px-4 sm:px-0">
+            <div className="grid grid-cols-2 gap-2.5 max-w-md">
               <div
                 onClick={() => setActiveFilter(activeFilter === "nearby" ? "all" : "nearby")}
-                className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
+                className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-lg border transition-all cursor-pointer text-center sm:text-left ${
                   activeFilter === "nearby"
-                    ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
+                    ? "bg-orange-100/70 border-transparent shadow-xs"
                     : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
                 }`}
               >
-                <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
+                <div className={`text-xs sm:text-sm leading-tight ${activeFilter === "nearby" ? "font-semibold text-[#8C3015]" : "font-normal text-slate-800"}`}>
                   {nearbyItems.length} {serviceName} nearby
                 </div>
               </div>
 
               <div
                 onClick={() => setActiveFilter("all")}
-                className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
+                className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-lg border transition-all cursor-pointer text-center sm:text-left ${
                   activeFilter === "all"
-                    ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
+                    ? "bg-orange-100/70 border-transparent shadow-xs"
                     : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
                 }`}
               >
-                <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
+                <div className={`text-xs sm:text-sm leading-tight ${activeFilter === "all" ? "font-semibold text-[#8C3015]" : "font-normal text-slate-800"}`}>
                   {liveItems.length} total in {userCity}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ── SCROLLABLE SERVICE ITEMS LIST ── */}
+          {/* ── SCROLLABLE LIST OF LISTINGS (Scrolls underneath persistent header) ── */}
           <div
             ref={cardListRef}
             onScroll={handleCardListScroll}
             onTouchStart={handleListTouchStart}
             onTouchMove={handleListTouchMove}
             onTouchEnd={handleListTouchEnd}
-            className="flex-1 min-h-0 overflow-y-auto px-0 sm:px-0 pb-24"
+            className="flex-1 min-h-0 overflow-y-auto px-0 pb-24"
           >
             {/* Card Container: Equal Grid across all devices */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-0 sm:gap-5 items-stretch">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-0 sm:gap-5 items-stretch pt-1">
             {(activeFilter === "nearby" ? nearbyItems : filteredItems).map(item => {
               const isSelected = selectedItem?.id === item.id;
               const isSaved = savedIds.includes(item.id);
@@ -1371,6 +1401,10 @@ export function ServiceMapDirectory({
                 <div
                   key={item.id}
                   data-item-id={item.id}
+                  ref={el => {
+                    if (el) cardRefs.current.set(item.id, el);
+                    else cardRefs.current.delete(item.id);
+                  }}
                   onClick={() => {
                     setSelectedItem(item);
                   }}
@@ -1508,9 +1542,9 @@ export function ServiceMapDirectory({
               </button>
             </div>
           )}
+          </div>
         </div>
       </div>
-    </div>
 
       {/* Full Details Modal ("Explore a gele baki details dekhabe") */}
       <ServiceDetailsModal

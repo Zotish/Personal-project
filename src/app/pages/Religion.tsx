@@ -117,14 +117,34 @@ function BariKoiLiveReligionMap({
   const LRef = useRef<any>(null);
 
   const [markerClickedListing, setMarkerClickedListing] = useState<LiveReligionListing | null>(null);
+  const [cardPlacement, setCardPlacement] = useState<"bottom" | "top">("bottom");
   const [travelMode, setTravelMode] = useState<"car" | "bike" | "walk">("car");
   const [routeInfo, setRouteInfo] = useState<{ distanceText: string; durationText: string } | null>(null);
   const [isNavCardMinimized, setIsNavCardMinimized] = useState(false);
 
   const handleMarkerClick = useCallback((listing: LiveReligionListing) => {
+    let placement: "bottom" | "top" = "bottom";
+    const map = mapRef.current;
+    if (map) {
+      let pinY: number | null = null;
+      if (typeof map.latLngToContainerPoint === "function") {
+        pinY = map.latLngToContainerPoint([listing.lat, listing.lng]).y;
+      } else if (typeof map.project === "function") {
+        pinY = map.project([listing.lng, listing.lat]).y;
+      }
+      const containerH = containerRef.current?.clientHeight || 450;
+      if (isScrolled || (pinY !== null && pinY > containerH * 0.4)) {
+        placement = "top";
+      } else {
+        placement = "bottom";
+      }
+    } else if (isScrolled) {
+      placement = "top";
+    }
+    setCardPlacement(placement);
     setMarkerClickedListing(listing);
     onSelectListing(listing);
-  }, [onSelectListing]);
+  }, [onSelectListing, isScrolled]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -135,10 +155,10 @@ function BariKoiLiveReligionMap({
   }, []);
 
   useEffect(() => {
-    if (isScrolled) {
+    if (sheetMode === "full") {
       setMarkerClickedListing(null);
     }
-  }, [isScrolled]);
+  }, [sheetMode]);
 
   useEffect(() => {
     if (directionListing) {
@@ -447,56 +467,33 @@ function BariKoiLiveReligionMap({
         } catch (_) {}
       }
 
-      // Auto-move / Fly map to selected place on scroll or selection
+      // Auto-move / Fly map to selected place on scroll or selection with offset away from card
       if (selectedListing) {
-        if (LRef.current) {
-          if (map.flyTo) {
-            map.flyTo([selectedListing.lat, selectedListing.lng], 14.5, { duration: 1.0 });
-          } else if (map.panTo) {
-            map.panTo([selectedListing.lat, selectedListing.lng]);
-          }
-        } else {
-          if (map.flyTo) {
-            map.flyTo({
-              center: [selectedListing.lng, selectedListing.lat],
-              zoom: 14.5,
-              speed: 1.2,
-              curve: 1.1,
-              essential: true
-            });
-          } else if (map.panTo) {
-            map.panTo([selectedListing.lng, selectedListing.lat]);
-          }
+        const yOffset = cardPlacement === "top" ? 75 : -75;
+        if (map.flyTo) {
+          map.flyTo({
+            center: [selectedListing.lng, selectedListing.lat],
+            offset: [0, yOffset],
+            zoom: 14.5,
+            duration: 1200,
+            essential: true
+          });
+        } else if (map.panTo && typeof map.project === "function" && typeof map.unproject === "function") {
+          const pt = map.project([selectedListing.lat, selectedListing.lng], map.getZoom()).add([0, -yOffset]);
+          map.panTo(map.unproject(pt, map.getZoom()), { animate: true, duration: 1.0 });
+        } else if (map.panTo) {
+          map.panTo([selectedListing.lat, selectedListing.lng], { animate: true, duration: 1.0 });
         }
       }
     }
-  }, [directionListing, selectedListing, userCoords, travelMode]);
+  }, [directionListing, selectedListing, userCoords, travelMode, cardPlacement]);
 
   // Smoothly sync map size and camera with bottom sheet up/down motion (60fps continuous WebGL resize)
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    // Smooth camera ease to focus on user pinpoint with appropriate zoom for sheet position
-    if (!directionListing && !selectedListing) {
-      if (map.easeTo) {
-        map.easeTo({
-          center: [userCoords[1], userCoords[0]],
-          zoom: isScrolled ? 14.0 : 14.8,
-          duration: 300,
-          easing: (t: number) => t * (2 - t)
-        });
-      } else if (map.flyTo) {
-        map.flyTo({
-          center: [userCoords[1], userCoords[0]],
-          zoom: isScrolled ? 14.0 : 14.8,
-          duration: 300,
-          essential: true
-        });
-      } else if (map.setView) {
-        map.setView([userCoords[0], userCoords[1]], isScrolled ? 14.0 : 14.8);
-      }
-    }
+    // Continuously resize map viewport on every animation frame during the 300ms CSS height transition
 
     // Continuously resize map viewport on every animation frame during the 300ms CSS height transition
     let rafId: number;
@@ -548,54 +545,60 @@ function BariKoiLiveReligionMap({
             : sheetMode === "full"
               ? "h-0 overflow-hidden"
               : isScrolled
-                ? "h-[210px] sm:h-[240px] md:h-[260px] lg:h-[280px]"
-                : "h-[340px] sm:h-[460px] md:h-[520px] lg:h-[580px]"
+                ? "h-[380px] sm:h-[400px] md:h-[420px] lg:h-[440px]" // Mid transition: shows exactly 1 card photo + name
+                : "h-[520px] sm:h-[550px] md:h-[580px] lg:h-[620px]"
         }`}
       >
         <div ref={containerRef} className="w-full h-full" />
 
-        {/* ── Selected Place Card Overlay on Marker Click ── */}
-        {markerClickedListing && !directionListing && !isScrolled && (
-          <div className="absolute bottom-3 left-3 right-3 sm:right-auto sm:left-4 sm:bottom-4 z-30 w-auto sm:w-[330px] bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden animate-in slide-in-from-bottom-3 duration-250 pointer-events-auto">
+        {/* ── Selected Place Card Overlay on Marker Click (Compact & Dynamically Positioned) ── */}
+        {markerClickedListing && !directionListing && sheetMode !== "full" && (
+          <div
+            className={`absolute z-[9999999] w-[275px] sm:w-[315px] bg-white rounded-2xl shadow-xl border border-slate-200/90 overflow-hidden duration-200 pointer-events-auto left-1/2 -translate-x-1/2 sm:left-4 sm:translate-x-0 ${
+              cardPlacement === "top"
+                ? "top-3 sm:top-4 animate-in slide-in-from-top-3"
+                : "bottom-3 sm:bottom-4 animate-in slide-in-from-bottom-3"
+            }`}
+          >
             <div className="relative w-full h-28 sm:h-32 overflow-hidden bg-slate-100">
               <img
                 src={markerClickedListing.image}
                 alt={markerClickedListing.name}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute top-2 right-2 flex items-center gap-1.5">
-                <div className="px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[11px] font-bold shadow-xs">
+              <div className="absolute top-1.5 right-1.5 flex items-center gap-1.5">
+                <div className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold shadow-xs">
                   {markerClickedListing.openStatus}
                 </div>
                 <button
                   onClick={() => setMarkerClickedListing(null)}
-                  className="w-6.5 h-6.5 rounded-full bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 flex items-center justify-center shadow transition cursor-pointer"
+                  className="w-6 h-6 rounded-full bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 flex items-center justify-center shadow transition cursor-pointer"
                   title="Close"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              <div className="absolute top-2 left-2 px-2.5 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[10px] font-bold border border-slate-200/60 shadow-xs flex items-center gap-1">
+              <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[10px] font-bold border border-slate-200/60 shadow-xs flex items-center gap-1">
                 <span>{markerClickedListing.emoji}</span>
                 <span>{markerClickedListing.type}</span>
               </div>
 
-              <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[11px] font-medium flex items-center gap-1 shadow-xs">
+              <div className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-medium flex items-center gap-1 shadow-xs">
                 <MapPin className="w-3 h-3 text-emerald-400" />
                 <span>{markerClickedListing.distance}</span>
               </div>
             </div>
 
-            <div className="p-3 sm:p-3.5">
-              <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-snug line-clamp-1">
+            <div className="p-2.5 sm:p-3">
+              <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight line-clamp-1">
                 {markerClickedListing.name}
               </h3>
-              <p className="text-xs text-slate-500 font-medium mt-0.5 truncate">
+              <p className="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5 truncate">
                 {markerClickedListing.address}
               </p>
 
-              <div className="mt-1.5 flex items-center gap-2 overflow-hidden">
+              <div className="mt-1 flex items-center gap-2 overflow-hidden">
                 {markerClickedListing.features.slice(0, 2).map(f => (
                   <span key={f} className="text-[#C04A22] text-[10px] font-bold truncate">
                     {f}
@@ -604,29 +607,29 @@ function BariKoiLiveReligionMap({
               </div>
 
               {/* Action Buttons (Icon Only) */}
-              <div className="mt-2.5 pt-2 flex items-center justify-between gap-2">
+              <div className="mt-1.5 pt-1.5 border-t border-slate-100 flex items-center justify-between gap-2">
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     setMarkerClickedListing(null);
                     onShowDirection(markerClickedListing);
                   }}
-                  className="flex-1 py-2 rounded-xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95"
+                  className="flex-1 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-100 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
                   title="Direction"
                   aria-label="Direction"
                 >
-                  <Navigation className="w-4 h-4 text-[#C04A22]" />
+                  <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
                 </button>
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     onViewDetails?.(markerClickedListing);
                   }}
-                  className="flex-1 py-2 rounded-xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center shadow-none active:scale-95 cursor-pointer"
+                  className="flex-1 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-100 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
                   title="Details"
                   aria-label="Details"
                 >
-                  <Info className="w-4 h-4 text-[#C04A22]" />
+                  <Info className="w-3.5 h-3.5 text-[#C04A22]" />
                 </button>
               </div>
             </div>
@@ -665,32 +668,8 @@ function BariKoiLiveReligionMap({
           </div>
         )}
 
-        {/* Top Right Controls (Zoom + Recenter - Matching Screenshot 2) */}
-        <div className="absolute top-4 right-4 z-30 flex flex-col items-center gap-2 pointer-events-auto">
-          {/* Zoom controls pill */}
-          <div className="flex flex-col items-center bg-white/95 backdrop-blur-md rounded-xl shadow-md border border-slate-200/90 overflow-hidden">
-            <button
-              onClick={() => {
-                if (mapRef.current?.zoomIn) mapRef.current.zoomIn();
-                else if (mapRef.current?.setZoom) mapRef.current.setZoom(mapRef.current.getZoom() + 1);
-              }}
-              className="w-8.5 h-8.5 flex items-center justify-center text-slate-700 hover:text-[#D85A30] hover:bg-slate-50 transition cursor-pointer"
-              title="Zoom In"
-            >
-              <Plus className="w-4 h-4 stroke-[2.2]" />
-            </button>
-            <div className="w-full h-px bg-slate-100" />
-            <button
-              onClick={() => {
-                if (mapRef.current?.zoomOut) mapRef.current.zoomOut();
-                else if (mapRef.current?.setZoom) mapRef.current.setZoom(mapRef.current.getZoom() - 1);
-              }}
-              className="w-8.5 h-8.5 flex items-center justify-center text-slate-700 hover:text-[#D85A30] hover:bg-slate-50 transition cursor-pointer"
-              title="Zoom Out"
-            >
-              <Minus className="w-4 h-4 stroke-[2.2]" />
-            </button>
-          </div>
+        {/* Top Right Controls (Recenter Navigation - Matching Screenshot 2) */}
+        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-30 flex flex-col items-center gap-2 pointer-events-auto">
           {/* Floating Navigation Button */}
           <button
             onClick={() => {
@@ -702,14 +681,14 @@ function BariKoiLiveReligionMap({
                 }
               }
             }}
-            className={`w-9.5 h-9.5 rounded-full shadow-lg border transition-all cursor-pointer active:scale-95 flex items-center justify-center ${
+            className={`w-7.5 h-7.5 sm:w-8.5 sm:h-8.5 rounded-full shadow-md border transition-all cursor-pointer active:scale-95 flex items-center justify-center ${
               isLocationGranted
                 ? "bg-[#D85A30] text-white border-[#D85A30] shadow-[#D85A30]/30"
                 : "bg-white/95 backdrop-blur-md text-slate-700 hover:text-[#D85A30] border-slate-200/90"
             }`}
             title="Recenter to Your Location"
           >
-            <Navigation className={`w-4 h-4 transition-transform ${isLocationGranted ? "text-white fill-current" : "text-slate-700 hover:text-[#D85A30]"}`} />
+            <Navigation className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform ${isLocationGranted ? "text-white fill-current" : "text-slate-700 hover:text-[#D85A30]"}`} />
           </button>
         </div>
       </div>
@@ -966,9 +945,8 @@ export function ReligiousFinder() {
     const mapEl = document.getElementById("religion-map-section")?.querySelector(".relative.w-full");
     const isMobile = window.innerWidth < 640;
     const minH = 0; // User can drag cart all the way to the top of the map!
-    const midH = isMobile ? 210 : 250;
-    const maxAllowedH = Math.max(160, (window.innerHeight || 800) - (isMobile ? 320 : 360));
-    const maxH = Math.min(isMobile ? 360 : 540, maxAllowedH);
+    const midH = isMobile ? 380 : 400;
+    const maxH = isMobile ? 520 : 580;
     const currentH = mapEl ? mapEl.getBoundingClientRect().height : (sheetMode === "full" ? 0 : isScrolled ? midH : maxH);
 
     startDragYRef.current = e.clientY;
@@ -1058,9 +1036,7 @@ export function ReligiousFinder() {
 
     if (cardListRef.current.scrollTop <= 2 && deltaY > 30 && isScrolled) {
       setIsScrolled(false);
-      listTouchStartYRef.current = null;
-    } else if (!isScrolled && deltaY < -30) {
-      setIsScrolled(true);
+      setSheetMode("expanded");
       listTouchStartYRef.current = null;
     }
   };
@@ -1069,13 +1045,35 @@ export function ReligiousFinder() {
     listTouchStartYRef.current = null;
   };
 
-  // Smooth scroll detection for dynamic map resizing
+  // Card list scroll detection for instant hide/show of bottom navigation bar
+  const lastCardScrollYRef = useRef(0);
+
   const handleCardListScroll = () => {
     if (!cardListRef.current) return;
-    const y = cardListRef.current.scrollTop;
-    if (y > 20 && !isScrolled) {
-      setIsScrolled(true);
+    const currentY = cardListRef.current.scrollTop;
+
+    // At top of list, always show nav bar
+    if (currentY <= 15) {
+      window.dispatchEvent(new CustomEvent("nav-visibility", { detail: { visible: true } }));
+      lastCardScrollYRef.current = currentY;
+      return;
     }
+
+    const diff = currentY - lastCardScrollYRef.current;
+
+    // Scrolling down -> instantly hide bottom nav bar like Home Feed!
+    if (diff > 4) {
+      window.dispatchEvent(new CustomEvent("nav-visibility", { detail: { visible: false } }));
+      if (sheetMode === "expanded") {
+        setSheetMode("mid");
+        setIsScrolled(true);
+      }
+    } else if (diff < -4) {
+      // Scrolling up -> instantly bring back bottom nav bar!
+      window.dispatchEvent(new CustomEvent("nav-visibility", { detail: { visible: true } }));
+    }
+
+    lastCardScrollYRef.current = currentY;
   };
 
   // Filter listings
@@ -1097,6 +1095,7 @@ export function ReligiousFinder() {
 
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
+
   // Deep linking: auto-focus and show details if opened via shared link
   const routerLocation = useLocation();
   const searchParams = useMemo(() => new URLSearchParams(routerLocation.search), [routerLocation.search]);
@@ -1109,9 +1108,6 @@ export function ReligiousFinder() {
       setSelectedPlace(target);
       setActiveModalPlace(target);
       setUserCoords([target.lat, target.lng]);
-      setTimeout(() => {
-        cardRefs.current.get(target.id)?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 500);
     }
   }, [sharedId, livePlaces]);
 
@@ -1120,10 +1116,6 @@ export function ReligiousFinder() {
   const handleShowDirection = useCallback((listing: LiveReligionListing) => {
     setDirectionPlace(listing);
     setSelectedPlace(listing);
-    const mapEl = document.getElementById("religion-map-section");
-    if (mapEl) {
-      mapEl.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
   }, []);
 
   const executeGeolocation = useCallback(() => {
@@ -1165,41 +1157,41 @@ export function ReligiousFinder() {
 
   return (
     <AppLayout noPad={true}>
-      <div className="w-full h-[calc(100dvh-4rem)] lg:h-[calc(100vh)] flex flex-col overflow-hidden bg-[#FAFAFA]">
+      <div className="w-full h-[100dvh] lg:h-[100vh] flex flex-col overflow-hidden bg-[#FAFAFA]">
         {/* ── TOP STICKY BAR (Housing Style) ── */}
-        <div className="flex-shrink-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 sm:px-6 shadow-2xs">
-          <div className="max-w-7xl mx-auto flex items-center gap-3">
+        <div className="flex-shrink-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-2.5 py-1.5 sm:px-5 sm:py-2 shadow-2xs">
+          <div className="max-w-7xl mx-auto flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={() => navigate(-1)}
-              className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer flex-shrink-0"
+              className="w-7.5 h-7.5 sm:w-8 sm:h-8 flex items-center justify-center rounded-md sm:rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer flex-shrink-0"
               title="Back"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
 
             {/* Clean Rounded Search Bar */}
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="search mosque, temple, church, jummah, langar, prayer times..."
-                className="w-full pl-10 pr-9 py-2.5 bg-slate-50 hover:bg-white focus:bg-white rounded-xl border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C04A22]/20 focus:border-[#C04A22] shadow-2xs transition"
+                className="w-full pl-7.5 pr-7 py-1 sm:py-1.5 bg-slate-50 hover:bg-white focus:bg-white rounded-md sm:rounded-lg border border-slate-200 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C04A22]/20 focus:border-[#C04A22] shadow-2xs transition"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
           </div>
 
           {/* Filter Pills */}
-          <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar pt-2.5 pb-0.5">
+          <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar pt-1 pb-0.5">
             {filterPills.map(f => (
               <button
                 key={f.id}
@@ -1223,7 +1215,7 @@ export function ReligiousFinder() {
             sheetMode === "full" && dragMapHeight === null ? "h-0 overflow-hidden" : ""
           }`}
         >
-          <div className="rounded-none sm:rounded-b-2xl overflow-hidden border-b border-slate-200/90 shadow-xs bg-white">
+          <div className="rounded-none overflow-hidden border-b border-slate-200/90 shadow-xs bg-white">
             <BariKoiLiveReligionMap
               userCoords={userCoords}
               isLocationGranted={isLocationGranted}
@@ -1249,10 +1241,10 @@ export function ReligiousFinder() {
           </div>
         </div>
 
-        {/* ── MAIN DIRECTORY CONTENT (UPORE / ON TOP - PAUSES RIGHT BELOW COMPACT MAP) ── */}
-        <div className="flex-1 min-h-[145px] flex flex-col max-w-7xl w-full mx-auto px-0 sm:px-6 relative z-20 bg-[#FAFAFA] rounded-t-3xl shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-2 sm:-mt-3 overflow-hidden">
-          {/* ── PINNED BOTTOM SHEET HEADER: Handle bar + Filter Options (NEVER HIDES!) ── */}
-          <div className="flex-shrink-0 bg-[#FAFAFA] rounded-t-3xl pt-2 sm:pt-3 select-none border-b border-slate-200/40">
+        {/* ── MAIN DIRECTORY CONTENT (BOTTOM SHEET) ── */}
+        <div className="flex-1 min-h-0 flex flex-col max-w-7xl w-full mx-auto px-0 relative z-20 bg-[#FAFAFA] rounded-none shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-px">
+          {/* ── PERSISTENT DRAG HANDLE & FILTER HEADER (NEVER HIDES! Jekhanei jak na keno) ── */}
+          <div className="flex-shrink-0 z-30 bg-[#FAFAFA] rounded-none pt-2 sm:pt-3 pb-2.5 px-4 sm:px-6">
             {/* Uber-style pull handle indicator (Live 1:1 mouse/touch drag tracker) */}
             <div
               onPointerDown={handlePointerDown}
@@ -1260,48 +1252,47 @@ export function ReligiousFinder() {
             >
               <div className="w-12 h-1.5 bg-slate-300 group-hover:bg-slate-400 active:bg-slate-500 rounded-full transition-colors" />
             </div>
-
             {/* Counter Toggle Boxes */}
-            <div className="grid grid-cols-2 gap-2.5 pb-3 max-w-md px-4 sm:px-0">
+            <div className="grid grid-cols-2 gap-2.5 max-w-md">
               <div
                 onClick={() => setActiveFilter("nearby")}
-                className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border text-center transition-all cursor-pointer ${
+                className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer ${
                   activeFilter === "nearby"
-                    ? "bg-orange-50/60 border-[#C04A22]/40 ring-1 ring-[#C04A22]/20 shadow-xs"
+                    ? "bg-orange-100/70 border-transparent shadow-xs"
                     : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs"
                 }`}
               >
-                <div className="text-xs sm:text-sm font-normal text-slate-900 leading-tight">
+                <div className={`text-xs sm:text-sm leading-tight ${activeFilter === "nearby" ? "font-semibold text-[#8C3015]" : "font-normal text-slate-900"}`}>
                   {nearbyPlaces.length} Nearby Places
                 </div>
               </div>
 
               <div
                 onClick={() => setActiveFilter("all")}
-                className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border text-center transition-all cursor-pointer ${
+                className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer ${
                   activeFilter === "all"
-                    ? "bg-orange-50/60 border-[#C04A22]/40 ring-1 ring-[#C04A22]/20 shadow-xs"
+                    ? "bg-orange-100/70 border-transparent shadow-xs"
                     : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs"
                 }`}
               >
-                <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
+                <div className={`text-xs sm:text-sm leading-tight ${activeFilter === "all" ? "font-semibold text-[#8C3015]" : "font-normal text-slate-800"}`}>
                   {livePlaces.length} All Areas
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ── SCROLLABLE RELIGIOUS PLACES LIST ── */}
+          {/* ── SCROLLABLE LIST OF PLACES (Scrolls underneath persistent header) ── */}
           <div
             ref={cardListRef}
             onScroll={handleCardListScroll}
             onTouchStart={handleListTouchStart}
             onTouchMove={handleListTouchMove}
             onTouchEnd={handleListTouchEnd}
-            className="flex-1 min-h-0 overflow-y-auto px-0 sm:px-0 pb-24"
+            className="flex-1 min-h-0 overflow-y-auto px-0 pb-24"
           >
             {/* Equal Grid of Religious Places (1 on mobile, 2 on pad, 3 on desktop) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-0 sm:gap-5 items-stretch mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-0 sm:gap-5 items-stretch mb-6 pt-1">
             {(activeFilter === "nearby" ? nearbyPlaces : filteredPlaces).map(place => {
               const isSaved = savedIds.includes(place.id);
               const isSelected = selectedPlace?.id === place.id;
@@ -1409,7 +1400,7 @@ export function ReligiousFinder() {
                           e.stopPropagation();
                           handleShowDirection(place);
                         }}
-                        className="flex-1 py-2 rounded-2xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95"
+                        className="flex-1 py-2 rounded-2xl bg-white hover:bg-slate-50 border border-slate-100 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
                         title="Direction"
                         aria-label="Direction"
                       >
@@ -1420,7 +1411,7 @@ export function ReligiousFinder() {
                           e.stopPropagation();
                           setActiveModalPlace(place);
                         }}
-                        className="flex-1 py-2 rounded-2xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center shadow-none active:scale-95 cursor-pointer"
+                        className="flex-1 py-2 rounded-2xl bg-white hover:bg-slate-50 border border-slate-100 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
                         title="Details"
                         aria-label="Details"
                       >

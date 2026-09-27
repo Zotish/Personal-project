@@ -3151,7 +3151,7 @@ export function MapDiscoveryContent({
   };
 
   return (
-    <div className={compact ? `flex flex-col ${height || "h-[240px] sm:h-[260px]"} rounded-2xl border border-border overflow-hidden bg-background shadow-xs relative mb-3 sm:mb-4` : embedded ? "flex flex-col h-[580px] sm:h-[650px] rounded-2xl border border-border overflow-hidden bg-background shadow-sm my-1" : "flex flex-col h-[calc(100dvh-5rem)] lg:h-screen overflow-hidden bg-background"}>
+    <div className={compact ? `flex flex-col ${height || "h-[240px] sm:h-[260px]"} overflow-hidden bg-background relative mb-0` : embedded ? "flex flex-col h-[580px] sm:h-[650px] rounded-none sm:rounded-2xl border-0 sm:border border-border overflow-hidden bg-background shadow-none sm:shadow-sm my-0 sm:my-1" : "flex flex-col h-[calc(100dvh-5rem)] lg:h-screen overflow-hidden bg-background"}>
       {compact ? (
         /* ── Compact Embedded Mode (For HomeFeed between top bar & post composer) ── */
         <div
@@ -3183,36 +3183,8 @@ export function MapDiscoveryContent({
               onMarkerHover={() => {}}
             />
 
-            {/* Floating Controls: Zoom & GPS */}
+            {/* Floating Controls: GPS */}
             <div className="absolute bottom-2.5 right-2.5 z-10 flex flex-col items-center gap-1.5 pointer-events-auto">
-              {/* Google Maps Style Small Zoom (+ / -) */}
-              <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-md shadow-md border border-slate-200/90 dark:border-slate-800 overflow-hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800 select-none">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setZoomInCount(c => c + 1);
-                  }}
-                  className="w-7 h-7 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 transition cursor-pointer"
-                  title="Zoom in"
-                  aria-label="Zoom in"
-                >
-                  <Plus className="w-3.5 h-3.5 stroke-[2.2]" />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setZoomOutCount(c => c + 1);
-                  }}
-                  className="w-7 h-7 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 transition cursor-pointer"
-                  title="Zoom out"
-                  aria-label="Zoom out"
-                >
-                  <Minus className="w-3.5 h-3.5 stroke-[2.2]" />
-                </button>
-              </div>
-
               {/* Floating GPS Button */}
               <button
                 onClick={(e) => {
@@ -3350,12 +3322,12 @@ export function MapDiscoveryContent({
             </div>
           </div>
 
-          {/* Main Content Area (Matches Categories Pill Bar max-w-4xl width) */}
-          <div className="flex-1 w-full max-w-4xl mx-auto px-2 sm:px-4 pt-2 pb-2 min-h-0 relative flex flex-col gap-2.5 overflow-hidden">
+          {/* Main Content Area (Full-bleed edge-to-edge on mobile, padded card on desktop) */}
+          <div className="flex-1 w-full max-w-4xl mx-auto p-0 sm:px-4 sm:pt-2 sm:pb-2 min-h-0 relative flex flex-col gap-0 sm:gap-2.5 overflow-hidden">
             {/* Top Row: Map Box and List View */}
-            <div className="flex-1 w-full flex flex-col md:flex-row gap-4 min-h-0">
-              {/* Standalone Map View Box (Rounded border card) */}
-              <div ref={mapContainerRef} className={`relative flex-1 w-full h-full min-h-0 rounded-2xl sm:rounded-3xl overflow-hidden border border-border/80 shadow-sm bg-white ${viewMode === "list" ? "hidden md:block" : "block"}`}>
+            <div className="flex-1 w-full flex flex-col md:flex-row gap-0 sm:gap-4 min-h-0">
+              {/* Standalone Map View Box (0 padding/margin & rounded-none on mobile, rounded card on desktop) */}
+              <div ref={mapContainerRef} className={`relative flex-1 w-full h-full min-h-0 rounded-none sm:rounded-3xl overflow-hidden border-0 sm:border border-border/80 shadow-none sm:shadow-sm bg-white ${viewMode === "list" ? "hidden md:block" : "block"}`}>
                 <LeafletMap
                   visiblePlaces={filteredPlaces}
                   activePlaceId={mapActiveId}
@@ -3423,31 +3395,9 @@ export function MapDiscoveryContent({
                   );
                 })()}
 
-                {/* Floating Map Controls: Google Maps Style Zoom (+ / -) & My Location */}
+                {/* Floating Map Controls: My Location */}
                 {!isRecentsOpen && !isLiveNavigating && (
                   <div className="absolute bottom-20 right-4 sm:bottom-6 sm:right-6 z-30 flex flex-col items-center gap-2 pointer-events-auto">
-                    {/* Google Maps Style Simple & Small Zoom (+ / -) Buttons */}
-                    <div className="bg-white dark:bg-slate-900 rounded-lg shadow-md border border-slate-200/90 dark:border-slate-800 overflow-hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800 select-none">
-                      <button
-                        type="button"
-                        onClick={() => setZoomInCount(c => c + 1)}
-                        className="w-8 h-8 sm:w-8.5 sm:h-8.5 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 dark:active:bg-slate-700 transition cursor-pointer"
-                        title="Zoom in"
-                        aria-label="Zoom in"
-                      >
-                        <Plus className="w-4 h-4 stroke-[2.2]" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setZoomOutCount(c => c + 1)}
-                        className="w-8 h-8 sm:w-8.5 sm:h-8.5 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 dark:active:bg-slate-700 transition cursor-pointer"
-                        title="Zoom out"
-                        aria-label="Zoom out"
-                      >
-                        <Minus className="w-4 h-4 stroke-[2.2]" />
-                      </button>
-                    </div>
-
                     {/* Floating My Location Button */}
                     <button
                       onClick={() => {
@@ -3552,7 +3502,7 @@ export function MapDiscoveryContent({
               </div>
 
               {/* List View Sidebar (shown only when List view mode is selected) */}
-              <div className={`w-full md:w-[420px] bg-white rounded-2xl sm:rounded-3xl border border-border/80 shadow-sm flex-col h-full min-h-0 overflow-hidden ${viewMode === "list" ? "flex" : "hidden"}`}>
+              <div className={`w-full md:w-[420px] bg-white rounded-none sm:rounded-3xl border-0 sm:border border-border/80 shadow-none sm:shadow-sm flex-col h-full min-h-0 overflow-hidden ${viewMode === "list" ? "flex" : "hidden"}`}>
                 <div className="p-4 border-b border-border flex items-center justify-between">
                   <div>
                     <span className="text-sm font-bold text-foreground block">

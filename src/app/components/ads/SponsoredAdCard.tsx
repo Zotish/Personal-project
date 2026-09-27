@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router";
-import { ExternalLink, Sparkles, Info, CheckCircle2, ChevronRight, X } from "lucide-react";
+import { ExternalLink, CheckCircle2, ChevronRight } from "lucide-react";
 import { useAds, SponsoredAd } from "../../context/AdsContext";
-import { ExpandablePostText } from "../post/ExpandablePostText";
 
 interface SponsoredAdCardProps {
   ad: SponsoredAd;
@@ -12,7 +11,6 @@ interface SponsoredAdCardProps {
 export function SponsoredAdCard({ ad, variant = "feed" }: SponsoredAdCardProps) {
   const navigate = useNavigate();
   const { trackImpression, trackClick } = useAds();
-  const [showInfo, setShowInfo] = useState(false);
 
   useEffect(() => {
     trackImpression(ad.id);
@@ -36,8 +34,7 @@ export function SponsoredAdCard({ ad, variant = "feed" }: SponsoredAdCardProps) 
       >
         {/* Top Tag */}
         <div className="absolute top-2.5 left-2.5 z-10">
-          <span className="inline-flex items-center gap-1 bg-amber-500/90 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
-            <Sparkles className="w-2.5 h-2.5" />
+          <span className="bg-amber-500/90 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
             {ad.badgeText || "Sponsored"}
           </span>
         </div>
@@ -70,14 +67,9 @@ export function SponsoredAdCard({ ad, variant = "feed" }: SponsoredAdCardProps) 
             <h4 className="text-xs font-bold text-slate-900 group-hover:text-[#C04A22] transition-colors line-clamp-2 leading-snug">
               {ad.title}
             </h4>
-
-            <p className="text-[11px] text-slate-500 line-clamp-2 mt-1 leading-relaxed font-normal">
-              {ad.description}
-            </p>
           </div>
 
-          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
-            <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">{ad.category}</span>
+          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-end">
             <button
               type="button"
               onClick={handleAction}
@@ -95,32 +87,6 @@ export function SponsoredAdCard({ ad, variant = "feed" }: SponsoredAdCardProps) 
   // ── Default Feed Variant (Native Post Style) ──
   return (
     <article className="bg-white rounded-none sm:rounded-2xl border-0 sm:border border-b border-slate-100/90 sm:border-border hover:border-slate-300 shadow-none sm:shadow-2xs hover:shadow-sm transition-all duration-200 overflow-hidden relative group">
-      {/* Top Sponsored Identifier Bar */}
-      <div className="px-4 pt-3 pb-1 flex items-center justify-between border-b border-slate-100">
-        <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-800">
-          <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-          <span>{ad.badgeText || "Sponsored"}</span>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setShowInfo(!showInfo)}
-          className="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
-          title="About this sponsored post"
-        >
-          <Info className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
-      {showInfo && (
-        <div className="bg-slate-50 px-4 py-2 text-[11px] text-slate-700 border-b border-slate-200 flex items-center justify-between animate-in fade-in duration-150">
-          <span>This verified partner provides essential services for immigrants and diaspora members.</span>
-          <button onClick={() => setShowInfo(false)} className="text-slate-500 hover:text-slate-700 ml-2">
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
       <div className="p-4 space-y-3">
         {/* Sponsor Profile Header */}
         <div className="flex items-center justify-between gap-3">
@@ -137,11 +103,11 @@ export function SponsoredAdCard({ ad, variant = "feed" }: SponsoredAdCardProps) 
               </div>
             )}
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-sm font-black text-slate-900 truncate">{ad.sponsorName}</span>
                 <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
-                <span className="text-[9px] font-mono bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded font-bold">
-                  {ad.category}
+                <span className="text-[11px] font-bold text-amber-700">
+                  {ad.badgeText || "Sponsored"}
                 </span>
               </div>
               {ad.sponsorHandle && (
@@ -151,16 +117,11 @@ export function SponsoredAdCard({ ad, variant = "feed" }: SponsoredAdCardProps) 
           </div>
         </div>
 
-        {/* Content Headline & Copy */}
-        <div className="space-y-1">
+        {/* Content Headline */}
+        <div>
           <h3 className="text-sm sm:text-base font-extrabold text-slate-900 leading-snug">
             {ad.title}
           </h3>
-          <ExpandablePostText
-            text={ad.description}
-            className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal"
-            buttonClassName="text-xs font-semibold text-slate-500 hover:text-[#C04A22] transition-colors cursor-pointer inline-flex items-center gap-0.5"
-          />
         </div>
 
         {/* Image Banner */}
@@ -184,10 +145,7 @@ export function SponsoredAdCard({ ad, variant = "feed" }: SponsoredAdCardProps) 
         )}
 
         {/* Bottom Action Ribbon */}
-        <div className="pt-2 flex items-center justify-between border-t border-slate-100 text-xs">
-          <span className="text-[11px] text-slate-400">
-            Verified Partner Guarantee · Free cancellation
-          </span>
+        <div className="pt-2 flex items-center justify-end border-t border-slate-100 text-xs">
           <button
             type="button"
             onClick={handleAction}

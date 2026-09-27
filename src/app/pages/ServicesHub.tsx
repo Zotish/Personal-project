@@ -429,7 +429,7 @@ export function ServicesHub() {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto space-y-4 pb-12 pt-2 sm:pt-5 px-0 sm:px-0">
+      <div className="max-w-4xl mx-auto space-y-2 sm:space-y-4 pb-12 pt-1.5 sm:pt-5 px-0 sm:px-0">
 
         {/* QUICK SEARCH BAR + MAP LAUNCHER BUTTON */}
         <div className="flex items-center gap-2.5 px-3 sm:px-0">
@@ -466,18 +466,18 @@ export function ServicesHub() {
         </div>
 
         {/* 🌟 MASTER SERVICES SWIPE CAROUSEL (8 ITEMS ON MOBILE, 10 ON DESKTOP) */}
-        <div ref={servicesContainerRef} className="bg-white rounded-none sm:rounded-3xl border-0 sm:border border-b border-slate-100/90 sm:border-border p-4 sm:p-6 shadow-none sm:shadow-2xs">
+        <div ref={servicesContainerRef} className="bg-white rounded-none sm:rounded-none border-0 sm:border border-b-0 sm:border-b sm:border-border px-3.5 pt-2 pb-1.5 sm:p-6 shadow-none sm:shadow-2xs">
 
           <div
             ref={servicesScrollRef}
             onScroll={handleServicesScroll}
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-            className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory pt-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory pt-0.5 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {servicePages.map((pageItems, pageIdx) => (
               <div
                 key={pageIdx}
-                className="w-full flex-shrink-0 grid grid-cols-4 sm:grid-cols-5 gap-y-4 gap-x-1 sm:gap-x-3 snap-center px-1"
+                className="w-full flex-shrink-0 grid grid-cols-4 sm:grid-cols-5 gap-y-2.5 sm:gap-y-4 gap-x-1 sm:gap-x-3 snap-center px-1"
               >
                 {pageItems.map(service => {
                   const Icon = service.icon;
@@ -488,10 +488,10 @@ export function ServicesHub() {
                         trackVisit({ id: service.id, name: service.name, path: service.link, type: "service" });
                         navigate(service.link);
                       }}
-                      className="group flex flex-col items-center text-center p-2 rounded-2xl hover:bg-[#C04A22]/10 transition-all duration-200 cursor-pointer active:scale-95"
+                      className="group flex flex-col items-center text-center p-1.5 sm:p-2 rounded-2xl hover:bg-[#C04A22]/10 transition-all duration-200 cursor-pointer active:scale-95"
                     >
                       {/* Clean Coral Vector Icon */}
-                      <div className="p-1.5 sm:p-2 flex items-center justify-center transition-all duration-200 mb-1">
+                      <div className="p-1 sm:p-2 flex items-center justify-center transition-all duration-200 mb-0.5 sm:mb-1">
                         <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-[#C04A22] group-hover:text-[#8C3015] group-hover:scale-110 transition-all duration-200" />
                       </div>
 
@@ -508,7 +508,7 @@ export function ServicesHub() {
 
           {/* Always Visible Ultra-Thin 2.5px Scroll Line */}
           {servicePages.length > 1 && (
-            <div className="w-24 sm:w-32 mx-auto h-[2.5px] bg-slate-200/80 rounded-full overflow-hidden mt-3 relative">
+            <div className="w-24 sm:w-32 mx-auto h-[2.5px] bg-slate-200/80 rounded-full overflow-hidden mt-1.5 sm:mt-3 relative">
               <div
                 className="h-full bg-[#C04A22] rounded-full transition-all duration-75"
                 style={{
@@ -522,7 +522,7 @@ export function ServicesHub() {
 
         {/* 🌟 STICKY ONE-LINE HORIZONTAL SCROLLABLE SERVICES BAR (Flush to top, reduced vertical height) */}
         {isStickyServices && (
-          <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md rounded-t-none rounded-b-2xl border-b border-x border-t-0 border-border px-2.5 sm:px-3 pt-1 pb-1.5 sm:pt-1.5 sm:pb-2 shadow-md animate-in slide-in-from-top-2 duration-200">
+          <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md rounded-none border-b border-border px-2.5 sm:px-3 pt-1 pb-1.5 sm:pt-1.5 sm:pb-2 shadow-md animate-in slide-in-from-top-2 duration-200">
             {/* Horizontal Scrollable Service Icons in Single Row */}
             <div
               ref={stickyBarScrollRef}
@@ -559,11 +559,11 @@ export function ServicesHub() {
 
 
         {/* 🌟 FEATURED SERVICES & PRODUCTS CATALOG WITH INTERACTIVE FILTER TABS */}
-        <div className="bg-white rounded-none sm:rounded-3xl border-0 sm:border border-b border-slate-100/90 sm:border-border p-0 sm:p-6 shadow-none sm:shadow-2xs space-y-4">
+        <div className="bg-white rounded-none sm:rounded-3xl border-0 sm:border border-b border-slate-100/90 sm:border-border p-0 sm:p-6 shadow-none sm:shadow-2xs space-y-4 !mt-0 sm:!mt-4">
 
           
           {/* FILTER TABS HEADER (EQUAL DISTANCE 3 BUTTONS - NO ICONS) */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full pb-3 border-b border-slate-100 px-3.5 sm:px-0 pt-3.5 sm:pt-0">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full pb-3 border-b border-slate-100 px-3.5 sm:px-0 pt-1.5 sm:pt-0">
             {[
               { id: "discounted", label: "Discounted" },
               { id: "new", label: "New Arrival" },
@@ -574,10 +574,10 @@ export function ServicesHub() {
                 <button
                   key={tab.id}
                   onClick={() => setFeaturedTab(tab.id as any)}
-                  className={`w-full py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-bold transition-all text-center cursor-pointer ${
+                  className={`w-full py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm font-bold transition-all text-center cursor-pointer ${
                     active
-                      ? "bg-[#C04A22]/15 text-[#8C3015] border border-[#C04A22]/40 shadow-2xs shadow-[#C04A22]/20"
-                      : "bg-slate-100/80 text-slate-700 border border-transparent hover:bg-[#C04A22]/10 hover:text-[#8C3015]"
+                      ? "bg-[#C04A22]/15 text-[#8C3015] shadow-2xs shadow-[#C04A22]/20"
+                      : "bg-slate-100/80 text-slate-700 hover:bg-[#C04A22]/10 hover:text-[#8C3015]"
                   }`}
                 >
                   {tab.label}

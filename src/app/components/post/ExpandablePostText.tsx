@@ -9,7 +9,7 @@ interface ExpandablePostTextProps {
 
 export function ExpandablePostText({
   text,
-  maxChars = 135,
+  maxChars = 100, // Exactly ~2.4 lines on all mobile devices before showing See more
   className = "text-sm text-foreground leading-relaxed whitespace-pre-line text-left mt-3 font-normal",
   buttonClassName = "font-semibold text-slate-500 hover:text-[#C04A22] transition-colors cursor-pointer inline-flex items-center gap-0.5 text-xs sm:text-sm select-none",
 }: ExpandablePostTextProps) {
@@ -21,26 +21,26 @@ export function ExpandablePostText({
   const hasMultipleLines = lines.length > 2;
   const isOverLength = text.length > maxChars;
 
-  // If text is short (within ~2.5 lines), render clean paragraph without button
+  // If text is short (within ~2.4 lines), render clean paragraph without button
   if (!isOverLength && !hasMultipleLines) {
     return <p className={className}>{text}</p>;
   }
 
-  // Calculate preview text truncated cleanly at a word boundary
+  // Calculate preview text truncated cleanly at a word boundary (~2.4 lines)
   let previewText = text;
   if (hasMultipleLines) {
     const firstTwoLines = lines.slice(0, 2).join("\n");
     if (firstTwoLines.length > maxChars) {
       const sub = firstTwoLines.slice(0, maxChars);
       const lastSpace = sub.lastIndexOf(" ");
-      previewText = (lastSpace > 50 ? sub.slice(0, lastSpace) : sub).trim();
+      previewText = (lastSpace > 40 ? sub.slice(0, lastSpace) : sub).trim();
     } else {
       previewText = firstTwoLines.trim();
     }
   } else if (isOverLength) {
     const sub = text.slice(0, maxChars);
     const lastSpace = sub.lastIndexOf(" ");
-    previewText = (lastSpace > 50 ? sub.slice(0, lastSpace) : sub).trim();
+    previewText = (lastSpace > 40 ? sub.slice(0, lastSpace) : sub).trim();
   }
 
   // Ensure trailing punctuation doesn't awkwardly clash with ellipsis

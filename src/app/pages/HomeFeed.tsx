@@ -2144,7 +2144,7 @@ export function HomeFeed() {
           ) : (
             <>
               {/* ── Compact Live Map (Between Top Bar & Post Box) ── */}
-              <div className="px-3 sm:px-0 pt-2.5 sm:pt-0">
+              <div className="w-full">
                 <MapDiscoveryContent compact={true} height="h-[230px] sm:h-[250px]" />
               </div>
 
@@ -2196,7 +2196,9 @@ export function HomeFeed() {
 
               {displayPosts.map((post, idx) => (
                 <Fragment key={post.id}>
-                  <PostCard post={post} />
+                  <div className={idx === 0 && !isPostBoxOpen ? "!mt-0" : ""}>
+                    <PostCard post={post} />
+                  </div>
 
                   {/* Auto-injected Sponsored Ad after every 2-3 posts */}
                   {(idx + 1) % 3 === 0 && (

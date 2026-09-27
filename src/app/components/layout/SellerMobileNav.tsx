@@ -25,6 +25,7 @@ export function SellerMobileNav({ activeTab = "overview", onTabChange }: SellerM
   const lastScrollY = useRef(0);
 
   // Auto-hide bottom nav bar on scroll down, instantly bring back on scroll up
+  // (Listens to both window scroll and inner card list nav-visibility events)
   useEffect(() => {
     let ticking = false;
 
@@ -55,8 +56,20 @@ export function SellerMobileNav({ activeTab = "overview", onTabChange }: SellerM
       }
     };
 
+    const handleNavVisibility = (e: Event) => {
+      const customEvent = e as CustomEvent<{ visible: boolean }>;
+      if (customEvent.detail && typeof customEvent.detail.visible === "boolean") {
+        setIsVisible(customEvent.detail.visible);
+      }
+    };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("nav-visibility", handleNavVisibility);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("nav-visibility", handleNavVisibility);
+    };
   }, []);
 
   useEffect(() => {

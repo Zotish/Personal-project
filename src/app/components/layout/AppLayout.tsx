@@ -29,16 +29,16 @@ export function AppLayout({
   const isInsideIframe = typeof window !== "undefined" && window.self !== window.top;
 
   return (
-    <div className="min-h-screen bg-slate-50/50">
+    <div className={`min-h-screen bg-slate-50/50 ${noPad ? "overflow-hidden h-screen" : ""}`}>
       {isSeller ? (
         <SellerSidebar activeTab={activeTab} onTabChange={onTabChange} />
       ) : (
         <Sidebar />
       )}
 
-      <div className="lg:ml-64 min-h-screen">
-        <div className={`w-full max-w-[1536px] mx-auto flex gap-0 ${noPad ? "" : "px-0 sm:px-5 lg:px-6 pt-0 pb-6 sm:pb-8 lg:pb-8"}`}>
-          <main className={`flex-1 min-w-0 ${hideNav ? "pb-0" : "pb-20 lg:pb-0"}`}>
+      <div className={`lg:ml-64 ${noPad ? "h-screen overflow-hidden" : "min-h-screen"}`}>
+        <div className={`w-full max-w-[1536px] mx-auto flex gap-0 ${noPad ? "h-full" : "px-0 sm:px-5 lg:px-6 pt-0 pb-6 sm:pb-8 lg:pb-8"}`}>
+          <main className={`flex-1 min-w-0 ${noPad || hideNav ? "pb-0 h-full" : "pb-20 lg:pb-0"}`}>
             {children}
           </main>
           {rightPanel && (

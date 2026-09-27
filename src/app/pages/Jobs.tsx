@@ -171,13 +171,33 @@ function BariKoiLiveJobsMap({
   const LRef = useRef<any>(null);
   const lastCoordinatesRef = useRef<[number, number][] | null>(null);
   const [markerClickedJob, setMarkerClickedJob] = useState<LiveJobListing | null>(null);
+  const [cardPlacement, setCardPlacement] = useState<"bottom" | "top">("bottom");
 
   const handleMarkerClick = useCallback((job: LiveJobListing) => {
+    let placement: "bottom" | "top" = "bottom";
+    const map = mapRef.current;
+    if (map) {
+      let pinY: number | null = null;
+      if (typeof map.latLngToContainerPoint === "function") {
+        pinY = map.latLngToContainerPoint([job.lat, job.lng]).y;
+      } else if (typeof map.project === "function") {
+        pinY = map.project([job.lng, job.lat]).y;
+      }
+      const containerH = containerRef.current?.clientHeight || 450;
+      if (isScrolled || (pinY !== null && pinY > containerH * 0.4)) {
+        placement = "top";
+      } else {
+        placement = "bottom";
+      }
+    } else if (isScrolled) {
+      placement = "top";
+    }
+    setCardPlacement(placement);
     setMarkerClickedJob(job);
     onSelectJob(job);
-  }, [onSelectJob]);
+  }, [onSelectJob, isScrolled]);
 
-  // Auto-hide marker card overlay if user scrolls
+  // Auto-hide marker card overlay if user scrolls window or sheet goes to full
   useEffect(() => {
     const handleScroll = () => {
       setMarkerClickedJob(null);
@@ -187,10 +207,10 @@ function BariKoiLiveJobsMap({
   }, []);
 
   useEffect(() => {
-    if (isScrolled) {
+    if (sheetMode === "full") {
       setMarkerClickedJob(null);
     }
-  }, [isScrolled]);
+  }, [sheetMode]);
 
   useEffect(() => {
     if (directionJob) {
@@ -354,28 +374,6 @@ function BariKoiLiveJobsMap({
           syncMapMarkers();
         });
 
-        map.on("dragend", () => {
-          try {
-            const center = map.getCenter();
-            if (!center) return;
-            const lat = typeof center.lat === "function" ? center.lat() : center.lat;
-            const lng = typeof center.lng === "function" ? center.lng() : center.lng;
-            if (typeof lat !== "number" || typeof lng !== "number") return;
-            let closest: LiveJobListing | null = null;
-            let minD = Infinity;
-            jobs.forEach(j => {
-              const d = Math.hypot(j.lat - lat, j.lng - lng);
-              if (d < minD) {
-                minD = d;
-                closest = j;
-              }
-            });
-            if (closest && minD < 0.04) {
-              onSelectJob(closest);
-            }
-          } catch (_) { }
-        });
-
         mapRef.current = map;
       })
       .catch(() => {
@@ -396,25 +394,6 @@ function BariKoiLiveJobsMap({
             maxZoom: tileCfg.maxZoom,
             attribution: tileCfg.attribution,
           }).addTo(map);
-
-          map.on("dragend", () => {
-            try {
-              const center = map.getCenter();
-              if (!center) return;
-              let closest: LiveJobListing | null = null;
-              let minD = Infinity;
-              jobs.forEach(j => {
-                const d = Math.hypot(j.lat - center.lat, j.lng - center.lng);
-                if (d < minD) {
-                  minD = d;
-                  closest = j;
-                }
-              });
-              if (closest && minD < 0.04) {
-                onSelectJob(closest);
-              }
-            } catch (_) { }
-          });
 
           mapRef.current = map;
           LRef.current = L;
@@ -643,20 +622,26 @@ function BariKoiLiveJobsMap({
         } catch (_) { }
       }
 
-      // If no direction, fly to selected job if present
+      // If no direction, fly to selected job if present with offset away from card
       if (selectedJob) {
+        const yOffset = cardPlacement === "top" ? 75 : -75;
         if (map.flyTo) {
           map.flyTo({
             center: [selectedJob.lng, selectedJob.lat],
+            offset: [0, yOffset],
             zoom: 15.5,
-            speed: 1.2
+            duration: 1200,
+            essential: true
           });
+        } else if (map.panTo && typeof map.project === "function" && typeof map.unproject === "function") {
+          const pt = map.project([selectedJob.lat, selectedJob.lng], map.getZoom()).add([0, -yOffset]);
+          map.panTo(map.unproject(pt, map.getZoom()), { animate: true, duration: 1.0 });
         } else if (map.panTo) {
-          map.panTo([selectedJob.lat, selectedJob.lng]);
+          map.panTo([selectedJob.lat, selectedJob.lng], { animate: true, duration: 1.0 });
         }
       }
     }
-  }, [directionJob, selectedJob, userCoords]);
+  }, [directionJob, selectedJob, userCoords, cardPlacement]);
 
   // User pinpoint center is continuously handled in synchronized 60fps camera effect below
 
@@ -695,26 +680,7 @@ function BariKoiLiveJobsMap({
     const map = mapRef.current;
     if (!map) return;
 
-    // Smooth camera ease to focus on user pinpoint with appropriate zoom for sheet position
-    if (!directionJob && !selectedJob) {
-      if (map.easeTo) {
-        map.easeTo({
-          center: [userCoords[1], userCoords[0]],
-          zoom: isScrolled ? 14.0 : 14.8,
-          duration: 300,
-          easing: (t: number) => t * (2 - t)
-        });
-      } else if (map.flyTo) {
-        map.flyTo({
-          center: [userCoords[1], userCoords[0]],
-          zoom: isScrolled ? 14.0 : 14.8,
-          duration: 300,
-          essential: true
-        });
-      } else if (map.setView) {
-        map.setView(userCoords, isScrolled ? 14.0 : 14.8);
-      }
-    } else if (directionJob && lastCoordinatesRef.current && lastCoordinatesRef.current.length > 0) {
+    if (directionJob && lastCoordinatesRef.current && lastCoordinatesRef.current.length > 0) {
       const coords = lastCoordinatesRef.current;
       if (map.fitBounds) {
         let minLng = coords[0][0], maxLng = coords[0][0];
@@ -786,16 +752,22 @@ function BariKoiLiveJobsMap({
             : sheetMode === "full"
               ? "h-0 overflow-hidden"
               : isScrolled
-                ? "h-[210px] sm:h-[240px] md:h-[260px] lg:h-[280px]" // Screenshot compact height when scrolling list!
-                : "h-[340px] sm:h-[460px] md:h-[520px] lg:h-[580px]" // Responsive full height allowing sheet header visibility
+                ? "h-[380px] sm:h-[400px] md:h-[420px] lg:h-[440px]" // Mid transition: shows exactly 1 card photo + name
+                : "h-[520px] sm:h-[550px] md:h-[580px] lg:h-[620px]" // Default full height (from previous prompt)
           }`}
       >
         <div ref={containerRef} className="w-full h-full" />
 
-        {/* ── Selected Job Card Overlay on Marker Click (Only on direct marker click, NOT during scroll) ── */}
-        {markerClickedJob && !directionJob && !isScrolled && (
-          <div className="absolute bottom-3 left-3 right-3 sm:right-auto sm:left-4 sm:bottom-4 z-30 w-auto sm:w-[330px] bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden animate-in slide-in-from-bottom-3 duration-250 pointer-events-auto">
-            {/* Banner Image with Type, Bookmark & Distance Badges (Compact Height) */}
+        {/* ── Selected Job Card Overlay on Marker Click (Compact & Dynamically Positioned) ── */}
+        {markerClickedJob && !directionJob && sheetMode !== "full" && (
+          <div
+            className={`absolute z-[9999999] w-[275px] sm:w-[315px] bg-white rounded-2xl shadow-xl border border-slate-200/90 overflow-hidden duration-200 pointer-events-auto left-1/2 -translate-x-1/2 sm:left-4 sm:translate-x-0 ${
+              cardPlacement === "top"
+                ? "top-3 sm:top-4 animate-in slide-in-from-top-3"
+                : "bottom-3 sm:bottom-4 animate-in slide-in-from-bottom-3"
+            }`}
+          >
+            {/* Banner Image with Type, Bookmark & Distance Badges */}
             <div className="relative w-full h-28 sm:h-32 overflow-hidden bg-slate-100">
               <img
                 src={markerClickedJob.image}
@@ -803,13 +775,13 @@ function BariKoiLiveJobsMap({
                 className="w-full h-full object-cover"
               />
               {/* Top Right: Type Badge & Close button */}
-              <div className="absolute top-2 right-2 flex items-center gap-1.5">
-                <div className="px-2.5 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[11px] font-bold shadow-xs border border-slate-200/60">
+              <div className="absolute top-1.5 right-1.5 flex items-center gap-1.5">
+                <div className="px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[10px] font-bold shadow-xs border border-slate-200/60">
                   {markerClickedJob.type}
                 </div>
                 <button
                   onClick={() => setMarkerClickedJob(null)}
-                  className="w-6.5 h-6.5 rounded-full bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 flex items-center justify-center shadow transition cursor-pointer"
+                  className="w-6 h-6 rounded-full bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 flex items-center justify-center shadow transition cursor-pointer"
                   title="Close"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -817,52 +789,52 @@ function BariKoiLiveJobsMap({
               </div>
 
               {/* Bottom Left: Distance Badge on Image */}
-              <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[11px] font-medium flex items-center gap-1 shadow-xs">
+              <div className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-medium flex items-center gap-1 shadow-xs">
                 <MapPin className="w-3 h-3 text-emerald-400" />
                 <span>{markerClickedJob.distance}</span>
               </div>
             </div>
 
             {/* Card Body */}
-            <div className="p-3 sm:p-3.5">
-              <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-snug line-clamp-1">
+            <div className="p-2.5 sm:p-3">
+              <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight line-clamp-1">
                 {markerClickedJob.title}
               </h3>
-              <p className="text-xs text-slate-500 font-medium mt-0.5 truncate">
+              <p className="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5 truncate">
                 {markerClickedJob.company} • {markerClickedJob.location}
               </p>
 
               {/* Salary Pill */}
-              <div className="mt-1.5">
-                <span className="text-xs font-bold text-[#C04A22] inline-block">
+              <div className="mt-1">
+                <span className="text-[11px] sm:text-xs font-bold text-[#C04A22] inline-block">
                   {markerClickedJob.salary}
                 </span>
               </div>
 
               {/* Action Buttons: Direction & Details (Icon Only) */}
-              <div className="mt-2.5 pt-2 flex items-center justify-between gap-2">
+              <div className="mt-1.5 pt-1.5 border-t border-slate-100 flex items-center justify-between gap-2">
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     setMarkerClickedJob(null);
                     onShowDirection(markerClickedJob);
                   }}
-                  className="flex-1 py-2 rounded-xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95"
+                  className="flex-1 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-100 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
                   title="Direction"
                   aria-label="Direction"
                 >
-                  <Navigation className="w-4 h-4 text-[#C04A22]" />
+                  <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
                 </button>
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     onApplyJob?.(markerClickedJob);
                   }}
-                  className="flex-1 py-2 rounded-xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95"
+                  className="flex-1 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-100 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
                   title="Details"
                   aria-label="Details"
                 >
-                  <Info className="w-4 h-4 text-[#C04A22]" />
+                  <Info className="w-3.5 h-3.5 text-[#C04A22]" />
                 </button>
               </div>
             </div>
@@ -902,31 +874,13 @@ function BariKoiLiveJobsMap({
           </div>
         )}
 
-        {/* Map Controls: Zoom In / Out / Recenter (Matching Screenshot 2) */}
-        <div className="absolute top-4 right-4 z-30 flex flex-col items-center gap-2 pointer-events-auto">
-          {/* Zoom controls pill */}
-          <div className="flex flex-col items-center bg-white/95 backdrop-blur-md rounded-xl shadow-md border border-slate-200/90 overflow-hidden">
-            <button
-              onClick={handleZoomIn}
-              className="w-8.5 h-8.5 flex items-center justify-center text-slate-700 hover:text-[#D85A30] hover:bg-slate-50 transition cursor-pointer"
-              title="Zoom In"
-            >
-              <Plus className="w-4 h-4 stroke-[2.2]" />
-            </button>
-            <div className="w-full h-px bg-slate-100" />
-            <button
-              onClick={handleZoomOut}
-              className="w-8.5 h-8.5 flex items-center justify-center text-slate-700 hover:text-[#D85A30] hover:bg-slate-50 transition cursor-pointer"
-              title="Zoom Out"
-            >
-              <Minus className="w-4 h-4 stroke-[2.2]" />
-            </button>
-          </div>
+        {/* Map Controls: Floating Navigation Button */}
+        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-30 flex flex-col items-center gap-2 pointer-events-auto">
           {/* Floating Navigation Button */}
           <button
             onClick={handleReset}
             disabled={isLocating}
-            className={`w-9.5 h-9.5 rounded-full shadow-lg border transition-all cursor-pointer active:scale-95 disabled:opacity-75 flex items-center justify-center ${
+            className={`w-7.5 h-7.5 sm:w-8.5 sm:h-8.5 rounded-full shadow-md border transition-all cursor-pointer active:scale-95 disabled:opacity-75 flex items-center justify-center ${
               isLocationGranted
                 ? "bg-[#D85A30] text-white border-[#D85A30] shadow-[#D85A30]/30"
                 : "bg-white/95 backdrop-blur-md text-slate-700 hover:text-[#D85A30] border-slate-200/90"
@@ -934,9 +888,9 @@ function BariKoiLiveJobsMap({
             title={isLocationGranted ? "Live Location Active (Click to Turn OFF)" : "Turn ON Live Location (GPS)"}
           >
             {isLocating ? (
-              <Loader2 className={`w-4 h-4 animate-spin ${isLocationGranted ? "text-white" : "text-[#D85A30]"}`} />
+              <Loader2 className={`w-3.5 h-3.5 animate-spin ${isLocationGranted ? "text-white" : "text-[#D85A30]"}`} />
             ) : (
-              <Navigation className={`w-4 h-4 transition-transform ${isLocationGranted ? "text-white fill-current" : "text-slate-700 hover:text-[#D85A30]"}`} />
+              <Navigation className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform ${isLocationGranted ? "text-white fill-current" : "text-slate-700 hover:text-[#D85A30]"}`} />
             )}
           </button>
         </div>
@@ -1216,13 +1170,8 @@ export function Jobs() {
 
   const handleSelectJob = useCallback((job: LiveJobListing | null) => {
     setSelectedJob(job);
-    if (job) {
-      const cardEl = cardRefs.current.get(job.id);
-      if (cardEl) {
-        cardEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
-    }
   }, []);
+
 
   // Deep linking: auto-focus and show details if opened via shared link
   const sharedId = searchParams.get("id") || searchParams.get("jobId");
@@ -1234,9 +1183,6 @@ export function Jobs() {
       setSelectedJob(target);
       setShowApplyModal(target);
       setUserCoords([target.lat, target.lng]);
-      setTimeout(() => {
-        cardRefs.current.get(target.id)?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 500);
     }
   }, [sharedId, liveJobs]);
 
@@ -1271,9 +1217,8 @@ export function Jobs() {
     const mapEl = document.getElementById("jobs-map-section")?.querySelector(".relative.w-full");
     const isMobile = window.innerWidth < 640;
     const minH = 0; // User can drag cart all the way to the top of the map!
-    const midH = isMobile ? 210 : 250;
-    const maxAllowedH = Math.max(160, (window.innerHeight || 800) - (isMobile ? 320 : 360));
-    const maxH = Math.min(isMobile ? 360 : 540, maxAllowedH);
+    const midH = isMobile ? 380 : 400;
+    const maxH = isMobile ? 520 : 580;
     const currentH = mapEl ? mapEl.getBoundingClientRect().height : (sheetMode === "full" ? 0 : isScrolled ? midH : maxH);
 
     startDragYRef.current = e.clientY;
@@ -1365,6 +1310,7 @@ export function Jobs() {
 
     if (cardListRef.current.scrollTop <= 2 && deltaY > 35 && isScrolled) {
       setIsScrolled(false);
+      setSheetMode("expanded");
       listTouchStartYRef.current = null;
     }
   };
@@ -1373,13 +1319,35 @@ export function Jobs() {
     listTouchStartYRef.current = null;
   };
 
-  // Smooth scroll detection for dynamic map resizing
+  // Card list scroll detection for instant hide/show of bottom navigation bar
+  const lastCardScrollYRef = useRef(0);
+
   const handleCardListScroll = () => {
     if (!cardListRef.current) return;
-    const y = cardListRef.current.scrollTop;
-    if (y > 20 && !isScrolled) {
-      setIsScrolled(true);
+    const currentY = cardListRef.current.scrollTop;
+
+    // At top of list, always show nav bar
+    if (currentY <= 15) {
+      window.dispatchEvent(new CustomEvent("nav-visibility", { detail: { visible: true } }));
+      lastCardScrollYRef.current = currentY;
+      return;
     }
+
+    const diff = currentY - lastCardScrollYRef.current;
+
+    // Scrolling down -> instantly hide bottom nav bar like Home Feed!
+    if (diff > 4) {
+      window.dispatchEvent(new CustomEvent("nav-visibility", { detail: { visible: false } }));
+      if (sheetMode === "expanded") {
+        setSheetMode("mid");
+        setIsScrolled(true);
+      }
+    } else if (diff < -4) {
+      // Scrolling up -> instantly bring back bottom nav bar!
+      window.dispatchEvent(new CustomEvent("nav-visibility", { detail: { visible: true } }));
+    }
+
+    lastCardScrollYRef.current = currentY;
   };
 
   // Request Live GPS Location strictly from device GPS when navigation button is clicked
@@ -1512,41 +1480,41 @@ export function Jobs() {
 
   return (
     <AppLayout noPad={true}>
-      <div className="w-full h-[calc(100dvh-4rem)] lg:h-[calc(100vh)] flex flex-col overflow-hidden bg-[#FAFAFA]">
+      <div className="w-full h-[100dvh] lg:h-[100vh] flex flex-col overflow-hidden bg-[#FAFAFA]">
         {/* ── TOP STICKY BAR: Search Jobs ───────────────────────────────────── */}
-        <div className="flex-shrink-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 sm:px-6 shadow-2xs">
-          <div className="max-w-7xl mx-auto flex items-center gap-3">
+        <div className="flex-shrink-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-2.5 py-1.5 sm:px-5 sm:py-2 shadow-2xs">
+          <div className="max-w-7xl mx-auto flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={() => navigate(-1)}
-              className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer flex-shrink-0"
+              className="w-7.5 h-7.5 sm:w-8 sm:h-8 flex items-center justify-center rounded-md sm:rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer flex-shrink-0"
               title="Back"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
 
             {/* Clean rounded search bar */}
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="search jobs, titles, skills..."
-                className="w-full pl-10 pr-9 py-2.5 bg-slate-50 hover:bg-white focus:bg-white rounded-xl border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C04A22]/20 focus:border-[#C04A22] shadow-2xs transition"
+                className="w-full pl-7.5 pr-7 py-1 sm:py-1.5 bg-slate-50 hover:bg-white focus:bg-white rounded-md sm:rounded-lg border border-slate-200 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C04A22]/20 focus:border-[#C04A22] shadow-2xs transition"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
           </div>
 
           {/* Short & Understandable Filter Pills */}
-          <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar pt-2.5 pb-0.5">
+          <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar pt-1 pb-0.5">
             {[
               { id: "all", label: "All Jobs" },
               { id: "nearby", label: "Nearby" },
@@ -1574,7 +1542,7 @@ export function Jobs() {
             sheetMode === "full" && dragMapHeight === null ? "h-0 overflow-hidden" : ""
           }`}
         >
-          <div className="rounded-none sm:rounded-b-2xl overflow-hidden border-b border-slate-200/90 shadow-xs bg-white">
+          <div className="rounded-none overflow-hidden border-b border-slate-200/90 shadow-xs bg-white">
             <BariKoiLiveJobsMap
               userCoords={userCoords}
               isLocationGranted={isLocationGranted}
@@ -1604,10 +1572,10 @@ export function Jobs() {
           </div>
         </div>
 
-        {/* ── MAIN JOB DIRECTORY CONTENT (UPORE / ON TOP - PAUSES RIGHT BELOW COMPACT MAP) ── */}
-        <div className="flex-1 min-h-[145px] flex flex-col max-w-7xl w-full mx-auto px-0 sm:px-6 relative z-20 bg-[#FAFAFA] rounded-t-3xl shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-2 sm:-mt-3 overflow-hidden">
-          {/* ── PINNED BOTTOM SHEET HEADER: Handle bar + Filter Options (NEVER HIDES!) ── */}
-          <div className="flex-shrink-0 bg-[#FAFAFA] rounded-t-3xl pt-2 sm:pt-3 select-none border-b border-slate-200/40">
+        {/* ── MAIN JOB DIRECTORY CONTENT (BOTTOM SHEET) ── */}
+        <div className="flex-1 min-h-0 flex flex-col max-w-7xl w-full mx-auto px-0 relative z-20 bg-[#FAFAFA] rounded-none shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-px">
+          {/* ── PERSISTENT DRAG HANDLE & FILTER HEADER (NEVER HIDES! Jekhanei jak na keno) ── */}
+          <div className="flex-shrink-0 z-30 bg-[#FAFAFA] rounded-none pt-2 sm:pt-3 pb-2.5 px-4 sm:px-6">
             {/* Uber-style pull handle indicator (Live 1:1 mouse/touch drag tracker) */}
             <div
               onPointerDown={handlePointerDown}
@@ -1615,21 +1583,20 @@ export function Jobs() {
             >
               <div className="w-12 h-1.5 bg-slate-300 group-hover:bg-slate-400 active:bg-slate-500 rounded-full transition-colors" />
             </div>
-
             {/* Controls Bar: Filter Options */}
-            <div className="flex items-center justify-between gap-3 pb-3 px-4 sm:px-0">
+            <div className="flex items-center justify-between gap-3 max-w-md w-full">
               {/* Filter Option Buttons */}
-              <div className="grid grid-cols-2 gap-2.5 max-w-md w-full">
+              <div className="grid grid-cols-2 gap-2.5 w-full">
                 {/* Left Option: Nearby Me Jobs */}
                 <div
                   onClick={() => setActiveFilter(activeFilter === "nearby" ? "all" : "nearby")}
-                  className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
+                  className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-lg border transition-all cursor-pointer text-center sm:text-left ${
                     activeFilter === "nearby"
-                      ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
+                      ? "bg-orange-100/70 border-transparent shadow-xs"
                       : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
                   }`}
                 >
-                  <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
+                  <div className={`text-xs sm:text-sm leading-tight ${activeFilter === "nearby" ? "font-semibold text-[#8C3015]" : "font-normal text-slate-800"}`}>
                     {nearbyJobs.length} jobs nearby
                   </div>
                 </div>
@@ -1637,13 +1604,13 @@ export function Jobs() {
                 {/* Right Option: Full State Jobs */}
                 <div
                   onClick={() => setActiveFilter("all")}
-                  className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-2xl border transition-all cursor-pointer text-center sm:text-left ${
+                  className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-lg border transition-all cursor-pointer text-center sm:text-left ${
                     activeFilter === "all"
-                      ? "bg-orange-50/60 border-[#C04A22] ring-1 ring-[#C04A22]/20 shadow-xs"
+                      ? "bg-orange-100/70 border-transparent shadow-xs"
                       : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
                   }`}
                 >
-                  <div className="text-xs sm:text-sm font-normal text-slate-800 leading-tight">
+                  <div className={`text-xs sm:text-sm leading-tight ${activeFilter === "all" ? "font-semibold text-[#8C3015]" : "font-normal text-slate-800"}`}>
                     {liveJobs.length} full state jobs
                   </div>
                 </div>
@@ -1651,17 +1618,17 @@ export function Jobs() {
             </div>
           </div>
 
-          {/* ── SCROLLABLE JOB CARDS LIST ── */}
+          {/* ── SCROLLABLE LIST OF JOB CARDS (Scrolls underneath persistent header) ── */}
           <div
             ref={cardListRef}
             onScroll={handleCardListScroll}
             onTouchStart={handleListTouchStart}
             onTouchMove={handleListTouchMove}
             onTouchEnd={handleListTouchEnd}
-            className="flex-1 min-h-0 overflow-y-auto px-0 sm:px-0 pb-24"
+            className="flex-1 min-h-0 overflow-y-auto px-0 pb-24"
           >
             {/* Equal Grid of Job Cards (Consistent positioning & equal heights on both sides) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-0 sm:gap-5 items-stretch">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-0 sm:gap-5 items-stretch pt-1">
             {(activeFilter === "nearby" ? nearbyJobs : filteredJobs).map(job => {
               const isSelected = selectedJob?.id === job.id;
               const isSaved = savedJobIds.includes(job.id);
@@ -1766,7 +1733,7 @@ export function Jobs() {
                           e.stopPropagation();
                           handleShowDirection(job);
                         }}
-                        className="flex-1 py-2 rounded-2xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95"
+                        className="flex-1 py-2 rounded-2xl bg-white hover:bg-slate-50 border border-slate-100 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
                         title="Direction"
                         aria-label="Direction"
                       >
@@ -1777,7 +1744,7 @@ export function Jobs() {
                           e.stopPropagation();
                           setShowApplyModal(job);
                         }}
-                        className="flex-1 py-2 rounded-2xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95"
+                        className="flex-1 py-2 rounded-2xl bg-white hover:bg-slate-50 border border-slate-100 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
                         title="Details"
                         aria-label="Details"
                       >

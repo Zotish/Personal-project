@@ -98,14 +98,34 @@ function BariKoiMissionMap({
   const LRef = useRef<any>(null);
 
   const [markerClickedMission, setMarkerClickedMission] = useState<ConsularMission | null>(null);
+  const [cardPlacement, setCardPlacement] = useState<"bottom" | "top">("bottom");
   const [travelMode, setTravelMode] = useState<"car" | "bike" | "walk">("car");
   const [routeInfo, setRouteInfo] = useState<{ distanceText: string; durationText: string } | null>(null);
   const [isNavCardMinimized, setIsNavCardMinimized] = useState(false);
 
   const handleMarkerClick = useCallback((mission: ConsularMission) => {
+    let placement: "bottom" | "top" = "bottom";
+    const map = mapRef.current;
+    if (map) {
+      let pinY: number | null = null;
+      if (typeof map.latLngToContainerPoint === "function") {
+        pinY = map.latLngToContainerPoint([mission.lat, mission.lng]).y;
+      } else if (typeof map.project === "function") {
+        pinY = map.project([mission.lng, mission.lat]).y;
+      }
+      const containerH = containerRef.current?.clientHeight || 450;
+      if (isScrolled || (pinY !== null && pinY > containerH * 0.4)) {
+        placement = "top";
+      } else {
+        placement = "bottom";
+      }
+    } else if (isScrolled) {
+      placement = "top";
+    }
+    setCardPlacement(placement);
     setMarkerClickedMission(mission);
     onSelectMission(mission);
-  }, [onSelectMission]);
+  }, [onSelectMission, isScrolled]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -116,8 +136,8 @@ function BariKoiMissionMap({
   }, []);
 
   useEffect(() => {
-    if (isScrolled) setMarkerClickedMission(null);
-  }, [isScrolled]);
+    if (sheetMode === "full") setMarkerClickedMission(null);
+  }, [sheetMode]);
 
   useEffect(() => {
     if (directionMission) setMarkerClickedMission(null);
@@ -405,8 +425,25 @@ function BariKoiMissionMap({
       };
     } else {
       setRouteInfo(null);
+      if (selectedMission) {
+        const yOffset = cardPlacement === "top" ? 75 : -75;
+        if (map.flyTo) {
+          map.flyTo({
+            center: [selectedMission.lng, selectedMission.lat],
+            offset: [0, yOffset],
+            zoom: 15,
+            duration: 1200,
+            essential: true
+          });
+        } else if (map.panTo && typeof map.project === "function" && typeof map.unproject === "function") {
+          const pt = map.project([selectedMission.lat, selectedMission.lng], map.getZoom()).add([0, -yOffset]);
+          map.panTo(map.unproject(pt, map.getZoom()), { animate: true, duration: 1.0 });
+        } else if (map.panTo) {
+          map.panTo([selectedMission.lat, selectedMission.lng], { animate: true, duration: 1.0 });
+        }
+      }
     }
-  }, [directionMission, userCoords, travelMode]);
+  }, [directionMission, selectedMission, userCoords, travelMode, cardPlacement]);
 
   // Smoothly sync map size and camera with bottom sheet up/down motion (60fps continuous WebGL resize)
   useEffect(() => {
@@ -491,64 +528,70 @@ function BariKoiMissionMap({
       >
         <div ref={containerRef} className="w-full h-full" />
 
-        {/* ── Mission Card Overlay on Pin Click ── */}
-        {markerClickedMission && !directionMission && !isScrolled && (
-          <div className="absolute bottom-3 left-3 right-3 sm:right-auto sm:left-4 sm:bottom-4 z-30 w-auto sm:w-[340px] bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden animate-in slide-in-from-bottom-3 duration-250 pointer-events-auto">
+        {/* ── Mission Card Overlay on Pin Click (Compact & Dynamically Positioned) ── */}
+        {markerClickedMission && !directionMission && sheetMode !== "full" && (
+          <div
+            className={`absolute z-[9999999] w-[275px] sm:w-[315px] bg-white rounded-2xl shadow-xl border border-slate-200/90 overflow-hidden duration-200 pointer-events-auto left-1/2 -translate-x-1/2 sm:left-4 sm:translate-x-0 ${
+              cardPlacement === "top"
+                ? "top-3 sm:top-4 animate-in slide-in-from-top-3"
+                : "bottom-3 sm:bottom-4 animate-in slide-in-from-bottom-3"
+            }`}
+          >
             <div className="relative w-full h-28 sm:h-32 overflow-hidden bg-slate-900">
               <img
                 src={markerClickedMission.image}
                 alt={markerClickedMission.name}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute top-2 right-2 flex items-center gap-1.5">
+              <div className="absolute top-1.5 right-1.5 flex items-center gap-1.5">
                 <button
                   onClick={() => setMarkerClickedMission(null)}
-                  className="w-6.5 h-6.5 rounded-full bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 flex items-center justify-center shadow transition cursor-pointer"
+                  className="w-6 h-6 rounded-full bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 flex items-center justify-center shadow transition cursor-pointer"
                   title="Close"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              <div className="absolute top-2 left-2 px-2.5 py-0.5 rounded-full bg-emerald-700 text-white text-[10px] font-bold shadow-xs">
+              <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full bg-emerald-700 text-white text-[10px] font-bold shadow-xs">
                 {markerClickedMission.type}
               </div>
 
-              <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-black/65 backdrop-blur-md text-white text-[11px] font-medium flex items-center gap-1">
+              <div className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded-full bg-black/65 backdrop-blur-md text-white text-[10px] font-medium flex items-center gap-1">
                 <MapPin className="w-3 h-3 text-emerald-400" />
                 <span>{markerClickedMission.city}, {markerClickedMission.state}</span>
               </div>
             </div>
 
-            <div className="p-3 sm:p-3.5 space-y-2">
+            <div className="p-2.5 sm:p-3">
               <div>
-                <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-snug line-clamp-1">
+                <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight line-clamp-1">
                   {markerClickedMission.name}
                 </h3>
-                <p className="text-xs text-slate-500 font-medium mt-0.5 truncate">
+                <p className="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5 truncate">
                   {markerClickedMission.address}
                 </p>
-                <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold mt-1">
+                <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-emerald-700 font-semibold mt-1">
                   <Clock className="w-3 h-3" />
                   <span className="truncate">{markerClickedMission.hours}</span>
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+              <div className="mt-1.5 pt-1.5 border-t border-slate-100 flex items-center justify-between gap-2">
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     setMarkerClickedMission(null);
                     onShowDirection(markerClickedMission);
                   }}
-                  className="flex-1 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
+                  className="flex-1 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
                 >
                   <Navigation className="w-3.5 h-3.5 text-emerald-700" />
                   <span>Direction</span>
                 </button>
                 <a
                   href={`tel:${markerClickedMission.emergencyHotline}`}
-                  className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer"
                   title="24/7 Citizen Emergency Hotline"
                 >
                   <Phone className="w-3.5 h-3.5" />
@@ -559,23 +602,7 @@ function BariKoiMissionMap({
           </div>
         )}
 
-        {/* Map Controls */}
-        <div className="absolute top-4 right-4 z-30 flex flex-col gap-1.5 pointer-events-auto">
-          <button
-            onClick={() => mapRef.current?.zoomIn()}
-            className="w-9 h-9 rounded-xl bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 shadow-md border border-slate-200/80 flex items-center justify-center transition cursor-pointer hover:text-emerald-700"
-            title="Zoom In"
-          >
-            <Plus className="w-4.5 h-4.5" />
-          </button>
-          <button
-            onClick={() => mapRef.current?.zoomOut()}
-            className="w-9 h-9 rounded-xl bg-white/95 backdrop-blur-md hover:bg-white text-slate-700 shadow-md border border-slate-200/80 flex items-center justify-center transition cursor-pointer hover:text-emerald-700"
-            title="Zoom Out"
-          >
-            <Minus className="w-4.5 h-4.5" />
-          </button>
-        </div>
+
       </div>
 
       {/* ── ROUTE NAVIGATION CARD ── */}
@@ -931,9 +958,7 @@ export function Embassy() {
 
     if (cardListRef.current.scrollTop <= 2 && deltaY > 30 && isScrolled) {
       setIsScrolled(false);
-      listTouchStartYRef.current = null;
-    } else if (!isScrolled && deltaY < -30) {
-      setIsScrolled(true);
+      setSheetMode("expanded");
       listTouchStartYRef.current = null;
     }
   };
@@ -942,13 +967,31 @@ export function Embassy() {
     listTouchStartYRef.current = null;
   };
 
-  // Smooth scroll detection for dynamic map resizing
+  // Card list scroll detection for instant hide/show of bottom navigation bar
+  const lastCardScrollYRef = useRef(0);
+
   const handleCardListScroll = () => {
     if (!cardListRef.current) return;
-    const y = cardListRef.current.scrollTop;
-    if (y > 20 && !isScrolled) {
-      setIsScrolled(true);
+    const currentY = cardListRef.current.scrollTop;
+
+    // At top of list, always show nav bar
+    if (currentY <= 15) {
+      window.dispatchEvent(new CustomEvent("nav-visibility", { detail: { visible: true } }));
+      lastCardScrollYRef.current = currentY;
+      return;
     }
+
+    const diff = currentY - lastCardScrollYRef.current;
+
+    // Scrolling down -> instantly hide bottom nav bar like Home Feed!
+    if (diff > 4) {
+      window.dispatchEvent(new CustomEvent("nav-visibility", { detail: { visible: false } }));
+    } else if (diff < -4) {
+      // Scrolling up -> instantly bring back bottom nav bar!
+      window.dispatchEvent(new CustomEvent("nav-visibility", { detail: { visible: true } }));
+    }
+
+    lastCardScrollYRef.current = currentY;
   };
 
   const toggleSave = (id: string) => {
@@ -970,42 +1013,38 @@ export function Embassy() {
   const handleShowDirection = (mission: ConsularMission) => {
     setDirectionMission(mission);
     setSelectedMission(mission);
-    const mapEl = document.getElementById("embassy-map-section");
-    if (mapEl) {
-      mapEl.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
   };
 
   return (
-    <AppLayout>
-      <div className="w-full h-[calc(100dvh-4rem)] lg:h-[calc(100vh)] flex flex-col overflow-hidden bg-[#FDFBF9]">
+    <AppLayout noPad={true}>
+      <div className="w-full h-[100dvh] lg:h-[100vh] flex flex-col overflow-hidden bg-[#FDFBF9]">
         {/* ── TOP STICKY BAR: Clean Search Only (Filters Removed) ───────────── */}
-        <div className="flex-shrink-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 sm:px-6 shadow-2xs">
-          <div className="max-w-7xl mx-auto flex items-center gap-3">
+        <div className="flex-shrink-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-2.5 py-1.5 sm:px-5 sm:py-2 shadow-2xs">
+          <div className="max-w-7xl mx-auto flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={() => navigate(-1)}
-              className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer flex-shrink-0"
+              className="w-7.5 h-7.5 sm:w-8 sm:h-8 flex items-center justify-center rounded-md sm:rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer flex-shrink-0"
               title="Back"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
 
             {/* Rounded Search Bar */}
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="search passport, visa, NVR, power of attorney, NID, camps, fees..."
-                className="w-full pl-10 pr-9 py-2.5 bg-slate-50 hover:bg-white focus:bg-white rounded-xl border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 shadow-2xs transition"
+                className="w-full pl-7.5 pr-7 py-1 sm:py-1.5 bg-slate-50 hover:bg-white focus:bg-white rounded-md sm:rounded-lg border border-slate-200 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 shadow-2xs transition"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
@@ -1019,7 +1058,7 @@ export function Embassy() {
             sheetMode === "full" && dragMapHeight === null ? "h-0 overflow-hidden" : ""
           }`}
         >
-          <div className="rounded-none sm:rounded-b-2xl overflow-hidden border-b border-slate-200/90 shadow-xs bg-white">
+          <div className="rounded-none overflow-hidden border-b border-slate-200/90 shadow-xs bg-white">
             <BariKoiMissionMap
               userCoords={userCoords}
               missions={BD_DIPLOMATIC_MISSIONS}
@@ -1039,10 +1078,10 @@ export function Embassy() {
           </div>
         </div>
 
-        {/* ── MAIN DIRECTORY CONTENT: Clean Minimalist List of Consular Services (UPORE / ON TOP) ── */}
-        <div className="flex-1 min-h-[120px] flex flex-col w-full max-w-7xl mx-auto px-1 sm:px-2 relative z-20 bg-[#FAFAFA] rounded-t-3xl shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-2 sm:-mt-3 overflow-hidden">
-          {/* ── PINNED BOTTOM SHEET HEADER: Handle bar (NEVER HIDES!) ── */}
-          <div className="flex-shrink-0 bg-[#FAFAFA] rounded-t-3xl pt-2 sm:pt-3 select-none">
+        {/* ── MAIN DIRECTORY CONTENT: Clean Minimalist List of Consular Services (BOTTOM SHEET) ── */}
+        <div className="flex-1 min-h-0 flex flex-col w-full max-w-7xl mx-auto px-0 relative z-20 bg-[#FAFAFA] rounded-none shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-px">
+          {/* ── PERSISTENT DRAG HANDLE (NEVER HIDES! Jekhanei jak na keno) ── */}
+          <div className="flex-shrink-0 z-30 bg-[#FAFAFA] rounded-none pt-2 sm:pt-3 pb-2.5 px-4 sm:px-6">
             {/* Uber-style pull handle indicator (Live 1:1 mouse/touch drag tracker) */}
             <div
               onPointerDown={handlePointerDown}
@@ -1052,14 +1091,14 @@ export function Embassy() {
             </div>
           </div>
 
-          {/* ── SCROLLABLE SERVICES LIST ── */}
+          {/* ── SCROLLABLE LIST OF SERVICES (Scrolls underneath persistent header) ── */}
           <div
             ref={cardListRef}
             onScroll={handleCardListScroll}
             onTouchStart={handleListTouchStart}
             onTouchMove={handleListTouchMove}
             onTouchEnd={handleListTouchEnd}
-            className="flex-1 min-h-0 overflow-y-auto px-1 sm:px-2 pb-24"
+            className="flex-1 min-h-0 overflow-y-auto pb-24"
           >
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden divide-y divide-slate-100">
               {filteredServices.map(service => (

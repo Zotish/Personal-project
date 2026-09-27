@@ -331,7 +331,7 @@ export function ServiceDetail() {
         {/* Real Interactive BariKoi Map View (Live Vector Tiles - Niche/Underneath) */}
         {viewMode !== "cards" && (
           <div className="px-0 pt-0 sticky top-[60px] z-10">
-            <div className="relative rounded-none sm:rounded-b-2xl overflow-hidden border-b border-border shadow-xs bg-slate-100">
+            <div className="relative rounded-none overflow-hidden border-b border-border shadow-xs bg-slate-100">
               <div
                 ref={mapContainerRef}
                 className={`w-full transition-all duration-150 ease-out ${viewMode === "map" ? "h-[500px]" : "h-[260px] sm:h-[320px]"}`}
@@ -387,7 +387,7 @@ export function ServiceDetail() {
           </div>
         )}
 
-        <div className="p-4 space-y-4 relative z-20 bg-[#FAFAFA] rounded-t-3xl shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-2 sm:-mt-3">
+        <div className="p-4 space-y-4 relative z-20 bg-[#FAFAFA] rounded-none shadow-[0_-6px_25px_rgba(0,0,0,0.06)] border-t border-slate-200/80 -mt-px">
           {/* Pull handle indicator */}
           <div className="w-full flex items-center justify-center py-1">
             <div className="w-12 h-1.5 bg-slate-300 rounded-full" />
