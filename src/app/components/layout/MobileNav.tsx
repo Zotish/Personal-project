@@ -300,7 +300,7 @@ export function MobileNav() {
                       setIsTabMenuOpen(false);
                       setIsRecentsOpen(true);
                     }}
-                    className="flex items-center justify-center w-8 h-8 rounded-xl shadow-xs font-black transition-all active:scale-90 cursor-pointer border-[1.5px] bg-[#C04A22]/15 hover:bg-[#C04A22]/25 text-[#8C3015] border-[#C04A22]/30 shadow-[#C04A22]/15"
+                    className="flex items-center justify-center w-8 h-8 rounded-xl shadow-xs font-black transition-all active:scale-90 cursor-pointer border-[1.5px] bg-white hover:bg-slate-50 text-[#8C3015] border-[#C04A22]/30 shadow-[#C04A22]/15"
                     title="Open Tabs"
                   >
                     <ArrowRight className="w-3.5 h-3.5 stroke-[3] text-[#8C3015]" />
@@ -313,7 +313,7 @@ export function MobileNav() {
                       e.stopPropagation();
                       togglePageInRecents();
                     }}
-                    className="flex items-center justify-center w-8 h-8 rounded-xl shadow-xs font-black transition-all active:scale-90 cursor-pointer border-[1.5px] bg-[#C04A22]/15 hover:bg-[#C04A22]/25 text-[#8C3015] border-[#C04A22]/30 shadow-[#C04A22]/15"
+                    className="flex items-center justify-center w-8 h-8 rounded-xl shadow-xs font-black transition-all active:scale-90 cursor-pointer border-[1.5px] bg-white hover:bg-slate-50 text-[#8C3015] border-[#C04A22]/30 shadow-[#C04A22]/15"
                     title={isCurrentPageInRecents ? "Remove current page from Tab (-)" : "Add current page to Tab (+)"}
                   >
                     {isCurrentPageInRecents ? (
