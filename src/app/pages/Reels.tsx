@@ -173,7 +173,7 @@ function CommentSheet({ reel, onClose }: { reel: Reel; onClose: () => void }) {
                   </div>
                   <button onClick={() => setLikedComments(p => { const n = new Set(p); n.has(c.id) ? n.delete(c.id) : n.add(c.id); return n; })}
                     className="flex flex-col items-center gap-0.5 flex-shrink-0">
-                    <Heart className={`w-4 h-4 transition ${likedComments.has(c.id) ? "fill-red-500 text-red-500" : "text-white/40"}`} />
+                    <Heart className={`w-4 h-4 transition ${likedComments.has(c.id) ? "fill-[#C04A22] text-[#C04A22]" : "text-white/40"}`} />
                     <span className="text-white/40 text-[10px]">{likedComments.has(c.id) ? c.likes + 1 : c.likes}</span>
                   </button>
                 </div>
@@ -315,7 +315,7 @@ function ReelPlayer({ reel, active, muted, onMuteToggle }: {
       <div className="absolute right-3 bottom-32 z-20 flex flex-col items-center gap-6">
         {[
           {
-            icon: <Heart className={`w-7 h-7 drop-shadow transition-all ${liked ? "fill-red-500 text-red-500 scale-110" : "text-white"}`} />,
+            icon: <Heart className={`w-7 h-7 drop-shadow transition-all ${liked ? "fill-[#C04A22] text-[#C04A22] scale-110" : "text-white"}`} />,
             count: fmt(liked ? reel.likes + 1 : reel.likes),
             onClick: () => setLiked(l => !l),
           },

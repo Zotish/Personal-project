@@ -124,7 +124,7 @@ export function SponsoredAdCard({ ad, variant = "feed" }: SponsoredAdCardProps) 
           </h3>
         </div>
 
-        {/* Image Banner */}
+        {/* Image Banner with Transparent Floating CTA Button */}
         {ad.mediaUrl && (
           <div
             onClick={handleAction}
@@ -135,26 +135,34 @@ export function SponsoredAdCard({ ad, variant = "feed" }: SponsoredAdCardProps) 
               alt={ad.title}
               className="w-full h-full object-cover group-hover/img:scale-[1.02] transition-transform duration-300 max-h-72"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity flex items-end p-3.5">
-              <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                <span>Learn more</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </span>
+
+            {/* Transparent Floating CTA Button on Photo */}
+            <div className="absolute bottom-3 right-3 z-10">
+              <button
+                type="button"
+                onClick={handleAction}
+                className="px-3.5 py-1.5 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-md text-white text-xs font-bold transition-all flex items-center gap-1.5 border border-white/25 shadow-md active:scale-95 cursor-pointer"
+              >
+                <span>{ad.ctaText || "Learn More"}</span>
+                <ChevronRight className="w-3.5 h-3.5 text-white/90" />
+              </button>
             </div>
           </div>
         )}
 
-        {/* Bottom Action Ribbon */}
-        <div className="pt-2 flex items-center justify-end border-t border-slate-100 text-xs">
-          <button
-            type="button"
-            onClick={handleAction}
-            className="font-bold text-[#C04A22] hover:text-[#8C3015] flex items-center gap-1 cursor-pointer"
-          >
-            <span>{ad.ctaText}</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        {/* Bottom Action Ribbon (Only shown if no photo) */}
+        {!ad.mediaUrl && (
+          <div className="pt-2 flex items-center justify-end border-t border-slate-100 text-xs">
+            <button
+              type="button"
+              onClick={handleAction}
+              className="font-bold text-[#C04A22] hover:text-[#8C3015] flex items-center gap-1 cursor-pointer"
+            >
+              <span>{ad.ctaText || "Learn More"}</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </div>
     </article>
   );

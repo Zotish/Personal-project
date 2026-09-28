@@ -39,7 +39,7 @@ function StepWrapper({ step, total, title, subtitle, children, onNext, onBack, o
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-start px-4 pt-7 sm:pt-8 pb-10">
       <div className="w-full max-w-lg">
         <div className="flex items-center justify-between mb-2">
           {onBack ? (
@@ -212,36 +212,35 @@ export function OnboardingStatus() {
   const [selected, setSelected] = useState("Student");
 
   const statuses = [
-    { id: "Student", label: "Student", desc: "F-1, J-1 or other student visa" },
-    { id: "Worker", label: "Worker", desc: "H-1B, L-1, O-1 or work visa" },
-    { id: "Permanent Resident", label: "Permanent Resident", desc: "Green card holder" },
-    { id: "Asylum Seeker", label: "Asylum Seeker", desc: "Seeking protection in the USA" },
-    { id: "Refugee", label: "Refugee", desc: "Admitted as a refugee" },
-    { id: "Family Visa", label: "Family Visa", desc: "IR, CR, or family preference" },
-    { id: "Tourist", label: "Tourist / Visitor", desc: "B-1/B-2 visa holder" },
-    { id: "New Citizen", label: "New Citizen", desc: "Recently naturalized" },
+    { id: "Student", label: "Student" },
+    { id: "Worker", label: "Worker" },
+    { id: "Permanent Resident", label: "Permanent Resident" },
+    { id: "Asylum Seeker", label: "Asylum Seeker" },
+    { id: "Refugee", label: "Refugee" },
+    { id: "Family Visa", label: "Family Visa" },
+    { id: "Tourist", label: "Tourist / Visitor" },
+    { id: "New Citizen", label: "New Citizen" },
   ];
 
   return (
     <StepWrapper step={2} total={6} title="What's your immigration status?"
       onNext={() => navigate("/onboarding/language")} onBack={() => navigate("/onboarding/country")}>
       <div className="grid grid-cols-1 gap-2">
-        {statuses.map(({ id, label, desc }) => (
+        {statuses.map(({ id, label }) => (
           <button
             key={id}
             onClick={() => setSelected(id)}
             className={`flex items-center justify-between p-3.5 rounded-xl border text-left transition-all cursor-pointer bg-transparent ${
               selected === id
-                ? "border-[#D85A30]"
+                ? "border-[#C04A22] bg-[#C04A22]/5"
                 : "border-slate-300 hover:border-slate-400"
             }`}
           >
             <div className="flex-1">
-              <div className={`text-sm font-semibold ${selected === id ? "text-[#D85A30]" : "text-foreground"}`}>{label}</div>
-              <div className="text-xs text-muted-foreground">{desc}</div>
+              <div className={`text-sm font-semibold ${selected === id ? "text-[#C04A22]" : "text-foreground"}`}>{label}</div>
             </div>
             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-              selected === id ? "border-[#D85A30] bg-[#D85A30]" : "border-slate-300 bg-transparent"
+              selected === id ? "border-[#C04A22] bg-[#C04A22]" : "border-slate-300 bg-transparent"
             }`}>
               {selected === id && <Check className="w-3 h-3 text-white" />}
             </div>

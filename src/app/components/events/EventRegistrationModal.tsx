@@ -151,17 +151,17 @@ export function EventRegistrationModal({
                 </div>
               </div>
 
-              {/* Optional Note */}
+              {/* Optional Note (Multiline) */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   Note or Questions (Optional)
                 </label>
-                <input
-                  type="text"
+                <textarea
+                  rows={3}
                   value={note}
                   onChange={e => setNote(e.target.value)}
                   placeholder="Any special accommodations or questions"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-hidden focus:border-[#C04A22] focus:ring-1 focus:ring-[#C04A22] transition-colors"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-hidden focus:border-[#C04A22] focus:ring-1 focus:ring-[#C04A22] transition-colors resize-y leading-relaxed"
                 />
               </div>
 

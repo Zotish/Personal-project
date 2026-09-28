@@ -210,9 +210,9 @@ function CommunityDetail({ community, onBack }: { community: typeof allCommuniti
                   <div className="flex items-center gap-4 mt-3 pt-2 border-t border-white/40">
                     <button
                       onClick={() => setLikedPosts(s => s.includes(post.id) ? s.filter(x => x !== post.id) : [...s, post.id])}
-                      className={`flex items-center gap-1 text-xs transition-colors ${likedPosts.includes(post.id) ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}
+                      className={`flex items-center gap-1 text-xs transition-colors cursor-pointer ${likedPosts.includes(post.id) ? "text-[#C04A22] font-bold" : "text-muted-foreground hover:text-[#C04A22]"}`}
                     >
-                      <Heart className={`w-3.5 h-3.5 ${likedPosts.includes(post.id) ? "fill-red-500" : ""}`} />
+                      <Heart className={`w-3.5 h-3.5 transition-transform active:scale-125 ${likedPosts.includes(post.id) ? "fill-[#C04A22] text-[#C04A22]" : "hover:text-[#C04A22]"}`} />
                       {post.likes + (likedPosts.includes(post.id) ? 1 : 0)}
                     </button>
                     <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">

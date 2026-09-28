@@ -6,6 +6,7 @@ import {
   Sparkles,
   MapPin,
   ArrowRight,
+  ArrowLeft,
   RotateCcw,
   ExternalLink,
   Compass,
@@ -2471,10 +2472,12 @@ export function DollChatboxWindow({
   isOpen,
   onClose,
   isFeed = false,
+  fullPage = false,
 }: {
   isOpen: boolean;
   onClose: () => void;
   isFeed?: boolean;
+  fullPage?: boolean;
 }) {
   const navigate = useNavigate();
   const { lang } = useLanguage();
@@ -2756,15 +2759,28 @@ export function DollChatboxWindow({
 
   return (
     <div
-      className={`fixed z-[9999] w-[calc(100vw-24px)] sm:w-[440px] md:w-[480px] max-w-[500px] h-[480px] sm:h-[530px] md:h-[570px] max-h-[calc(100vh-100px)] bg-white/98 backdrop-blur-md rounded-3xl shadow-2xl border border-orange-200/90 overflow-hidden flex flex-col transition-all duration-300 animate-in fade-in slide-in-from-bottom-5 ${
-        isFeed
-          ? "bottom-20 right-3 sm:right-6 xl:right-[340px]"
-          : "bottom-[96px] sm:bottom-20 right-3 sm:right-6"
-      }`}
+      className={
+        fullPage
+          ? "w-full h-full flex flex-col bg-white overflow-hidden max-w-4xl mx-auto sm:border-x sm:border-slate-200 sm:shadow-sm"
+          : `fixed z-[9999] w-[calc(100vw-24px)] sm:w-[440px] md:w-[480px] max-w-[500px] h-[480px] sm:h-[530px] md:h-[570px] max-h-[calc(100vh-100px)] bg-white/98 backdrop-blur-md rounded-3xl shadow-2xl border border-orange-200/90 overflow-hidden flex flex-col transition-all duration-300 animate-in fade-in slide-in-from-bottom-5 ${
+              isFeed
+                ? "bottom-20 right-3 sm:right-6 xl:right-[340px]"
+                : "bottom-[96px] sm:bottom-20 right-3 sm:right-6"
+            }`
+      }
     >
       {/* ── Chat Header (Clean White like Sidebar with subtle Shadow & Border) ── */}
       <div className="relative px-4 py-3 bg-white text-slate-900 flex items-center justify-between shadow-sm border-b border-slate-200/80 flex-shrink-0 z-10">
         <div className="flex items-center gap-2.5">
+          {fullPage && (
+            <button
+              onClick={onClose}
+              className="p-1.5 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-full transition cursor-pointer"
+              title={lang === "bn" ? "ফিরে যান" : "Go back"}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
           <div className="relative w-8 h-8 rounded-full bg-orange-100 p-0.5 border border-orange-200 overflow-hidden flex-shrink-0">
             <img
               src="/doll_assistant.jpg"
@@ -2792,13 +2808,15 @@ export function DollChatboxWindow({
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
-          <button
-            onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition cursor-pointer"
-            title={lang === "bn" ? "বন্ধ করুন" : "Close"}
-          >
-            <X className="w-4 h-4" />
-          </button>
+          {!fullPage && (
+            <button
+              onClick={onClose}
+              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition cursor-pointer"
+              title={lang === "bn" ? "বন্ধ করুন" : "Close"}
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -3116,8 +3134,36 @@ export function GlobalDollAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
 
-  // Hide on splash and onboarding screens
-  const hiddenPaths = ["/", "/landing", "/login", "/signup", "/verify-email"];
+  useEffect(() => {
+    const handleToggle = () => {
+      setIsOpen(prev => {
+        const next = !prev;
+        window.dispatchEvent(new CustomEvent("doll-assistant-state-changed", { detail: { isOpen: next } }));
+        return next;
+      });
+    };
+    const handleOpen = () => {
+      setIsOpen(true);
+      window.dispatchEvent(new CustomEvent("doll-assistant-state-changed", { detail: { isOpen: true } }));
+    };
+    const handleClose = () => {
+      setIsOpen(false);
+      window.dispatchEvent(new CustomEvent("doll-assistant-state-changed", { detail: { isOpen: false } }));
+    };
+
+    window.addEventListener("toggle-doll-assistant", handleToggle);
+    window.addEventListener("open-doll-assistant", handleOpen);
+    window.addEventListener("close-doll-assistant", handleClose);
+
+    return () => {
+      window.removeEventListener("toggle-doll-assistant", handleToggle);
+      window.removeEventListener("open-doll-assistant", handleOpen);
+      window.removeEventListener("close-doll-assistant", handleClose);
+    };
+  }, []);
+
+  // Hide on splash, onboarding, and dedicated assistant chat screens
+  const hiddenPaths = ["/", "/landing", "/login", "/signup", "/verify-email", "/assistant", "/ai-assistant"];
   const isHidden =
     hiddenPaths.includes(location.pathname) ||
     location.pathname.startsWith("/onboarding");
@@ -3127,25 +3173,13 @@ export function GlobalDollAssistant() {
   const isFeed = location.pathname === "/feed";
 
   return (
-    <>
-      <div
-        className={`fixed z-40 pointer-events-auto transition-all duration-300 ${
-          isFeed
-            ? "bottom-[98px] right-4 sm:right-6 xl:right-[340px]"
-            : "bottom-[88px] sm:bottom-6 right-4 sm:right-6"
-        }`}
-      >
-        <DollAssistantTrigger
-          isOpen={isOpen}
-          onClick={() => setIsOpen((prev) => !prev)}
-        />
-      </div>
-
-      <DollChatboxWindow
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        isFeed={isFeed}
-      />
-    </>
+    <DollChatboxWindow
+      isOpen={isOpen}
+      onClose={() => {
+        setIsOpen(false);
+        window.dispatchEvent(new CustomEvent("doll-assistant-state-changed", { detail: { isOpen: false } }));
+      }}
+      isFeed={isFeed}
+    />
   );
 }

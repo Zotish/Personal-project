@@ -340,6 +340,8 @@ export function ServicesHub() {
   const [featuredTab, setFeaturedTab] = useState<"discounted" | "new" | "popular">("discounted");
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isStickyServices, setIsStickyServices] = useState(false);
+  const [isNavVisible, setIsNavVisible] = useState(true);
+  const lastScrollYRef = React.useRef(0);
   const servicesContainerRef = React.useRef<HTMLDivElement>(null);
   const stickyBarScrollRef = React.useRef<HTMLDivElement>(null);
 
@@ -358,17 +360,30 @@ export function ServicesHub() {
 
   useEffect(() => {
     const handleScroll = () => {
+      const currentY = window.scrollY;
       if (servicesContainerRef.current) {
         const rect = servicesContainerRef.current.getBoundingClientRect();
         setIsStickyServices(rect.bottom < 60);
       } else {
-        setIsStickyServices(window.scrollY > 220);
+        setIsStickyServices(currentY > 220);
       }
-      if (window.scrollY > 250) {
+      if (currentY > 250) {
         setShowScrollTop(true);
       } else {
         setShowScrollTop(false);
       }
+
+      if (currentY <= 15) {
+        setIsNavVisible(true);
+      } else {
+        const diff = currentY - lastScrollYRef.current;
+        if (diff > 5) {
+          setIsNavVisible(false);
+        } else if (diff < -5) {
+          setIsNavVisible(true);
+        }
+      }
+      lastScrollYRef.current = currentY;
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
@@ -603,7 +618,7 @@ export function ServicesHub() {
                         alt={prod.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
-                      <span className="absolute top-2.5 right-2.5 text-[10px] font-extrabold text-[#8C3015] bg-white/95 backdrop-blur-xs px-2.5 py-0.5 rounded-full shadow-2xs border border-[#C04A22]/20 whitespace-nowrap">
+                      <span className="absolute top-2.5 right-2.5 text-[10px] font-extrabold text-white bg-orange-500 backdrop-blur-xs px-2.5 py-0.5 rounded-full shadow-xs border border-white/20 whitespace-nowrap">
                         {prod.badge}
                       </span>
                     </div>
@@ -665,7 +680,7 @@ export function ServicesHub() {
                             alt={prod.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
-                          <span className="absolute top-2.5 right-2.5 text-[10px] font-extrabold text-[#8C3015] bg-white/95 backdrop-blur-xs px-2.5 py-0.5 rounded-full shadow-2xs border border-[#C04A22]/20 whitespace-nowrap">
+                          <span className="absolute top-2.5 right-2.5 text-[10px] font-extrabold text-white bg-orange-500 backdrop-blur-xs px-2.5 py-0.5 rounded-full shadow-xs border border-white/20 whitespace-nowrap">
                             {prod.badge}
                           </span>
                         </div>
@@ -808,7 +823,7 @@ export function ServicesHub() {
       {isMobile && showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="sm:hidden fixed bottom-20 right-4 z-50 p-2.5 rounded-full bg-[#C04A22] text-white shadow-xl hover:bg-[#8C3015] active:scale-95 transition-all duration-300 flex items-center justify-center cursor-pointer border border-white/30"
+          className={`sm:hidden fixed ${isNavVisible ? "bottom-16" : "bottom-3.5"} right-2.5 z-50 p-2.5 rounded-full bg-[#C04A22] text-white shadow-xl hover:bg-[#8C3015] active:scale-95 transition-all duration-300 flex items-center justify-center cursor-pointer border border-white/30`}
           title="Scroll to top"
         >
           <ChevronUp className="w-5 h-5" />

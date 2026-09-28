@@ -329,11 +329,11 @@ export function PostDetails() {
                 <button
                   onClick={() => setLiked(!liked)}
                   className={`flex items-center gap-1.5 transition-colors p-1.5 sm:p-2 rounded-full cursor-pointer ${
-                    liked ? "text-rose-600 hover:bg-rose-50" : "text-slate-500 hover:text-rose-600 hover:bg-rose-50"
+                    liked ? "text-[#C04A22] hover:bg-[#C04A22]/10" : "text-slate-500 hover:text-[#C04A22] hover:bg-[#C04A22]/10"
                   }`}
                   title="Like"
                 >
-                  <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${liked ? "fill-rose-600 text-rose-600" : ""}`} />
+                  <Heart className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform active:scale-125 ${liked ? "fill-[#C04A22] text-[#C04A22]" : "hover:text-[#C04A22]"}`} />
                   <span className="text-xs sm:text-sm font-semibold">{(post.likes + (liked ? 1 : 0)).toLocaleString()}</span>
                 </button>
 

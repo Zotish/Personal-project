@@ -3,7 +3,8 @@ import { useNavigate } from "react-router";
 import { AppLayout } from "../components/layout/AppLayout";
 import {
   Bell, Heart, MessageCircle, Users, MapPin, Calendar,
-  AlertTriangle, Scale, CheckCircle, Repeat2, User, Sparkles, ArrowLeft
+  AlertTriangle, Scale, CheckCircle, Repeat2, User, Sparkles, ArrowLeft,
+  Trash2, UserPlus
 } from "lucide-react";
 
 interface NotificationItem {
@@ -26,8 +27,8 @@ const initialNotifications: NotificationItem[] = [
     id: 1,
     type: "emergency",
     icon: AlertTriangle,
-    iconColor: "text-red-500",
-    bg: "bg-red-50",
+    iconColor: "text-red-600",
+    bg: "",
     title: "USCIS Emergency Alert",
     desc: "USCIS has announced a 90-day automatic extension for expiring EAD cards. Check your case status now.",
     time: "2 hours ago",
@@ -39,9 +40,9 @@ const initialNotifications: NotificationItem[] = [
   {
     id: 2,
     type: "follow",
-    icon: Users,
-    iconColor: "text-[#C04A22]",
-    bg: "bg-[#C04A22]/10",
+    icon: UserPlus,
+    iconColor: "text-white",
+    bg: "bg-blue-500",
     title: "Nadia Islam started following you",
     desc: "Immigration attorney · 14.8K followers",
     time: "4 hours ago",
@@ -54,8 +55,8 @@ const initialNotifications: NotificationItem[] = [
     id: 3,
     type: "reply",
     icon: MessageCircle,
-    iconColor: "text-[#C04A22]",
-    bg: "bg-[#C04A22]/10",
+    iconColor: "text-white",
+    bg: "bg-emerald-500",
     title: "Carlos Rivera replied to your post",
     desc: '"Great tip about the DMV in Jamaica! I\'ll share this with my Houston friends too 🙌"',
     time: "5 hours ago",
@@ -68,8 +69,8 @@ const initialNotifications: NotificationItem[] = [
     id: 4,
     type: "like",
     icon: Heart,
-    iconColor: "text-rose-500",
-    bg: "bg-rose-50",
+    iconColor: "text-[#C04A22] fill-[#C04A22]",
+    bg: "bg-rose-50 border border-rose-200",
     title: "47 people liked your post",
     desc: "\"Has anyone applied for NY state ID without SSN?\" — Your post is getting attention!",
     time: "6 hours ago",
@@ -82,8 +83,8 @@ const initialNotifications: NotificationItem[] = [
     id: 5,
     type: "community",
     icon: Users,
-    iconColor: "text-[#C04A22]",
-    bg: "bg-[#C04A22]/10",
+    iconColor: "text-white",
+    bg: "bg-[#C04A22]",
     title: "Community invite: Bangladeshi New Yorkers",
     desc: "Rahim Chowdhury invited you to join this community (14.2K members)",
     time: "8 hours ago",
@@ -152,8 +153,8 @@ const initialNotifications: NotificationItem[] = [
     id: 10,
     type: "like",
     icon: Heart,
-    iconColor: "text-rose-500",
-    bg: "bg-rose-50",
+    iconColor: "text-white",
+    bg: "bg-rose-500",
     title: "Priya Sharma liked your comment",
     desc: "On post: \"Tips for finding immigrant-friendly healthcare in NYC\"",
     time: "3 days ago",
@@ -178,6 +179,11 @@ export function Notifications() {
   const handleMarkAllRead = () => {
     setNotifList(prev => prev.map(n => ({ ...n, read: true })));
     showToast("All notifications marked as read");
+  };
+
+  const handleDeleteNotif = (id: number) => {
+    setNotifList(prev => prev.filter(n => n.id !== id));
+    showToast("Notification deleted");
   };
 
   const unreadCount = notifList.filter(n => !n.read).length;
@@ -262,22 +268,12 @@ export function Notifications() {
                   !notif.read ? "bg-[#C04A22]/5" : ""
                 }`}
               >
-                {/* Avatar / Icon Container */}
-                <div className="flex-shrink-0">
+                {/* Avatar / Icon Container (No background circle) */}
+                <div className="flex-shrink-0 w-11 h-11 flex items-center justify-center">
                   {notif.hasUserAvatar ? (
-                    <div className="relative">
-                      {/* Normal Default User Avatar Icon (No colored letter badges) */}
-                      <div className="w-11 h-11 rounded-full bg-slate-200 border border-slate-300/60 flex items-center justify-center text-slate-500 flex-shrink-0 shadow-2xs">
-                        <User className="w-5.5 h-5.5 text-slate-500" />
-                      </div>
-                      <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full ${notif.bg} border-2 border-white flex items-center justify-center shadow-xs`}>
-                        <Icon className={`w-3 h-3 ${notif.iconColor}`} />
-                      </div>
-                    </div>
+                    <User className="w-6 h-6 text-slate-500" />
                   ) : (
-                    <div className={`w-11 h-11 rounded-full ${notif.bg} flex items-center justify-center border border-slate-200/50 shadow-2xs`}>
-                      <Icon className={`w-5 h-5 ${notif.iconColor}`} />
-                    </div>
+                    <Icon className={`w-6 h-6 ${notif.iconColor}`} />
                   )}
                 </div>
 
@@ -287,9 +283,19 @@ export function Notifications() {
                     <p className="text-sm text-slate-900 leading-snug">
                       <span className="font-bold">{notif.title}</span>
                     </p>
-                    {!notif.read && (
-                      <div className="w-2.5 h-2.5 rounded-full bg-[#C04A22] flex-shrink-0 mt-1 shadow-2xs" />
-                    )}
+                    {/* Right side: Delete button (replaced colored dot) */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteNotif(notif.id);
+                      }}
+                      className="p-1.5 -mr-1 -mt-0.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer flex-shrink-0"
+                      title="Delete notification"
+                      aria-label="Delete notification"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                   <p className="text-xs sm:text-sm text-slate-600 mt-1 line-clamp-2 leading-relaxed">
                     {notif.desc}

@@ -24,6 +24,7 @@ import { JobDetailsModal } from "../components/jobs/JobDetailsModal";
 import { useMobileTabs } from "../context/MobileTabContext";
 import { useCountryPlatform } from "../context/CountryPlatformContext";
 import { buildMapShareUrl, shareOrCopy } from "../utils/shareUtils";
+import { MapLocationToast, type MapLocationToastInfo } from "../components/map/MapLocationToast";
 import type { Map as LeafletMapType } from "leaflet";
 import {
   BARIKOI_API_KEY,
@@ -2532,6 +2533,7 @@ export function MapDiscoveryContent({
   const [zoomOutCount, setZoomOutCount] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const [locationToast, setLocationToast] = useState<MapLocationToastInfo | null>(null);
 
   // ── Continuous Real-Time GPS Tracking with watchPosition (Throttled) ──
   const lastGpsCoordsRef = useRef<[number, number] | null>(null);
@@ -2572,6 +2574,13 @@ export function MapDiscoveryContent({
       },
       err => {
         console.warn("Real-time GPS watch warning:", err);
+        if (err.code === 1) {
+          setIsGPSActive(false);
+          setLocationToast({ type: "permission_denied" });
+        } else if (err.code === 2) {
+          setIsGPSActive(false);
+          setLocationToast({ type: "location_off" });
+        }
       },
       {
         enableHighAccuracy: true,
@@ -2592,6 +2601,12 @@ export function MapDiscoveryContent({
       if ("permissions" in navigator) {
         try {
           const status = await navigator.permissions.query({ name: "geolocation" as any });
+          status.onchange = () => {
+            if (status.state === "denied") {
+              setIsGPSActive(false);
+              setLocationToast({ type: "permission_denied" });
+            }
+          };
           if (status.state === "granted" && "geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(
               (pos) => {
@@ -2604,9 +2619,14 @@ export function MapDiscoveryContent({
                   localStorage.setItem("bkoi_last_user_coords", JSON.stringify([lat, lng]));
                 } catch (_) {}
               },
-              () => {
+              (err) => {
                 // If geolocation fails, preserve existing/cached user location! Do NOT overwrite with DEFAULT_LOCATION
                 setIsGPSActive(false);
+                if (err.code === 1) {
+                  setLocationToast({ type: "permission_denied" });
+                } else if (err.code === 2) {
+                  setLocationToast({ type: "location_off" });
+                }
               },
               { enableHighAccuracy: true, timeout: 5000, maximumAge: 10000 }
             );
@@ -2631,6 +2651,51 @@ export function MapDiscoveryContent({
 
     detectExactLocation();
   }, [routeState]);
+
+  const handleRequestPhoneLocation = () => {
+    gpsDisabledByUserRef.current = false;
+    setIsLocating(true);
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+          setUserLocation(coords);
+          setIsGPSActive(true);
+          setIsLocating(false);
+          setLocationToast(null);
+          setRecenterCount(c => c + 1);
+          try {
+            localStorage.setItem("bkoi_last_user_coords", JSON.stringify(coords));
+          } catch (_) {}
+        },
+        err => {
+          setIsLocating(false);
+          setIsGPSActive(false);
+          if (err.code === 1) {
+            alert(
+              lang === "bn"
+                ? "অনুগ্রহ করে আপনার মোবাইল ফোনের ব্রাউজার সেটিংসে গিয়ে লোকেশন পারমিশন অন করুন।"
+                : "Please allow location access in your phone/browser settings."
+            );
+          } else {
+            alert(
+              lang === "bn"
+                ? "অনুগ্রহ করে আপনার মোবাইল ফোনের লোকেশন (GPS) চালু করুন।"
+                : "Please turn on Location / GPS in your mobile phone settings."
+            );
+          }
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 }
+      );
+    } else {
+      setIsLocating(false);
+      alert(
+        lang === "bn"
+          ? "অনুগ্রহ করে আপনার মোবাইল ফোনের লোকেশন (GPS) চালু করুন।"
+          : "Please turn on Location / GPS in your mobile phone settings."
+      );
+    }
+  };
 
   // ── Real-Time Address via BariKoi Reverse Geocode API (Debounced) ──
   const [liveAddressInfo, setLiveAddressInfo] = useState<{
@@ -3183,6 +3248,13 @@ export function MapDiscoveryContent({
               onMarkerHover={() => {}}
             />
 
+            {/* Top-Right Location Toast */}
+            <MapLocationToast
+              toast={locationToast}
+              onClose={() => setLocationToast(null)}
+              onClick={handleRequestPhoneLocation}
+            />
+
             {/* Floating Controls: GPS */}
             <div className="absolute bottom-2.5 right-2.5 z-10 flex flex-col items-center gap-1.5 pointer-events-auto">
               {/* Floating GPS Button */}
@@ -3192,6 +3264,7 @@ export function MapDiscoveryContent({
                   if (isGPSActive) {
                     gpsDisabledByUserRef.current = true;
                     setIsGPSActive(false);
+                    setLocationToast({ type: "turned_off" });
                   } else {
                     gpsDisabledByUserRef.current = false;
                     setIsLocating(true);
@@ -3199,6 +3272,7 @@ export function MapDiscoveryContent({
                       setUserLocation(coords);
                       setIsGPSActive(true);
                       setIsLocating(false);
+                      setLocationToast(null);
                       setRecenterCount((c) => c + 1);
                       try {
                         localStorage.setItem("bkoi_last_user_coords", JSON.stringify(coords));
@@ -3212,11 +3286,19 @@ export function MapDiscoveryContent({
                           setIsLocating(false);
                           setIsGPSActive(false);
                           console.warn("Geolocation permission not granted:", err.message);
+                          if (err.code === 1) {
+                            setLocationToast({ type: "permission_denied" });
+                          } else if (err.code === 2) {
+                            setLocationToast({ type: "location_off" });
+                          } else {
+                            setLocationToast({ type: "unavailable" });
+                          }
                         },
                         { enableHighAccuracy: true, timeout: 6000, maximumAge: 10000 }
                       );
                     } else {
                       setIsLocating(false);
+                      setLocationToast({ type: "location_off" });
                     }
                   }
                 }}
@@ -3363,6 +3445,13 @@ export function MapDiscoveryContent({
                   }}
                 />
 
+                {/* Top-Right Location Toast */}
+                <MapLocationToast
+                  toast={locationToast}
+                  onClose={() => setLocationToast(null)}
+                  onClick={handleRequestPhoneLocation}
+                />
+
                 {/* Desktop Hover Card Tooltip (Hidden when navigation route is active) */}
                 {!directionsFor && !isLiveNavigating && hoverPlace && (
                   <HoverTooltipCard
@@ -3404,6 +3493,7 @@ export function MapDiscoveryContent({
                         if (isGPSActive) {
                           gpsDisabledByUserRef.current = true;
                           setIsGPSActive(false);
+                          setLocationToast({ type: "turned_off" });
                         } else {
                           gpsDisabledByUserRef.current = false;
                           setIsLocating(true);
@@ -3411,6 +3501,7 @@ export function MapDiscoveryContent({
                             setUserLocation(coords);
                             setIsGPSActive(true);
                             setIsLocating(false);
+                            setLocationToast(null);
                             setRecenterCount((c) => c + 1);
                             try {
                               localStorage.setItem("bkoi_last_user_coords", JSON.stringify(coords));
@@ -3424,17 +3515,25 @@ export function MapDiscoveryContent({
                                 setIsLocating(false);
                                 setIsGPSActive(false);
                                 console.warn("Geolocation permission not granted:", err.message);
+                                if (err.code === 1) {
+                                  setLocationToast({ type: "permission_denied" });
+                                } else if (err.code === 2) {
+                                  setLocationToast({ type: "location_off" });
+                                } else {
+                                  setLocationToast({ type: "unavailable" });
+                                }
                               },
                               { enableHighAccuracy: true, timeout: 6000, maximumAge: 10000 }
                             );
                           } else {
                             setIsLocating(false);
+                            setLocationToast({ type: "location_off" });
                           }
                         }
                       }}
                       className={`p-3 sm:p-3.5 rounded-full shadow-lg border transition-all flex items-center justify-center cursor-pointer active:scale-95 ${
                         isGPSActive
-                          ? "bg-[#D85A30] text-white border-[#D85A30] shadow-[#D85A30]/30"
+                          ? "bg-[#C04A22] text-white border-[#C04A22] shadow-[#C04A22]/30"
                           : "bg-white text-foreground border-border hover:bg-slate-50"
                       }`}
                       title={isGPSActive ? "Turn OFF GPS Navigation" : "Turn ON Live Location (GPS)"}

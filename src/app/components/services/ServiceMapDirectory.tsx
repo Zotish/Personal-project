@@ -11,6 +11,7 @@ import {
   Phone, Globe, CheckCircle2, UserCheck, Utensils, Info
 } from "lucide-react";
 import { ServiceListing, formatDistance, getDistanceKm } from "../../data/serviceDirectoryData";
+import { MapLocationToast, type MapLocationToastInfo } from "../map/MapLocationToast";
 import type { Map as LeafletMapType } from "leaflet";
 import { useCountryPlatform } from "../../context/CountryPlatformContext";
 import {
@@ -111,6 +112,10 @@ function InteractiveServiceMap({
   themeColor = "#C04A22",
   serviceName,
   countryCode,
+  onToggleLocation,
+  isLocating = false,
+  locationToast = null,
+  onCloseToast,
 }: {
   userCoords: [number, number];
   isLocationGranted: boolean;
@@ -130,6 +135,10 @@ function InteractiveServiceMap({
   themeColor?: string;
   serviceName: string;
   countryCode?: string;
+  onToggleLocation?: (turnOn: boolean) => void;
+  isLocating?: boolean;
+  locationToast?: MapLocationToastInfo | null;
+  onCloseToast?: () => void;
 }) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -621,6 +630,17 @@ function InteractiveServiceMap({
       >
         <div ref={mapContainerRef} className="w-full h-full" />
 
+        {/* Top-Right Location Toast */}
+        <MapLocationToast
+          toast={locationToast || null}
+          onClose={onCloseToast || (() => {})}
+          onClick={() => {
+            if (onToggleLocation) {
+              onToggleLocation(true);
+            }
+          }}
+        />
+
         {markerClickedItem && !directionItem && sheetMode !== "full" && (
           <div
             className={`absolute z-30 w-[275px] sm:w-[315px] bg-white rounded-2xl shadow-xl border border-slate-200/90 overflow-hidden duration-200 pointer-events-auto left-1/2 -translate-x-1/2 sm:left-4 sm:translate-x-0 ${
@@ -688,16 +708,32 @@ function InteractiveServiceMap({
         )}
 
         {/* Map Controls: Floating Navigation Button */}
-        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 flex flex-col items-center gap-2 z-20 pointer-events-auto">
-          {/* Floating Navigation Button */}
-          <button
-            onClick={handleCenterUser}
-            className="w-7.5 h-7.5 sm:w-8.5 sm:h-8.5 rounded-full shadow-md border transition-all cursor-pointer active:scale-95 flex items-center justify-center bg-[#D85A30] text-white border-[#D85A30] shadow-[#D85A30]/30"
-            title="Center My Location"
-          >
-            <Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current" />
-          </button>
-        </div>
+        {!directionItem && (
+          <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 flex flex-col items-center gap-2 z-20 pointer-events-auto">
+            {/* Floating Navigation Button */}
+            <button
+              onClick={() => {
+                if (isLocationGranted) {
+                  onToggleLocation?.(false);
+                } else {
+                  onToggleLocation?.(true);
+                }
+              }}
+              className={`w-7.5 h-7.5 sm:w-8.5 sm:h-8.5 rounded-full shadow-md border transition-all cursor-pointer active:scale-95 flex items-center justify-center ${
+                isLocationGranted
+                  ? "bg-[#C04A22] text-white border-[#C04A22] shadow-[#C04A22]/30"
+                  : "bg-white/95 backdrop-blur-md text-slate-700 hover:text-[#C04A22] border-slate-200/90"
+              }`}
+              title={isLocationGranted ? "Turn OFF Live Location" : "Turn ON Live Location (GPS)"}
+            >
+              {isLocating ? (
+                <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin text-[#C04A22]" />
+              ) : (
+                <Navigation className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isLocationGranted ? "fill-current text-white" : "text-[#C04A22]"}`} />
+              )}
+            </button>
+          </div>
+        )}
 
         {directionItem && routeInfo && (
           <div className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-3 sm:w-96 z-30 animate-in slide-in-from-bottom-3 duration-200">
@@ -1144,6 +1180,8 @@ export function ServiceMapDirectory({
       return false;
     }
   });
+  const [locationToast, setLocationToast] = useState<MapLocationToastInfo | null>(null);
+  const [isLocating, setIsLocating] = useState<boolean>(false);
 
   // Generate live location items
   const [liveItems, setLiveItems] = useState<ServiceListing[]>(() => {
@@ -1176,7 +1214,7 @@ export function ServiceMapDirectory({
     return generateListings(coords[0], coords[1], area, city);
   });
 
-  // Geolocation detection
+  // Geolocation detection on mount
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -1202,13 +1240,85 @@ export function ServiceMapDirectory({
             setLiveItems(generateListings(coords[0], coords[1], area, city));
           });
         },
-        () => {
-          // Do not overwrite userCoords if already known
+        (err) => {
+          if (err.code === 1) {
+            setLocationToast({ type: "permission_denied" });
+          } else if (err.code === 2) {
+            setLocationToast({ type: "location_off" });
+          }
         },
         { timeout: 8000 }
       );
     }
   }, [generateListings, defaultAreaName, defaultCityName]);
+
+  // Listen to browser permission state changes
+  useEffect(() => {
+    if ("permissions" in navigator) {
+      navigator.permissions.query({ name: "geolocation" as any }).then(status => {
+        status.onchange = () => {
+          if (status.state === "denied") {
+            setIsLocationGranted(false);
+            setLocationToast({ type: "permission_denied" });
+          }
+        };
+      }).catch(() => {});
+    }
+  }, []);
+
+  const handleToggleLocation = (turnOn: boolean) => {
+    if (!turnOn) {
+      setIsLocationGranted(false);
+      setLocationToast({ type: "turned_off" });
+      return;
+    }
+
+    setIsLocating(true);
+    if (!("geolocation" in navigator)) {
+      setIsLocating(false);
+      setLocationToast({ type: "location_off" });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setIsLocating(false);
+        const inBD = isLocationInBangladesh(pos.coords.latitude, pos.coords.longitude);
+        const coords: [number, number] = inBD
+          ? [pos.coords.latitude, pos.coords.longitude]
+          : [pos.coords.latitude, pos.coords.longitude];
+        setUserCoords(coords);
+        setIsLocationGranted(true);
+        setLocationToast(null);
+        try {
+          localStorage.setItem("bkoi_last_user_coords", JSON.stringify(coords));
+        } catch (_) {}
+        fetchBariKoiReverseGeocode(coords[0], coords[1]).then(geo => {
+          const area = geo?.area || defaultAreaName;
+          const city = geo?.city || defaultCityName;
+          setUserArea(area);
+          setUserCity(city);
+          try {
+            localStorage.setItem("bkoi_last_user_area", area);
+            localStorage.setItem("bkoi_last_user_city", city);
+          } catch (_) {}
+          setLiveItems(generateListings(coords[0], coords[1], area, city));
+        });
+      },
+      err => {
+        setIsLocating(false);
+        setIsLocationGranted(false);
+        if (err.code === 1) {
+          setLocationToast({ type: "permission_denied" });
+        } else if (err.code === 2) {
+          setLocationToast({ type: "location_off" });
+        } else {
+          setLocationToast({ type: "unavailable" });
+        }
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 }
+    );
+  };
 
   // Filter & Search
   const filteredItems = useMemo(() => {
@@ -1318,6 +1428,10 @@ export function ServiceMapDirectory({
             <InteractiveServiceMap
               userCoords={userCoords}
               isLocationGranted={isLocationGranted}
+              onToggleLocation={handleToggleLocation}
+              isLocating={isLocating}
+              locationToast={locationToast}
+              onCloseToast={() => setLocationToast(null)}
               items={filteredItems}
               selectedItem={selectedItem}
               onSelectItem={item => setSelectedItem(item)}

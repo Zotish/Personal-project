@@ -15,7 +15,7 @@ import {
   Calendar, Clock, X, MapPin as MapPinIcon, UserCheck, Building2,
   Megaphone, Star, TrendingUp, Lock, Hash, Pin, Award, User, Video, Film, Smile,
   Wind, Droplets, Thermometer, ArrowUp, Loader2, CloudSun, Plus, LayoutGrid, Box, Package,
-  Cloud, CloudRain, CloudSnow, Sun, CloudLightning, ShoppingBag, Shield, Menu, SquarePen, Camera, ArrowLeft, Music
+  Cloud, CloudRain, CloudSnow, Sun, CloudLightning, ShoppingBag, Shield, Menu, SquarePen, Camera, ArrowLeft, Music, Sparkles
 } from "lucide-react";
 import { EventRegistrationModal } from "../components/events/EventRegistrationModal";
 import { SponsoredFeedAd } from "../components/ads/SponsoredAdCard";
@@ -499,10 +499,14 @@ function MiniCalendar({
   selectedDate,
   onSelect,
   onClose,
+  compact = false,
+  className,
 }: {
   selectedDate: string | null;
   onSelect: (key: string | null) => void;
   onClose?: () => void;
+  compact?: boolean;
+  className?: string;
 }) {
   const { t } = useLanguage();
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -527,8 +531,12 @@ function MiniCalendar({
   while (cells.length % 7 !== 0) cells.push(null);
 
   return (
-    <div className="bg-white rounded-2xl border border-border p-4">
-      <div className="flex items-center justify-between mb-3">
+    <div className={`bg-white border-border flex flex-col justify-between ${
+      compact
+        ? "h-[230px] sm:h-[250px] rounded-none sm:rounded-2xl border-0 sm:border border-b border-slate-200/90 sm:border-border p-2 sm:p-2.5 overflow-hidden"
+        : "rounded-2xl border p-4"
+    } ${className || ""}`}>
+      <div className={`flex items-center justify-between ${compact ? "mb-0.5" : "mb-3"}`}>
         <div className="flex items-center gap-1.5">
           <button
             type="button"
@@ -544,29 +552,29 @@ function MiniCalendar({
             title="Back to home"
             aria-label="Back"
           >
-            <ArrowLeft className="w-4 h-4 text-slate-700 hover:text-[#C04A22] transition-colors" strokeWidth={2.4} />
+            <ArrowLeft className={`${compact ? "w-3.5 h-3.5" : "w-4 h-4"} text-slate-700 hover:text-[#C04A22] transition-colors`} strokeWidth={2.4} />
           </button>
-          <h3 className="font-bold text-sm text-foreground">
+          <h3 className={`font-bold text-foreground ${compact ? "text-xs sm:text-sm" : "text-sm"}`}>
             {MONTHS[viewMonth]} {viewYear}
           </h3>
         </div>
         <div className="flex gap-1">
-          <button onClick={prevMonth} className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-orange-50 text-slate-500 hover:text-[#C04A22] transition-colors">
+          <button onClick={prevMonth} className={`${compact ? "w-5 h-5" : "w-6 h-6"} flex items-center justify-center rounded-lg hover:bg-orange-50 text-slate-500 hover:text-[#C04A22] transition-colors`}>
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
-          <button onClick={nextMonth} className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-orange-50 text-slate-500 hover:text-[#C04A22] transition-colors">
+          <button onClick={nextMonth} className={`${compact ? "w-5 h-5" : "w-6 h-6"} flex items-center justify-center rounded-lg hover:bg-orange-50 text-slate-500 hover:text-[#C04A22] transition-colors`}>
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 mb-1">
+      <div className={`grid grid-cols-7 ${compact ? "mb-0" : "mb-1"}`}>
         {DAYS.map(d => (
-          <div key={d} className="text-center text-[10px] font-semibold text-muted-foreground py-1">{d}</div>
+          <div key={d} className={`text-center font-semibold text-muted-foreground ${compact ? "text-[9px] py-0.5" : "text-[10px] py-1"}`}>{d}</div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-y-0.5">
+      <div className={`grid grid-cols-7 flex-1 ${compact ? "gap-y-0" : "gap-y-0.5"}`}>
         {cells.map((day, i) => {
           if (!day) return <div key={`empty-${i}`} />;
           const key = dateKey(viewYear, viewMonth, day);
@@ -578,10 +586,10 @@ function MiniCalendar({
             <button
               key={key}
               onClick={() => onSelect(isSelected ? null : key)}
-              className="relative flex flex-col items-center justify-center h-8.5 w-full text-xs font-medium transition-all duration-150 cursor-pointer group"
+              className={`relative flex flex-col items-center justify-center ${compact ? "h-6 sm:h-7" : "h-8.5"} w-full text-xs font-medium transition-all duration-150 cursor-pointer group`}
             >
               <span
-                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-150 ${
+                className={`${compact ? "w-5.5 h-5.5 sm:w-6 sm:h-6 text-[10px] sm:text-xs" : "w-7 h-7 text-xs"} rounded-full flex items-center justify-center transition-all duration-150 ${
                   isSelected
                     ? "bg-[#C04A22] text-white shadow-sm font-bold scale-105"
                     : isToday
@@ -595,7 +603,7 @@ function MiniCalendar({
               </span>
               {hasEvents && (
                 <span
-                  className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${
+                  className={`absolute ${compact ? "bottom-0 w-1 h-1" : "bottom-0.5 w-1.5 h-1.5"} left-1/2 -translate-x-1/2 rounded-full ${
                     isSelected ? "bg-white" : "bg-[#C04A22]"
                   }`}
                 />
@@ -605,13 +613,13 @@ function MiniCalendar({
         })}
       </div>
 
-      <div className="flex items-center gap-3.5 mt-3 pt-3 border-t border-border">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span className="w-2 h-2 rounded-full bg-[#C04A22] inline-block" />
+      <div className={`flex items-center border-t border-border ${compact ? "gap-2.5 mt-0.5 pt-0.5 text-[9px] sm:text-[10px]" : "gap-3.5 mt-3 pt-3 text-xs"} text-muted-foreground`}>
+        <div className="flex items-center gap-1">
+          <span className={`${compact ? "w-1.5 h-1.5" : "w-2 h-2"} rounded-full bg-[#C04A22] inline-block`} />
           {t("cal_has_events")}
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span className="w-4 h-4 rounded-full border-1.5 border-[#C04A22] bg-orange-50/80 inline-block" />
+        <div className="flex items-center gap-1">
+          <span className={`${compact ? "w-3 h-3 border" : "w-4 h-4 border-1.5"} rounded-full border-[#C04A22] bg-orange-50/80 inline-block`} />
           {t("cal_today")}
         </div>
       </div>
@@ -889,8 +897,8 @@ function PostCard({ post }: { post: Post; key?: string | number }) {
 
       {/* Action Bar */}
       <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 max-w-md" onClick={e => e.stopPropagation()}>
-        <button onClick={() => setLiked(!liked)} className={`flex items-center gap-1 sm:gap-1.5 text-xs transition-colors cursor-pointer ${liked ? "text-red-500 font-bold" : "text-muted-foreground hover:text-red-500"}`}>
-          <Heart className={`w-4 h-4 ${liked ? "fill-red-500 text-red-500" : ""}`} />
+        <button onClick={() => setLiked(!liked)} className={`flex items-center gap-1 sm:gap-1.5 text-xs transition-colors cursor-pointer ${liked ? "text-[#C04A22] font-bold" : "text-muted-foreground hover:text-[#C04A22]"}`}>
+          <Heart className={`w-4 h-4 transition-transform active:scale-125 ${liked ? "fill-[#C04A22] text-[#C04A22]" : "hover:text-[#C04A22]"}`} />
           <span className="hidden sm:inline">{post.likes + (liked ? 1 : 0)}</span>
           <span className="sm:hidden">{post.likes + (liked ? 1 : 0) > 999 ? `${Math.round((post.likes + (liked ? 1 : 0)) / 1000)}k` : post.likes + (liked ? 1 : 0)}</span>
         </button>
@@ -1822,6 +1830,7 @@ export function HomeFeed() {
   });
   const [mobileFollowedUsers, setMobileFollowedUsers] = useState<string[]>([]);
   const [isPostBoxOpen, setIsPostBoxOpen] = useState(() => searchParams.get("open") === "post" || location.state?.open === "post");
+  const [isDollOpen, setIsDollOpen] = useState(false);
 
   // Sync country & lang from URL search params whenever present
   useEffect(() => {
@@ -1887,16 +1896,24 @@ export function HomeFeed() {
       if (e.detail?.tab) setActiveTab(e.detail.tab);
     };
 
+    const handleDollState = (e: any) => {
+      if (typeof e.detail?.isOpen === "boolean") {
+        setIsDollOpen(e.detail.isOpen);
+      }
+    };
+
     window.addEventListener("open-weather-modal", handleOpenWeather);
     window.addEventListener("open-calendar-modal", handleOpenCalendar);
     window.addEventListener("open-post-composer", handleOpenPost);
     window.addEventListener("select-feed-tab", handleSelectTab);
+    window.addEventListener("doll-assistant-state-changed", handleDollState);
 
     return () => {
       window.removeEventListener("open-weather-modal", handleOpenWeather);
       window.removeEventListener("open-calendar-modal", handleOpenCalendar);
       window.removeEventListener("open-post-composer", handleOpenPost);
       window.removeEventListener("select-feed-tab", handleSelectTab);
+      window.removeEventListener("doll-assistant-state-changed", handleDollState);
     };
   }, []);
 
@@ -1965,8 +1982,33 @@ export function HomeFeed() {
           <Logo size="sm" showIcon={false} onClick={() => navigate("/feed")} />
         </div>
 
-        {/* Right: Temperature on left, Notifications on right */}
+        {/* Right: Post on left, Temperature in middle, Notifications on right */}
         <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => {
+              setIsPostBoxOpen(v => !v);
+              if (!isPostBoxOpen && typeof window !== "undefined" && window.innerWidth >= 1024) {
+                setTimeout(() => {
+                  const composer = document.getElementById("home-post-composer");
+                  if (composer) {
+                    composer.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                    const textarea = composer.querySelector("textarea");
+                    if (textarea) textarea.focus();
+                  }
+                }, 50);
+              }
+            }}
+            className={`w-9 h-9 flex items-center justify-center rounded-full transition cursor-pointer group focus:outline-hidden ${
+              isPostBoxOpen
+                ? "bg-[#C04A22]/10 text-[#C04A22]"
+                : "hover:bg-secondary text-slate-600 hover:text-[#8C3015]"
+            }`}
+            title="Create a Post"
+            aria-label="Create a Post"
+          >
+            <SquarePen className="w-5 h-5 transition-colors" strokeWidth={2.2} />
+          </button>
           <button
             type="button"
             onClick={() => {
@@ -1998,7 +2040,7 @@ export function HomeFeed() {
       {/* Main content: expanded width, centered */}
       <div className="w-full max-w-3xl mx-auto lg:max-w-none">
         {/* Sticky tabs bar */}
-        {!selectedDate && (
+        {(!selectedDate || mobileCalOpen) && (
           <div className="sticky top-0 lg:top-0 z-20 bg-white/90 backdrop-blur-md border-b border-border">
             <div className="grid grid-cols-5 w-full items-stretch">
               {/* 1. For You */}
@@ -2019,36 +2061,28 @@ export function HomeFeed() {
                 <QuickAccessBox navigate={navigate} variant="desktop" />
               </div>
 
-              {/* 3. Post (Pen Box Icon from 2nd screenshot) */}
+              {/* 3. AI Assistant (3-star AI magic icon - opens dedicated chat page) */}
               <button
                 onClick={() => {
-                  setIsPostBoxOpen(v => !v);
-                  if (!isPostBoxOpen && typeof window !== "undefined" && window.innerWidth >= 1024) {
-                    setTimeout(() => {
-                      const composer = document.getElementById("home-post-composer");
-                      if (composer) {
-                        composer.scrollIntoView({ behavior: "smooth", block: "nearest" });
-                        const textarea = composer.querySelector("textarea");
-                        if (textarea) textarea.focus();
-                      }
-                    }, 50);
-                  }
+                  navigate("/assistant");
                 }}
-                className={`w-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 text-xs font-medium transition-all group cursor-pointer ${
-                  isPostBoxOpen
-                    ? "text-[#8C3015] font-bold border-b-2 border-[#C04A22]"
-                    : "text-slate-600 hover:text-[#8C3015] hover:bg-slate-50"
-                }`}
-                title={isPostBoxOpen ? "Close Post Composer" : "Create a Post"}
+                className="w-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 text-xs font-medium transition-all group cursor-pointer text-slate-600 hover:text-[#8C3015] hover:bg-slate-50"
+                title="AI Magic Assistant"
               >
-                <SquarePen className={`w-5 h-5 sm:w-4 sm:h-4 flex-shrink-0 transition-colors ${isPostBoxOpen ? "text-[#C04A22]" : "text-slate-600 group-hover:text-[#8C3015]"}`} strokeWidth={2.2} />
-                <span className="hidden sm:inline truncate font-semibold">Post</span>
+                <Sparkles className="w-5 h-5 sm:w-4 sm:h-4 flex-shrink-0 transition-colors text-slate-600 group-hover:text-[#8C3015]" />
+                <span className="hidden sm:inline truncate font-semibold">AI Magic</span>
               </button>
 
               {/* 4. Calendar (Right side of Post button) */}
               <button
                 onClick={() => {
-                  setMobileCalOpen(v => !v);
+                  setMobileCalOpen(v => {
+                    if (v) {
+                      setSelectedDate(null);
+                      return false;
+                    }
+                    return true;
+                  });
                   setMobileWeatherOpen(false);
                 }}
                 className={`w-full flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-3 sm:py-3.5 text-xs font-medium transition-all group cursor-pointer ${
@@ -2083,73 +2117,88 @@ export function HomeFeed() {
         )}
 
         <div className="px-0 sm:px-3 md:px-4 py-0 sm:py-4 space-y-0 sm:space-y-4 w-full">
-          {selectedDate ? (
-            <>
-              {/* Date filter header */}
-              <div className="flex items-center justify-between bg-white rounded-2xl border border-border px-3 sm:px-4 py-3 shadow-2xs mx-3 sm:mx-0 mt-3 sm:mt-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedDate(null);
-                    setMobileCalOpen(true);
-                  }}
-                  className="flex items-center gap-2.5 text-left cursor-pointer group"
-                  title="Change date in calendar"
-                >
-                  <div className="w-8 h-8 rounded-xl bg-orange-50 group-hover:bg-orange-100 border border-orange-100 flex items-center justify-center flex-shrink-0 transition-colors">
-                    <Calendar className="w-4 h-4 text-[#C04A22]" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-foreground group-hover:text-[#8C3015] transition-colors">{formatDate(selectedDate)}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {hasEvents ? (
-                        <span className="text-[#8C3015] font-medium">{selectedEvents.length} event{selectedEvents.length > 1 ? "s" : ""} on this day</span>
-                      ) : "No events scheduled"}
-                    </div>
-                  </div>
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedDate(null);
-                    setMobileCalOpen(true);
-                  }}
-                  className="flex items-center gap-1 text-xs font-medium text-[#8C3015] hover:text-[#C04A22] px-3 py-1.5 rounded-xl hover:bg-orange-50 transition-colors border border-transparent hover:border-orange-200 cursor-pointer"
-                  title="Open Calendar"
-                >
-                  <X className="w-3.5 h-3.5" /> Clear
-                </button>
-              </div>
-
-              {hasEvents ? (
-                selectedEvents.map(event => <EventCard key={event.id} event={event} />)
-              ) : (
-                <div className="bg-white rounded-2xl border border-border p-8 sm:p-10 text-center shadow-2xs mx-3 sm:mx-0">
-                  <div className="text-4xl mb-3">📅</div>
-                  <div className="text-base font-bold text-foreground mb-1">{t("cal_no_events")}</div>
-                  <div className="text-sm text-muted-foreground mb-4">{t("cal_no_events_hint")}</div>
-                  <button
-                    onClick={() => {
-                      setSelectedDate(null);
-                      setMobileCalOpen(true);
-                    }}
-                    className="px-5 py-2.5 rounded-2xl bg-[#C04A22] hover:bg-[#8C3015] text-white text-xs font-bold transition shadow-xs cursor-pointer active:scale-98"
-                  >
-                    {t("cal_back")}
-                  </button>
-                </div>
-              )}
-            </>
-          ) : activeTab === "map" ? (
+          {activeTab === "map" ? (
             <MapDiscoveryContent embedded={true} />
           ) : (
             <>
-              {/* ── Compact Live Map (Between Top Bar & Post Box) ── */}
-              <div className="w-full">
-                <MapDiscoveryContent compact={true} height="h-[230px] sm:h-[250px]" />
+              {/* ── Compact Live Map or Calendar in Map Spot (Between Top Bar & Feed) ── */}
+              <div className="w-full h-[230px] sm:h-[250px]">
+                {mobileCalOpen ? (
+                  <div className="w-full h-full animate-in fade-in duration-200">
+                    <MiniCalendar
+                      compact={true}
+                      selectedDate={selectedDate}
+                      onSelect={(d) => {
+                        setSelectedDate(d);
+                      }}
+                      onClose={() => {
+                        setMobileCalOpen(false);
+                        setSelectedDate(null);
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <MapDiscoveryContent compact={true} height="h-[230px] sm:h-[250px]" />
+                )}
               </div>
 
-              {/* ── Post Creation Box ── */}
-              {isPostBoxOpen && (
+              {selectedDate ? (
+                <>
+                  {/* Date filter header */}
+                  <div className="flex items-center justify-between bg-white rounded-2xl border border-border px-3 sm:px-4 py-3 shadow-2xs mx-3 sm:mx-0 mt-3 sm:mt-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedDate(null);
+                      }}
+                      className="flex items-center gap-2.5 text-left cursor-pointer group"
+                      title="Clear date filter"
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-orange-50 group-hover:bg-orange-100 border border-orange-100 flex items-center justify-center flex-shrink-0 transition-colors">
+                        <Calendar className="w-4 h-4 text-[#C04A22]" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-foreground group-hover:text-[#8C3015] transition-colors">{formatDate(selectedDate)}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {hasEvents ? (
+                            <span className="text-[#8C3015] font-medium">{selectedEvents.length} event{selectedEvents.length > 1 ? "s" : ""} on this day</span>
+                          ) : "No events scheduled"}
+                        </div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedDate(null);
+                      }}
+                      className="flex items-center gap-1 text-xs font-medium text-[#8C3015] hover:text-[#C04A22] px-3 py-1.5 rounded-xl hover:bg-orange-50 transition-colors border border-transparent hover:border-orange-200 cursor-pointer"
+                      title="Clear"
+                    >
+                      <X className="w-3.5 h-3.5" /> Clear
+                    </button>
+                  </div>
+
+                  {hasEvents ? (
+                    selectedEvents.map(event => <EventCard key={event.id} event={event} />)
+                  ) : (
+                    <div className="bg-white rounded-2xl border border-border p-8 sm:p-10 text-center shadow-2xs mx-3 sm:mx-0">
+                      <div className="text-4xl mb-3">📅</div>
+                      <div className="text-base font-bold text-foreground mb-1">{t("cal_no_events")}</div>
+                      <div className="text-sm text-muted-foreground mb-4">{t("cal_no_events_hint")}</div>
+                      <button
+                        onClick={() => {
+                          setSelectedDate(null);
+                        }}
+                        className="px-5 py-2.5 rounded-2xl bg-[#C04A22] hover:bg-[#8C3015] text-white text-xs font-bold transition shadow-xs cursor-pointer active:scale-98"
+                      >
+                        {t("cal_back")}
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* ── Post Creation Box ── */}
+                  {isPostBoxOpen && (
                 <>
                   {/* Desktop: Inline Post Box (Only on lg screens) */}
                   <div className="hidden lg:block relative animate-in slide-in-from-top-2 fade-in duration-200">
@@ -2284,32 +2333,14 @@ export function HomeFeed() {
                   )}
                 </Fragment>
               ))}
+                </>
+              )}
             </>
           )}
         </div>
       </div>
 
-      {/* Centered Floating Calendar Popover on Mobile */}
-      {mobileCalOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-50 bg-black/35 backdrop-blur-2xs"
-            onClick={() => setMobileCalOpen(false)}
-          />
-          {/* Centered floating popup */}
-          <div className="fixed left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-50 w-[min(360px,calc(100vw-2rem))] bg-white rounded-3xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 fade-in duration-200">
-            <MiniCalendar
-              selectedDate={selectedDate}
-              onSelect={(d) => {
-                setSelectedDate(d);
-                setMobileCalOpen(false);
-              }}
-              onClose={() => setMobileCalOpen(false)}
-            />
-          </div>
-        </>
-      )}
+
 
       {/* Centered Floating Weather Popover on Mobile */}
       {mobileWeatherOpen && (

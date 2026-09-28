@@ -765,17 +765,6 @@ export function Profile() {
           </div>
         )}
 
-        {/* ── Top Header Bar ── */}
-        <div className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-border px-4 py-2.5 flex items-center">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 rounded-full hover:bg-slate-100 transition cursor-pointer text-slate-700 active:scale-95"
-            title="Back"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-        </div>
-
         {/* ── Cover / Banner Image ── */}
         <div className="relative h-36 sm:h-52 w-full bg-slate-900 overflow-hidden group">
           {profileData.bannerImage ? (
@@ -790,6 +779,16 @@ export function Profile() {
           
           {/* Subtle Banner Overlay */}
           <div className="absolute inset-0 bg-black/10" />
+
+          {/* Floating Back Button (Matches Camera Icon on Banner) */}
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="absolute top-3 left-3 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/60 hover:bg-black/80 text-white backdrop-blur-xs transition cursor-pointer flex items-center justify-center shadow-md active:scale-95 z-20"
+            title="Back"
+          >
+            <ArrowLeft className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+          </button>
 
           {isSelf && (
             <button
@@ -823,7 +822,7 @@ export function Profile() {
         <div className="px-4 sm:px-5 pb-4 bg-white">
           
           {/* Avatar and Top Actions Row */}
-          <div className="flex items-end justify-between -mt-14 sm:-mt-18 mb-4 relative z-10">
+          <div className="flex items-end justify-between -mt-14 sm:-mt-18 mb-2 sm:mb-2.5 relative z-10">
             {/* Avatar with thick white border (Default clean icon when no custom photo) */}
             <div className="relative group">
               <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-slate-200 border-4 border-white shadow-xl flex items-center justify-center text-slate-500 overflow-hidden relative">
@@ -848,90 +847,15 @@ export function Profile() {
             </div>
 
             {/* Right Side Action Buttons */}
-            <div className="flex items-center gap-2 pb-1 pt-2.5 sm:pt-3 translate-x-1.5 sm:translate-x-2">
+            <div className="flex items-center gap-2 pb-0.5 pt-2 sm:pt-2.5">
               {isSelf ? (
-                /* Edit Profile & Seller Action for Own Profile (Edit Profile in original position outside banner, Become a Seller below it) */
-                <div className="relative flex flex-col items-end">
-                  <button
-                    onClick={() => setShowEditModal(true)}
-                    className="px-5 py-2 rounded-full border border-slate-300 font-bold text-xs sm:text-sm text-slate-800 hover:bg-slate-100 transition-all cursor-pointer active:scale-95 shadow-2xs bg-white"
-                  >
-                    Edit profile
-                  </button>
-                  {!hasSellerAccount ? (
-                    <div className="absolute top-full right-0 mt-2 z-10 whitespace-nowrap">
-                      <button
-                        onClick={openMigrateModal}
-                        className="px-4 py-2 rounded-full bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 font-bold text-xs sm:text-sm transition-all cursor-pointer active:scale-95 shadow-2xs flex items-center gap-1.5"
-                      >
-                        <span>Become a Seller</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="absolute top-full right-0 mt-2 z-10 whitespace-nowrap">
-                      <div className="relative">
-                        <button
-                          onClick={() => setShowProfileStoreMenu(!showProfileStoreMenu)}
-                          className="px-4 py-2 rounded-full bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 font-bold text-xs sm:text-sm transition-all cursor-pointer active:scale-95 shadow-2xs flex items-center gap-1.5"
-                        >
-                          <span>Seller Portal</span>
-                          <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform ${showProfileStoreMenu ? "rotate-180" : ""}`} />
-                        </button>
-
-                        {showProfileStoreMenu && (
-                          <>
-                            <div className="fixed inset-0 z-30" onClick={() => setShowProfileStoreMenu(false)} />
-                            <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 z-40 animate-in fade-in zoom-in-95 duration-150">
-                              <div className="px-2.5 py-1 border-b border-slate-100 mb-1">
-                                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
-                                  My Businesses
-                                </span>
-                              </div>
-
-                              <div className="max-h-40 overflow-y-auto space-y-1">
-                                {sellerProfiles.map(shop => {
-                                  const isActive = shop.id === activeSellerId;
-                                  return (
-                                    <button
-                                      key={shop.id}
-                                      onClick={() => {
-                                        setShowProfileStoreMenu(false);
-                                        switchActiveSeller(shop.id, true);
-                                      }}
-                                      className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition cursor-pointer text-xs ${
-                                        isActive
-                                          ? "bg-[#C04A22]/10 text-[#8C3015] font-bold"
-                                          : "hover:bg-slate-100 text-slate-700 font-medium"
-                                      }`}
-                                    >
-                                      <span className="truncate min-w-0">{shop.shopName}</span>
-                                      {isActive && (
-                                        <span className="text-[9px] bg-[#C04A22] text-white px-1.5 py-0.2 rounded-full font-bold">
-                                          Active
-                                        </span>
-                                      )}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-
-                              <button
-                                onClick={() => {
-                                  setShowProfileStoreMenu(false);
-                                  openMigrateModal();
-                                }}
-                                className="w-full mt-1.5 py-1.5 px-2.5 rounded-xl border border-dashed border-[#C04A22]/40 text-[#8C3015] hover:bg-[#C04A22]/10 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
-                              >
-                                <PlusCircle className="w-3.5 h-3.5 text-[#C04A22]" />
-                                <span>+ Add Another Business</span>
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                /* Edit button for Own Profile (lowered proportionally above seller button, reduced radius) */
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="px-5 py-1.5 sm:py-2 rounded-xl border border-slate-300 font-bold text-xs sm:text-sm text-slate-800 hover:bg-slate-100 transition-all cursor-pointer active:scale-95 shadow-2xs bg-white"
+                >
+                  Edit
+                </button>
               ) : (
                 /* Actions when viewing another Universal User */
                 <>
@@ -1065,25 +989,102 @@ export function Profile() {
             </div>
           </div>
 
-          {/* User Name & Handle */}
-          <div className={`mb-2.5 ${isSelf && !hasSellerAccount ? "pr-36 sm:pr-0" : ""}`}>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                {profileData.name}
-              </h1>
-              {profileData.verified && (
-                <GoldenBadge size={20} title="Verified Community Member" />
-              )}
+          {/* User Name & Handle + Seller Action Row (Become a Seller aligned horizontally with Name) */}
+          <div className="flex items-start justify-between gap-3 mb-2.5">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+                  {profileData.name}
+                </h1>
+                {profileData.verified && (
+                  <GoldenBadge size={20} title="Verified Community Member" />
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-sm text-slate-500 font-medium">{profileData.handle}</span>
+                {!isSelf && (
+                  <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                    Follows you
+                  </span>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-sm text-slate-500 font-medium">{profileData.handle}</span>
-              {!isSelf && (
-                <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
-                  Follows you
-                </span>
-              )}
-            </div>
+            {/* Seller Action Button (aligned with Name, reduced radius) */}
+            {isSelf && (
+              <div className="shrink-0 pt-0.5">
+                {!hasSellerAccount ? (
+                  <button
+                    onClick={openMigrateModal}
+                    className="px-4 py-1.5 sm:py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 font-bold text-xs sm:text-sm transition-all cursor-pointer active:scale-95 shadow-2xs flex items-center gap-1.5 whitespace-nowrap"
+                  >
+                    <span>Become a Seller</span>
+                  </button>
+                ) : (
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowProfileStoreMenu(!showProfileStoreMenu)}
+                      className="px-4 py-1.5 sm:py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 font-bold text-xs sm:text-sm transition-all cursor-pointer active:scale-95 shadow-2xs flex items-center gap-1.5 whitespace-nowrap"
+                    >
+                      <span>Seller Portal</span>
+                      <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform ${showProfileStoreMenu ? "rotate-180" : ""}`} />
+                    </button>
+
+                    {showProfileStoreMenu && (
+                      <>
+                        <div className="fixed inset-0 z-30" onClick={() => setShowProfileStoreMenu(false)} />
+                        <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 z-40 animate-in fade-in zoom-in-95 duration-150">
+                          <div className="px-2.5 py-1 border-b border-slate-100 mb-1">
+                            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                              My Businesses
+                            </span>
+                          </div>
+
+                          <div className="max-h-40 overflow-y-auto space-y-1">
+                            {sellerProfiles.map(shop => {
+                              const isActive = shop.id === activeSellerId;
+                              return (
+                                <button
+                                  key={shop.id}
+                                  onClick={() => {
+                                    setShowProfileStoreMenu(false);
+                                    switchActiveSeller(shop.id, true);
+                                  }}
+                                  className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition cursor-pointer text-xs ${
+                                    isActive
+                                      ? "bg-[#C04A22]/10 text-[#8C3015] font-bold"
+                                      : "hover:bg-slate-100 text-slate-700 font-medium"
+                                  }`}
+                                >
+                                  <span className="truncate min-w-0">{shop.shopName}</span>
+                                  {isActive && (
+                                    <span className="text-[9px] bg-[#C04A22] text-white px-1.5 py-0.2 rounded-full font-bold">
+                                      Active
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <button
+                            onClick={() => {
+                              setShowProfileStoreMenu(false);
+                              openMigrateModal();
+                            }}
+                            className="w-full mt-1.5 py-1.5 px-2.5 rounded-xl border border-dashed border-[#C04A22]/40 text-[#8C3015] hover:bg-[#C04A22]/10 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                          >
+                            <PlusCircle className="w-3.5 h-3.5 text-[#C04A22]" />
+                            <span>+ Add Another Business</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Following & Followers Counts - Positioned directly below User Name & Handle */}
@@ -1145,7 +1146,7 @@ export function Profile() {
         </div>
 
         {/* ── Twitter Navigation Tabs Bar ── */}
-        <div className="flex border-b border-border bg-white sticky top-12 z-20 overflow-x-auto no-scrollbar">
+        <div className="flex border-b border-border bg-white sticky top-0 z-20 overflow-x-auto no-scrollbar">
           {[
             { id: "posts", label: "Posts" },
             { id: "replies", label: "Replies" },
@@ -1391,10 +1392,10 @@ export function Profile() {
                                 handleToggleLike(tweet.id);
                               }}
                               className={`flex items-center gap-1 sm:gap-1.5 text-xs transition-colors cursor-pointer ${
-                                tweet.isLiked ? "text-red-500 font-bold" : "text-muted-foreground hover:text-red-500"
+                                tweet.isLiked ? "text-[#C04A22] font-bold" : "text-muted-foreground hover:text-[#C04A22]"
                               }`}
                             >
-                              <Heart className={`w-4 h-4 ${tweet.isLiked ? "fill-red-500 text-red-500" : ""}`} />
+                              <Heart className={`w-4 h-4 transition-transform active:scale-125 ${tweet.isLiked ? "fill-[#C04A22] text-[#C04A22]" : "hover:text-[#C04A22]"}`} />
                               <span className="hidden sm:inline">{tweet.likes}</span>
                               <span className="sm:hidden">{tweet.likes > 999 ? `${Math.round(tweet.likes / 1000)}k` : tweet.likes}</span>
                             </button>

@@ -366,10 +366,10 @@ export function Explore() {
                         <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 text-slate-500 max-w-md">
                           <button
                             onClick={() => toggleLike(post.id, post.likes)}
-                            className={`flex items-center gap-1.5 text-xs transition-colors cursor-pointer ${isLiked ? "text-red-600 font-bold" : "hover:text-red-600"
+                            className={`flex items-center gap-1.5 text-xs transition-colors cursor-pointer ${isLiked ? "text-[#C04A22] font-bold" : "hover:text-[#C04A22]"
                               }`}
                           >
-                            <Heart className={`w-4 h-4 ${isLiked ? "fill-red-600 text-red-600" : ""}`} />
+                            <Heart className={`w-4 h-4 transition-transform active:scale-125 ${isLiked ? "fill-[#C04A22] text-[#C04A22]" : "hover:text-[#C04A22]"}`} />
                             <span>{currentLikes}</span>
                           </button>
                           <button

@@ -52,6 +52,7 @@ import { SellerDashboard } from "./pages/SellerDashboard";
 import { SellerProfile } from "./pages/SellerProfile";
 import { MoreMenu } from "./pages/MoreMenu";
 import { BuyerOrders } from "./pages/BuyerOrders";
+import { AiAssistantPage } from "./pages/AiAssistantPage";
 import { PWAInstallPrompt } from "./components/ui/PWAInstallPrompt";
 import { AccountModeProvider } from "./context/AccountModeContext";
 import { SellerMigrationModal } from "./components/seller/SellerMigrationModal";
@@ -127,6 +128,8 @@ export default function App() {
             <Route path="/post/:id" element={<PostDetails />} />
             <Route path="/saved" element={<SavedResources />} />
             <Route path="/more" element={<MoreMenu />} />
+            <Route path="/assistant" element={<AiAssistantPage />} />
+            <Route path="/ai-assistant" element={<AiAssistantPage />} />
 
             {/* Seller SaaS & Storefront */}
             <Route path="/seller-dashboard" element={<SellerDashboard />} />
