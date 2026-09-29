@@ -685,22 +685,24 @@ function InteractiveServiceMap({
                     setMarkerClickedItem(null);
                     onShowDirection(markerClickedItem);
                   }}
-                  className="flex-1 py-1 rounded-lg bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95"
+                  className="flex-1 py-1 rounded-lg bg-transparent hover:opacity-70 text-[#C04A22] text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
                   title="Direction"
                   aria-label="Direction"
                 >
                   <Navigation className="w-3.5 h-3.5 text-[#C04A22]" />
+                  <span>Direction</span>
                 </button>
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     onOpenDetails(markerClickedItem);
                   }}
-                  className="flex-1 py-1 rounded-lg bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center shadow-none active:scale-95 cursor-pointer"
+                  className="flex-1 py-1 rounded-lg bg-transparent hover:opacity-70 text-[#C04A22] text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
                   title="Details"
                   aria-label="Details"
                 >
                   <Info className="w-3.5 h-3.5 text-[#C04A22]" />
+                  <span>Details</span>
                 </button>
               </div>
             </div>
@@ -1614,11 +1616,12 @@ export function ServiceMapDirectory({
                           e.stopPropagation();
                           handleShowDirection(item);
                         }}
-                        className="flex-1 py-2 rounded-2xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center cursor-pointer active:scale-95"
+                        className="flex-1 py-2 rounded-2xl bg-transparent hover:opacity-70 text-[#C04A22] text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
                         title="Direction"
                         aria-label="Direction"
                       >
                         <Navigation className="w-4 h-4 text-[#C04A22]" />
+                        <span>Direction</span>
                       </button>
                       <button
                         onClick={e => {
@@ -1626,11 +1629,12 @@ export function ServiceMapDirectory({
                           setSelectedItem(item);
                           setModalItem(item);
                         }}
-                        className="flex-1 py-2 rounded-2xl bg-transparent hover:opacity-70 text-[#C04A22] font-bold transition flex items-center justify-center shadow-none active:scale-95 cursor-pointer"
+                        className="flex-1 py-2 rounded-2xl bg-transparent hover:opacity-70 text-[#C04A22] text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
                         title="Details"
                         aria-label="Details"
                       >
                         <Info className="w-4 h-4 text-[#C04A22]" />
+                        <span>Details</span>
                       </button>
                     </div>
                   </div>
