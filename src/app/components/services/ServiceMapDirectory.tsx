@@ -454,9 +454,9 @@ function InteractiveServiceMap({
 
     const el = document.createElement("div");
     el.className = "bkoi-user-pinpoint-marker";
-    el.style.zIndex = "999999";
+    el.style.zIndex = "50";
     el.innerHTML = `
-      <div style="position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:999999;">
+      <div style="position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:50;">
         <!-- Pinpoint Radar Waves (Brand Color #D85A30) -->
         <div style="position:absolute;inset:-10px;border-radius:50%;background:rgba(216,90,48,0.22);animation:userPinRadar 2s cubic-bezier(0,0,0.2,1) infinite;"></div>
         <div style="position:absolute;inset:-4px;border-radius:50%;background:rgba(230,101,60,0.32);animation:userPinRadar 2s cubic-bezier(0,0,0.2,1) 0.6s infinite;"></div>
@@ -643,7 +643,7 @@ function InteractiveServiceMap({
 
         {markerClickedItem && !directionItem && sheetMode !== "full" && (
           <div
-            className={`absolute z-30 w-[275px] sm:w-[315px] bg-white rounded-2xl shadow-xl border border-slate-200/90 overflow-hidden duration-200 pointer-events-auto left-1/2 -translate-x-1/2 sm:left-4 sm:translate-x-0 ${
+            className={`absolute z-[9999999] w-[275px] sm:w-[315px] bg-white rounded-2xl shadow-xl border border-slate-200/90 overflow-hidden duration-200 pointer-events-auto left-1/2 -translate-x-1/2 sm:left-4 sm:translate-x-0 ${
               cardPlacement === "top"
                 ? "top-3 sm:top-4 animate-in slide-in-from-top-3"
                 : "bottom-3 sm:bottom-4 animate-in slide-in-from-bottom-3"
@@ -736,7 +736,7 @@ function InteractiveServiceMap({
         )}
 
         {directionItem && routeInfo && (
-          <div className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-3 sm:w-96 z-30 animate-in slide-in-from-bottom-3 duration-200">
+          <div className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-3 sm:w-96 z-[9999999] animate-in slide-in-from-bottom-3 duration-200">
             <div className="bg-white/95 backdrop-blur-md rounded-3xl p-3.5 shadow-xl border border-slate-200/90">
               <div className="flex items-center justify-between gap-2 mb-2.5">
                 <div className="flex-1 min-w-0">

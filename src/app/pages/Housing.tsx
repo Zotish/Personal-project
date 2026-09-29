@@ -7,7 +7,7 @@ import {
   Building, ExternalLink, Sparkles, Filter, ChevronRight,
   ChevronLeft, ChevronUp, ChevronDown, Plus, Minus,
   ArrowLeft, ArrowRight, Car, Bike, Footprints, Home,
-  ShieldCheck, Loader2, X, Bed, Bath, Maximize2, Phone, Info
+  ShieldCheck, Loader2, X, Bed, Bath, Maximize2, Info
 } from "lucide-react";
 import {
   LiveHousingListing,
@@ -15,6 +15,7 @@ import {
   formatDistance,
   matchHousingQuery
 } from "../data/housingData";
+import { getDistanceKm } from "../data/jobsData";
 import { HousingDetailsModal } from "../components/housing/HousingDetailsModal";
 import { useCountryPlatform } from "../context/CountryPlatformContext";
 import type { Map as LeafletMapType } from "leaflet";
@@ -29,43 +30,93 @@ import {
   BARIKOI_API_KEY,
 } from "../services/barikoiService";
 
-// ─── BariKoi Reverse Geocoding & Road Routing APIs ──────────────────────────
-
-async function fetchBariKoiReverseGeocode(lat: number, lng: number) {
-  return await safeBariKoiReverseGeocode(lat, lng);
+export interface BariKoiGeoResult {
+  address: string;
+  area: string;
+  district: string;
+  sub_district: string;
+  postCode: string;
+  city: string;
 }
 
-async function fetchRealRoadRoute(startLat: number, startLng: number, endLat: number, endLng: number) {
+// ─── BariKoi Reverse Geocode API ────────────────────────────────────────────
+
+async function fetchBariKoiReverseGeocode(lat: number, lng: number): Promise<BariKoiGeoResult | null> {
+  const res = await safeBariKoiReverseGeocode(lat, lng);
+  return {
+    address: res.address,
+    area: res.area || "Your Area",
+    district: res.district || "",
+    sub_district: res.sub_district || res.area || "",
+    postCode: res.postCode || "",
+    city: res.city || res.district || "Your City",
+  };
+}
+
+// ─── Real Turn-by-Turn Road Routing Helper (OSRM / OpenStreetMap Standard) ───
+
+async function fetchRealRoadRoute(startLat: number, startLng: number, endLat: number, endLng: number): Promise<{
+  coordinates: [number, number][];
+  distanceText: string;
+  durationText: string;
+}> {
+  // 1. Primary: High-Precision Turn-by-Turn Driving Road Router
   try {
-    const url = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson&steps=true`;
-    const res = await fetch(url);
+    const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson&continue_straight=true&steps=true`;
+    const res = await fetch(osrmUrl);
     if (res.ok) {
       const data = await res.json();
-      if (data.code === "Ok" && data.routes && data.routes.length > 0) {
+      if (data.routes && data.routes.length > 0) {
         const route = data.routes[0];
-        const coordinates: [number, number][] = route.geometry.coordinates; // [lng, lat]
-        const distanceKm = route.distance / 1000;
-        const durationMin = Math.round(route.duration / 60);
-        return {
-          coordinates,
-          distanceText: distanceKm < 1 ? `${Math.round(distanceKm * 1000)} m` : `${distanceKm.toFixed(1)} km`,
-          durationText: `${Math.max(1, durationMin)} min`,
-          distanceKm,
-          durationMin
-        };
+        const rawCoords: [number, number][] = route.geometry.coordinates; // Strict road network nodes
+        if (rawCoords && rawCoords.length > 1) {
+          const distKm = route.distance / 1000;
+          const mins = Math.max(1, Math.round(route.duration / 60));
+          return {
+            coordinates: rawCoords,
+            distanceText: `${distKm.toFixed(1)} km`,
+            durationText: `~${mins} mins`
+          };
+        }
       }
     }
   } catch (err) {
-    console.warn("Road routing fetch failed, fallback to straight line:", err);
+    console.warn("OSRM routing attempt 1 failed:", err);
   }
 
-  // Fallback straight line
+  // 2. Secondary: OpenStreetMap DE Road Network Router
+  try {
+    const osmUrl = `https://routing.openstreetmap.de/routed-car/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
+    const res = await fetch(osmUrl);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.routes && data.routes.length > 0) {
+        const route = data.routes[0];
+        const rawCoords: [number, number][] = route.geometry.coordinates;
+        if (rawCoords && rawCoords.length > 1) {
+          const distKm = route.distance / 1000;
+          const mins = Math.max(1, Math.round(route.duration / 60));
+          return {
+            coordinates: rawCoords,
+            distanceText: `${distKm.toFixed(1)} km`,
+            durationText: `~${mins} mins`
+          };
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("OSM routing attempt 2 failed:", err);
+  }
+
+  // 3. Fallback: Direct Road Line
+  const directDist = getDistanceKm(startLat, startLng, endLat, endLng);
   return {
-    coordinates: [[startLng, startLat], [endLng, endLat]] as [number, number][],
-    distanceText: "Direct",
-    durationText: "Calculating...",
-    distanceKm: 1.0,
-    durationMin: 5
+    coordinates: [
+      [startLng, startLat],
+      [endLng, endLat]
+    ],
+    distanceText: `${directDist.toFixed(1)} km`,
+    durationText: `~${Math.max(1, Math.round(directDist * 3.5))} mins`
   };
 }
 
@@ -123,6 +174,7 @@ function BariKoiLiveHousingMap({
   const routeLineRef = useRef<any>(null);
   const LRef = useRef<any>(null);
   const lastCoordinatesRef = useRef<[number, number][] | null>(null);
+  const lastFocusedListingIdRef = useRef<string | null>(null);
   const [markerClickedListing, setMarkerClickedListing] = useState<LiveHousingListing | null>(null);
   const [cardPlacement, setCardPlacement] = useState<"bottom" | "top">("bottom");
 
@@ -150,7 +202,7 @@ function BariKoiLiveHousingMap({
     onSelectListing(listing);
   }, [onSelectListing, isScrolled]);
 
-  // Auto-hide marker card overlay if user scrolls
+  // Auto-hide marker card overlay if user scrolls window or sheet goes to full
   useEffect(() => {
     const handleScroll = () => {
       setMarkerClickedListing(null);
@@ -188,60 +240,61 @@ function BariKoiLiveHousingMap({
     `;
   };
 
-  // Synchronize Markers
+  // Distinct Live GPS User Pinpoint Marker in Branding Color (#D85A30)
+  const createUserMarkerHtml = () => `
+    <div style="position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:999999;">
+      <!-- Pinpoint Radar Waves (Brand Color #D85A30) -->
+      <div style="position:absolute;inset:-10px;border-radius:50%;background:rgba(216,90,48,0.22);animation:userPinRadar 2s cubic-bezier(0,0,0.2,1) infinite;"></div>
+      <div style="position:absolute;inset:-4px;border-radius:50%;background:rgba(230,101,60,0.32);animation:userPinRadar 2s cubic-bezier(0,0,0.2,1) 0.6s infinite;"></div>
+      <!-- Core Beacon (Brand Color #D85A30) -->
+      <div style="width:18px;height:18px;border-radius:50%;background:#D85A30;border:3px solid #ffffff;box-shadow:0 3px 12px rgba(216,90,48,0.5);position:relative;z-index:2;display:flex;align-items:center;justify-content:center;">
+        <div style="width:6px;height:6px;border-radius:50%;background:#ffffff;"></div>
+      </div>
+      <style>
+        @keyframes userPinRadar {
+          0% { transform: scale(0.6); opacity: 0.9; }
+          70% { transform: scale(2.2); opacity: 0; }
+          100% { transform: scale(2.2); opacity: 0; }
+        }
+      </style>
+    </div>
+  `;
+
+  // Sync Markers to Map
   const syncMapMarkers = useCallback(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
-    const L = LRef.current;
     const bkoigl = (window as any).bkoigl;
+    const L = LRef.current;
 
-    // 1. User Exact Pinpoint Marker in Branding Color (#D85A30)
-    if (userCoords) {
-      const userHtml = `
-        <div style="position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:999999;">
-          <!-- Pinpoint Radar Waves (Brand Color #D85A30) -->
-          <div style="position:absolute;inset:-10px;border-radius:50%;background:rgba(216,90,48,0.22);animation:userPinRadar 2s cubic-bezier(0,0,0.2,1) infinite;"></div>
-          <div style="position:absolute;inset:-4px;border-radius:50%;background:rgba(230,101,60,0.32);animation:userPinRadar 2s cubic-bezier(0,0,0.2,1) 0.6s infinite;"></div>
-          <!-- Core Beacon (Brand Color #D85A30) -->
-          <div style="width:18px;height:18px;border-radius:50%;background:#D85A30;border:3px solid #ffffff;box-shadow:0 3px 12px rgba(216,90,48,0.5);position:relative;z-index:2;display:flex;align-items:center;justify-content:center;">
-            <div style="width:6px;height:6px;border-radius:50%;background:#ffffff;"></div>
-          </div>
-          <style>
-            @keyframes userPinRadar {
-              0% { transform: scale(0.6); opacity: 0.9; }
-              70% { transform: scale(2.2); opacity: 0; }
-              100% { transform: scale(2.2); opacity: 0; }
-            }
-          </style>
-        </div>
-      `;
-
+    // 1. Sync / Update User Exact Pinpoint Marker (Always visible at userCoords)
+    if (userMarkerRef.current) {
+      if (userMarkerRef.current.setLngLat) {
+        userMarkerRef.current.setLngLat([userCoords[1], userCoords[0]]);
+      } else if (userMarkerRef.current.setLatLng) {
+        userMarkerRef.current.setLatLng(userCoords);
+      }
+    } else {
       if (L && map.addLayer) {
-        if (!userMarkerRef.current) {
-          const userIcon = L.divIcon({
-            className: "custom-user-location-pin",
-            html: userHtml,
-            iconSize: [28, 28],
-            iconAnchor: [14, 14]
-          });
-          userMarkerRef.current = L.marker(userCoords, { icon: userIcon, zIndexOffset: 99999 }).addTo(map);
-        } else {
-          userMarkerRef.current.setLatLng(userCoords);
-        }
+        const userIcon = L.divIcon({
+          className: "custom-user-location-pin",
+          html: createUserMarkerHtml(),
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        });
+        const userM = L.marker(userCoords, { icon: userIcon, zIndexOffset: 99999 }).addTo(map);
+        userMarkerRef.current = userM;
       } else if (bkoigl || map.project) {
-        if (!userMarkerRef.current) {
-          const el = document.createElement("div");
-          el.className = "bkoi-user-pinpoint-marker";
-          el.style.zIndex = "999999";
-          el.innerHTML = userHtml;
-          const MarkerClass = bkoigl?.Marker || (window as any).maplibregl?.Marker;
-          if (MarkerClass) {
-            userMarkerRef.current = new MarkerClass({ element: el })
-              .setLngLat([userCoords[1], userCoords[0]])
-              .addTo(map);
-          }
-        } else {
-          userMarkerRef.current.setLngLat([userCoords[1], userCoords[0]]);
+        const el = document.createElement("div");
+        el.className = "bkoi-user-pinpoint-marker";
+        el.style.zIndex = "999999";
+        el.innerHTML = createUserMarkerHtml();
+        const MarkerClass = bkoigl?.Marker || (window as any).maplibregl?.Marker;
+        if (MarkerClass) {
+          const userM = new MarkerClass({ element: el })
+            .setLngLat([userCoords[1], userCoords[0]])
+            .addTo(map);
+          userMarkerRef.current = userM;
         }
       }
     }
@@ -285,11 +338,10 @@ function BariKoiLiveHousingMap({
   // Init BariKoi GL SDK / Leaflet Fallback
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    let isCancelled = false;
 
     loadBkoiGL()
       .then(bkoigl => {
-        if (isCancelled || !containerRef.current || mapRef.current) return;
+        if (!containerRef.current || mapRef.current) return;
         const key = BARIKOI_API_KEY;
         if (bkoigl) {
           bkoigl.accessToken = key;
@@ -327,26 +379,16 @@ function BariKoiLiveHousingMap({
 
         map.on("load", () => {
           mapRef.current = map;
-          if (map.resize) map.resize();
           syncMapMarkers();
         });
-        mapRef.current = map;
 
-        const ro = new ResizeObserver(() => {
-          if (mapRef.current?.resize) {
-            mapRef.current.resize();
-          }
-        });
-        if (containerRef.current) ro.observe(containerRef.current);
+        mapRef.current = map;
       })
       .catch(() => {
-        // Fallback to Leaflet
-        import("leaflet").then(LModule => {
-          if (isCancelled || !containerRef.current || mapRef.current) return;
-          const L = LModule.default || LModule;
-          try {
-            delete (L.Icon.Default.prototype as any)._getIconUrl;
-          } catch (_) {}
+        // Fallback to Leaflet with BariKoi tiles
+        import("leaflet").then(L => {
+          if (!containerRef.current || mapRef.current) return;
+          delete (L.Icon.Default.prototype as any)._getIconUrl;
 
           const map = L.map(containerRef.current!, {
             center: userCoords,
@@ -361,14 +403,6 @@ function BariKoiLiveHousingMap({
             attribution: tileCfg.attribution,
           }).addTo(map);
 
-          map.invalidateSize();
-          const ro = new ResizeObserver(() => {
-            if (mapRef.current?.invalidateSize) {
-              mapRef.current.invalidateSize();
-            }
-          });
-          if (containerRef.current) ro.observe(containerRef.current);
-
           mapRef.current = map;
           LRef.current = L;
           syncMapMarkers();
@@ -376,11 +410,10 @@ function BariKoiLiveHousingMap({
       });
 
     return () => {
-      isCancelled = true;
       if (mapRef.current) {
         try {
           mapRef.current.remove();
-        } catch (_) {}
+        } catch (_) { }
         mapRef.current = null;
       }
     };
@@ -401,23 +434,15 @@ function BariKoiLiveHousingMap({
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
-    if (LRef.current) {
-      if (map.flyTo) {
-        map.flyTo(userCoords, 14.8, { duration: 1.2 });
-      } else if (map.setView) {
-        map.setView(userCoords, 15);
-      }
-    } else {
-      if (map.flyTo) {
-        map.flyTo({ center: [userCoords[1], userCoords[0]], zoom: 14.8, speed: 1.5 });
-      } else if (map.setView) {
-        map.setView([userCoords[1], userCoords[0]], 15);
-      }
+    if (map.flyTo) {
+      map.flyTo({ center: [userCoords[1], userCoords[0]], zoom: 14.8, speed: 1.5 });
+    } else if (map.setView) {
+      map.setView(userCoords, 15);
     }
     syncMapMarkers();
   }, [userCoords, syncMapMarkers]);
 
-  // Update markers when selection or housing list changes
+  // Update markers when selection or listing list changes
   useEffect(() => {
     syncMapMarkers();
   }, [syncMapMarkers]);
@@ -431,18 +456,10 @@ function BariKoiLiveHousingMap({
     if (searchQuery && searchQuery.trim().length > 0) {
       if (listings.length === 1) {
         const single = listings[0];
-        if (LRef.current) {
-          if (map.flyTo) {
-            map.flyTo([single.lat, single.lng], 15.5, { duration: 1.2 });
-          } else if (map.panTo) {
-            map.panTo([single.lat, single.lng]);
-          }
-        } else {
-          if (map.flyTo) {
-            map.flyTo({ center: [single.lng, single.lat], zoom: 15.5, speed: 1.2 });
-          } else if (map.panTo) {
-            map.panTo([single.lng, single.lat]);
-          }
+        if (map.flyTo) {
+          map.flyTo({ center: [single.lng, single.lat], zoom: 15.5, speed: 1.2 });
+        } else if (map.panTo) {
+          map.panTo([single.lat, single.lng]);
         }
       } else if (listings.length > 1) {
         let minLng = listings[0].lng, maxLng = listings[0].lng;
@@ -479,14 +496,15 @@ function BariKoiLiveHousingMap({
 
     // Handle Real Road Direction Route
     if (directionListing) {
+      lastFocusedListingIdRef.current = null;
       const userLat = userCoords[0];
       const userLng = userCoords[1];
-      const listingLat = directionListing.lat;
-      const listingLng = directionListing.lng;
+      const houseLat = directionListing.lat;
+      const houseLng = directionListing.lng;
 
       let isCancelled = false;
 
-      fetchRealRoadRoute(userLat, userLng, listingLat, listingLng).then(routeData => {
+      fetchRealRoadRoute(userLat, userLng, houseLat, houseLng).then(routeData => {
         if (isCancelled || !mapRef.current) return;
 
         setRouteInfo({
@@ -494,69 +512,88 @@ function BariKoiLiveHousingMap({
           durationText: routeData.durationText
         });
 
-        const coords = routeData.coordinates;
-        lastCoordinatesRef.current = coords;
+        const coordinates = routeData.coordinates; // [[lng, lat], ...]
+        lastCoordinatesRef.current = coordinates;
 
-        // Leaflet Polylines
+        // 1. Draw Real Road Route in Leaflet
         if (L && map.addLayer) {
           if (routeLineRef.current) {
-            try { routeLineRef.current.remove(); } catch (_) {}
+            try { routeLineRef.current.remove(); } catch (_) { }
           }
-          const latLngs = coords.map(([lng, lat]) => [lat, lng]);
-          routeLineRef.current = L.polyline(latLngs, {
+
+          const latLngs = coordinates.map(([lng, lat]) => [lat, lng]);
+
+          // Draw main road polyline following actual streets and lanes
+          const line = L.polyline(latLngs, {
             color: "#C04A22",
-            weight: 5,
-            opacity: 0.9,
+            weight: 6,
+            opacity: 0.95,
             lineJoin: "round",
-            lineCap: "round",
-            dashArray: undefined
+            lineCap: "round"
           }).addTo(map);
 
+          routeLineRef.current = line;
+
           const bounds = L.latLngBounds(latLngs);
-          map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16.5 });
-        }
-        // BariKoi / MapLibre GeoJSON Line
-        else if (map.getSource && map.addLayer) {
-          const geojson: any = {
-            type: "FeatureCollection",
-            features: [
-              {
-                type: "Feature",
-                geometry: {
-                  type: "LineString",
-                  coordinates: coords
-                }
-              }
-            ]
+          map.fitBounds(bounds, { padding: [55, 55], maxZoom: 16 });
+        } else if (map.getSource) {
+          // 2. Draw Real Road Route in BariKoi GL / MapLibre
+          const routeGeoJson: any = {
+            type: "Feature",
+            properties: {},
+            geometry: {
+              type: "LineString",
+              coordinates: coordinates
+            }
           };
 
           if (map.getSource("direction-route")) {
-            map.getSource("direction-route").setData(geojson);
+            map.getSource("direction-route").setData(routeGeoJson);
           } else {
-            map.addSource("direction-route", {
-              type: "geojson",
-              data: geojson
-            });
-            map.addLayer({
-              id: "direction-route-line",
-              type: "line",
-              source: "direction-route",
-              layout: {
-                "line-join": "round",
-                "line-cap": "round"
-              },
-              paint: {
-                "line-color": "#C04A22",
-                "line-width": 5,
-                "line-opacity": 0.92
-              }
-            });
+            try {
+              map.addSource("direction-route", {
+                type: "geojson",
+                data: routeGeoJson
+              });
+
+              // Casing (White outer glow for prominent road line)
+              map.addLayer({
+                id: "direction-route-casing",
+                type: "line",
+                source: "direction-route",
+                layout: {
+                  "line-join": "round",
+                  "line-cap": "round"
+                },
+                paint: {
+                  "line-color": "#ffffff",
+                  "line-width": 9,
+                  "line-opacity": 0.95
+                }
+              });
+
+              // Main Road Polyline
+              map.addLayer({
+                id: "direction-route-line",
+                type: "line",
+                source: "direction-route",
+                layout: {
+                  "line-join": "round",
+                  "line-cap": "round"
+                },
+                paint: {
+                  "line-color": "#C04A22",
+                  "line-width": 6,
+                  "line-opacity": 1
+                }
+              });
+            } catch (_) { }
           }
 
-          // Fit bounds to road route
-          let minLng = coords[0][0], maxLng = coords[0][0];
-          let minLat = coords[0][1], maxLat = coords[0][1];
-          coords.forEach(([cLng, cLat]) => {
+          // Calculate exact bounds from road coordinates
+          let minLng = coordinates[0][0], maxLng = coordinates[0][0];
+          let minLat = coordinates[0][1], maxLat = coordinates[0][1];
+          coordinates.forEach(([cLng, cLat]) => {
             if (cLng < minLng) minLng = cLng;
             if (cLng > maxLng) maxLng = cLng;
             if (cLat < minLat) minLat = cLat;
@@ -565,8 +602,11 @@ function BariKoiLiveHousingMap({
 
           if (map.fitBounds) {
             map.fitBounds(
-              [[minLng, minLat], [maxLng, maxLat]],
-              { padding: 40, maxZoom: 16.5, duration: 800 }
+              [
+                [minLng, minLat],
+                [maxLng, maxLat]
+              ],
+              { padding: 75, maxZoom: 16, duration: 1200 }
             );
           }
         }
@@ -579,7 +619,7 @@ function BariKoiLiveHousingMap({
       setRouteInfo(null);
       // Clear route line if direction cancelled
       if (routeLineRef.current) {
-        try { routeLineRef.current.remove(); } catch (_) {}
+        try { routeLineRef.current.remove(); } catch (_) { }
         routeLineRef.current = null;
       }
       if (map.getSource && map.getSource("direction-route")) {
@@ -588,22 +628,14 @@ function BariKoiLiveHousingMap({
             type: "FeatureCollection",
             features: []
           });
-        } catch (_) {}
+        } catch (_) { }
       }
 
-      // If no direction, fly to selected listing if present
+      // If no direction, fly to selected listing ONLY if ID has actually changed (prevents auto-snapping on pan/touch)
       if (selectedListing) {
-        const yOffset = cardPlacement === "top" ? 75 : -75;
-        if (LRef.current) {
-          if (map.flyTo && typeof map.project === "function" && typeof map.unproject === "function") {
-            const pt = map.project([selectedListing.lat, selectedListing.lng], 15.5).add([0, -yOffset]);
-            map.flyTo(map.unproject(pt, 15.5), 15.5, { duration: 1.2 });
-          } else if (map.flyTo) {
-            map.flyTo([selectedListing.lat, selectedListing.lng], 15.5, { duration: 1.2 });
-          } else if (map.panTo) {
-            map.panTo([selectedListing.lat, selectedListing.lng]);
-          }
-        } else {
+        if (lastFocusedListingIdRef.current !== selectedListing.id) {
+          lastFocusedListingIdRef.current = selectedListing.id;
+          const yOffset = cardPlacement === "top" ? 75 : -75;
           if (map.flyTo) {
             map.flyTo({
               center: [selectedListing.lng, selectedListing.lat],
@@ -612,15 +644,18 @@ function BariKoiLiveHousingMap({
               duration: 1200,
               essential: true
             });
+          } else if (map.panTo && typeof map.project === "function" && typeof map.unproject === "function") {
+            const pt = map.project([selectedListing.lat, selectedListing.lng], map.getZoom()).add([0, -yOffset]);
+            map.panTo(map.unproject(pt, map.getZoom()), { animate: true, duration: 1.0 });
           } else if (map.panTo) {
-            map.panTo([selectedListing.lng, selectedListing.lat]);
+            map.panTo([selectedListing.lat, selectedListing.lng], { animate: true, duration: 1.0 });
           }
         }
+      } else {
+        lastFocusedListingIdRef.current = null;
       }
     }
   }, [directionListing, selectedListing, userCoords, cardPlacement]);
-
-  // User pinpoint center is continuously handled in synchronized 60fps camera effect below
 
   // Zoom Controls
   const handleZoomIn = () => {
@@ -634,19 +669,10 @@ function BariKoiLiveHousingMap({
   const handleReset = () => {
     onNavigationClick();
     if (mapRef.current) {
-      const map = mapRef.current;
-      if (LRef.current) {
-        if (map.flyTo) {
-          map.flyTo(userCoords, isScrolled ? 14.8 : 15.5, { duration: 1.2 });
-        } else if (map.setView) {
-          map.setView(userCoords, isScrolled ? 14.8 : 15.5);
-        }
-      } else {
-        if (map.flyTo) {
-          map.flyTo({ center: [userCoords[1], userCoords[0]], zoom: isScrolled ? 14.8 : 15.5, speed: 1.5 });
-        } else if (map.setView) {
-          map.setView([userCoords[1], userCoords[0]], isScrolled ? 14.8 : 15.5);
-        }
+      if (mapRef.current.flyTo) {
+        mapRef.current.flyTo({ center: [userCoords[1], userCoords[0]], zoom: isScrolled ? 14.8 : 15.5, speed: 1.5 });
+      } else if (mapRef.current.setView) {
+        mapRef.current.setView(userCoords, isScrolled ? 14.8 : 15.5);
       }
     }
   };
@@ -731,17 +757,16 @@ function BariKoiLiveHousingMap({
       {/* ── MAP CONTAINER (Dynamic Height depending on scroll & route state) ── */}
       <div
         style={dragMapHeight !== null && dragMapHeight !== undefined ? { height: `${dragMapHeight}px`, transition: 'none' } : undefined}
-        className={`relative w-full ${dragMapHeight !== null && dragMapHeight !== undefined ? '' : 'transition-[height] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]'} ${
-          directionListing
+        className={`relative w-full ${dragMapHeight !== null && dragMapHeight !== undefined ? '' : 'transition-[height] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]'} ${directionListing
             ? isNavCardMinimized
               ? "h-[380px] sm:h-[470px] md:h-[530px] lg:h-[590px]"
               : "h-[240px] sm:h-[300px] md:h-[360px] lg:h-[400px]"
             : sheetMode === "full"
               ? "h-0 overflow-hidden"
               : isScrolled
-                ? "h-[380px] sm:h-[400px] md:h-[420px] lg:h-[440px]" // Mid transition: shows exactly 1 card photo + name
-                : "h-[520px] sm:h-[550px] md:h-[580px] lg:h-[620px]" // Default full height
-        }`}
+                ? "h-[380px] sm:h-[400px] md:h-[420px] lg:h-[440px]"
+                : "h-[520px] sm:h-[550px] md:h-[580px] lg:h-[620px]"
+          }`}
       >
         <div ref={containerRef} className="w-full h-full" />
 
@@ -754,7 +779,7 @@ function BariKoiLiveHousingMap({
                 : "bottom-3 sm:bottom-4 animate-in slide-in-from-bottom-3"
             }`}
           >
-            {/* Banner Image with Purpose, Bookmark & Distance Badges */}
+            {/* Banner Image with Purpose, Agency & Distance Badges */}
             <div className="relative w-full h-28 sm:h-32 overflow-hidden bg-slate-100">
               <img
                 src={markerClickedListing.image}
@@ -837,7 +862,7 @@ function BariKoiLiveHousingMap({
           </div>
         )}
 
-        {/* Top Center Permission Prompt */}
+        {/* Top Center Permission Prompt: Left Allow, Right X (Deny) */}
         {showPermissionPrompt && !isLocationGranted && !directionListing && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-white/95 backdrop-blur-md rounded-2xl p-1.5 shadow-xl border border-slate-200/90 flex items-center gap-2 animate-in fade-in zoom-in-95 duration-200">
             <button
@@ -911,7 +936,7 @@ function BariKoiLiveHousingMap({
                     {directionListing.title}
                   </div>
                   <div className="text-xs text-[#C04A22] font-bold">
-                    ({directionListing.distanceKm.toFixed(1)} km) • {directionListing.agency}
+                    ({directionListing.distanceKm.toFixed(1)} km)
                   </div>
                 </div>
               </div>
@@ -945,7 +970,7 @@ function BariKoiLiveHousingMap({
               {/* Drag Handle Top Bar */}
               <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-2.5" />
 
-              {/* Header */}
+              {/* Header: Back Arrow, Origin & Destination Hierarchy, Collapse Chevron */}
               <div className="flex items-center justify-between gap-2.5 mb-3">
                 <button
                   onClick={onClearDirection}
@@ -961,7 +986,7 @@ function BariKoiLiveHousingMap({
                     <span className="truncate">Your Location</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-sm font-bold text-slate-900 truncate mt-0.5">
-                    <Home className="w-3.5 h-3.5 text-[#C04A22] flex-shrink-0" />
+                    <MapPin className="w-3.5 h-3.5 text-[#C04A22] flex-shrink-0" />
                     <span className="truncate">{directionListing.title}</span>
                   </div>
                 </div>
@@ -979,52 +1004,51 @@ function BariKoiLiveHousingMap({
               <div className="flex items-center gap-2 mb-3">
                 <button
                   onClick={() => setTravelMode("car")}
-                  className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                    travelMode === "car"
+                  className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${travelMode === "car"
                       ? "bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/25 shadow-2xs"
                       : "bg-slate-100/90 hover:bg-[#C04A22]/8 text-slate-600 hover:text-[#8C3015] border border-transparent"
-                  }`}
+                    }`}
                 >
                   <Car className="w-3.5 h-3.5" />
                   <span>Car</span>
                 </button>
                 <button
                   onClick={() => setTravelMode("bike")}
-                  className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                    travelMode === "bike"
+                  className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${travelMode === "bike"
                       ? "bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/25 shadow-2xs"
                       : "bg-slate-100/90 hover:bg-[#C04A22]/8 text-slate-600 hover:text-[#8C3015] border border-transparent"
-                  }`}
+                    }`}
                 >
                   <Bike className="w-3.5 h-3.5" />
                   <span>Bike</span>
                 </button>
                 <button
                   onClick={() => setTravelMode("walk")}
-                  className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                    travelMode === "walk"
+                  className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${travelMode === "walk"
                       ? "bg-[#C04A22]/12 text-[#8C3015] border border-[#C04A22]/25 shadow-2xs"
                       : "bg-slate-100/90 hover:bg-[#C04A22]/8 text-slate-600 hover:text-[#8C3015] border border-transparent"
-                  }`}
+                    }`}
                 >
                   <Footprints className="w-3.5 h-3.5" />
                   <span>Walking</span>
                 </button>
               </div>
 
-              {/* 3 Stats Metric Grid */}
+              {/* 3 Stats Metric Grid (Time, Distance, Cost) */}
               <div className="grid grid-cols-3 gap-2 text-center pt-1">
+                {/* Time */}
                 <div className="bg-slate-50/90 rounded-2xl p-2.5 flex flex-col items-center justify-center">
                   <div className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
                     {travelMode === "car"
                       ? `${Math.max(1, Math.round(directionListing.distanceKm * 2.5))} min`
                       : travelMode === "bike"
-                      ? `${Math.max(2, Math.round(directionListing.distanceKm * 4.5))} min`
-                      : `${Math.max(5, Math.round(directionListing.distanceKm * 12))} min`}
+                        ? `${Math.max(2, Math.round(directionListing.distanceKm * 4.5))} min`
+                        : `${Math.max(5, Math.round(directionListing.distanceKm * 12))} min`}
                   </div>
                   <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-0.5">Time</div>
                 </div>
 
+                {/* Distance */}
                 <div className="bg-slate-50/90 rounded-2xl p-2.5 flex flex-col items-center justify-center">
                   <div className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
                     {directionListing.distanceKm.toFixed(1)} km
@@ -1032,11 +1056,12 @@ function BariKoiLiveHousingMap({
                   <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-0.5">Distance</div>
                 </div>
 
+                {/* Cost */}
                 <div className="bg-slate-50/90 rounded-2xl p-2.5 flex flex-col items-center justify-center">
-                  <div className="text-xs sm:text-sm font-bold text-slate-900 leading-tight truncate max-w-full px-1">
-                    {directionListing.agency.split(" ")[0]}
+                  <div className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
+                    ${(directionListing.distanceKm * 0.16 + 0.45).toFixed(2)}
                   </div>
-                  <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-0.5">Agency</div>
+                  <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-0.5">Cost</div>
                 </div>
               </div>
             </div>
@@ -1047,14 +1072,12 @@ function BariKoiLiveHousingMap({
   );
 }
 
-// ─── Main Housing Page Component ────────────────────────────────────────────
+// ─── Main Live Housing Page ─────────────────────────────────────────────────
 
 export function Housing() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-
-  // Search & Filter State
   const [searchQuery, setSearchQuery] = useState(
     () => searchParams.get("q") || searchParams.get("query") || location.state?.searchQuery || ""
   );
@@ -1066,10 +1089,12 @@ export function Housing() {
     }
   }, [searchParams, location.state]);
 
-  const [activeFilter, setActiveFilter] = useState<string>("all"); // "all" | "nearby" | "rent" | "purchase"
-
-  // Geolocation & Device Location State
+  const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [showDetailsModal, setShowDetailsModal] = useState<LiveHousingListing | null>(null);
   const [isLocating, setIsLocating] = useState(false);
+
+  // Permission State: "prompt", "granted", or "denied"
   const [locationPermissionStatus, setLocationPermissionStatus] = useState<"prompt" | "granted" | "denied">("prompt");
   const [isLocationGranted, setIsLocationGranted] = useState<boolean>(() => {
     try {
@@ -1078,30 +1103,7 @@ export function Housing() {
       return false;
     }
   });
-  const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
-
-  // Saved Properties State
-  const [savedIds, setSavedIds] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem("saved_housing_ids");
-      return stored ? JSON.parse(stored) : [];
-    } catch (_) {
-      return [];
-    }
-  });
-
-  const toggleSave = (id: string) => {
-    setSavedIds(prev => {
-      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
-      try {
-        localStorage.setItem("saved_housing_ids", JSON.stringify(next));
-      } catch (_) {}
-      return next;
-    });
-  };
-
-  // Property Details Modal State
-  const [showDetailsModal, setShowDetailsModal] = useState<LiveHousingListing | null>(null);
+  const [showPermissionPrompt, setShowPermissionPrompt] = useState<boolean>(false);
 
   const { currentCountry } = useCountryPlatform();
   const countryCode = "BD";
@@ -1140,7 +1142,7 @@ export function Housing() {
   const [userArea, setUserArea] = useState<string>(initialLoc.area);
   const [userCity, setUserCity] = useState<string>(initialLoc.city);
 
-  // Dynamic Live Housing List initialized strictly around user's location
+  // Dynamic Live Housing List strictly positioned around user's location
   const [liveHousing, setLiveHousing] = useState<LiveHousingListing[]>(() => {
     const coords = (() => {
       try {
@@ -1182,18 +1184,22 @@ export function Housing() {
       }
     } catch (_) {}
   }, []);
+
   const [selectedListing, setSelectedListing] = useState<LiveHousingListing | null>(null);
   const [directionListing, setDirectionListing] = useState<LiveHousingListing | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
+  const handleSelectListing = useCallback((listing: LiveHousingListing | null) => {
+    setSelectedListing(listing);
+  }, []);
 
   // Deep linking: auto-focus and show details if opened via shared link
   const sharedId = searchParams.get("id") || searchParams.get("houseId");
 
   useEffect(() => {
     if (!sharedId) return;
-    const target = liveHousing.find(h => String(h.id) === String(sharedId));
+    const target = liveHousing.find(h => String(h.id) === String(sharedId) || String(h.id) === `house-${sharedId}`);
     if (target) {
       setSelectedListing(target);
       setShowDetailsModal(target);
@@ -1218,22 +1224,20 @@ export function Housing() {
 
   const nearbyHousing = filteredHousing.filter(j => j.isNearby);
 
-  // Smooth scroll detection for dynamic map resizing
-  const cardListRef = useRef<HTMLDivElement>(null);
-
-  // Uber-style 1:1 real-time drag tracking for mouse & touch
   const [sheetMode, setSheetMode] = useState<"expanded" | "mid" | "full">("expanded");
   const [dragMapHeight, setDragMapHeight] = useState<number | null>(null);
+  const cardListRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef<boolean>(false);
   const startDragYRef = useRef<number>(0);
   const startMapHeightRef = useRef<number>(0);
 
+  // Uber-style 1:1 real-time drag tracking for mouse & touch
   const handlePointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0 && e.pointerType === "mouse") return;
 
     const mapEl = document.getElementById("housing-map-section")?.querySelector(".relative.w-full");
     const isMobile = window.innerWidth < 640;
-    const minH = 0; // User can drag cart all the way to the top of the map!
+    const minH = 0; // User can drag card all the way to the top of the map!
     const midH = isMobile ? 380 : 400;
     const maxH = isMobile ? 520 : 580;
     const currentH = mapEl ? mapEl.getBoundingClientRect().height : (sheetMode === "full" ? 0 : isScrolled ? midH : maxH);
@@ -1312,18 +1316,20 @@ export function Housing() {
     window.addEventListener("pointerup", onPointerUp, { once: true });
   };
 
-  // Card list touch gestures (pull-down when at top expands map, swipe-up when expanded compacts map)
+  // Card list touch pull-down gesture to expand map when at top of list
   const listTouchStartYRef = useRef<number | null>(null);
 
   const handleListTouchStart = (e: React.TouchEvent) => {
-    listTouchStartYRef.current = e.touches[0].clientY;
+    if (cardListRef.current && cardListRef.current.scrollTop <= 2) {
+      listTouchStartYRef.current = e.touches[0].clientY;
+    }
   };
 
   const handleListTouchMove = (e: React.TouchEvent) => {
     if (listTouchStartYRef.current === null || !cardListRef.current) return;
     const deltaY = e.touches[0].clientY - listTouchStartYRef.current;
 
-    if (cardListRef.current.scrollTop <= 2 && deltaY > 30 && isScrolled) {
+    if (cardListRef.current.scrollTop <= 2 && deltaY > 35 && isScrolled) {
       setIsScrolled(false);
       setSheetMode("expanded");
       listTouchStartYRef.current = null;
@@ -1365,8 +1371,6 @@ export function Housing() {
     lastCardScrollYRef.current = currentY;
   };
 
-
-
   // Request Live GPS Location strictly from device GPS when navigation button is clicked
   const executeGeolocation = useCallback((highAccuracy: boolean = true) => {
     setIsLocating(true);
@@ -1387,7 +1391,7 @@ export function Housing() {
 
         try {
           localStorage.setItem("bkoi_last_user_coords", JSON.stringify([lat, lng]));
-        } catch (_) {}
+        } catch (_) { }
 
         // Fetch real address from BariKoi Reverse Geocode API
         const geoResult = await fetchBariKoiReverseGeocode(lat, lng);
@@ -1407,46 +1411,67 @@ export function Housing() {
         }
         setIsLocating(false);
       },
-      (error) => {
+      async (error) => {
+        // If high accuracy fails on desktop/mac, retry once with standard accuracy
         if (highAccuracy) {
           executeGeolocation(false);
           return;
         }
-        console.warn("Device geolocation error:", error.code, error.message);
-        setIsLocating(false);
-        setIsLocationGranted(false);
-        if (error.code === 1) {
-          setLocationPermissionStatus("denied");
+        console.warn("Device geolocation error, attempting real IP geolocation fallback:", error.code, error.message);
+
+        let fallbackLat = defaultCoords[0];
+        let fallbackLng = defaultCoords[1];
+        let areaName = initialLoc.area;
+        let cityName = initialLoc.city;
+
+        // Try IP Geolocation lookup
+        try {
+          const res = await fetch("https://ipwho.is/");
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.success && typeof data.latitude === "number" && typeof data.longitude === "number") {
+              fallbackLat = data.latitude;
+              fallbackLng = data.longitude;
+              cityName = data.city || initialLoc.city;
+              areaName = data.region || initialLoc.area;
+            }
+          }
+        } catch (_) {
+          try {
+            const cached = localStorage.getItem("bkoi_last_user_coords");
+            if (cached) {
+              const parsed = JSON.parse(cached);
+              if (Array.isArray(parsed) && parsed.length === 2 && !isNaN(parsed[0]) && !isNaN(parsed[1])) {
+                fallbackLat = parsed[0];
+                fallbackLng = parsed[1];
+              }
+            }
+          } catch (_) {}
         }
+
+        try {
+          localStorage.setItem("bkoi_last_user_coords", JSON.stringify([fallbackLat, fallbackLng]));
+        } catch (_) {}
+
+        setLocationPermissionStatus("granted");
+        setIsLocationGranted(true);
+        setShowPermissionPrompt(false);
+        setUserCoords([fallbackLat, fallbackLng]);
+        setUserLocationName(`${areaName}, ${cityName}`);
+        setUserArea(areaName);
+        setUserCity(cityName);
+        setLiveHousing(generateLiveLocationHousing(fallbackLat, fallbackLng, areaName, cityName));
+        setIsLocating(false);
       },
       {
         enableHighAccuracy: highAccuracy,
-        timeout: highAccuracy ? 6000 : 15000,
+        timeout: highAccuracy ? 4000 : 8000,
         maximumAge: 60000
       }
     );
-  }, []);
+  }, [defaultCoords, initialLoc]);
 
-  // Continuous Real-Time GPS Tracking for Housing
-  useEffect(() => {
-    if (!("geolocation" in navigator)) return;
-    const watchId = navigator.geolocation.watchPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        setUserCoords([lat, lng]);
-        setIsLocationGranted(true);
-        setLocationPermissionStatus("granted");
-      },
-      err => {
-        console.warn("Housing GPS watch warning:", err);
-      },
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
-    );
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, []);
-
-  // Direction Handler
+  // Direction Handler (Sets direction & displays route without jumping scroll position)
   const handleShowDirection = useCallback((listing: LiveHousingListing) => {
     setDirectionListing(listing);
     setSelectedListing(listing);
@@ -1455,20 +1480,27 @@ export function Housing() {
   // Navigation Button Click Handler (Turn ON / Turn OFF Toggle)
   const handleNavigationClick = useCallback(() => {
     if (isLocationGranted) {
-      // Turn OFF live GPS follow, but KEEP userCoords and service cards in place!
+      // Turn OFF Location live GPS tracker, but KEEP userCoords and service cards in place!
       setIsLocationGranted(false);
       setLocationPermissionStatus("prompt");
       setShowPermissionPrompt(false);
       setDirectionListing(null);
     } else {
+      // Turn ON Location (Direct device permission request)
       executeGeolocation(true);
     }
   }, [isLocationGranted, executeGeolocation]);
 
+  const toggleSave = (id: string) => {
+    setSavedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
   return (
     <AppLayout noPad={true}>
       <div className="w-full h-[100dvh] lg:h-[100vh] flex flex-col overflow-hidden bg-[#FAFAFA]">
-        {/* ── TOP STICKY BAR: Search Housing & Purpose Filter ────────────────── */}
+        {/* ── TOP STICKY BAR: Search Housing & Filter ───────────────────────── */}
         <div className="flex-shrink-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-2.5 py-1.5 sm:px-5 sm:py-2 shadow-2xs">
           <div className="max-w-7xl mx-auto flex items-center gap-1.5 sm:gap-2">
             <button
@@ -1500,7 +1532,7 @@ export function Housing() {
             </div>
           </div>
 
-          {/* Purpose Filter Pills: Rent / Purchase / All / Nearby */}
+          {/* Short & Understandable Filter Pills */}
           <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar pt-1 pb-0.5">
             {[
               { id: "all", label: "All Properties" },
@@ -1511,11 +1543,10 @@ export function Housing() {
               <button
                 key={f.id}
                 onClick={() => setActiveFilter(f.id)}
-                className={`px-3.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
-                  activeFilter === f.id
+                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${activeFilter === f.id
                     ? "bg-[#C04A22] text-white shadow-xs font-semibold"
                     : "bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200/60"
-                }`}
+                  }`}
               >
                 {f.label}
               </button>
@@ -1536,7 +1567,7 @@ export function Housing() {
               isLocationGranted={isLocationGranted}
               listings={filteredHousing}
               selectedListing={selectedListing}
-              onSelectListing={listing => setSelectedListing(listing)}
+              onSelectListing={handleSelectListing}
               onNavigationClick={handleNavigationClick}
               onRequestLocation={() => executeGeolocation(true)}
               onDenyLocation={() => setShowPermissionPrompt(false)}
@@ -1571,31 +1602,36 @@ export function Housing() {
             >
               <div className="w-12 h-1.5 bg-slate-300 group-hover:bg-slate-400 active:bg-slate-500 rounded-full transition-colors" />
             </div>
-            {/* Toggle Button Header */}
-            <div className="grid grid-cols-2 gap-2.5 max-w-md">
-              <div
-                onClick={() => setActiveFilter("nearby")}
-                className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer active:scale-99 ${
-                  activeFilter === "nearby"
-                    ? "bg-orange-100/70 border-transparent shadow-xs"
-                    : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
-                }`}
-              >
-                <div className={`text-xs sm:text-sm leading-tight ${activeFilter === "nearby" ? "font-semibold text-[#8C3015]" : "font-normal text-slate-800"}`}>
-                  {nearbyHousing.length} Nearby
+            {/* Controls Bar: Filter Options */}
+            <div className="flex items-center justify-between gap-3 max-w-md w-full">
+              {/* Filter Option Buttons */}
+              <div className="grid grid-cols-2 gap-2.5 w-full">
+                {/* Left Option: Nearby Properties */}
+                <div
+                  onClick={() => setActiveFilter(activeFilter === "nearby" ? "all" : "nearby")}
+                  className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-lg border transition-all cursor-pointer text-center sm:text-left ${
+                    activeFilter === "nearby"
+                      ? "bg-orange-100/70 border-transparent shadow-xs"
+                      : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
+                  }`}
+                >
+                  <div className={`text-xs sm:text-sm leading-tight ${activeFilter === "nearby" ? "font-semibold text-[#8C3015]" : "font-normal text-slate-800"}`}>
+                    {nearbyHousing.length} properties nearby
+                  </div>
                 </div>
-              </div>
 
-              <div
-                onClick={() => setActiveFilter("all")}
-                className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer active:scale-99 ${
-                  activeFilter === "all"
-                    ? "bg-orange-100/70 border-transparent shadow-xs"
-                    : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
-                }`}
-              >
-                <div className={`text-xs sm:text-sm leading-tight ${activeFilter === "all" ? "font-semibold text-[#8C3015]" : "font-normal text-slate-800"}`}>
-                  {liveHousing.length} Full State
+                {/* Right Option: Full State Properties */}
+                <div
+                  onClick={() => setActiveFilter("all")}
+                  className={`py-2 px-3 sm:py-2.5 sm:px-3.5 rounded-lg border transition-all cursor-pointer text-center sm:text-left ${
+                    activeFilter === "all"
+                      ? "bg-orange-100/70 border-transparent shadow-xs"
+                      : "bg-slate-50/80 hover:bg-white border-slate-100 hover:border-slate-200 shadow-2xs hover:shadow-xs"
+                  }`}
+                >
+                  <div className={`text-xs sm:text-sm leading-tight ${activeFilter === "all" ? "font-semibold text-[#8C3015]" : "font-normal text-slate-800"}`}>
+                    {liveHousing.length} full state properties
+                  </div>
                 </div>
               </div>
             </div>
@@ -1610,7 +1646,7 @@ export function Housing() {
             onTouchEnd={handleListTouchEnd}
             className="flex-1 min-h-0 overflow-y-auto px-0 pb-24"
           >
-            {/* Equal Grid of Housing Cards (1 on mobile, 2 on pad, 3 on desktop) */}
+            {/* Equal Grid of Housing Cards (Consistent positioning & equal heights on both sides) */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-0 sm:gap-5 items-stretch pt-1">
             {(activeFilter === "nearby" ? nearbyHousing : filteredHousing).map(listing => {
               const isSelected = selectedListing?.id === listing.id;
@@ -1625,16 +1661,15 @@ export function Housing() {
                     if (el) cardRefs.current.set(listing.id, el);
                     else cardRefs.current.delete(listing.id);
                   }}
-                  onClick={() => setSelectedListing(listing)}
+                  onClick={() => handleSelectListing(listing)}
                   className={`group bg-white rounded-none sm:rounded-3xl border-0 sm:border border-slate-200/90 overflow-hidden transition-all duration-150 ease-out cursor-pointer flex flex-col justify-between h-full shadow-none sm:shadow-2xs ${
                     isSelected
                       ? "sm:border-[#C04A22] sm:ring-2 sm:ring-[#C04A22]/20 sm:shadow-md"
                       : "sm:border-slate-200/90 sm:hover:border-slate-300 sm:hover:shadow-xs"
                   }`}
                 >
-                  {/* Top: Image & Header Content */}
+                  {/* Banner Image with Type & Distance Floating Badges */}
                   <div>
-                    {/* Banner Image with Purpose & Agency Corner Badges */}
                     <div className="relative w-full h-36 sm:h-40 overflow-hidden bg-slate-100">
                       <img
                         src={listing.image}
@@ -1642,7 +1677,7 @@ export function Housing() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         loading="lazy"
                       />
-                      {/* Top-Right: Purpose Badge (Rent / Purchase) */}
+                      {/* Top Right: Purpose Badge (Rent / Purchase) */}
                       <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold shadow-xs border ${
                         isRent
                           ? "bg-emerald-600 text-white border-emerald-700/60"
@@ -1651,86 +1686,76 @@ export function Housing() {
                         For {listing.purpose}
                       </div>
 
-                      {/* Top-Left: Agency Badge In The Corner */}
-                      <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-xs font-bold border border-slate-200/80 shadow-xs">
-                        <span className="truncate max-w-[140px] sm:max-w-[180px]">{listing.agency}</span>
-                      </div>
-
-                      {/* Bottom-Left: Distance Badge */}
+                      {/* Bottom Left: Distance Badge */}
                       <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-medium flex items-center gap-1">
                         <MapPin className="w-3.5 h-3.5 text-emerald-400" />
                         {listing.distance}
                       </div>
+
+                      {/* Top Left: Share & Bookmark Save Buttons */}
+                      <div className="absolute top-3 left-3 flex items-center gap-1.5 z-[2]">
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const url = buildMapShareUrl({
+                              id: listing.id,
+                              title: listing.title,
+                              lat: listing.lat,
+                              lng: listing.lng,
+                              category: `🏠 Housing (${listing.purpose})`,
+                              address: listing.location,
+                              image: listing.image,
+                              phone: listing.contactPhone,
+                              description: `${listing.propertyType} • ${listing.beds} • ${listing.price}`,
+                            });
+                            await shareOrCopy({
+                              title: listing.title,
+                              text: `Check out ${listing.title} on Pathasathi Map!`,
+                              url,
+                            });
+                          }}
+                          className="w-8 h-8 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-500 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
+                          title="Share on Map"
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            toggleSave(listing.id);
+                          }}
+                          className="w-8 h-8 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/60 flex items-center justify-center text-slate-500 hover:text-[#C04A22] transition shadow-xs cursor-pointer"
+                          title={isSaved ? "Saved" : "Save Property"}
+                        >
+                          {isSaved ? (
+                            <BookmarkCheck className="w-4 h-4 text-[#C04A22]" />
+                          ) : (
+                            <Bookmark className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
                     </div>
 
-                    {/* Card Content Header */}
+                    {/* Card Body Header */}
                     <div className="p-4 sm:p-5 pb-0">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug group-hover:text-[#C04A22] transition-colors line-clamp-1">
-                            {listing.title}
-                          </h3>
-                          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5 flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                            <span className="truncate">{listing.location}</span>
-                          </p>
-                        </div>
-
-                        {/* Share & Bookmark Buttons */}
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              const url = buildMapShareUrl({
-                                id: listing.id,
-                                title: listing.title,
-                                lat: listing.lat,
-                                lng: listing.lng,
-                                category: `🏠 Housing (${listing.purpose})`,
-                                address: listing.location,
-                                image: listing.image,
-                                phone: listing.contactPhone,
-                                description: `${listing.propertyType} • ${listing.beds} • ${listing.price}`,
-                              });
-                              await shareOrCopy({
-                                title: listing.title,
-                                text: `Check out ${listing.title} on Pathasathi Map!`,
-                                url,
-                              });
-                            }}
-                            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-[#C04A22] flex items-center justify-center transition cursor-pointer"
-                            title="Share on Map"
-                          >
-                            <Share2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              toggleSave(listing.id);
-                            }}
-                            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-[#C04A22] flex items-center justify-center transition cursor-pointer"
-                            title={isSaved ? "Saved" : "Save Property"}
-                          >
-                            {isSaved ? (
-                              <BookmarkCheck className="w-4 h-4 text-[#C04A22]" />
-                            ) : (
-                              <Bookmark className="w-4 h-4" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug line-clamp-1 group-hover:text-[#C04A22] transition-colors">
+                        {listing.title}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
+                        {listing.agency} • {listing.location}
+                      </p>
 
                       {/* Specification Chips (Beds, Baths, Sqft) */}
-                      <div className="flex items-center gap-2 flex-wrap mt-2.5">
-                        <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
+                      <div className="flex items-center gap-2 flex-wrap mt-2">
+                        <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
                           <Bed className="w-3 h-3 text-[#C04A22]" />
                           {listing.beds}
                         </span>
-                        <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
+                        <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
                           <Bath className="w-3 h-3 text-[#C04A22]" />
                           {listing.baths}
                         </span>
-                        <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
+                        <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1">
                           <Maximize2 className="w-3 h-3 text-[#C04A22]" />
                           {listing.sqft}
                         </span>
@@ -1745,7 +1770,7 @@ export function Housing() {
                     </div>
                   </div>
 
-                  {/* Bottom: Aligned Action Buttons (Icon Only) */}
+                  {/* Card Body Footer: Direction & Details Buttons (Icon Only) */}
                   <div className="px-4 sm:px-5 pb-3 pt-1">
                     <div className="flex items-center justify-between gap-2.5">
                       <button
@@ -1759,7 +1784,6 @@ export function Housing() {
                       >
                         <Navigation className="w-4 h-4 text-[#C04A22]" />
                       </button>
-
                       <button
                         onClick={e => {
                           e.stopPropagation();
@@ -1780,15 +1804,14 @@ export function Housing() {
         </div>
       </div>
 
-        {/* ── HOUSING DETAILS MODAL ─────────────────────────────────────── */}
-        {showDetailsModal && (
-          <HousingDetailsModal
-            listing={showDetailsModal}
-            onClose={() => setShowDetailsModal(null)}
-            savedIds={savedIds}
-            onToggleSave={toggleSave}
-          />
-        )}
+        {/* ── HOUSING DETAILS & CONTACT MODAL ───────────────────────────────── */}
+        <HousingDetailsModal
+          listing={showDetailsModal}
+          onClose={() => setShowDetailsModal(null)}
+          savedIds={savedIds}
+          onToggleSave={toggleSave}
+        />
+
       </div>
     </AppLayout>
   );
