@@ -163,6 +163,9 @@ export default function App() {
             <Route path="/services/subway" element={<TransitServicePage />} />
             <Route path="/services/metro" element={<TransitServicePage />} />
             <Route path="/services/transit" element={<TransitServicePage />} />
+            <Route path="/services/transportation" element={<TransitServicePage />} />
+            <Route path="/services/bus" element={<TransitServicePage />} />
+            <Route path="/services/train" element={<TransitServicePage />} />
             <Route path="/services/shops" element={<GroceryShopServicePage />} />
             <Route path="/services/local-shops" element={<GroceryShopServicePage />} />
             <Route path="/services/grocery" element={<GroceryShopServicePage />} />

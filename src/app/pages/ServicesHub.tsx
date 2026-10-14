@@ -30,8 +30,7 @@ const allServices: ServiceItem[] = [
   { id: "housing-rentals", name: "Housing", desc: "Apartments, bachelor flats, family sublets & rooms", icon: Home, link: "/services/housing", category: "housing" },
   { id: "local-shops", name: "Grocery", desc: "Shwapno, Unimart, Agora & local fresh markets", icon: Store, link: "/services/shops", category: "utility" },
   { id: "food-bank", name: "Free Food", desc: "Community food aid, charity relief & meal distribution", icon: Gift, link: "/services/free-food", category: "health" },
-  // Row 2:
-  { id: "metro-transit", name: "Transport", desc: "Dhaka Metro Rail (MRT-6), bus terminals & schedules", icon: Bus, link: "/services/subway", category: "travel" },
+  { id: "metro-transit", name: "Transport", desc: "US Intercity buses, Amtrak trains & Metro Subway schedules", icon: Bus, link: "/services/transit", category: "travel" },
   { id: "esl-education", name: "Education", desc: "Universities, colleges, English medium & schools", icon: GraduationCap, link: "/services/schools", category: "education" },
   { id: "religious", name: "Religion", desc: "Mosques, temples & prayer spaces near your area", icon: Building, link: "/services/religious", category: "utility" },
   { id: "high-commission", name: "Embassy", desc: "Embassies, High Commissions & Passport services", icon: Landmark, link: "/services/embassy", category: "legal" },

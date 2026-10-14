@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PathaSathi — FigJam Architecture Mindmap & Flowchart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0E131F;
+      --canvas-dot: #1E293B;
+      --card-bg: #161F30;
+      --card-border: #24324D;
+      --text-main: #F1F5F9;
+      --text-muted: #94A3B8;
+      
+      /* FigJam Sticky Palette */
+      --sticky-purple: #F3E8FF;
+      --sticky-purple-text: #581C87;
+      --sticky-purple-border: #D8B4FE;
+      
+      --sticky-blue: #E0F2FE;
+      --sticky-blue-text: #075985;
+      --sticky-blue-border: #7DD3FC;
+      
+      --sticky-teal: #CCFBF1;
+      --sticky-teal-text: #115E59;
+      --sticky-teal-border: #5EEAD4;
+      
+      --sticky-yellow: #FEF9C3;
+      --sticky-yellow-text: #854D0E;
+      --sticky-yellow-border: #FDE047;
+      
+      --sticky-orange: #FFEDD5;
+      --sticky-orange-text: #9A3412;
+      --sticky-orange-border: #FDBA74;
+      
+      --sticky-rose: #FFE4E6;
+      --sticky-rose-text: #9F1239;
+      --sticky-rose-border: #FDA4AF;
+      
+      --brand-orange: #EA580C;
+      --brand-amber: #F59E0B;
+      --brand-blue: #3B82F6;
+      --brand-emerald: #10B981;
+      --brand-purple: #8B5CF6;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg);
+      background-image: radial-gradient(var(--canvas-dot) 2px, transparent 2px);
+      background-size: 32px 32px;
+      color: var(--text-main);
+      width: 3600px;
+      min-height: 2500px;
+      padding: 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* FigJam Topbar Header */
+    .figjam-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(22, 31, 48, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 20px 36px;
+      margin-bottom: 48px;
+      box-shadow: 0 20px 40px -15px rgba(0,0,0,0.5);
+    }
+
+    .title-group h1 {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #FFFFFF 30%, #FDBA74 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .title-group p {
+      color: var(--text-muted);
+      font-size: 16px;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .title-group .fig-badge {
+      background: #4338CA;
+      color: #EEF2FF;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .collaborators {
+      display: flex;
+      align-items: center;
+    }
+
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 3px solid #0E131F;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      color: #FFF;
+      margin-left: -12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    .avatar:first-child { margin-left: 0; }
+    .avatar-1 { background: #EA580C; }
+    .avatar-2 { background: #3B82F6; }
+    .avatar-3 { background: #10B981; }
+    .avatar-4 { background: #8B5CF6; }
+
+    .zoom-pill {
+      background: #1E293B;
+      border: 1px solid #334155;
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 15px;
+      color: #CBD5E1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Central Flow Legend */
+    .legend-shelf {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      background: #131B2A;
+      border: 1px dashed #2E3E5C;
+      padding: 14px 28px;
+      border-radius: 16px;
+      margin-bottom: 40px;
+    }
+
+    .legend-title {
+      font-weight: 700;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #94A3B8;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+    }
+
+    /* FigJam Canvas Grid Layout */
+    .figjam-grid {
+      display: grid;
+      grid-template-columns: 880px 1080px 880px 580px;
+      gap: 40px;
+      margin-bottom: 50px;
+    }
+
+    /* Big Section Container */
+    .section-board {
+      background: rgba(22, 31, 48, 0.7);
+      border: 2px solid var(--card-border);
+      border-radius: 28px;
+      padding: 32px;
+      position: relative;
+      box-shadow: 0 16px 36px -10px rgba(0,0,0,0.4);
+    }
+
+    .section-board.purple { border-color: #6366F1; }
+    .section-board.blue { border-color: #38BDF8; }
+    .section-board.teal { border-color: #2DD4BF; }
+    .section-board.amber { border-color: #FBBF24; }
+    .section-board.rose { border-color: #FB7185; }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .section-title {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-tag {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 6px 14px;
+      border-radius: 8px;
+    }
+
+    /* Sticky Note Styling */
+    .sticky-note {
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 20px -5px rgba(0,0,0,0.3);
+      position: relative;
+      transition: all 0.2s ease;
+      margin-bottom: 20px;
+    }
+
+    .sticky-note::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 28px;
+      width: 44px;
+      height: 12px;
+      background: rgba(255,255,255,0.4);
+      border-radius: 0 0 4px 4px;
+    }
+
+    .sticky-note.purple {
+      background: var(--sticky-purple);
+      color: var(--sticky-purple-text);
+      border: 1px solid var(--sticky-purple-border);
+    }
+    .sticky-note.blue {
+      background: var(--sticky-blue);
+      color: var(--sticky-blue-text);
+      border: 1px solid var(--sticky-blue-border);
+    }
+    .sticky-note.teal {
+      background: var(--sticky-teal);
+      color: var(--sticky-teal-text);
+      border: 1px solid var(--sticky-teal-border);
+    }
+    .sticky-note.yellow {
+      background: var(--sticky-yellow);
+      color: var(--sticky-yellow-text);
+      border: 1px solid var(--sticky-yellow-border);
+    }
+    .sticky-note.orange {
+      background: var(--sticky-orange);
+      color: var(--sticky-orange-text);
+      border: 1px solid var(--sticky-orange-border);
+    }
+    .sticky-note.rose {
+      background: var(--sticky-rose);
+      color: var(--sticky-rose-text);
+      border: 1px solid var(--sticky-rose-border);
+    }
+
+    .sticky-head {
+      font-size: 17px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sticky-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      opacity: 0.85;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .sticky-list {
+      list-style: none;
+      font-size: 13.5px;
+      line-height: 1.55;
+    }
+
+    .sticky-list li {
+      margin-bottom: 6px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .sticky-list li::before {
+      content: "•";
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    /* Structured Whiteboard Cards */
+    .flow-card {
+      background: #182338;
+      border: 1px solid #2B3D5E;
+      border-radius: 18px;
+      padding: 22px;
+      margin-bottom: 18px;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+    }
+
+    .flow-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .flow-card-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .flow-pill.blue { background: rgba(56, 189, 248, 0.15); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.3); }
+    .flow-pill.green { background: rgba(52, 211, 153, 0.15); color: #34D399; border: 1px solid rgba(52, 211, 153, 0.3); }
+    .flow-pill.orange { background: rgba(251, 146, 60, 0.15); color: #FB923C; border: 1px solid rgba(251, 146, 60, 0.3); }
+    .flow-pill.purple { background: rgba(167, 139, 250, 0.15); color: #A78BFA; border: 1px solid rgba(167, 139, 250, 0.3); }
+
+    .step-chain {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .step-box {
+      background: #121A2B;
+      border: 1px solid #24344E;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .step-box-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: #2563EB;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .connector-down {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 18px;
+      color: #64748B;
+      font-size: 16px;
+    }
+
+    /* Hand-drawn note annotation */
+    .hand-annotation {
+      font-family: 'Kalam', cursive;
+      font-size: 18px;
+      color: #FDE047;
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transform: rotate(-1.5deg);
+    }
+
+    /* Bottom Foundation: Data & Infra */
+    .foundation-board {
+      background: rgba(22, 31, 48, 0.85);
+      border: 2px solid #334155;
+      border-radius: 28px;
+      padding: 34px 44px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+
+    .foundation-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #FFF;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .infra-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 28px;
+    }
+
+    .infra-card {
+      background: #151E2E;
+      border: 1px solid #283750;
+      border-radius: 18px;
+      padding: 22px;
+    }
+
+    .infra-card-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #F8FAFC;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .infra-tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .infra-badge {
+      background: #1E293B;
+      color: #CBD5E1;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+    }
+
+    /* FigJam Cursor Pin */
+    .figjam-cursor {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    .cursor-pointer {
+      width: 0;
+      height: 0;
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+      border-bottom: 14px solid;
+      transform: rotate(-35deg);
+    }
+
+    .cursor-tag {
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFF;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+    }
+
+    /* Inter-column Visual Connection Banners */
+    .flow-bridge-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: -20px 40px 30px 40px;
+      padding: 12px 24px;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px dashed #334155;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #94A3B8;
+    }
+
+    .bridge-indicator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .bridge-indicator span.arrow {
+      color: #38BDF8;
+      font-size: 18px;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Mock FigJam Cursor Pins (positioned safely in open spaces without touching any text) -->
+  <div class="figjam-cursor" style="top: 36px; right: 520px;">
+    <div class="cursor-pointer" style="border-bottom-color: #EA580C;"></div>
+    <div class="cursor-tag" style="background: #EA580C;">🖱️ Zotish (Lead Architect)</div>
+  </div>
+
+  <div class="figjam-cursor" style="top: 36px; right: 280px;">
+    <div class="cursor-pointer" style="border-bottom-color: #8B5CF6;"></div>
+    <div class="cursor-tag" style="background: #8B5CF6;">✨ PathaSathi Copilot</div>
+  </div>
+
+  <!-- Topbar Header -->
+  <header class="figjam-toolbar">
+    <div class="title-group">
+      <h1>
+        <span>📐</span> PathaSathi — Full System Mindmap & Flowchart
+      </h1>
+      <p style="margin-top: 10px;">
+        <span class="fig-badge">FigJam Whiteboard Edition</span>
+        <span>•</span>
+        <span>End-to-End Visual Architecture: User Flow • Spatial GIS & Routing • 5 Core Lifelines • AI RAG Copilot • RBAC OS</span>
+        <span>•</span>
+        <span>Production Ready</span>
+      </p>
+    </div>
+
+    <div class="toolbar-actions">
+      <div class="collaborators">
+        <div class="avatar avatar-1" title="Zotish">ZC</div>
+        <div class="avatar avatar-2" title="GIS Engine">GIS</div>
+        <div class="avatar avatar-3" title="Directory Engine">DIR</div>
+        <div class="avatar avatar-4" title="AI Copilot">AI</div>
+      </div>
+      <div class="zoom-pill">
+        <span>🔍</span>
+        <span>100% Canvas</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Legend Shelf -->
+  <div class="legend-shelf">
+    <div class="legend-title">Flow Taxonomy:</div>
+    <div class="legend-item"><div class="legend-color" style="background: #A855F7;"></div> User Journey & Presentation</div>
+    <div class="legend-item"><div class="legend-color" style="background: #38BDF8;"></div> GIS, Geolocation & Turn-by-Turn Routing</div>
+    <div class="legend-item"><div class="legend-color" style="background: #2DD4BF;"></div> Lifeline Directory & Verified Services</div>
+    <div class="legend-item"><div class="legend-color" style="background: #FBBF24;"></div> Community, Q&A & Local Marketplace</div>
+    <div class="legend-item"><div class="legend-color" style="background: #FB923C;"></div> Conversational AI & Decision Copilot</div>
+    <div class="legend-item"><div class="legend-color" style="background: #FB7185;"></div> Multi-Role RBAC & Trust Governance</div>
+    <div class="legend-item"><div class="legend-color" style="background: #64748B;"></div> PostGIS, OSRM & Cloud Gateway</div>
+  </div>
+
+  <!-- Cross-System Interactive Bridges Banner -->
+  <div class="flow-bridge-row">
+    <div class="bridge-indicator">
+      <span style="color:#C084FC;">1. User Actions (Home/Explore)</span>
+      <span class="arrow">─── Coordinates & Intent ───►</span>
+      <span style="color:#38BDF8;">2. Spatial Routing & Directory</span>
+    </div>
+    <div class="bridge-indicator">
+      <span style="color:#38BDF8;">2. Spatial Services</span>
+      <span class="arrow">─── Real-time Context ───►</span>
+      <span style="color:#FBBF24;">3. AI Copilot RAG & Community</span>
+    </div>
+    <div class="bridge-indicator">
+      <span style="color:#FBBF24;">3. User Submissions</span>
+      <span class="arrow">─── Verification Pipeline ───►</span>
+      <span style="color:#FB7185;">4. Admin RBAC & Audit</span>
+    </div>
+  </div>
+
+  <!-- Main 4-Column Grid -->
+  <main class="figjam-grid">
+
+    <!-- COLUMN 1: USER JOURNEY & ENTRY EXPERIENCE -->
+    <div class="section-board purple">
+      <div class="section-header">
+        <div class="section-title" style="color: #C084FC;">
+          <span>👤</span> 1. User Journey & Core Experience
+        </div>
+        <div class="section-tag" style="background: rgba(192, 132, 252, 0.15); color: #C084FC;">Client Flow</div>
+      </div>
+
+      <!-- Sticky 1: Onboarding -->
+      <div class="sticky-note purple">
+        <div class="sticky-head">
+          <span>🚀 App Boot & Auth</span>
+          <span>⚡ 0.8s</span>
+        </div>
+        <div class="sticky-sub">AppSplash.tsx → Auth.tsx → Onboarding.tsx</div>
+        <ul class="sticky-list">
+          <li>Local language selection (Bangla & English)</li>
+          <li>OTP Verification (Phone number / Social sign-in)</li>
+          <li>Instant GPS permission request with graceful fallback</li>
+          <li>Custom persona: Immigrant, Job Seeker, Volunteer, NGO</li>
+        </ul>
+      </div>
+
+      <!-- Flow Card: HomeFeed Hub -->
+      <div class="flow-card">
+        <div class="flow-card-header">
+          <div class="flow-card-title">
+            <span>🏠</span> Home Feed Engine
+          </div>
+          <span class="flow-pill purple">HomeFeed.tsx</span>
+        </div>
+        <div class="step-chain">
+          <div class="step-box">
+            <div class="step-box-left">
+              <span class="step-num">1</span>
+              <span>Top Bar: City Selector + SOS Emergency</span>
+            </div>
+            <span style="color: #EF4444; font-weight:700;">SOS 999</span>
+          </div>
+          <div class="connector-down">↓</div>
+          <div class="step-box">
+            <div class="step-box-left">
+              <span class="step-num">2</span>
+              <span>Story & Video Reels Strip (`Reels.tsx`)</span>
+            </div>
+            <span style="color: #A855F7;">Video</span>
+          </div>
+          <div class="connector-down">↓</div>
+          <div class="step-box">
+            <div class="step-box-left">
+              <span class="step-num">3</span>
+              <span>Lifeline Quick Action Grid (Jobs, Food, Rent)</span>
+            </div>
+            <span style="color: #F59E0B;">5 Badges</span>
+          </div>
+          <div class="connector-down">↓</div>
+          <div class="step-box">
+            <div class="step-box-left">
+              <span class="step-num">4</span>
+              <span>Location-Aware Feed Cards + Direct Pinpoints</span>
+            </div>
+            <span style="color: #38BDF8;">No Overlap</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sticky 2: Global Navigation Dock -->
+      <div class="sticky-note yellow">
+        <div class="sticky-head">
+          <span>🧭 5-Tab Navigation Dock</span>
+          <span>Mobile UI</span>
+        </div>
+        <div class="sticky-sub">Global Persistent Controller</div>
+        <ul class="sticky-list">
+          <li><strong>Home:</strong> Personalized local feed and emergency updates</li>
+          <li><strong>Services:</strong> 5 Essential lifelines categorized directory</li>
+          <li><strong>Map:</strong> Interactive GIS discovery with routing</li>
+          <li><strong>Community:</strong> Q&A answers, local groups, discussions</li>
+          <li><strong>Profile:</strong> Saved bookmarks, language, dark mode</li>
+        </ul>
+      </div>
+
+      <div class="hand-annotation">
+        ✏️ Note: Pinpoint card overlap on HomeFeed is fully fixed!
+      </div>
+    </div>
+
+    <!-- COLUMN 2: GIS ENGINE & 5 CORE SERVICES -->
+    <div class="section-board blue">
+      <div class="section-header">
+        <div class="section-title" style="color: #38BDF8;">
+          <span>🗺️</span> 2. GIS Map Discovery & Routing
+        </div>
+        <div class="section-tag" style="background: rgba(56, 189, 248, 0.15); color: #38BDF8;">Spatial Engine</div>
+      </div>
+
+      <!-- Flow Card: BariKoi & GPS Ingestion -->
+      <div class="flow-card">
+        <div class="flow-card-header">
+          <div class="flow-card-title">
+            <span>📡</span> GPS & BariKoi Geocoding
+          </div>
+          <span class="flow-pill blue">MapDiscovery.tsx</span>
+        </div>
+        <div class="step-chain">
+          <div class="step-box">
+            <div class="step-box-left">
+              <span class="step-num">A</span>
+              <span>Navigator Geolocation Stream (lat, lng, accuracy)</span>
+            </div>
+            <span style="color: #34D399;">Active</span>
+          </div>
+          <div class="connector-down">↓</div>
+          <div class="step-box">
+            <div class="step-box-left">
+              <span class="step-num">B</span>
+              <span>BariKoi Reverse API Call (`/v1/reverse/geocode`)</span>
+            </div>
+            <span style="color: #38BDF8;">200 OK</span>
+          </div>
+          <div class="connector-down">↓</div>
+          <div class="step-box">
+            <div class="step-box-left">
+              <span class="step-num">C</span>
+              <span>Normalized Address: Area, Union, Thana, District</span>
+            </div>
+            <span style="color: #FBBF24;">Formatted</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sticky: OSRM Turn-by-Turn Routing -->
+      <div class="sticky-note blue">
+        <div class="sticky-head">
+          <span>🚗 Turn-by-Turn Routing Engine</span>
+          <span>OSRM + Polyline</span>
+        </div>
+        <div class="sticky-sub">Process 3.0 → Step-by-Step Guidance</div>
+        <ul class="sticky-list">
+          <li>Origin GPS to Destination Service Coordinates</li>
+          <li>Polyline Decoding into high-frequency GeoJSON coordinates</li>
+          <li>Instruction Banner: "Turn left onto Mirpur Road in 200m"</li>
+          <li>Dual Action Buttons: <strong>[Direction]</strong> (Turn navigation) & <strong>[Details]</strong> (Modal sheet)</li>
+          <li>Distance Matrix calculation (Walking, Transit, Driving ETA)</li>
+        </ul>
+      </div>
+
+      <!-- 5 Lifelines Sub-Board -->
+      <div class="flow-card" style="border-color: #2DD4BF;">
+        <div class="flow-card-header">
+          <div class="flow-card-title" style="color: #2DD4BF;">
+            <span>🏢</span> 5 Essential Lifeline Directories
+          </div>
+          <span class="flow-pill green">ServiceDirectoryPages.tsx</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+          <div style="background: #111A2B; padding: 12px; border-radius: 10px; border-left: 3px solid #38BDF8;">
+            <div style="font-weight: 700; font-size: 14px; color: #FFF;">💼 Jobs (`Jobs.tsx`)</div>
+            <div style="font-size: 12px; color: #94A3B8; margin-top: 4px;">Daily labor, skill matching, direct call employer</div>
+          </div>
+          <div style="background: #111A2B; padding: 12px; border-radius: 10px; border-left: 3px solid #F59E0B;">
+            <div style="font-weight: 700; font-size: 14px; color: #FFF;">🏠 Housing (`Housing.tsx`)</div>
+            <div style="font-size: 12px; color: #94A3B8; margin-top: 4px;">Low-cost shelters, rent sharing, verified landlords</div>
+          </div>
+          <div style="background: #111A2B; padding: 12px; border-radius: 10px; border-left: 3px solid #10B981;">
+            <div style="font-weight: 700; font-size: 14px; color: #FFF;">🍲 Food (`FreeFood.tsx`)</div>
+            <div style="font-size: 12px; color: #94A3B8; margin-top: 4px;">Community kitchens, food distribution, timing</div>
+          </div>
+          <div style="background: #111A2B; padding: 12px; border-radius: 10px; border-left: 3px solid #8B5CF6;">
+            <div style="font-weight: 700; font-size: 14px; color: #FFF;">🕌 Religion (`Religion.tsx`)</div>
+            <div style="font-size: 12px; color: #94A3B8; margin-top: 4px;">Mosques, Temples, Churches, Prayer schedules</div>
+          </div>
+        </div>
+        <div style="background: #111A2B; padding: 12px; border-radius: 10px; border-left: 3px solid #EF4444; margin-top: 10px;">
+          <div style="font-weight: 700; font-size: 14px; color: #FFF;">🏛️ Embassy & Legal (`Embassy.tsx`)</div>
+          <div style="font-size: 12px; color: #94A3B8; margin-top: 4px;">Consulate hotlines, legal aid clinics, asylum documents</div>
+        </div>
+      </div>
+
+      <div class="hand-annotation" style="color: #38BDF8;">
+        📍 Fully integrated with BariKoi Bangladesh map tiles & local places!
+      </div>
+    </div>
+
+    <!-- COLUMN 3: AI COPILOT & SOCIAL MARKETPLACE -->
+    <div class="section-board amber">
+      <div class="section-header">
+        <div class="section-title" style="color: #FBBF24;">
+          <span>🤖</span> 3. AI Copilot & Community Hub
+        </div>
+        <div class="section-tag" style="background: rgba(251, 191, 36, 0.15); color: #FBBF24;">Intelligence & Social</div>
+      </div>
+
+      <!-- Sticky: Conversational AI -->
+      <div class="sticky-note orange">
+        <div class="sticky-head">
+          <span>🧠 PathaSathi AI Copilot</span>
+          <span>Gemini RAG</span>
+        </div>
+        <div class="sticky-sub">AiAssistantPage.tsx → Context Engine</div>
+        <ul class="sticky-list">
+          <li><strong>Multilingual Natural Chat:</strong> Bangla, Sylheti, Chittagonian, English</li>
+          <li><strong>Live Context Injection:</strong> User's current Lat/Lng + Active City</li>
+          <li><strong>Intent Resolver:</strong> Automatically detects need (e.g., "Kache kothao free khabar ache?")</li>
+          <li><strong>Structured Action Cards:</strong> Generates clickable direction links and contact cards</li>
+          <li><strong>Safety Guard:</strong> Sanitizes prompt injection & blocks toxic queries</li>
+        </ul>
+      </div>
+
+      <!-- Flow Card: Community & Social Engagement -->
+      <div class="flow-card">
+        <div class="flow-card-header">
+          <div class="flow-card-title">
+            <span>💬</span> Community & Knowledge Base
+          </div>
+          <span class="flow-pill orange">QandA.tsx / Communities</span>
+        </div>
+        <div class="step-chain">
+          <div class="step-box">
+            <div class="step-box-left">
+              <span class="step-num">Q</span>
+              <span>User Posts Question on Local Living & Procedures</span>
+            </div>
+            <span style="color: #F59E0B;">Public</span>
+          </div>
+          <div class="connector-down">↓</div>
+          <div class="step-box">
+            <div class="step-box-left">
+              <span class="step-num">A</span>
+              <span>Community Members & Verified Mentors Answer</span>
+            </div>
+            <span style="color: #10B981;">Verified</span>
+          </div>
+          <div class="connector-down">↓</div>
+          <div class="step-box">
+            <div class="step-box-left">
+              <span class="step-num">★</span>
+              <span>Upvoting, Best Answer Pinning & Saved Bookmarks</span>
+            </div>
+            <span style="color: #C084FC;">Saved</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sticky: Marketplace & Direct Chat -->
+      <div class="sticky-note teal">
+        <div class="sticky-head">
+          <span>🛍️ Local Marketplace & Chat</span>
+          <span>P2P Commerce</span>
+        </div>
+        <div class="sticky-sub">SellerDashboard.tsx • BuyerOrders.tsx • Messages.tsx</div>
+        <ul class="sticky-list">
+          <li>Community buy/sell listings (essentials, furniture, tools)</li>
+          <li>Direct in-app messaging between buyers & sellers (`Messages.tsx`)</li>
+          <li>Real-time order statuses (Pending, Confirmed, Picked Up)</li>
+          <li>Seller credibility badges based on community reviews</li>
+        </ul>
+      </div>
+
+      <div class="hand-annotation" style="color: #F97316;">
+        💡 AI acts as a 24/7 personal guide for new city dwellers!
+      </div>
+    </div>
+
+    <!-- COLUMN 4: GOVERNANCE, RBAC & SECURITY -->
+    <div class="section-board rose">
+      <div class="section-header">
+        <div class="section-title" style="color: #FB7185;">
+          <span>🛡️</span> 4. Admin OS & Trust
+        </div>
+        <div class="section-tag" style="background: rgba(251, 113, 133, 0.15); color: #FB7185;">Security Layer</div>
+      </div>
+
+      <!-- Sticky: RBAC Roles -->
+      <div class="sticky-note rose">
+        <div class="sticky-head">
+          <span>👥 Multi-Role RBAC System</span>
+          <span>Enterprise OS</span>
+        </div>
+        <div class="sticky-sub">SuperAdminOverview.tsx & Role Guards</div>
+        <ul class="sticky-list">
+          <li><strong>Super Admin:</strong> Full system metrics, database audits, user bans</li>
+          <li><strong>NGO / Verifier:</strong> Validates real-world free food spots & shelters</li>
+          <li><strong>Moderator:</strong> Removes malicious posts, spam, false claims</li>
+          <li><strong>Category Admin:</strong> Oversees housing and employment posts</li>
+        </ul>
+      </div>
+
+      <!-- Flow Card: Verification Pipeline -->
+      <div class="flow-card">
+        <div class="flow-card-header">
+          <div class="flow-card-title">
+            <span>✅</span> Trust Verification
+          </div>
+          <span class="flow-pill orange">Audit Pipeline</span>
+        </div>
+        <div class="step-chain">
+          <div class="step-box">
+            <div class="step-box-left">
+              <span class="step-num">1</span>
+              <span>Listing Submission</span>
+            </div>
+            <span style="color: #94A3B8;">Pending</span>
+          </div>
+          <div class="connector-down">↓</div>
+          <div class="step-box">
+            <div class="step-box-left">
+              <span class="step-num">2</span>
+              <span>Document & Physical Check</span>
+            </div>
+            <span style="color: #F59E0B;">Verifier</span>
+          </div>
+          <div class="connector-down">↓</div>
+          <div class="step-box">
+            <div class="step-box-left">
+              <span class="step-num">3</span>
+              <span>Blue Verified Badge Granted</span>
+            </div>
+            <span style="color: #34D399; font-weight:800;">✓ Live</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sticky: Security Shield -->
+      <div class="sticky-note yellow">
+        <div class="sticky-head">
+          <span>🔒 Privacy & Zero Leakage</span>
+          <span>Security Guard</span>
+        </div>
+        <div class="sticky-sub">End-to-End Compliance</div>
+        <ul class="sticky-list">
+          <li>Fuzzy GPS jitter for refugee/vulnerable user profiles</li>
+          <li>Tamper-proof immutable audit logging in database</li>
+          <li>JWT Bearer token rotation with HTTP-only cookies</li>
+          <li>OWASP Sanitize on all form inputs and chat fields</li>
+        </ul>
+      </div>
+
+      <div class="hand-annotation" style="color: #FB7185;">
+        🛡️ Ensures safety, privacy & verified resources for all users!
+      </div>
+    </div>
+
+  </main>
+
+  <!-- BOTTOM SHELF: INFRASTRUCTURE, DATA STORES & EXTERNAL APIS -->
+  <footer class="foundation-board">
+    <div class="foundation-title">
+      <span>⚙️</span> 5. Unified System Infrastructure, APIs & Data Stores (Foundation Layer)
+    </div>
+
+    <div class="infra-grid">
+      <!-- 1. Frontend Client -->
+      <div class="infra-card">
+        <div class="infra-card-title" style="color: #60A5FA;">
+          <span>💻</span> Client App Layer
+        </div>
+        <div class="infra-tag-list">
+          <span class="infra-badge">React 18</span>
+          <span class="infra-badge">TypeScript</span>
+          <span class="infra-badge">Tailwind CSS</span>
+          <span class="infra-badge">Vite Bundler</span>
+          <span class="infra-badge">Lucide Icons</span>
+          <span class="infra-badge">PWA Ready</span>
+        </div>
+      </div>
+
+      <!-- 2. State & Geolocation -->
+      <div class="infra-card">
+        <div class="infra-card-title" style="color: #34D399;">
+          <span>🌐</span> State & Geolocation
+        </div>
+        <div class="infra-tag-list">
+          <span class="infra-badge">AuthContext</span>
+          <span class="infra-badge">LocationProvider</span>
+          <span class="infra-badge">Browser Geo API</span>
+          <span class="infra-badge">Leaflet / Mapbox</span>
+          <span class="infra-badge">Polyline Decoder</span>
+        </div>
+      </div>
+
+      <!-- 3. External API Gateways -->
+      <div class="infra-card">
+        <div class="infra-card-title" style="color: #FBBF24;">
+          <span>🔌</span> External Cloud APIs
+        </div>
+        <div class="infra-tag-list">
+          <span class="infra-badge">BariKoi Reverse GIS</span>
+          <span class="infra-badge">BariKoi Autocomplete</span>
+          <span class="infra-badge">OSRM Routing V1</span>
+          <span class="infra-badge">Google Gemini API</span>
+          <span class="infra-badge">Twilio SMS OTP</span>
+        </div>
+      </div>
+
+      <!-- 4. Database & Spatial Storage -->
+      <div class="infra-card">
+        <div class="infra-card-title" style="color: #A78BFA;">
+          <span>🗄️</span> Data Stores & GIS
+        </div>
+        <div class="infra-tag-list">
+          <span class="infra-badge">PostgreSQL</span>
+          <span class="infra-badge">PostGIS Spatial</span>
+          <span class="infra-badge">Supabase DB</span>
+          <span class="infra-badge">ST_DWithin Queries</span>
+          <span class="infra-badge">Redis Fast Cache</span>
+        </div>
+      </div>
+
+      <!-- 5. Security & DevSecOps -->
+      <div class="infra-card">
+        <div class="infra-card-title" style="color: #F43F5E;">
+          <span>🛡️</span> Security & Hosting
+        </div>
+        <div class="infra-tag-list">
+          <span class="infra-badge">JWT + Refresh</span>
+          <span class="infra-badge">Bcrypt Hashing</span>
+          <span class="infra-badge">HTTPS / TLS 1.3</span>
+          <span class="infra-badge">Role Middleware</span>
+          <span class="infra-badge">Cloudflare CDN</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

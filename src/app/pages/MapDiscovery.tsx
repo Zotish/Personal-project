@@ -8,11 +8,12 @@ import {
   DollarSign, Timer, Route, ArrowLeft, Loader2, ChevronDown, ChevronUp, Store,
   Building2, ExternalLink, Briefcase, Maximize2, Volume2, VolumeX,
   CornerUpRight, CornerUpLeft, ArrowUp, CheckCircle2, LocateFixed,
-  Plus, Minus
+  Plus, Minus, Bus, Train
 } from "lucide-react";
 
 import { LiveJobListing, generateLiveLocationJobs, isJobQuery } from "../data/jobsData";
 import { generateLiveLocationHousing } from "../data/housingData";
+import { USA_TRANSIT_STATIONS } from "../data/transportationData";
 import {
   generateHospitalListings,
   generateGroceryShopListings,
@@ -3035,6 +3036,37 @@ export function MapDiscoveryContent({
       }));
     }
 
+    if (activeCategory === "transport") {
+      return USA_TRANSIT_STATIONS.map(st => {
+        const distKm = userLocation
+          ? getDistanceKm(userLocation[0], userLocation[1], st.coords[0], st.coords[1])
+          : 2.5;
+        const distMiles = (distKm * 0.621371).toFixed(1);
+        return {
+          id: `transit-${st.id}`,
+          lat: st.coords[0],
+          lng: st.coords[1],
+          name: st.name,
+          category: st.category === "bus" ? "🚌 Bus Terminal" : st.category === "train" ? "🚆 Train Station" : "🚇 Subway Station",
+          distance: `${distMiles} mi`,
+          rating: 4.8,
+          reviews: 340,
+          open: true,
+          openUntil: "24/7 Live Schedules",
+          address: st.address,
+          phone: "+1 800-555-0199",
+          languages: ["English", "Bengali", "Spanish"],
+          immigrantFriendly: true,
+          description: `${st.lines.join(", ")} • Official USA Transit Hub. Live timetables, low-to-high fare sort, and seat availability.`,
+          image: st.category === "bus"
+            ? "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=700&auto=format&fit=crop&q=80"
+            : st.category === "train"
+            ? "https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=700&auto=format&fit=crop&q=80"
+            : "https://images.unsplash.com/photo-1517649763962-0c623266ddc0?w=700&auto=format&fit=crop&q=80",
+        };
+      });
+    }
+
     return [];
   }, [userLocation, activeCategory, liveAddressInfo]);
 
@@ -3402,6 +3434,33 @@ export function MapDiscoveryContent({
                 </button>
               ))}
             </div>
+
+            {/* When Transport category is active: show the sub-filters Bus, Train, Subway (as sketched by user) */}
+            {activeCategory === "transport" && (
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar max-w-4xl mx-auto pt-1 pb-1 animate-in fade-in slide-in-from-top-1">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide shrink-0">
+                  Transit Mode:
+                </span>
+                <button
+                  onClick={() => navigate("/services/transit?type=bus")}
+                  className="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs transition-all cursor-pointer"
+                >
+                  Bus
+                </button>
+                <button
+                  onClick={() => navigate("/services/transit?type=train")}
+                  className="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs transition-all cursor-pointer"
+                >
+                  Train
+                </button>
+                <button
+                  onClick={() => navigate("/services/transit?type=subway")}
+                  className="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs transition-all cursor-pointer"
+                >
+                  Subway
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Main Content Area (Full-bleed edge-to-edge on mobile, padded card on desktop) */}

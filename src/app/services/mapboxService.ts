@@ -3,6 +3,8 @@
 // when BariKoi is unavailable or when operating in countries outside Bangladesh (e.g. USA, UK, Canada).
 
 import { BariKoiAddressInfo, CuratedPlace, BARIKOI_API_KEY, isBariKoiAvailable, triggerBariKoiCooldown } from "./barikoiService";
+export { BARIKOI_API_KEY };
+
 
 // Mapbox Token from environment, with optional user token support
 export const MAPBOX_TOKEN: string =

@@ -204,25 +204,11 @@ export function SchoolServicePage() {
   );
 }
 
-// ─── 10. TRANSIT, METRO & SUBWAY ──────────────────────────────────────────────
+// ─── 10. TRANSIT, METRO & SUBWAY (Dedicated Transportation Hub Flow) ──────────
+import { TransportationHub } from "./TransportationHub";
+
 export function TransitServicePage() {
-  return (
-    <ServiceMapDirectory
-      serviceName="Transport & Metro"
-      serviceIcon={Bus}
-      themeColor="#0284C7"
-      bannerPlaceholder="Search MRT-6 Metro stations, Kamalapur Railway, Mohakhali bus..."
-      defaultAreaName="Motijheel"
-      defaultCityName="Dhaka"
-      filterTabs={[
-        { id: "all", label: "All Transit Hubs" },
-        { id: "metro-rail", label: "MRT Line 6 Metro Stations" },
-        { id: "railway", label: "Intercity Railway Stations" },
-        { id: "bus-terminal", label: "Highway Bus Terminals" }
-      ]}
-      generateListings={generateTransitMetroListings}
-    />
-  );
+  return <TransportationHub />;
 }
 
 // ─── 11. GROCERY & SUPERSTORES ────────────────────────────────────────────────
